@@ -1,4 +1,5 @@
 *.pyc
 *~
 
+EmployeeCenter/settings.py
 EmployeeCenter/wsgi.py

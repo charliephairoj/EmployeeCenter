@@ -73,7 +73,7 @@ urlpatterns += patterns('wool.views',
     url(r'^test', 'display'),
 )
 urlpatterns += patterns('',
-    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/Users/charliephairojmahakij/sites/EmployeeCenter[Client]/app/'}),
+    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/home/bitnami/angular'}),
 )
 
 
