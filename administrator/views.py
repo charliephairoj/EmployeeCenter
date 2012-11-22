@@ -182,4 +182,8 @@ def user(request):
         response.status_code = 200
         #return data via http 
         return response
+    
+    
+def userPermissins(request):
+    
             

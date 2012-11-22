@@ -18,8 +18,10 @@ urlpatterns = patterns('',
     
 )
 
+#primary login and url routing
 urlpatterns += patterns('login.views',
     url(r'^login$', 'appLogin'),
+    url(r'^$', 'appLogin'),
 )
 
 urlpatterns += patterns('products.views',
@@ -73,7 +75,7 @@ urlpatterns += patterns('wool.views',
     url(r'^test', 'display'),
 )
 urlpatterns += patterns('',
-    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/home/bitnami/angular'})
+    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/Users/charliephairojmahakij/Sites/EmployeeCenter[Client]/app'})
 )
 
 
