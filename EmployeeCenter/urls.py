@@ -8,11 +8,9 @@ admin.autodiscover()
 
 
 #primary login and url routing
-urlpatterns = patterns('',
-    url(r'^$', 'login.views.appLogin'),
-    
-)
+
 urlpatterns = patterns('login.views',
+    url(r'^$', 'appLogin'),
     url(r'^login$', 'appLogin'),
     
 )
