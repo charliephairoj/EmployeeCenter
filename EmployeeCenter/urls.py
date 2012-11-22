@@ -5,23 +5,17 @@ from django.contrib import admin
 from login.views import login
 admin.autodiscover()
 
-urlpatterns = patterns('',
-    # Examples:
-   
-    # url(r'^EmployeeCenter/', include('EmployeeCenter.foo.urls')),
 
-    # Uncomment the admin/doc line below to enable admin documentation:
-    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    url(r'^admin/', include(admin.site.urls)),
-    
-)
 
 #primary login and url routing
-urlpatterns += patterns('login.views',
-    url(r'^login$', 'appLogin'),
+urlpatterns = patterns('',
+    url(r'^$', 'login.viewsappLogin'),
+    
+)
+urlpatterns = patterns('login.views',
     url(r'^$', 'appLogin'),
+    url(r'^login$', 'appLogin'),
+    
 )
 
 urlpatterns += patterns('products.views',
