@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url
+from django.conf import settings
 
 
 
@@ -69,7 +70,7 @@ urlpatterns += patterns('wool.views',
     url(r'^test', 'display'),
 )
 urlpatterns += patterns('',
-    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/Users/charliephairojmahakij/Sites/EmployeeCenter[Client]/app'})
+    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT})
 )
 
 
