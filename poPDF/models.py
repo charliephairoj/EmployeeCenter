@@ -6,9 +6,7 @@ from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key
 from django.conf import settings
 from decimal import Decimal
-import logging
 
-logger = logging.getLogger('EmployeeCenter');
 
 width, height = A4
 stylesheet = getSampleStyleSheet()
@@ -29,7 +27,7 @@ class PurchaseOrderPDF():
     #create method
     def create(self):
         
-        self.filename = "Purchase_Order-%s.pdf" % self.po.id
+        self.filename = settings.MEDIA_ROOT+"Purchase_Order-%s.pdf" % self.po.id
         #create the doc template
         doc = SimpleDocTemplate(self.filename, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #initialize story array
