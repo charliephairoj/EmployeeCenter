@@ -2,10 +2,21 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from login.models import LoginForm
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
 import logging
 
 logger = logging.getLogger('EmployeeCenter');
 # Create your views here.
+@login_required
+def main(request):
+    from django.contrib.staticfiles.views import serve
+
+
+
+    serve(request, 'templates/auth/login.html')
+
+    
 
 def appLogin(request):
     #create the form object
@@ -39,7 +50,7 @@ def appLogin(request):
                     #login the user
                     login(request, user)
                     #redirects to the main page
-                    return HttpResponseRedirect('/index.html')
+                    return HttpResponseRedirect('/main')
             else:
                 #returns unauthenticated users
                 #back to the login page

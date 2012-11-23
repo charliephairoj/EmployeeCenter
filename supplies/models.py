@@ -1,9 +1,7 @@
 from django.db import models
 from contacts.models import Contact, Supplier
-import logging
 from decimal import Decimal
 
-logger = logging.getLogger('EmployeeCenter');
 
 # Create your models here.
 

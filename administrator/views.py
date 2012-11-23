@@ -2,10 +2,16 @@ from wool.models import Wool
 from django.contrib.auth.models import Permission, Group, User
 import json
 from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.decorators import login_required
+
 import logging
 
 logger = logging.getLogger('EmployeeCenter');
+
+
 #Deals with the permission
+@login_required
+
 def permission(request, permissionID = '0'):
     
     if request.method == "GET":
@@ -24,6 +30,8 @@ def permission(request, permissionID = '0'):
         
 
 #Deals with the Groups
+@login_required
+
 def group(request, groupID = '0'):
     
     if request.method == "GET":
@@ -120,6 +128,7 @@ def group(request, groupID = '0'):
         
         
 #Deals with User
+@login_required
 def user(request):
     
     if request.method == "GET":
@@ -184,6 +193,3 @@ def user(request):
         return response
     
     
-def userPermissins(request):
-    
-            

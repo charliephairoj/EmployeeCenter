@@ -1,9 +1,5 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, url
 
-# Uncomment the next two lines to enable the admin:
-from django.contrib import admin
-from login.views import login
-admin.autodiscover()
 
 
 
@@ -11,6 +7,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('login.views',
     url(r'^$', 'appLogin'),
+    url(r'^main$', 'main'),
     url(r'^login$', 'appLogin'),
     
 )
@@ -40,6 +37,12 @@ urlpatterns += patterns('supplies.views',
 urlpatterns += patterns('lumber.views', 
     url(r'^lumber$', 'lumber'),
     url(r'^lumber/(?P<lumberID>\d+)$', 'lumber'),
+    
+)
+
+urlpatterns += patterns('fabric.views', 
+    url(r'^fabric', 'fabric'),
+    url(r'^fabric/(?P<fabricID>\d+)$', 'fabric'),
     
 )
 

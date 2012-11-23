@@ -4,9 +4,7 @@
 from po.models import PurchaseOrder
 from django.http import HttpResponseRedirect, HttpResponse
 import json
-import logging
 
-logger = logging.getLogger('EmployeeCenter');
 
 
 

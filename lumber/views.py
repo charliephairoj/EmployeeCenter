@@ -26,7 +26,7 @@ def lumber(request, lumberID='0'):
         
         else:
             
-            data = Lumber.objects.get(id=lumberID)
+            data = Lumber.objects.get(id=lumberID).getData()
             
            
             
@@ -36,39 +36,45 @@ def lumber(request, lumberID='0'):
     
     elif request.method == "POST":
         
-        if lumberID == '0':
-            #Create a new Model
-            lumber = Lumber()
-            #Get the raw data
-            postData = json.loads(request.POST.get('data'))
-            #convert the information to the model
-            lumber.setData(postData)
-            lumber.save()
-            #Gets the images and assigns them
+        #Create a new Model
+        lumber = Lumber()
+        #Get the raw data
+        postData = json.loads(request.POST.get('data'))
+        #convert the information to the model
+        lumber.setData(postData)
+        lumber.save()
+        #Gets the images and assigns them
             
             
             
-            #response = HttpResponse(json.dumps({'lumberID':lumberID, 'filedata':request.FILES, 'modelData':newModel}), mimetype="application/json")
-            response = HttpResponse(json.dumps(lumber.getData()), mimetype="application/json")
-            response.status_code = 201
-            return response
+        #response = HttpResponse(json.dumps({'lumberID':lumberID, 'filedata':request.FILES, 'modelData':newModel}), mimetype="application/json")
+        response = HttpResponse(json.dumps(lumber.getData()), mimetype="application/json")
+        response.status_code = 201
+        return response
         
-        else:
-            # Create a Task
-            lumber = Lumber.objects.get(id=lumberID)
-            # Load data
-            rawData = json.loads(request.POST.get('data'))
-            logger.debug(rawData)
-            #Assigns the data to the  model
-            lumber.setData(rawData)
-            logger.debug(lumber.width)
-            # attempt to save
-            #model.save()
-            # return just the plain hash
-            # returning Location header causes problems
-            response = HttpResponse(json.dumps(lumber.getData()), mimetype="application/json")
-            response.status_code = 201
-            return response
+           
+    elif request.method == "PUT":
+        
+        # Create a Task
+        lumber = Lumber.objects.get(id=lumberID)
+        
+        #change to put
+        request.method = "POST"
+        request._load_post_and_files();
+        # Load data
+        rawData = json.loads(request.POST.get('data'))
+        logger.debug(rawData)
+        #Assigns the data to the  model
+        lumber.setData(rawData)
+        logger.debug(lumber.width)
+        # attempt to save
+        #model.save()
+        # return just the plain hash
+        # returning Location header causes problems
+        response = HttpResponse(json.dumps(lumber.getData()), mimetype="application/json")
+        response.status_code = 201
+        return response
+    
     elif request.method == "DELETE":
         lumber = Lumber.objects.get(id=lumberID)
         lumber.delete()
