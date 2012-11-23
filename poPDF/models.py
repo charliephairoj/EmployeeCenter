@@ -26,10 +26,10 @@ class PurchaseOrderPDF():
     
     #create method
     def create(self):
-        
-        self.filename = "%sPurchase_Order-%s.pdf" % (settings.MEDIA_ROOT,self.po.id)
+        self.filename = "Purchase_Order-%s.pdf" % self.po.id
+        self.location = "%s%s" % (settings.MEDIA_ROOT,self.filename)
         #create the doc template
-        doc = SimpleDocTemplate(self.filename, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
+        doc = SimpleDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #initialize story array
         Story = []
         #create the heading
@@ -205,7 +205,7 @@ class PurchaseOrderPDF():
         #Set file name
         k.key = "purchase_order/%s" % self.filename
         #upload file
-        k.set_contents_from_filename(self.filename)
+        k.set_contents_from_filename(self.location)
         #set the Acl
         k.set_acl('public-read')
         #set Url, key and bucket
