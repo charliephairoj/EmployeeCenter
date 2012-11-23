@@ -27,7 +27,7 @@ class PurchaseOrderPDF():
     #create method
     def create(self):
         
-        self.filename = settings.MEDIA_ROOT+"Purchase_Order-%s.pdf" % self.po.id
+        self.filename = "%sPurchase_Order-%s.pdf" % (settings.MEDIA_ROOT,self.po.id)
         #create the doc template
         doc = SimpleDocTemplate(self.filename, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #initialize story array
