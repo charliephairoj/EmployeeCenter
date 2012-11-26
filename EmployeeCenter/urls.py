@@ -10,6 +10,7 @@ urlpatterns = patterns('login.views',
     url(r'^$', 'appLogin'),
     url(r'^main$', 'main'),
     url(r'^login$', 'appLogin'),
+    url(r'^test', 'buildMenu')
     
 )
 
@@ -31,7 +32,7 @@ urlpatterns += patterns('contacts.views',
 
 urlpatterns += patterns('supplies.views', 
   
-    url(r'^supply', 'supply'),
+    url(r'^supply$', 'supply'),
     url(r'^supply/(?P<supplyID>\d+)$', 'supply')
 )
 
@@ -41,10 +42,21 @@ urlpatterns += patterns('lumber.views',
     
 )
 
+urlpatterns += patterns('foam.views', 
+    url(r'^foam$', 'foam'),
+    url(r'^foam/(?P<foamID>\d+)$', 'foam'),
+    
+)
+
 urlpatterns += patterns('fabric.views', 
-    url(r'^fabric', 'fabric'),
+    url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabricID>\d+)$', 'fabric'),
     
+)
+
+urlpatterns += patterns('screw.views', 
+    url(r'^screw$', 'screw'),
+    url(r'^screw/(?P<screwID>\d+)$', 'screw'),
 )
 
 urlpatterns += patterns('wool.views', 
@@ -66,9 +78,7 @@ urlpatterns += patterns('administrator.views',
      url(r'^group/(?P<groupID>\d+)$', 'group'),
     url(r'^user$', 'user')
 )
-urlpatterns += patterns('wool.views',
-    url(r'^test', 'display'),
-)
+
 urlpatterns += patterns('',
     url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT})
 )

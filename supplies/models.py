@@ -16,7 +16,7 @@ class Supply(models.Model):
     height = models.IntegerField(db_column='height', default=0)
     units = models.CharField(max_length=20, default='mm')
     discount = models.IntegerField(default=0)
-  
+    reference = models.TextField()
     
         
     #methods
@@ -29,13 +29,14 @@ class Supply(models.Model):
             'height':self.height,
             'description':self.description,
             'id':self.id,
-            'cost':'%s' %self.cost
-                
+            'cost':'%s' %self.cost,
+            'reference':self.reference
         }
         
         return data
     
     def setParentData(self, data):
+        if "reference" in data: self.reference = data["reference"]
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]

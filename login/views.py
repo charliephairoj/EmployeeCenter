@@ -1,9 +1,10 @@
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from login.models import LoginForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+import json
 import logging
 
 logger = logging.getLogger('EmployeeCenter');
@@ -55,3 +56,64 @@ def appLogin(request):
                 #returns unauthenticated users
                 #back to the login page
                 return HttpResponseRedirect('/login')
+            
+
+
+
+
+def hasModule(user, data):
+    
+    for moduleName in data:
+        
+        if user.has_module_perms(moduleName):
+            logger.debug(moduleName)
+            logger.debug(user.has_module_perms(moduleName))
+            return True
+        
+    return False
+#build the user permissions
+def buildMenu(request):
+    from django.contrib.auth.models import User, Permission
+    
+    user = request.user
+    
+    menuData = {}
+    
+    #list of modules
+    
+    #supplies modules
+    supplyModules = ['supplies', 'wool', 'lumber', 'fabric']
+    
+    
+    if hasModule(user, supplyModules):
+        
+        categories = []
+        for module in supplyModules:
+            actions = []
+            if user.has_perm('%s.%s_%s' %(module, 'add', module)):
+                
+                actions.append('Add %s' % module)
+            
+            if user.has_perm('%s.%s_%s' %(module, 'change', module)):
+                
+                actions.append('Add %s' % module)
+                
+            if user.has_perm('%s.%s_%s' %(module, 'delete', module)):
+                
+                actions.append('Add %s' % module)
+            
+            categories.append({'category':module, 'actions':actions})
+            
+            
+        menuData.update({'section':'Supplies', 'categories':categories})
+            
+    
+    return HttpResponse(json.dumps(menuData), mimetype="application/json")
+            
+            
+            
+            
+            
+            
+            
+            

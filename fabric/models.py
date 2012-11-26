@@ -9,24 +9,23 @@ logger = logging.getLogger('EmployeeCenter');
 
 # Create your models here.
 #Creates the lumber class
-class Lumber(Supply):
-    woodType = models.TextField(db_column  = "wood_type")
+class Fabric(Supply):
+    pattern = models.TextField()
+    color = models.TextField()
     
     #Methods
     def setData(self, data):
         #set the type to lumber
-        self.type = "lumber"
-        #set the wood type
-        if "type" in data:self.woodType = data["type"]
+        self.type = "fabric"
+        
        
         #set parent properties
         self.setParentData(data)
-        #set the description
-        if "description" in data: 
-            self.description = data["description"]
-        else:
-            self.description = self.woodType+' '+self.width+'x'+self.depth+'x'+self.height
-
+        
+        #set the model data
+        if "pattern" in data: self.pattern = data["pattern"]
+        if "color" in data: self.color = data["color"]
+        
         #set the supplier
         if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
         
@@ -36,11 +35,12 @@ class Lumber(Supply):
         
         #sets the data for this supply
         data = {
-                'type':self.woodType,
+                'pattern':self.pattern,
+                'color':self.color
         }
         #merges with parent data
         data.update(self.getParentData())
-       
+        
         #returns the data
         return data
     

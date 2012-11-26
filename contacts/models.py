@@ -42,7 +42,8 @@ class Contact(models.Model):
                 'fax':self.fax,
                 'isSupplier':self.isSupplier,
                 'isCustomer':self.isCustomer,
-                'addresses':addresses
+                'addresses':addresses,
+                
                 }
         #returns the data
         return data
@@ -118,7 +119,8 @@ class Supplier(Contact):
                 'territory':None,
                 'country':None,
                 'zipcode':None,
-                'terms':self.terms
+                'terms':self.terms,
+                'discount':self.discount
                 }
         #sets address if exists
         if len(self.address_set.all())>0:

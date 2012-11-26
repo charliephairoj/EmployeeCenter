@@ -15,17 +15,18 @@ def supplier(request, supplierID='0'):
         #all contacts
         if supplierID == '0':
             #set up array to hold contacts
-            dataArray = []
+            data = []
             #loop through all contacts
             for supplier in Supplier.objects.all():
                 #Adds data to the array
-                dataArray.append(supplier.getData())
+                data.append(supplier.getData())
             
-            return HttpResponse(json.dumps(dataArray), mimetype="application/json")
         
         else:
             #get the data from specified contact
-            return Supplier.objects.get(id = Supplier).getData()
+            data =  Supplier.objects.get(id = supplierID).getData()
+        
+        return HttpResponse(json.dumps(data), mimetype="application/json")
         
     elif request.method == "POST":
         #creates a new contact
