@@ -26,6 +26,10 @@ class Fabric(Supply):
         if "pattern" in data: self.pattern = data["pattern"]
         if "color" in data: self.color = data["color"]
         
+        if "description" in data: 
+            self.description = data["description"]
+        else:
+            self.description = "%s %s" % (self.pattern, self.color)
         #set the supplier
         if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
         

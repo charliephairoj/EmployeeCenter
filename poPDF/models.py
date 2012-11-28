@@ -1,12 +1,13 @@
 from reportlab.lib import pdfencrypt, colors, utils
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
-from boto.s3.connection import S3Connection, Location
+from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from django.conf import settings
-from decimal import Decimal
+import logging
 
+logger = logging.getLogger('EmployeeCenter');
 
 width, height = A4
 stylesheet = getSampleStyleSheet()
@@ -68,6 +69,10 @@ class PurchaseOrderPDF():
         Story.append(contact)
         Story.append(Spacer(0,40))
         
+        #Alignes the header and supplier to the left
+        for aStory in Story:
+            aStory.hAlign = 'LEFT'
+        
         #creates the data to hold the supplies information
         styleData = [
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
@@ -84,12 +89,29 @@ class PurchaseOrderPDF():
         t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(50,285, 50, 50, 65))
         tStyle = TableStyle(styleData)
         t.setStyle(tStyle)
-        
-        for aStory in Story:
-            aStory.hAlign = 'LEFT'
         Story.append(t)
-        doc.build(Story, onFirstPage=self.firstPage)
         
+        #create the signature
+        s = [
+                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                             #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                             ('LINEBELOW', (0,0), (0,0), 1, colors.CMYKColor(black=60)),
+                             ('LINEBELOW', (-1,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                             ('ALIGNMENT', (0,-1), (-1,-1), 'CENTER'),
+                             ('ALIGNMENT', (0,0), (-1,0), 'LEFT'),
+                             
+                             ]
+        
+        sigStyle = TableStyle(s)
+        
+        #spacer
+        Story.append(Spacer(0, 50))
+        
+        signature = Table([['x', '', 'x'], ['Purchasing Agent', '', 'Manager']], colWidths=(200,100,200))
+        signature.setStyle(sigStyle)
+        Story.append(signature)
+        
+        doc.build(Story, onFirstPage=self.firstPage)
         #upload the file and return 
         #the upload data
         return self.upload()
@@ -155,26 +177,48 @@ class PurchaseOrderPDF():
         return data
     
     def addTotal(self, data, style=None):
-        #Determines whether the supplier has a discount
-        if self.supplier.discount == 0:
-            data.append(['','','','Grand Total', self.po.total])
-            #adjust the style
-            style.append(('LINEABOVE', (0,-1), (-1,-1), 1, colors.CMYKColor(black=60)))
-        else:
+       
+        #calculate the totals
             
-            #calculate the totals
-            #get subtotal
-            subtotal = float(self.po.total)
-            discount = subtotal*(float(self.supplier.discount)/float(100))
-            grandTotal = subtotal-discount
-            
+        #what to do if there is vat or discount
+        if self.po.vat !=0 or self.supplier.discount!=0:
+            #get subtotal and add to pdf
+            subtotal = float(self.po.subtotal)
             data.append(['','','','Subtotal', "%.2f" % subtotal])
-            data.append(['','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
-            data.append(['','','','Grand Total', "%.2f" % grandTotal])
+            #add discount area if discount greater than 0
+            if self.supplier.discount != 0:
+                discount = subtotal*(float(self.supplier.discount)/float(100))
+                data.append(['','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
+                
+            #add vat if vat is greater than 0
+            if self.po.vat !=0:
+                if self.supplier.discount != 0:
+                    #append total to pdf
+                    data.append(['','','','Total', "%.2f" % self.po.total])
+                #calculate vat and add to pdf
+                vat = float(self.po.total)*(float(self.po.vat)/float(100))
+                data.append(['','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
+
+        data.append(['','','','Grand Total', "%.2f" % self.po.grandTotal])
             
-            #adjust the style
-            style.append(('LINEABOVE', (0,-3), (-1,-3), 1, colors.CMYKColor(black=60)))
-            style.append(('ALIGNMENT', (-2,-3), (-1,-1), 'RIGHT'))
+        #adjust the style based on vat and discount
+        
+        #if there is either vat or discount
+        if self.po.vat !=0 or self.supplier.discount!=0:
+            #if there is only vat or only discount
+            if self.po.vat !=0 and self.supplier.discount!=0:
+                style.append(('LINEABOVE', (0,-5), (-1,-5), 1, colors.CMYKColor(black=60)))
+                style.append(('ALIGNMENT', (-2,-5), (-1,-1), 'RIGHT'))       
+            #if there is both vat and discount
+            else:
+                style.append(('LINEABOVE', (0,-3), (-1,-3), 1, colors.CMYKColor(black=60)))
+                style.append(('ALIGNMENT', (-2,-3), (-1,-1), 'RIGHT'))
+        #if there is no vat or discount
+        else:
+            style.append(('LINEABOVE', (0,-1), (-1,-1), 1, colors.CMYKColor(black=60)))
+            style.append(('ALIGNMENT', (-2,-1), (-1,-1), 'RIGHT'))
+            
+        style.append(('ALIGNMENT', (-2,-3), (-1,-1), 'RIGHT'))
     
     #helps change the size and maintain ratio
     def getImage(self, path, width=None, height=None):

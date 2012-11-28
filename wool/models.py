@@ -40,6 +40,6 @@ class Wool(Supply):
         if "description" in data:
             self.description = data['description']
         else:
-            self.description = self.tex
+            self.description = "%s Tex" % self.tex
         
         self.save()

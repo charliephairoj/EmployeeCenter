@@ -13,7 +13,14 @@ class PurchaseOrder(models.Model):
     
     supplier = models.ForeignKey(Supplier)
     orderDate = models.DateField(db_column = "order_date", null=True, default = datetime.date.today())
+    vat = models.IntegerField(default=0)
+    currency = models.CharField(max_length=10, default="THB")
+    #refers to the total of all items
+    subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    #refers to total after discount
     total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    #refers to the todal after vat
+    grandTotal = models.DecimalField(db_column='grand_total', default=0, decimal_places=2, max_digits=12)
     url = models.TextField(null = True)
     key = models.TextField(null = True)
     bucket = models.TextField(null = True)
@@ -28,12 +35,16 @@ class PurchaseOrder(models.Model):
         #get supplier from data
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"])
+        
+        #apply vat and currency
+        if "vat" in data: self.vat = float(data["vat"])
+        if "currency" in data: self.currency = data["currency"]
             
         #save the purchase
         self.save()
         
-        #array to hold total
-        self.total = 0
+        #model to hold subtotal
+        self.subtotal = 0
         #array to hold supplies
         self.supplies = []
         #checks to see if has supplies to order
@@ -50,7 +61,38 @@ class PurchaseOrder(models.Model):
                 self.supplies.append(poItem)
                 
                 #add supply total to po total
-                self.total = self.total + poItem.total
+                self.subtotal = self.subtotal + poItem.total
+                
+        #Calculates the totals of the PO
+        
+        #calculate total after discount
+        if self.supplier.discount != 0:
+            #percentage 
+            percentage = Decimal(self.supplier.discount)/100
+            #amount to discount based off of subtotal
+            discountAmount = self.subtotal*percentage
+            #remaining total after subtracting discount
+            self.total = self.subtotal-discountAmount
+        #if no supplier discount
+        else:
+            #total is equal to subtotal
+            self.total = self.subtotal
+            
+        #calculate total after tax
+        if self.vat != 0 or self.vat != '0':
+            #get vat percentage
+            percentage = Decimal(self.vat)/100
+            #get vat amount
+            vatAmount = self.total*percentage
+            #remaining grand total after adding vat
+            self.grandTotal = self.total+vatAmount
+        else:
+            #grand total is equal to total
+            self.grandTotal = self.total
+        
+        #save the data
+        self.save()
+        
         #creates the PDF and retrieves the returned
         #data concerning location of file
         pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self)
@@ -90,6 +132,7 @@ class PurchaseOrderItems(models.Model):
     discount = models.IntegerField()
     unitCost = models.DecimalField(decimal_places=2, max_digits=12, default=0, db_column="unit_cost")
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    currency = models.CharField(max_length=10, default="THB")
     
     
     

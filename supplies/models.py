@@ -17,6 +17,7 @@ class Supply(models.Model):
     units = models.CharField(max_length=20, default='mm')
     discount = models.IntegerField(default=0)
     reference = models.TextField()
+    currency = models.CharField(max_length=10, default="THB")
     
         
     #methods
@@ -30,7 +31,8 @@ class Supply(models.Model):
             'description':self.description,
             'id':self.id,
             'cost':'%s' %self.cost,
-            'reference':self.reference
+            'reference':self.reference,
+            'currency':self.currency
         }
         
         return data
@@ -41,6 +43,7 @@ class Supply(models.Model):
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
         if "depth" in data: self.depth = data["depth"]
+        if "currency" in data: self.currency = data["currency"]
         if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
         if "supplierID" in data: self.supplier = Supplier.objects.get(id=data["supplierID"])
         
@@ -53,8 +56,8 @@ class Supply(models.Model):
                 'height':self.height,
                 'description':self.description,
                 'id':self.id,
-                'cost':'%s' %self.cost
-                
+                'cost':'%s' % self.cost,
+                'currency':self.currency
         }
         
         return data
