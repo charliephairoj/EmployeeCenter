@@ -10,7 +10,7 @@ import json
 
 
 #functions
-def purchaseOrder(request, poID=0):
+def purchase_order(request, po_id=0):
     
     #if post method
     if request.method == "POST":

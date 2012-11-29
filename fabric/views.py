@@ -8,10 +8,10 @@ from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor
 
 @login_required
 #Handles request for Lumber
-def fabric(request, fabricID=0):
+def fabric(request, fabric_id=0):
     if request.method == "GET":
         
-        return httpGETProcessor(request, Fabric, fabricID)
+        return httpGETProcessor(request, Fabric, fabric_id)
     
     elif request.method == "POST":
         
@@ -20,11 +20,11 @@ def fabric(request, fabricID=0):
            
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Fabric, fabricID)
+        return httpPUTProcessor(request, Fabric, fabric_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(request, Fabric, fabricID)
+        return httpDELETEProcessor(request, Fabric, fabric_id)
     
     
     

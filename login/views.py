@@ -14,7 +14,7 @@ def main(request):
     from django.contrib.staticfiles.views import serve
 
 
-
+    
     serve(request, 'templates/auth/login.html')
 
     
@@ -51,7 +51,7 @@ def appLogin(request):
                     #login the user
                     login(request, user)
                     #redirects to the main page
-                    return HttpResponseRedirect('/main')
+                    return HttpResponseRedirect('/index.html')
             else:
                 #returns unauthenticated users
                 #back to the login page

@@ -1,30 +1,30 @@
 # Create your views here.
-from django.contrib.auth.decorators import login_required
 
-from foam.models import Foam
+from webbing.models import Webbing
+from django.contrib.auth.decorators import login_required
 from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor, httpDELETEProcessor
+
 
 @login_required
 #Handles request for Lumber
-def foam(request, foam_id=0):
-    
+def webbing(request, webbing_id='0'):
     
     if request.method == "GET":
         
-        return httpGETProcessor(request, Foam, foam_id)
+        return httpGETProcessor(request, Webbing, webbing_id)
     
     elif request.method == "POST":
         
         
-        return httpPOSTProcessor(request, Foam)
+        return httpPOSTProcessor(request, Webbing)
            
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Foam, foam_id)
+        return httpPUTProcessor(request, Webbing, webbing_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(Foam, foam_id)
+        return httpDELETEProcessor(Webbing, webbing_id)
         
         
         

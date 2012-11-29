@@ -7,11 +7,11 @@ from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor
 
 @login_required
 #Handles request for Lumber
-def screw(request, screwID='0'):
+def screw(request, screw_id='0'):
     
     if request.method == "GET":
         
-        return httpGETProcessor(request, Screw, screwID)
+        return httpGETProcessor(request, Screw, screw_id)
     
     elif request.method == "POST":
         
@@ -20,11 +20,11 @@ def screw(request, screwID='0'):
            
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Screw, screwID)
+        return httpPUTProcessor(request, Screw, screw_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(Screw, screwID)
+        return httpDELETEProcessor(Screw, screw_id)
         
         
         

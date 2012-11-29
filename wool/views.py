@@ -9,10 +9,10 @@ from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor
 
 
 #Handles request for Lumber
-def wool(request, woolID='0'):
+def wool(request, wool_id='0'):
     if request.method == "GET":
         
-        return httpGETProcessor(request, Wool, woolID)
+        return httpGETProcessor(request, Wool, wool_id)
         
     elif request.method == "POST":
         
@@ -20,11 +20,11 @@ def wool(request, woolID='0'):
     
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Wool, woolID)
+        return httpPUTProcessor(request, Wool, wool_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(Wool, woolID)
+        return httpDELETEProcessor(Wool, wool_id)
     
     
     

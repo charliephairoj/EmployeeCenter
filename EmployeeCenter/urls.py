@@ -44,29 +44,34 @@ urlpatterns += patterns('lumber.views',
 
 urlpatterns += patterns('foam.views', 
     url(r'^foam$', 'foam'),
-    url(r'^foam/(?P<foamID>\d+)$', 'foam'),
+    url(r'^foam/(?P<foam_id>\d+)$', 'foam'),
     
 )
 
 urlpatterns += patterns('fabric.views', 
     url(r'^fabric$', 'fabric'),
-    url(r'^fabric/(?P<fabricID>\d+)$', 'fabric'),
+    url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
     
 )
 
 urlpatterns += patterns('screw.views', 
     url(r'^screw$', 'screw'),
-    url(r'^screw/(?P<screwID>\d+)$', 'screw'),
+    url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
 )
 
 urlpatterns += patterns('wool.views', 
     url(r'^wool$', 'wool'),
-    url(r'^wool/(?P<woolID>\d+)$', 'wool'),
+    url(r'^wool/(?P<wool_id>\d+)$', 'wool'),
+)
+
+urlpatterns += patterns('webbing.views', 
+    url(r'^webbing$', 'webbing'),
+    url(r'^webbing/(?P<webbing_id>\d+)$', 'webbing'),
 )
 
 urlpatterns += patterns('po.views', 
-    url(r'^purchase_order$', 'purchaseOrder'),
-    url(r'^purchase_order/(?P<poID>\d+)$', 'purchaseOrder'),
+    url(r'^purchase_order$', 'purchase_order'),
+    url(r'^purchase_order/(?P<po_id>\d+)$', 'purchase_order'),
    
 )
 

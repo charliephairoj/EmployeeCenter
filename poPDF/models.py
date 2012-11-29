@@ -5,6 +5,7 @@ from reportlab.lib.pagesizes import A4
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from django.conf import settings
+import os
 import logging
 
 logger = logging.getLogger('EmployeeCenter');
@@ -114,7 +115,11 @@ class PurchaseOrderPDF():
         doc.build(Story, onFirstPage=self.firstPage)
         #upload the file and return 
         #the upload data
-        return self.upload()
+        uploadData = self.upload()
+        #delete the file from local harddisk
+        os.remove(self.location)
+        #return the upload data
+        return uploadData
             
             
     def firstPage(self, canvas, doc):
