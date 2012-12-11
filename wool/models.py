@@ -12,23 +12,22 @@ class Wool(Supply):
     #methods
     
     #get data
-    def getData(self):
+    def get_data(self):
         #get's this supply's data
         data = {
             'tex':self.tex,
         }
         
         #merges with parent data
-        data.update(self.getParentData())
+        data.update(self.get_parent_data())
         #return the data
         return data
     
     #set data
-    def setData(self, data):
+    def set_data(self, data):
         
         #set parent data
-        self.setParentData(data)
-        
+        self.set_parent_data(data)
         #set wool specific data
         self.width = 0
         self.height = 0

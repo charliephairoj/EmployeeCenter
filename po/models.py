@@ -5,6 +5,9 @@ from boto.s3.connection import S3Connection
 from django.conf import settings
 from decimal import Decimal
 import datetime
+import logging
+
+logger = logging.getLogger('EmployeeCenter');
 
 
 # Create your models here.
@@ -12,15 +15,21 @@ import datetime
 class PurchaseOrder(models.Model):
     
     supplier = models.ForeignKey(Supplier)
-    orderDate = models.DateField(db_column = "order_date", null=True, default = datetime.date.today())
+    order_date = models.DateField(db_column = "order_date", null=True, default = datetime.date.today())
+    delivery_date = models.DateField(null=True)
     vat = models.IntegerField(default=0)
+    #shipping
+    shipping_type = models.CharField(max_length=10, default="none")
+    shipping_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
     currency = models.CharField(max_length=10, default="THB")
     #refers to the total of all items
     subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     #refers to total after discount
     total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     #refers to the todal after vat
-    grandTotal = models.DecimalField(db_column='grand_total', default=0, decimal_places=2, max_digits=12)
+    grand_total = models.DecimalField(db_column='grand_total', default=0, decimal_places=2, max_digits=12)
+    
     url = models.TextField(null = True)
     key = models.TextField(null = True)
     bucket = models.TextField(null = True)
@@ -39,6 +48,11 @@ class PurchaseOrder(models.Model):
         #apply vat and currency
         if "vat" in data: self.vat = float(data["vat"])
         if "currency" in data: self.currency = data["currency"]
+        logger.debug(data)
+        #set the deliverydate
+        if "deliveryDate" in data:
+            delivery_date = datetime.date(data['deliveryDate']['year'], data['deliveryDate']['month'], data['deliveryDate']['date'])
+            self.delivery_date = delivery_date
             
         #save the purchase
         self.save()
@@ -63,6 +77,17 @@ class PurchaseOrder(models.Model):
                 #add supply total to po total
                 self.subtotal = self.subtotal + poItem.total
                 
+        #checks if there was a shipping charge
+        if "shipping" in data:
+            #checks whether shipping is charged
+            if data['shipping'] != False:
+                
+                if "type" in data["shipping"]: self.shipping_type = data['shipping']['type']
+                if "amount" in data["shipping"]: self.shipping_amount = Decimal(data['shipping']['amount'])
+                
+                #add shipping to subtotal
+                self.subtotal = self.subtotal + self.shipping_amount
+                
         #Calculates the totals of the PO
         
         #calculate total after discount
@@ -70,9 +95,9 @@ class PurchaseOrder(models.Model):
             #percentage 
             percentage = Decimal(self.supplier.discount)/100
             #amount to discount based off of subtotal
-            discountAmount = self.subtotal*percentage
+            discount_amount = self.subtotal*percentage
             #remaining total after subtracting discount
-            self.total = self.subtotal-discountAmount
+            self.total = self.subtotal-discount_amount
         #if no supplier discount
         else:
             #total is equal to subtotal
@@ -83,12 +108,12 @@ class PurchaseOrder(models.Model):
             #get vat percentage
             percentage = Decimal(self.vat)/100
             #get vat amount
-            vatAmount = self.total*percentage
+            vat_amount = self.total*percentage
             #remaining grand total after adding vat
-            self.grandTotal = self.total+vatAmount
+            self.grand_total = self.total+vat_amount
         else:
             #grand total is equal to total
-            self.grandTotal = self.total
+            self.grand_total = self.total
         
         #save the data
         self.save()
@@ -96,26 +121,26 @@ class PurchaseOrder(models.Model):
         #creates the PDF and retrieves the returned
         #data concerning location of file
         pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self)
-        pdfData = pdf.create()
+        pdf_data = pdf.create()
         #sets the pdf
-        self.url = pdfData['url']
-        self.key = pdfData['key']
-        self.bucket = pdfData['bucket']
+        self.url = pdf_data['url']
+        self.key = pdf_data['key']
+        self.bucket = pdf_data['bucket']
         self.save()
 
     #get data
-    def getData(self):
+    def get_data(self):
         #get the url
         
        
         data = {
-                'url':self.getUrl(),
+                'url':self.get_url(),
                 'id':self.id,
-                'orderDate':self.orderDate.isoformat()
+                'orderDate':self.order_date.isoformat()
                 }
         return data
     
-    def getUrl(self):
+    def get_url(self):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the url
@@ -126,11 +151,11 @@ class PurchaseOrder(models.Model):
     
 class PurchaseOrderItems(models.Model):
     
-    purchaseOrder = models.ForeignKey(PurchaseOrder, db_column = "purchase_order_id")
+    purchase_order = models.ForeignKey(PurchaseOrder, db_column = "purchase_order_id")
     supply = models.ForeignKey(Supply, db_column = "supply_id")
     quantity = models.IntegerField()
     discount = models.IntegerField()
-    unitCost = models.DecimalField(decimal_places=2, max_digits=12, default=0, db_column="unit_cost")
+    unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0, db_column="unit_cost")
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     currency = models.CharField(max_length=10, default="THB")
     
@@ -138,7 +163,7 @@ class PurchaseOrderItems(models.Model):
     
     #set po
     def setPO(self, po):
-        self.purchaseOrder = po
+        self.purchase_order = po
         
     #create
     def create(self, data):
@@ -148,15 +173,15 @@ class PurchaseOrderItems(models.Model):
             self.cost = self.supply.cost
             self.discount = self.supply.discount
             if self.supply.discount == 0:
-                self.unitCost = self.supply.cost
+                self.unit_cost = self.supply.cost
             else:
-                discountAmount = self.supply.cost*(Decimal(self.supply.discount)/100)
-                self.unitCost = self.supply.cost-discountAmount
+                discount_amount = self.supply.cost*(Decimal(self.supply.discount)/100)
+                self.unit_cost = self.supply.cost-discount_amount
             
         if "quantity" in data: 
             self.quantity = data["quantity"]  
             #if there is a discount apply the discount
-            self.total = self.unitCost*self.quantity
+            self.total = self.unit_cost*self.quantity
         
 
 

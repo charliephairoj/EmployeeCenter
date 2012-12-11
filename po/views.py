@@ -21,7 +21,7 @@ def purchase_order(request, po_id=0):
         #create po
         po.create(data)
         #create the response and send 
-        response = HttpResponse(json.dumps(po.getData()), mimetype="application/json")
+        response = HttpResponse(json.dumps(po.get_data()), mimetype="application/json")
         response.status_code = 201
         return response
         

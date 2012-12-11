@@ -19,7 +19,7 @@ def main(request):
 
     
 
-def appLogin(request):
+def app_login(request):
     #create the form object
     #to hand the inputs
     form = LoginForm()
@@ -61,13 +61,12 @@ def appLogin(request):
 
 
 
-def hasModule(user, data):
+def has_module(user, data):
     
-    for moduleName in data:
+    for module_name in data:
         
-        if user.has_module_perms(moduleName):
-            logger.debug(moduleName)
-            logger.debug(user.has_module_perms(moduleName))
+        if user.has_module_perms(module_name):
+            
             return True
         
     return False
@@ -77,18 +76,18 @@ def buildMenu(request):
     
     user = request.user
     
-    menuData = {}
+    menu_data = {}
     
     #list of modules
     
     #supplies modules
-    supplyModules = ['supplies', 'wool', 'lumber', 'fabric']
+    supply_modules = ['supplies', 'wool', 'lumber', 'fabric']
     
     
-    if hasModule(user, supplyModules):
+    if has_module(user, supply_modules):
         
         categories = []
-        for module in supplyModules:
+        for module in supply_modules:
             actions = []
             if user.has_perm('%s.%s_%s' %(module, 'add', module)):
                 
@@ -105,10 +104,10 @@ def buildMenu(request):
             categories.append({'category':module, 'actions':actions})
             
             
-        menuData.update({'section':'Supplies', 'categories':categories})
+        menu_data.update({'section':'Supplies', 'categories':categories})
             
     
-    return HttpResponse(json.dumps(menuData), mimetype="application/json")
+    return HttpResponse(json.dumps(menu_data), mimetype="application/json")
             
             
             

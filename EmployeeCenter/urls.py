@@ -7,20 +7,26 @@ from django.conf import settings
 #primary login and url routing
 
 urlpatterns = patterns('login.views',
-    url(r'^$', 'appLogin'),
+    url(r'^$', 'app_login'),
     url(r'^main$', 'main'),
-    url(r'^login$', 'appLogin'),
-    url(r'^test', 'buildMenu')
+    url(r'^login$', 'app_login'),
+    
+)
+
+#creates the user profile for client side use
+urlpatterns += patterns('auth.views',
+    url(r'^auth_service$', 'current_user'),
+   
     
 )
 
 urlpatterns += patterns('products.views',
     url(r'^model$', 'model'),
-    url(r'^model/(?P<modelID>\d+)$', 'model'),
+    url(r'^model/(?P<model_id>\d+)$', 'model'),
     url(r'^configuration$', 'configuration'),
-    url(r'^configuration/(?P<configID>\d+)$', 'configuration'),
+    url(r'^configuration/(?P<config_id>\d+)$', 'configuration'),
     url(r'^upholstery', 'upholstery'),
-    url(r'^upholstery/(?P<upholID>\d+)$', 'upholstery'),
+    url(r'^upholstery/(?P<uphol_id>\d+)$', 'upholstery'),
     
 )
 urlpatterns += patterns('contacts.views',
@@ -33,12 +39,12 @@ urlpatterns += patterns('contacts.views',
 urlpatterns += patterns('supplies.views', 
   
     url(r'^supply$', 'supply'),
-    url(r'^supply/(?P<supplyID>\d+)$', 'supply')
+    url(r'^supply/(?P<supply_id>\d+)$', 'supply')
 )
 
 urlpatterns += patterns('lumber.views', 
     url(r'^lumber$', 'lumber'),
-    url(r'^lumber/(?P<lumberID>\d+)$', 'lumber'),
+    url(r'^lumber/(?P<lumber_id>\d+)$', 'lumber'),
     
 )
 
@@ -59,6 +65,16 @@ urlpatterns += patterns('screw.views',
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
 )
 
+urlpatterns += patterns('staple.views', 
+    url(r'^staple$', 'staple'),
+    url(r'^staple/(?P<staple_id>\d+)$', 'staple'),
+)
+
+urlpatterns += patterns('sewing_thread.views', 
+    url(r'^thread$', 'sewing_thread'),
+    url(r'^thread/(?P<sewing_thread_id>\d+)$', 'sewing_thread'),
+)
+
 urlpatterns += patterns('wool.views', 
     url(r'^wool$', 'wool'),
     url(r'^wool/(?P<wool_id>\d+)$', 'wool'),
@@ -67,6 +83,11 @@ urlpatterns += patterns('wool.views',
 urlpatterns += patterns('webbing.views', 
     url(r'^webbing$', 'webbing'),
     url(r'^webbing/(?P<webbing_id>\d+)$', 'webbing'),
+)
+
+urlpatterns += patterns('zipper.views', 
+    url(r'^zipper$', 'zipper'),
+    url(r'^zipper/(?P<zipper_id>\d+)$', 'zipper'),
 )
 
 urlpatterns += patterns('po.views', 
@@ -80,8 +101,10 @@ urlpatterns += patterns('po.views',
 urlpatterns += patterns('administrator.views', 
     url(r'^permission$', 'permission'),
     url(r'^group$', 'group'),
-     url(r'^group/(?P<groupID>\d+)$', 'group'),
-    url(r'^user$', 'user')
+    url(r'^group/(?P<group_id>\d+)$', 'group'),
+    url(r'^user$', 'user'),
+    url(r'^user/(?P<user_id>\d+)$', 'user'),
+
 )
 
 urlpatterns += patterns('',

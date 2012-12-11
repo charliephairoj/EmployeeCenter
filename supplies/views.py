@@ -18,7 +18,7 @@ def processRequest(request, classObject, ID='0'):
             for supply in classObject.objects.all():
                 
                 #add data to array
-                data.append(supply.getData())
+                data.append(supply.get_data())
         #gets a specific item       
         else:
             #set data to item
@@ -29,9 +29,8 @@ def processRequest(request, classObject, ID='0'):
         response.status_code = 200
         return response
 #Handles projects
-def supply(request, supplyID='0'):
-    logger.debug('oop')
-    return processRequest(request, Supply, supplyID)
+def supply(request, supply_id='0'):
+    return processRequest(request, Supply, supply_id)
     
     
 

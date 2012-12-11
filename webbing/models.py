@@ -9,14 +9,15 @@ class Webbing(Supply):
     #methods
     
     #get pdata
-    def getData(self):
+    def get_data(self):
         data = {}
         
-        data.update(self.getParentData())
+        data.update(self.get_parent_data())
         
     #set data
     
-    def setData(self, data):
+    def set_data(self, data):
         
         #set parent data
-        self.setParentData(data)
+        self.set_parent_data(data)
+        self.type = "webbing"

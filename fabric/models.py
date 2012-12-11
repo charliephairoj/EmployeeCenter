@@ -1,10 +1,6 @@
 from supplies.models import Supply
 from contacts.models import Supplier
 from django.db import models
-import json
-import logging
-
-logger = logging.getLogger('EmployeeCenter');
 
 
 # Create your models here.
@@ -14,13 +10,13 @@ class Fabric(Supply):
     color = models.TextField()
     
     #Methods
-    def setData(self, data):
+    def set_data(self, data):
         #set the type to lumber
         self.type = "fabric"
         
        
         #set parent properties
-        self.setParentData(data)
+        self.set_parent_data(data)
         
         #set the model data
         if "pattern" in data: self.pattern = data["pattern"]
@@ -35,7 +31,7 @@ class Fabric(Supply):
         
         self.save()
         
-    def getData(self):
+    def get_data(self):
         
         #sets the data for this supply
         data = {
@@ -43,7 +39,7 @@ class Fabric(Supply):
                 'color':self.color
         }
         #merges with parent data
-        data.update(self.getParentData())
+        data.update(self.get_parent_data())
         
         #returns the data
         return data

@@ -14,7 +14,8 @@ class Contact(models.Model):
     isCustomer = models.BooleanField(default=False)
     
     
-    def getData(self):
+    
+    def get_data(self):
         
         #get all addresses
         addresses = [];
@@ -28,7 +29,9 @@ class Contact(models.Model):
                     'city':address.city,
                     'territory':address.territory,
                     'country':address.country,
-                    'zipcode':address.zipcode
+                    'zipcode':address.zipcode,
+                    'lat': address.latitude,
+                    'lng': address.longitude
                     }
             
             #add to address array
@@ -48,7 +51,7 @@ class Contact(models.Model):
         #returns the data
         return data
     
-    def setData(self, data):
+    def set_data(self, data):
         if "name" in data: self.name = data["name"]
         if "email" in data: self.email = data["email"]
         if "telephone" in data: self.telephone = data["telephone"]
@@ -82,16 +85,20 @@ class Address(models.Model):
     country = models.CharField(max_length=150, null=True)
     zipcode = models.TextField(null=True)
     contact = models.ForeignKey(Contact)
+    latitude = models.DecimalField(decimal_places=6, max_digits=9)
+    longitude = models.DecimalField(decimal_places=6, max_digits=9)
     
     
     
-    def setData(self, data):
+    def set_data(self, data):
         if "address1" in data: self.address1 = data["address1"]
         if "address2" in data: self.address2 = data["address2"]
         if "city" in data: self.city = data["city"]
         if "territory" in data: self.territory = data["territory"]
         if "country" in data: self.country = data["country"]
         if "zipcode" in data: self.country = data["zipcode"]
+        if "lat" in data: self.latitude = data['lat']
+        if "lng" in data: self.longitude = data['lng']
     
 #supplier class
 class Supplier(Contact):
@@ -100,7 +107,7 @@ class Supplier(Contact):
     #methods
     
     #get data
-    def getData(self):
+    def get_data(self):
         
         
         #set the 
@@ -120,7 +127,9 @@ class Supplier(Contact):
                 'country':None,
                 'zipcode':None,
                 'terms':self.terms,
-                'discount':self.discount
+                'discount':self.discount,
+                'lat': None,
+                'lng': None
                 }
         #sets address if exists
         if len(self.address_set.all())>0:
@@ -133,14 +142,16 @@ class Supplier(Contact):
             data["territory"] = address.territory
             data["country"] = address.country
             data["zipcode"] = address.zipcode
+            data["lng"] = address.longitude
+            data['lat'] = address.latitude
             
         #returns the data
         return data
     #set data
-    def setData(self, data):
+    def set_data(self, data):
         
         #set parent data
-        super(Supplier, self).setData(data)
+        super(Supplier, self).set_data(data)
         
         #set supplier data
         if "discount" in data: self.discount = data["discount"]
@@ -162,6 +173,8 @@ class Supplier(Contact):
         if "territory" in data: address.territory = data["territory"]
         if "country" in data: address.country = data["country"]
         if "zipcode" in data: address.zipcode = data["zipcode"]
+        if "lat" in data: address.latitude = data['lat']
+        if "lng" in data: address.longitude = data['lng']
         if "terms" in data: self.term = data["terms"]
         
         #set the supplier to the address

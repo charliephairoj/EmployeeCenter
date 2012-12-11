@@ -12,7 +12,7 @@ class Foam(Supply):
     #methods 
     
     #get data
-    def getData(self):
+    def get_data(self):
         #get data for foam
         data = {
                 'color':self.color,
@@ -20,22 +20,22 @@ class Foam(Supply):
                 }
         
         #merge with data from parent
-        data.update(self.getParentData())
+        data.update(self.get_parent_data())
         
         #return the data
         return data
     
     #set data
-    def setData(self,data):
+    def set_data(self,data):
         
         #set the parent data
-        self.setParentData(data)
+        self.set_parent_data(data)
         
         #set foam data
         self.type = "foam"
         if "type" in data: self.foamType = data["type"]
         if "color" in data: self.color = data["color"]
-        self.description = "%s %s Foam (%sX%sX%s)" & (self.color, self.type, self.width, self.depth, self.height)
+        self.description = "%s %s Foam (%sX%sX%s)" % (self.color, self.type, self.width, self.depth, self.height)
         
         #save the foam
         self.save()

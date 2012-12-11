@@ -19,12 +19,12 @@ def supplier(request, supplierID='0'):
             #loop through all contacts
             for supplier in Supplier.objects.all():
                 #Adds data to the array
-                data.append(supplier.getData())
+                data.append(supplier.get_data())
             
         
         else:
             #get the data from specified contact
-            data =  Supplier.objects.get(id = supplierID).getData()
+            data =  Supplier.objects.get(id = supplierID).get_data()
         
         return HttpResponse(json.dumps(data), mimetype="application/json")
         
@@ -37,9 +37,9 @@ def supplier(request, supplierID='0'):
         #get the data
         data = json.loads(request.POST.get('data'))
         #set the data
-        newSupplier.setData(data)
+        newSupplier.set_data(data)
 
-        return HttpResponse(json.dumps(newSupplier.getData()), mimetype="application/json")
+        return HttpResponse(json.dumps(newSupplier.get_data()), mimetype="application/json")
     
     elif request.method == "PUT":
         #creates a new contact
@@ -51,9 +51,9 @@ def supplier(request, supplierID='0'):
         #get the data
         data = json.loads(request.POST.get('data'))
         #set the data
-        supplier.setData(data)
+        supplier.set_data(data)
 
-        return HttpResponse(json.dumps(supplier.getData()), mimetype="application/json")
+        return HttpResponse(json.dumps(supplier.get_data()), mimetype="application/json")
     
     elif request.method == "DELETE":
         logger.debug(supplierID)

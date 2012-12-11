@@ -1,4 +1,3 @@
-from wool.models import Wool
 from django.contrib.auth.models import Permission, Group, User
 import json
 from django.http import HttpResponseRedirect, HttpResponse
@@ -12,7 +11,7 @@ logger = logging.getLogger('EmployeeCenter');
 #Deals with the permission
 @login_required
 
-def permission(request, permissionID = '0'):
+def permission(request, permission_id = '0'):
     
     if request.method == "GET":
         #Create the array
@@ -32,11 +31,11 @@ def permission(request, permissionID = '0'):
 #Deals with the Groups
 @login_required
 
-def group(request, groupID = '0'):
+def group(request, group_id = '0'):
     
     if request.method == "GET":
         
-        if groupID == '0':
+        if group_id == '0':
             #Create the array
             data = []
             permData = []
@@ -55,9 +54,9 @@ def group(request, groupID = '0'):
         
         else:
             
-            logger.debug(groupID)
+            logger.debug(group_id)
             permData = []
-            group = Group.objects.get(id=groupID)
+            group = Group.objects.get(id=group_id)
             for perm in group.permissions.all():
                 permData.append({'id':perm.id, 'name':perm.name})
                 
@@ -98,7 +97,7 @@ def group(request, groupID = '0'):
     
     elif request.method == "PUT":
         
-        group = Group.objects.get(id=groupID)
+        group = Group.objects.get(id=group_id)
         
         request.method = "POST"
         request._load_post_and_files();
@@ -115,7 +114,7 @@ def group(request, groupID = '0'):
     
     elif request.method == "DELETE":
         
-        group = Group.objects.get(id=groupID)
+        group = Group.objects.get(id=group_id)
         
         group.delete()
         
@@ -129,34 +128,55 @@ def group(request, groupID = '0'):
         
 #Deals with User
 @login_required
-def user(request):
+def user(request, user_id=0):
     
     if request.method == "GET":
         
-        data = []
-        
-        for user in User.objects.all():
-            #permissionData = []
-            groupData = []
+        if user_id == 0:
+            data = []
             
-            #for perm in user.user_permssions.all():
+            for user in User.objects.all():
+                #permissionData = []
+                groupData = []
                 
-                #permissionData.append({'id':perm.id, 'name':perm.name})
-                
-            for group in user.groups.all():
-                groupData.append({'id':group.id, 'name':group.name})
-                #for perm in group.permissions.all():
+                #for perm in user.user_permssions.all():
+                    
                     #permissionData.append({'id':perm.id, 'name':perm.name})
                     
-            userData = {
-                        'id':user.id,
-                        'username':user.username,
-                        'email': user.email,
-                        'groups':groupData
-                        #'permissions':permissionData
-                        }
-            
-            data.append(userData)
+                for group in user.groups.all():
+                    groupData.append({'id':group.id, 'name':group.name})
+                    #for perm in group.permissions.all():
+                        #permissionData.append({'id':perm.id, 'name':perm.name})
+                        
+                userData = {
+                            'id':user.id,
+                            'username':user.username,
+                            'email': user.email,
+                            'groups':groupData
+                            #'permissions':permissionData
+                            }
+                
+                data.append(userData)
+        
+        else:
+            user = User.objects.get(id=user_id)
+            #permissionData = []
+            groupData = []
+                
+            #for perm in user.user_permssions.all():
+                    
+            #permissionData.append({'id':perm.id, 'name':perm.name})
+                    
+            for group in user.groups.all():
+                groupData.append({'id':group.id, 'name':group.name})
+                    
+            data = {
+                            'id':user.id,
+                            'username':user.username,
+                            'email': user.email,
+                            'groups':groupData
+                            #'permissions':permissionData
+                            }
             
             
         #build response
@@ -188,6 +208,19 @@ def user(request):
         
         #build response
         response = HttpResponse(json.dumps(data), mimetype="application/json")
+        response.status_code = 200
+        #return data via http 
+        return response
+    
+    
+    elif request.method == "DELETE":
+        
+        user = User.objects.get(id=user_id)
+        
+        user.delete()
+        
+        #build response
+        response = HttpResponse(json.dumps({'status':'success'}), mimetype="application/json")
         response.status_code = 200
         #return data via http 
         return response

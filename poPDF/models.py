@@ -38,7 +38,7 @@ class PurchaseOrderPDF():
         heading = Table([
                          [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), "Purchase Order"],
                          ["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
-                         ["Lam Lukka, Pathum Thani, Thailand 12150", self.po.orderDate]
+                         ["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')]
                          ], colWidths=(300, 210))
         #create the heading format and apply
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
@@ -60,12 +60,14 @@ class PurchaseOrderPDF():
         #about the supplier
         
         #create table for supplier data
-        contact = Table(self.formatSupplierData(self.supplier))
+        contact = Table(self.formatSupplierData(self.supplier))#, colWidths=(100, 180, 100, 150))
         contact.setStyle(TableStyle([
                                      ('BOTTOMPADDING', (0,0), (-1,-1), 1),
                                      ('TOPPADDING', (0,0), (-1,-1), 1),
                                      ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                                     ('FONT', (0,0), (-1,-1), 'Helvetica')
+                                     ('FONT', (0,0), (-1,-1), 'Helvetica'),
+                                     
+                                     #('TOPPADDING', (0,-2), (-1,-2), 20)
                                      ]))
         Story.append(contact)
         Story.append(Spacer(0,40))
@@ -78,16 +80,19 @@ class PurchaseOrderPDF():
         styleData = [
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                              #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                             #line under heading
                              ('LINEBELOW', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
-                             ('ALIGNMENT', (0,0), (0,-1), 'CENTER'),
-                             ('ALIGNMENT', (2,0), (2,-1), 'RIGHT'),
-                             ('ALIGNMENT', (3,0), (3,-1), 'CENTER'),
-                             ('ALIGNMENT', (2,0), (-1,0), 'CENTER'),
+                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
+                             ('ALIGNMENT', (3,0), (3,-1), 'RIGHT'),
+                             ('ALIGNMENT', (4,0), (4,-1), 'CENTER'),
+                             #align headers from description to total
+                             ('ALIGNMENT', (3,0), (-1,0), 'CENTER'),
+                             #align totals to the right
                              ('ALIGNMENT', (-1,1), (-1,-1), 'RIGHT'),
-                             #('GRID', (0,1), (-1,-1), 1, colors.CMYKColor(black=80)),
-                             ('LEFTPADDING', (1,0), (1,-1), 15)
+                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=80)),
+                             ('LEFTPADDING', (2,0), (2,-1), 10)
                              ]
-        t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(50,285, 50, 50, 65))
+        t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(40,84,225, 50, 40, 65))
         tStyle = TableStyle(styleData)
         t.setStyle(tStyle)
         Story.append(t)
@@ -138,7 +143,7 @@ class PurchaseOrderPDF():
         data = []
         address = supplier.address_set.all()[0]
         
-        #add name
+        #add name AND DELIVERY DATE
         data.append(['Supplier:',supplier.name])
         
         #add address data
@@ -157,13 +162,24 @@ class PurchaseOrderPDF():
             
         #add the terms to the data
         data.append(['Payment Terms:', terms])
+        #add currency
+        if self.po.currency == "EUR":
+            currency_description = "Euro(EUR)"
+        elif self.po.currency == "THB":
+            currency_description = "Thai Baht(THB)"
+        elif self.po.currency == "USD":
+            currency_description = "US Dollar(USD)"
+        data.append(["Currency:", currency_description])
+        #add the delivery date
+        data.append(['Delivery Date:', self.po.delivery_date.strftime('%B %d, %Y')])
+        
         
         return data
     
     
     def formatSuppliesData(self, supplies, style=None):
         #create an array
-        data = [['Item No.', 'Description', 'Unit Price', 'Qty', 'Total']]
+        data = [['Item No.','Ref', 'Description', 'Unit Price', 'Qty', 'Total']]
         i = 1
         #iterate through the array
         for supply in supplies:
@@ -173,9 +189,22 @@ class PurchaseOrderPDF():
             else:
                 description = "%s (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
             #add the data
-            data.append([i, description, "%.2f" % float(supply.unitCost), supply.quantity, "%.2f" % float(supply.total)])
+            data.append([i, supply.supply.reference, description, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
             #increase the item number
             i = i+1
+        
+        #add a shipping line item if there is a shipping charge
+        if self.po.shipping_type != "none":
+            #set the description
+            if self.po.shipping_type == "air":
+                shipping_description = "Air Freight"
+            elif self.po.shipping_type == "sea":
+                shipping_description = "Sea Freight"
+            elif self.po.shipping_type == "ground":
+                shipping_description = "Ground Freight"
+            #Add to data
+            data.append(['', '', shipping_description, '','', "%.2f" %float(self.po.shipping_amount)])
+        
         
         self.addTotal(data, style)
         #return the array
@@ -189,22 +218,22 @@ class PurchaseOrderPDF():
         if self.po.vat !=0 or self.supplier.discount!=0:
             #get subtotal and add to pdf
             subtotal = float(self.po.subtotal)
-            data.append(['','','','Subtotal', "%.2f" % subtotal])
+            data.append(['', '','','','Subtotal', "%.2f" % subtotal])
             #add discount area if discount greater than 0
             if self.supplier.discount != 0:
                 discount = subtotal*(float(self.supplier.discount)/float(100))
-                data.append(['','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
+                data.append(['', '','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
                 
             #add vat if vat is greater than 0
             if self.po.vat !=0:
                 if self.supplier.discount != 0:
                     #append total to pdf
-                    data.append(['','','','Total', "%.2f" % self.po.total])
+                    data.append(['', '','','','Total', "%.2f" % self.po.total])
                 #calculate vat and add to pdf
                 vat = float(self.po.total)*(float(self.po.vat)/float(100))
-                data.append(['','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
+                data.append(['', '','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
 
-        data.append(['','','','Grand Total', "%.2f" % self.po.grandTotal])
+        data.append(['', '','','','Grand Total', "%.2f" % self.po.grand_total])
             
         #adjust the style based on vat and discount
         

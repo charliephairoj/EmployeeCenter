@@ -1,30 +1,30 @@
 # Create your views here.
 
-from lumber.models import Lumber
+from zipper.models import Zipper
 from django.contrib.auth.decorators import login_required
 from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor, httpDELETEProcessor
 
 
 @login_required
-#Handles request for Lumber
-def lumber(request, lumberID='0'):
+#Handles request for Zipper
+def zipper(request, zipper_id='0'):
     
     if request.method == "GET":
         
-        return httpGETProcessor(request, Lumber, lumberID)
+        return httpGETProcessor(request, Zipper, zipper_id)
     
     elif request.method == "POST":
         
         
-        return httpPOSTProcessor(request, Lumber)
+        return httpPOSTProcessor(request, Zipper)
            
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Lumber, lumberID)
+        return httpPUTProcessor(request, Zipper, zipper_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(Lumber, lumberID)
+        return httpDELETEProcessor(Zipper, zipper_id)
         
         
         

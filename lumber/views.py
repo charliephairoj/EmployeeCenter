@@ -7,11 +7,11 @@ from utilities.http import httpGETProcessor, httpPOSTProcessor, httpPUTProcessor
 
 @login_required
 #Handles request for Lumber
-def lumber(request, lumberID='0'):
+def lumber(request, lumber_id='0'):
     
     if request.method == "GET":
         
-        return httpGETProcessor(request, Lumber, lumberID)
+        return httpGETProcessor(request, Lumber, lumber_id)
     
     elif request.method == "POST":
         
@@ -20,11 +20,11 @@ def lumber(request, lumberID='0'):
            
     elif request.method == "PUT":
         
-        return httpPUTProcessor(request, Lumber, lumberID)
+        return httpPUTProcessor(request, Lumber, lumber_id)
     
     elif request.method == "DELETE":
         
-        return httpDELETEProcessor(Lumber, lumberID)
+        return httpDELETEProcessor(Lumber, lumber_id)
         
         
         
