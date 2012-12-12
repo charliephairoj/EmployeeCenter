@@ -36,59 +36,46 @@ urlpatterns += patterns('contacts.views',
     url(r'^supplier/(?P<supplierID>\d+)$', 'supplier'),  
 )
 
+
+#URL settings for supplies
+
 urlpatterns += patterns('supplies.views', 
   
     url(r'^supply$', 'supply'),
-    url(r'^supply/(?P<supply_id>\d+)$', 'supply')
-)
+    url(r'^supply/(?P<supply_id>\d+)$', 'supply'),
 
-urlpatterns += patterns('lumber.views', 
     url(r'^lumber$', 'lumber'),
     url(r'^lumber/(?P<lumber_id>\d+)$', 'lumber'),
     
-)
 
-urlpatterns += patterns('foam.views', 
     url(r'^foam$', 'foam'),
     url(r'^foam/(?P<foam_id>\d+)$', 'foam'),
     
-)
 
-urlpatterns += patterns('fabric.views', 
     url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
     
-)
-
-urlpatterns += patterns('screw.views', 
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
-)
 
-urlpatterns += patterns('staple.views', 
     url(r'^staple$', 'staple'),
     url(r'^staple/(?P<staple_id>\d+)$', 'staple'),
-)
 
-urlpatterns += patterns('sewing_thread.views', 
     url(r'^thread$', 'sewing_thread'),
     url(r'^thread/(?P<sewing_thread_id>\d+)$', 'sewing_thread'),
-)
 
-urlpatterns += patterns('wool.views', 
     url(r'^wool$', 'wool'),
     url(r'^wool/(?P<wool_id>\d+)$', 'wool'),
-)
 
-urlpatterns += patterns('webbing.views', 
     url(r'^webbing$', 'webbing'),
     url(r'^webbing/(?P<webbing_id>\d+)$', 'webbing'),
-)
 
-urlpatterns += patterns('zipper.views', 
     url(r'^zipper$', 'zipper'),
     url(r'^zipper/(?P<zipper_id>\d+)$', 'zipper'),
+    
 )
+
+#URLS for Purchase Order
 
 urlpatterns += patterns('po.views', 
     url(r'^purchase_order$', 'purchase_order'),
