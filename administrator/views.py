@@ -149,6 +149,8 @@ def user(request, user_id=0):
                         #permissionData.append({'id':perm.id, 'name':perm.name})
                         
                 userData = {
+                            'firstName':user.first_name,
+                            'lastName':user.last_name,
                             'id':user.id,
                             'username':user.username,
                             'email': user.email,
@@ -205,6 +207,34 @@ def user(request, user_id=0):
             
             #save the user
             user.save()
+        
+        #build response
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        response.status_code = 200
+        #return data via http 
+        return response
+    
+    elif request.method == "PUT":
+        
+        #change to put
+        request.method = "POST"
+        request._load_post_and_files();
+        # Load data
+        data = json.loads(request.POST.get('data'))
+        request.method = "PUT"
+        
+        user = User.objects.get(id=user_id)
+            
+        if "firstName" in data:user.first_name = data["firstName"]
+        if "lastName" in data: user.last_name = data["lastName"] 
+            
+        if "groups" in data:
+            for group in data["groups"]:
+                    
+                user.groups.add(Group.objects.get(id=group['id']))
+            
+        #save the user
+        user.save()
         
         #build response
         response = HttpResponse(json.dumps(data), mimetype="application/json")

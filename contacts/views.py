@@ -1,70 +1,25 @@
 from contacts.models import Supplier
+from utilities.http import httpPOSTProcessor, httpGETProcessor, httpPUTProcessor, httpDELETEProcessor
 from django.http import HttpResponse
 import json
-import logging
 
-logger = logging.getLogger('EmployeeCenter');
 #Create the contacts view
 def supplier(request, supplier_id='0'):
     
+    
+    
     if request.method == "GET":
         
-        #check if id is 0
-        #this determine whether
-        #to get a specific contact or
-        #all contacts
-        if supplier_id == '0':
-            #set up array to hold contacts
-            data = []
-            #loop through all contacts
-            for supplier in Supplier.objects.all():
-                #Adds data to the array
-                data.append(supplier.get_data())
-            
-        
-        else:
-            #get the data from specified contact
-            data =  Supplier.objects.get(id=supplier_id).get_data()
-        
-        return HttpResponse(json.dumps(data), mimetype="application/json")
+        return httpGETProcessor(request, Supplier, supplier_id)
         
     elif request.method == "POST":
-        #creates a new contact
-        if supplier_id == '0':
-            newSupplier = Supplier()
-        else:
-            newSupplier = Supplier.objects.get(id=supplier_id)
-        #get the data
-        data = json.loads(request.POST.get('data'))
-        #set the data
-        newSupplier.set_data(data)
-
-        return HttpResponse(json.dumps(newSupplier.get_data()), mimetype="application/json")
+        
+        return httpPOSTProcessor(request, Supplier)
     
     elif request.method == "PUT":
-        #creates a new contact
         
-        supplier = Supplier.objects.get(id=supplier_id)
-        #RELOAD PUT DATA
-        request.method = "POST"
-        request._load_post_and_files();
-        #get the data
-        data = json.loads(request.POST.get('data'))
-        #set the data
-        supplier.set_data(data)
-
-        return HttpResponse(json.dumps(supplier.get_data()), mimetype="application/json")
+        return httpPUTProcessor(request, Supplier, supplier_id)
     
     elif request.method == "DELETE":
-        logger.debug(supplier_id)
-        supplier = Supplier.objects.get(id=supplier_id)
         
-        supplier.delete()
-        
-    
-    
-        return HttpResponse(json.dumps({'yay':'ok'}), mimetype="application/json")
-    
-    
-    
-    
+        return httpDELETEProcessor(request, Supplier, supplier_id)

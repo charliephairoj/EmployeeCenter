@@ -1,7 +1,5 @@
 from django.db import models
-import logging
 
-logger = logging.getLogger('EmployeeCenter');
 # Create your models here.
 
 #Creates the Contact Class

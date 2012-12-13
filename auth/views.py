@@ -9,7 +9,11 @@ import json
 def current_user(request):
     
     user = request.user
-    user_data = {}
+    user_data = {
+                 'firstName':user.first_name,
+                 'lastName':user.last_name
+                 
+                 }
     data = []
     #creates the permissions data
     #that will be used client side

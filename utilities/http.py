@@ -62,6 +62,7 @@ def httpPUTProcessor(request, Class, class_id):
     request._load_post_and_files();
     # Load data
     data = json.loads(request.POST.get('data'))
+    request.method = "PUT"
     #Assigns the data to the  model
     model.set_data(data)
     # attempt to save
@@ -73,7 +74,7 @@ def httpPUTProcessor(request, Class, class_id):
 
 
 #Processes the DELETE request
-def httpDELETEProcessor(Class, class_id):
+def httpDELETEProcessor(request, Class, class_id):
     #get the model
     model = Class.objects.get(id=class_id)
     #delete the model
