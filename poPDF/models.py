@@ -83,8 +83,8 @@ class PurchaseOrderPDF():
                              #line under heading
                              ('LINEBELOW', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
                              ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
-                             ('ALIGNMENT', (3,0), (3,-1), 'RIGHT'),
-                             ('ALIGNMENT', (4,0), (4,-1), 'CENTER'),
+                             ('ALIGNMENT', (4,0), (4,-1), 'RIGHT'),
+                             ('ALIGNMENT', (5,0), (5,-1), 'CENTER'),
                              #align headers from description to total
                              ('ALIGNMENT', (3,0), (-1,0), 'CENTER'),
                              #align totals to the right
@@ -92,7 +92,7 @@ class PurchaseOrderPDF():
                              #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=80)),
                              ('LEFTPADDING', (2,0), (2,-1), 10)
                              ]
-        t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(40,84,225, 50, 40, 65))
+        t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(40,84,210,35, 50, 40, 65))
         tStyle = TableStyle(styleData)
         t.setStyle(tStyle)
         Story.append(t)
@@ -179,7 +179,7 @@ class PurchaseOrderPDF():
     
     def formatSuppliesData(self, supplies, style=None):
         #create an array
-        data = [['Item No.','Ref', 'Description', 'Unit Price', 'Qty', 'Total']]
+        data = [['Item No.','Ref', 'Description','Units', 'Unit Price', 'Qty', 'Total']]
         i = 1
         #iterate through the array
         for supply in supplies:
@@ -189,7 +189,7 @@ class PurchaseOrderPDF():
             else:
                 description = "%s (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
             #add the data
-            data.append([i, supply.supply.reference, description, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
+            data.append([i, supply.supply.reference, description, supply.supply.purchasing_units, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
             #increase the item number
             i = i+1
         
@@ -203,7 +203,7 @@ class PurchaseOrderPDF():
             elif self.po.shipping_type == "ground":
                 shipping_description = "Ground Freight"
             #Add to data
-            data.append(['', '', shipping_description, '','', "%.2f" %float(self.po.shipping_amount)])
+            data.append(['', '', shipping_description, '','','', "%.2f" %float(self.po.shipping_amount)])
         
         
         self.addTotal(data, style)
@@ -218,22 +218,22 @@ class PurchaseOrderPDF():
         if self.po.vat !=0 or self.supplier.discount!=0:
             #get subtotal and add to pdf
             subtotal = float(self.po.subtotal)
-            data.append(['', '','','','Subtotal', "%.2f" % subtotal])
+            data.append(['', '','','','','Subtotal', "%.2f" % subtotal])
             #add discount area if discount greater than 0
             if self.supplier.discount != 0:
                 discount = subtotal*(float(self.supplier.discount)/float(100))
-                data.append(['', '','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
+                data.append(['', '','','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
                 
             #add vat if vat is greater than 0
             if self.po.vat !=0:
                 if self.supplier.discount != 0:
                     #append total to pdf
-                    data.append(['', '','','','Total', "%.2f" % self.po.total])
+                    data.append(['', '','','','','Total', "%.2f" % self.po.total])
                 #calculate vat and add to pdf
                 vat = float(self.po.total)*(float(self.po.vat)/float(100))
-                data.append(['', '','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
+                data.append(['', '','','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
 
-        data.append(['', '','','','Grand Total', "%.2f" % self.po.grand_total])
+        data.append(['', '','','','','Grand Total', "%.2f" % self.po.grand_total])
             
         #adjust the style based on vat and discount
         

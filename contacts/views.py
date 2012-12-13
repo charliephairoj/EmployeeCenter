@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger('EmployeeCenter');
 #Create the contacts view
-def supplier(request, supplierID='0'):
+def supplier(request, supplier_id='0'):
     
     if request.method == "GET":
         
@@ -13,7 +13,7 @@ def supplier(request, supplierID='0'):
         #this determine whether
         #to get a specific contact or
         #all contacts
-        if supplierID == '0':
+        if supplier_id == '0':
             #set up array to hold contacts
             data = []
             #loop through all contacts
@@ -24,16 +24,16 @@ def supplier(request, supplierID='0'):
         
         else:
             #get the data from specified contact
-            data =  Supplier.objects.get(id = supplierID).get_data()
+            data =  Supplier.objects.get(id=supplier_id).get_data()
         
         return HttpResponse(json.dumps(data), mimetype="application/json")
         
     elif request.method == "POST":
         #creates a new contact
-        if supplierID == '0':
+        if supplier_id == '0':
             newSupplier = Supplier()
         else:
-            newSupplier = Supplier.objects.get(id = supplierID)
+            newSupplier = Supplier.objects.get(id=supplier_id)
         #get the data
         data = json.loads(request.POST.get('data'))
         #set the data
@@ -44,7 +44,7 @@ def supplier(request, supplierID='0'):
     elif request.method == "PUT":
         #creates a new contact
         
-        supplier = Supplier.objects.get(id = supplierID)
+        supplier = Supplier.objects.get(id=supplier_id)
         #RELOAD PUT DATA
         request.method = "POST"
         request._load_post_and_files();
@@ -56,8 +56,8 @@ def supplier(request, supplierID='0'):
         return HttpResponse(json.dumps(supplier.get_data()), mimetype="application/json")
     
     elif request.method == "DELETE":
-        logger.debug(supplierID)
-        supplier = Supplier.objects.get(id = supplierID)
+        logger.debug(supplier_id)
+        supplier = Supplier.objects.get(id=supplier_id)
         
         supplier.delete()
         

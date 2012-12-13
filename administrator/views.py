@@ -196,7 +196,7 @@ def user(request, user_id=0):
             user.is_staff = True
             
             if "firstName" in data:user.first_name = data["firstName"]
-            if "lastName" in data: user.last_name = data["last_name"] 
+            if "lastName" in data: user.last_name = data["lastName"] 
             
             if "groups" in data:
                 for group in data["groups"]:

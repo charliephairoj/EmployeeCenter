@@ -18,6 +18,7 @@ class Supply(models.Model):
     height = models.IntegerField(db_column='height', default=0)
     height_units = models.CharField(max_length=4, default="mm")
     units = models.CharField(max_length=20, default='mm')
+    purchasing_units = models.CharField(max_length=10, default="pc")
     discount = models.IntegerField(default=0)
     reference = models.TextField()
     currency = models.CharField(max_length=10, default="THB")
@@ -89,13 +90,13 @@ class Fabric(Supply):
     
     #Methods
     def set_data(self, data):
-        #set the type to lumber
+        #set the type to fabric
         self.type = "fabric"
         
        
         #set parent properties
         self.set_parent_data(data)
-        
+        self.purchasing_units = "yard"
         #set the model data
         if "pattern" in data: self.pattern = data["pattern"]
         if "color" in data: self.color = data["color"]
@@ -150,12 +151,12 @@ class Foam(Supply):
         
         #set the parent data
         self.set_parent_data(data)
-        
+        self.purchasing_units = "pc"
         #set foam data
         self.type = "foam"
         if "type" in data: self.foamType = data["type"]
         if "color" in data: self.color = data["color"]
-        self.description = "%s %s Foam (%sX%sX%s)" % (self.color, self.type, self.width, self.depth, self.height)
+        self.description = "%s Foam (%sX%sX%s)" % (self.color, self.width, self.depth, self.height)
         
         #save the foam
         self.save()   
@@ -178,6 +179,7 @@ class Lumber(Supply):
         if "widthUnits" in data: self.width_units = data["widthUnits"]
         if "depthUnits" in data: self.depth_units = data["depthUnits"]
         if "heightUnits" in data: self.height_units = data["heightUnits"]
+        self.purchasing_units = "pc"
         #set the description
         if "description" in data: 
             self.description = data["description"]
@@ -230,6 +232,7 @@ class Screw(Supply):
         
         #set the parent data
         self.set_parent_data(data)
+        self.purchasing_units = "box"
         self.type = "screw"
         #set screw data
         if "boxQuantity" in data: self.box_quantity = data['boxQuantity']
@@ -254,6 +257,7 @@ class SewingThread(Supply):
     def set_data(self, data):
         
         self.set_parent_data(data)
+        self.purchasing_units = "spool"
         self.type = "sewing thread"
         if "color" in data: self.color = data["color"]
         self.description = "%s Sewing Thread" %self.color
@@ -278,6 +282,7 @@ class Staple(Supply):
         
         if "boxQuantity" in data: self.box_quantity = data['boxQuantity']
         self.set_parent_data(data)
+        self.purchasing_units = "box"
         self.type = "staple"
         #set description
         self.description = "%sx%s Staple" % (self.width, self.height)
@@ -301,6 +306,7 @@ class Webbing(Supply):
         
         #set parent data
         self.set_parent_data(data)
+        self.purchasing_units = "roll"
         self.type = "webbing"
         
 
@@ -327,6 +333,7 @@ class Wool(Supply):
         
         #set parent data
         self.set_parent_data(data)
+        self.purchasing_units = "kg"
         #set wool specific data
         self.width = 0
         self.height = 0
@@ -370,6 +377,7 @@ class Zipper(Supply):
         
         #set the parent data
         self.set_parent_data(data)
+        self.purchasing_units = "roll"
         self.type = "zipper"
         #set the description
         self.description = "%s%sx%s%s Zipper" %(self.width, self.width_units, self.depth, self.depth_units)
