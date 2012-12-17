@@ -2,7 +2,20 @@
 from django.http import HttpResponse
 import json
 
-
+#primary function to process requests for supplies
+#created in the REST format
+def processRequest(request, classObject, ID=0):
+    
+    if request.method == "GET":
+        return httpGETProcessor(request, classObject, ID)
+    elif request.method == "POST":
+        return httpPOSTProcessor(request, classObject)         
+    elif request.method == "PUT":       
+        return httpPUTProcessor(request, classObject, ID)
+    elif request.method == "DELETE":      
+        return httpDELETEProcessor(request, classObject, ID)
+    
+    
 #processes standard get requests
 def httpGETProcessor(request, Class, class_id):
     #determine if to get a specific Item

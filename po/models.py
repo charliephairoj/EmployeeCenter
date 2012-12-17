@@ -1,6 +1,7 @@
 from django.db import models
 from supplies.models import Supply
 from contacts.models import Supplier
+from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from django.conf import settings
 from decimal import Decimal
@@ -34,13 +35,20 @@ class PurchaseOrder(models.Model):
     key = models.TextField(null = True)
     bucket = models.TextField(null = True)
     
-    def create(self, data):
+    employee = models.ForeignKey(User)
+    
+    def create(self, data, user=None):
         #imports
         from poPDF.models import PurchaseOrderPDF
         #We will create the purchase order first
         #and then save it before creating the purchase order items 
         #so that the items have something to link to
         
+        #Set the employee that placed the order
+        if user != None:
+            
+            self.employee = user
+            
         #get supplier from data
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"])
@@ -132,11 +140,13 @@ class PurchaseOrder(models.Model):
     def get_data(self):
         #get the url
         
-       
+        #logger.debug(self.employee.id)
+        
         data = {
                 'url':self.get_url(),
                 'id':self.id,
-                'orderDate':self.order_date.isoformat()
+                'orderDate':self.order_date.isoformat(),
+                'employee':self.employee.first_name+' '+self.employee.last_name
                 }
         return data
     

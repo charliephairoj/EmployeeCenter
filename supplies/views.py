@@ -1,23 +1,12 @@
 from supplies.models import Supply
-from utilities.http import httpPOSTProcessor, httpGETProcessor, httpPUTProcessor, httpDELETEProcessor
+from utilities.http import processRequest
 import json
 from django.http import HttpResponseRedirect, HttpResponse
 import logging
 
 logger = logging.getLogger('EmployeeCenter');
 
-#primary function to process requests for supplies
-#created in the REST format
-def processRequest(request, classObject, ID=0):
-    
-    if request.method == "GET":
-        return httpGETProcessor(request, classObject, ID)
-    elif request.method == "POST":
-        return httpPOSTProcessor(request, classObject)         
-    elif request.method == "PUT":       
-        return httpPUTProcessor(request, classObject, ID)
-    elif request.method == "DELETE":      
-        return httpDELETEProcessor(request, classObject, ID)
+ 
        
 #Supplies
 def supply(request, supply_id='0'):
