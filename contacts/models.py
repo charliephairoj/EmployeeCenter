@@ -142,7 +142,11 @@ class Supplier(Contact):
             data["zipcode"] = address.zipcode
             data["lng"] = address.longitude
             data['lat'] = address.latitude
-            
+        
+        data['contacts'] = []
+        #get supplier contacts
+        for supplierContact in self.suppliercontact_set.all():
+            data['contacts'].append(supplierContact.get_data())
         #returns the data
         return data
     #set data
@@ -157,6 +161,23 @@ class Supplier(Contact):
         
         #save self
         self.save()
+        
+        #Add supplier contacts
+        if "contacts" in data:
+            for contactData in data["contacts"]:
+                #Decide if to create a new contact
+                #or if to retrieve an existsing one 
+                #based on if id exists
+                if "id" in contactData:
+                    contact = SupplierContact.objects.get(id=contactData['id'])
+                else:
+                    contact = SupplierContact()
+                
+                #sets the details
+                contact.set_data(contactData)
+                contact.supplier = self
+                
+                contact.save()
         
         #set the address
         
@@ -180,3 +201,36 @@ class Supplier(Contact):
         
         #save the address
         address.save()
+        
+        
+        
+class SupplierContact(models.Model):
+    
+    first_name = models.TextField()
+    last_name = models.TextField()
+    email = models.TextField()
+    telephone = models.TextField()
+    supplier = models.ForeignKey(Supplier)
+    
+    def get_data(self):
+        
+        data = {'id':self.id,
+                'firstName':self.first_name,
+                'lastName':self.last_name,
+                'email':self.email,
+                'telephone':self.telephone}
+        
+        return data
+    
+    def set_data(self, data):
+        
+        if "firstName" in data: self.first_name = data["firstName"]
+        if "lastName" in data: self.last_name = data["lastName"]
+        if "email" in data: self.email = data["email"]
+        if "telephone" in data: self.telephone = data["telephone"]
+    
+    
+    
+    
+    
+    
