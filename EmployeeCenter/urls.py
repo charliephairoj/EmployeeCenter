@@ -10,12 +10,14 @@ urlpatterns = patterns('login.views',
     url(r'^$', 'app_login'),
     url(r'^main$', 'main'),
     url(r'^login$', 'app_login'),
-    
+    url(r'^auth$', 'auth_flow')
 )
 
 #creates the user profile for client side use
 urlpatterns += patterns('auth.views',
     url(r'^auth_service$', 'current_user'),
+    url(r'^auth_service/change_password$', 'change_password'),
+    url(r'^oauth2callback', 'oauth_callback')
    
     
 )
@@ -34,6 +36,8 @@ urlpatterns += patterns('contacts.views',
     #url(r'^contact/(?P<contactID>\d+)$', 'contact'),
     url(r'^supplier$', 'supplier'),
     url(r'^supplier/(?P<supplier_id>\d+)$', 'supplier'),  
+    url(r'^supplier_contact$', 'supplierContact'),
+    url(r'^supplier_contact/(?P<supplier_contact_id>\d+)$', 'supplierContact'),  
 )
 
 
@@ -54,6 +58,9 @@ urlpatterns += patterns('supplies.views',
 
     url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
+    url(r'^fabric/(?P<fabric_id>\d+)/add$', 'fabric_add'),
+    url(r'^fabric/(?P<fabric_id>\d+)/subtract', 'fabric_subtract'),
+    url(r'^fabric/(?P<fabric_id>\d+)/reset', 'fabric_reset'),
     
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),

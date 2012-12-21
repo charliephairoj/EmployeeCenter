@@ -1,10 +1,13 @@
 # Create your views here.
-from django.contrib.auth.models import User, Group, Permission
-from django.contrib.contenttypes.models import ContentType
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password
 import json
+import logging
 
+logger = logging.getLogger('EmployeeCenter');
+
+@login_required
 #current user profile
 def current_user(request):
     
@@ -35,3 +38,48 @@ def current_user(request):
     user_data['modules'] = modules
     #return data via http 
     return HttpResponse(json.dumps(user_data), mimetype="application/json")
+
+@login_required
+def change_password(request):
+    
+    user = request.user
+    data = json.loads(request.POST.get('data'))
+    logger.debug(user.password)
+    #Check if correct old password supplied
+    if check_password(data['old'], user.password):
+        
+        if data['newPass'] == data['repeatPass']:
+            
+            user.set_password(data['newPass'])
+            user.save()
+            
+            response = HttpResponse(json.dumps({"status":"Password Changed"}), mimetype="application/json")
+            response.status_code = 200
+            return response
+        
+        else:
+            
+            response = HttpResponse(json.dumps({"status":"New Passwords do not match"}), mimetype="application/json")
+            response.status_code = 400
+            return response
+            
+            
+        
+    else:
+        
+        response = HttpResponse(json.dumps({"status":"Incorrect Password"}), mimetype="application/json")
+        response.status_code = 400
+        return response
+    
+    
+
+
+#Google Oauth call back
+def oauth_callback(request):
+    1==1
+    
+    
+    
+    
+    
+    

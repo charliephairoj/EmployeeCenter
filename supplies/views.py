@@ -19,6 +19,57 @@ def fabric(request, fabric_id=0):
     
     return processRequest(request, Fabric, fabric_id)
 
+#Add length to a fabric
+def fabric_add(request, fabric_id):
+    
+    from supplies.models import Fabric
+    
+    user = request.user
+    length = request.POST.get('length')
+    remark = request.POST.get('remark')
+    
+    fabric = Fabric.objects.get(id=fabric_id)
+    
+    fabric.add(length, remark=remark, employee=user)
+    
+    response = HttpResponse(json.dumps(fabric.get_data()), mimetype="application/json")
+    response.status_code = 200
+    return response
+    
+#Subtracts length from a fabric
+def fabric_subtract(request, fabric_id):
+    
+    from supplies.models import Fabric
+    
+    user = request.user
+    length = request.POST.get('length')
+    remark = request.POST.get('remark')
+    
+    fabric = Fabric.objects.get(id=fabric_id)
+    
+    fabric.subtract(length, remark=remark, employee=user)
+    
+    response = HttpResponse(json.dumps(fabric.get_data()), mimetype="application/json")
+    response.status_code = 200
+    return response
+    
+#Resets Length from a fabric
+def fabric_reset(request, fabric_id):
+    
+    from supplies.models import Fabric
+    logger.debug(request.POST)
+    user = request.user
+    length = request.POST.get('length')
+    remark = request.POST.get('remark')
+    
+    fabric = Fabric.objects.get(id=fabric_id)
+    
+    fabric.reset(length, remark=remark, employee=user)
+    
+    response = HttpResponse(json.dumps(fabric.get_data()), mimetype="application/json")
+    response.status_code = 200
+    return response
+
 #foam
 def foam(request, foam_id=0):
     from supplies.models import Foam

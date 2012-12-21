@@ -1,7 +1,7 @@
 from django.db import models
 from contacts.models import Contact, Supplier
 from decimal import Decimal
-
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -87,8 +87,60 @@ class Supply(models.Model):
 class Fabric(Supply):
     pattern = models.TextField()
     color = models.TextField()
+    current_length = models.DecimalField(max_digits=12, decimal_places=2)
     
     #Methods
+    
+    #Add Length
+    def add(self, length, employee=None, remark=None):
+        
+        #Add to current Length
+        self.current_length = self.current_length + Decimal(length)
+        self.save()
+        
+        #Create log of addition
+        log_item = FabricLog()
+        log_item.employee = employee
+        log_item.fabric = self
+        log_item.action = "Add"
+        log_item.length = length
+        log_item.current_length = self.current_length
+        log_item.save()
+    
+    #Subtract Length
+    def subtract(self, length, employee=None, remark=None):
+        
+        #check if length to subtract is more than total length
+        if self.current_length > Decimal(length):
+            
+            #Subtract from current length
+            self.current_length = self.current_length - Decimal(length)
+            self.save()
+            
+            #Create log
+            log_item = FabricLog()
+            log_item.employee = employee
+            log_item.fabric = self
+            log_item.action = "Subtract"
+            log_item.length = length
+            log_item.current_length = self.current_length
+            log_item.save()
+            
+    def reset(self, length, employee=None, remark=None):
+        
+        self.current_length = length
+        self.save()
+        
+        #Create log
+        log_item = FabricLog()
+        log_item.employee = employee
+        log_item.fabric = self
+        log_item.action = "Reset"
+        log_item.length = length
+        log_item.current_length = self.current_length
+        log_item.save()
+        
+    #Set fabric data for REST
     def set_data(self, data):
         #set the type to fabric
         self.type = "fabric"
@@ -109,7 +161,8 @@ class Fabric(Supply):
         if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
         
         self.save()
-        
+    
+    #Get Data for REST
     def get_data(self):
         
         #sets the data for this supply
@@ -122,6 +175,17 @@ class Fabric(Supply):
         
         #returns the data
         return data
+
+
+#Fabric Log
+
+class FabricLog(models.Model):
+    fabric = models.ForeignKey(Fabric)
+    action = models.CharField(max_length=15, null=False)
+    length = models.DecimalField(max_digits=15, decimal_places=2)
+    current_length = models.DecimalField(max_digits=15, decimal_places=2)
+    employee = models.ForeignKey(User)
+
 
 
 #Foam

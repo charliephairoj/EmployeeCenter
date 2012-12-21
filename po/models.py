@@ -52,7 +52,9 @@ class PurchaseOrder(models.Model):
         #get supplier from data
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"])
-        
+        logger.critical(data)
+        if "attention" in data:
+            self.attention = data["attention"]
         #apply vat and currency
         if "vat" in data: self.vat = float(data["vat"])
         if "currency" in data: self.currency = data["currency"]

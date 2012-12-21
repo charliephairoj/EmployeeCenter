@@ -17,7 +17,7 @@ normalStyle = stylesheet['Normal']
 class PurchaseOrderPDF():
     
     #def methods
-    def __init__(self, supplier=None, supplies=None, po=None):
+    def __init__(self, supplier=None, supplies=None, po=None, misc=None):
         
         
         self.supplier = supplier
@@ -38,7 +38,9 @@ class PurchaseOrderPDF():
         heading = Table([
                          [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), "Purchase Order"],
                          ["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
-                         ["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')]
+                         ["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')],
+                         ["T: 02-998-7490 F: 02-997-3251", ""],
+                         ["info@dellarobbiathailand.com", ""]
                          ], colWidths=(300, 210))
         #create the heading format and apply
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
@@ -153,6 +155,11 @@ class PurchaseOrderPDF():
             data.append(['',address.address2])
         data.append(['', address.city+', '+address.territory])
         data.append(['', "%s %s" %(address.country, address.zipcode)])
+        
+        #checks if this po needs someone's attention
+        if self.po.attention != None:
+            
+            data.append(['Attention:', self.po.attention])
         
         #determine what the terms are
         if supplier.terms == 0:
