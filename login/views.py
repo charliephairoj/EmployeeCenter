@@ -62,13 +62,15 @@ def app_login(request):
 
 #Deals with google auth
 def auth_flow(request):
+    from auth.models import FlowModel
     flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
                            client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
                            scope=['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/drive'],
                            redirect_uri='http://localhost:8000/oauth2callback')
     
     auth_uri = flow.step1_get_authorize_url()
-
+    
+    
     return HttpResponseRedirect(auth_uri)
 
 def has_module(user, data):

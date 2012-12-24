@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     user = models.ForeignKey(User)
     google_validated = models.BooleanField(default=False)
     identity_validated = models.BooleanField(default=False)
+    flow = FlowField()
     
     
 #Google Flows

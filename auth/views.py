@@ -76,8 +76,23 @@ def change_password(request):
 
 #Google Oauth call back
 def oauth_callback(request):
-    1==1
     
+    from oauth2client.client import OAuth2WebServerFlow
+    from oauth2client.file import Storage
+    #Get query code from auth request
+    code = request.GET.get('code')
+    flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
+                           client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
+                           scope=['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/drive'],
+                           redirect_uri='http://localhost:8000/oauth2callback')
+    
+    credentials = flow.step2_exchange(code)
+    
+    storage = Storage('credentials_file')
+    storage.put(credentials)
+    
+    response = HttpResponse(json.dumps(code), mimetype="application/json")
+    return response
     
     
     
