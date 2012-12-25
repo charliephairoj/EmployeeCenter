@@ -6,9 +6,7 @@ from boto.s3.connection import S3Connection
 from django.conf import settings
 from decimal import Decimal
 import datetime
-import logging
 
-logger = logging.getLogger('EmployeeCenter');
 
 
 # Create your models here.
@@ -52,13 +50,11 @@ class PurchaseOrder(models.Model):
         #get supplier from data
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"])
-        logger.critical(data)
         if "attention" in data:
             self.attention = data["attention"]
         #apply vat and currency
         if "vat" in data: self.vat = float(data["vat"])
         if "currency" in data: self.currency = data["currency"]
-        logger.debug(data)
         #set the deliverydate
         if "deliveryDate" in data:
             delivery_date = datetime.date(data['deliveryDate']['year'], data['deliveryDate']['month'], data['deliveryDate']['date'])
@@ -142,7 +138,6 @@ class PurchaseOrder(models.Model):
     def get_data(self):
         #get the url
         
-        #logger.debug(self.employee.id)
         
         data = {
                 'url':self.get_url(),

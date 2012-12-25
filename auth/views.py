@@ -1,5 +1,5 @@
 # Create your views here.
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
 import json
@@ -73,26 +73,34 @@ def change_password(request):
     
     
 
-
+@login_required
 #Google Oauth call back
 def oauth_callback(request):
     
     from oauth2client.client import OAuth2WebServerFlow
-    from oauth2client.file import Storage
+    from auth.models import CredentialsModel
+    from oauth2client.django_orm import Storage
     #Get query code from auth request
     code = request.GET.get('code')
+    
+    #create flow object
     flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
                            client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
                            scope=['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/drive'],
                            redirect_uri='http://localhost:8000/oauth2callback')
     
+    #retrieve and store credentials
     credentials = flow.step2_exchange(code)
-    
-    storage = Storage('credentials_file')
+    storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     storage.put(credentials)
     
-    response = HttpResponse(json.dumps(code), mimetype="application/json")
-    return response
+    #mark user has having been validated
+    user = request.user
+    user_profile = user.get_profile()
+    user_profile.google_validated = True
+    user_profile.save()
+    
+    return HttpResponseRedirect('/index.html')
     
     
     

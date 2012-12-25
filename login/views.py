@@ -52,8 +52,15 @@ def app_login(request):
                 if user.is_active:
                     #login the user
                     login(request, user)
-                    #redirects to the main page
-                    return HttpResponseRedirect('/index.html')
+                    
+                    #Gets user profile to do checks
+                    user_profile = user.get_profile()
+                    
+                    #checks if authenticated for google
+                    if user_profile.google_validated == False:
+                        return HttpResponseRedirect('/auth')
+                    
+                    return HttpResponseRedirect('index.html')
             else:
                 #returns unauthenticated users
                 #back to the login page
@@ -62,7 +69,6 @@ def app_login(request):
 
 #Deals with google auth
 def auth_flow(request):
-    from auth.models import FlowModel
     flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
                            client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
                            scope=['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/drive'],
@@ -70,6 +76,10 @@ def auth_flow(request):
     
     auth_uri = flow.step1_get_authorize_url()
     
+    user = request.user
+    user_profile = user.get_profile()
+    user_profile.flow = flow
+    user_profile.save()
     
     return HttpResponseRedirect(auth_uri)
 

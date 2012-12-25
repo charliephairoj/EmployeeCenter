@@ -1,4 +1,7 @@
-from django.contrib.staticfiles.views import serve
+from django.contrib.auth.models import User
+from auth.models import UserProfile
 
-def display(request):
-    return serve(request, 'https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/DRLogo.jpg')
+for user in User.objects.all():
+    user_profile = UserProfile()
+    user_profile.user = user
+    user_profile.save()
