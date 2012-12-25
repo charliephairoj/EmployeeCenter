@@ -9,6 +9,9 @@ class UserProfile(models.Model):
     user = models.ForeignKey(User)
     google_validated = models.BooleanField(default=False)
     identity_validated = models.BooleanField(default=False)
+    
+    class Meta:
+        app_label = 'auth'
 
      
 class CredentialsModel(models.Model):
