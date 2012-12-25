@@ -54,11 +54,11 @@ def app_login(request):
                     login(request, user)
                     
                     #Gets user profile to do checks
-                    user_profile = user.get_profile()
+                    #user_profile = user.get_profile()
                     
                     #checks if authenticated for google
-                    if user_profile.google_validated == False:
-                        return HttpResponseRedirect('/auth')
+                    #if user_profile.google_validated == False:
+                    #    return HttpResponseRedirect('/auth')
                     
                     return HttpResponseRedirect('index.html')
             else:
