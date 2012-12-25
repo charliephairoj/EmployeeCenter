@@ -5,8 +5,8 @@ from django.db import models
 #Creates the Contact Class
 class Contact(models.Model):
     name = models.CharField(max_length=200)
-    telephone = models.IntegerField()
-    fax = models.IntegerField()
+    telephone = models.TextField()
+    fax = models.TextField()
     email = models.CharField(max_length=200, null=True)
     isSupplier = models.BooleanField(default=False)
     isCustomer = models.BooleanField(default=False)
