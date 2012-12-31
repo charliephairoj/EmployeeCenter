@@ -1,4 +1,4 @@
-from reportlab.lib import pdfencrypt, colors, utils
+from reportlab.lib import colors, utils
 from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4

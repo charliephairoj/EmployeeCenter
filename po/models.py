@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from django.conf import settings
 from decimal import Decimal
+import sys
 import datetime
 
 
@@ -99,7 +100,10 @@ class PurchaseOrder(models.Model):
         #calculate total after discount
         if self.supplier.discount != 0:
             #percentage 
-            percentage = Decimal(self.supplier.discount)/100
+            if sys.version_info[:2] == (2,6):
+                percentage = Decimal(str(self.supplier.discount))/100
+            elif sys.version_info[:2] == (2,7):
+                percentage = Decimal(self.supplier.discount)/100
             #amount to discount based off of subtotal
             discount_amount = self.subtotal*percentage
             #remaining total after subtracting discount
@@ -112,7 +116,10 @@ class PurchaseOrder(models.Model):
         #calculate total after tax
         if self.vat != 0 or self.vat != '0':
             #get vat percentage
-            percentage = Decimal(self.vat)/100
+            if sys.version_info[:2] == (2,6):
+                percentage = Decimal(str(self.vat))/100
+            elif sys.version_info[:2] == (2,7):
+                percentage = Decimal(self.vat)/100
             #get vat amount
             vat_amount = self.total*percentage
             #remaining grand total after adding vat
@@ -182,7 +189,10 @@ class PurchaseOrderItems(models.Model):
             if self.supply.discount == 0:
                 self.unit_cost = self.supply.cost
             else:
-                discount_amount = self.supply.cost*(Decimal(self.supply.discount)/100)
+                if sys.version_info[:2] == (2,6):
+                    discount_amount = self.supply.cost*(Decimal(str(self.supply.discount)/100))
+                elif sys.version_info[:2] == (2,7):
+                    discount_amount = self.supply.cost*(Decimal(self.supply.discount)/100)
                 self.unit_cost = self.supply.cost-discount_amount
             
         if "quantity" in data: 
