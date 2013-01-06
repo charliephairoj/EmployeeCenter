@@ -55,7 +55,7 @@ class PurchaseOrder(models.Model):
             self.attention = data["attention"]
         #apply vat and currency
         if "vat" in data: self.vat = float(data["vat"])
-        if "currency" in data: self.currency = data["currency"]
+        self.currency = self.supplier.currency
         #set the deliverydate
         if "deliveryDate" in data:
             delivery_date = datetime.date(data['deliveryDate']['year'], data['deliveryDate']['month'], data['deliveryDate']['date'])

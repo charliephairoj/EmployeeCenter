@@ -10,6 +10,7 @@ class Contact(models.Model):
     email = models.CharField(max_length=200, null=True)
     isSupplier = models.BooleanField(default=False)
     isCustomer = models.BooleanField(default=False)
+    currency = models.CharField(max_length=10, null=True)
     
     
     
@@ -44,7 +45,7 @@ class Contact(models.Model):
                 'isSupplier':self.isSupplier,
                 'isCustomer':self.isCustomer,
                 'addresses':addresses,
-                
+                'currency':self.currency
                 }
         #returns the data
         return data
@@ -55,7 +56,7 @@ class Contact(models.Model):
         if "telephone" in data: self.telephone = data["telephone"]
         if "fax" in data: self.fax = data["fax"]
         if "term" in data: self.term = data["term"]
-       
+        if "currency" in data: self.currency = data["currency"]
         
         #save the contact
         self.save()
@@ -127,7 +128,8 @@ class Supplier(Contact):
                 'terms':self.terms,
                 'discount':self.discount,
                 'lat': None,
-                'lng': None
+                'lng': None,
+                'currency':self.currency
                 }
         #sets address if exists
         if len(self.address_set.all())>0:

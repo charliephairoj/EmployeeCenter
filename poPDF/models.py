@@ -21,6 +21,7 @@ class PurchaseOrderPDF():
        
         self.supplies = supplies
         self.po = po
+        self.employee = self.po.employee
         
     
     #create method
@@ -34,43 +35,59 @@ class PurchaseOrderPDF():
         #create the heading
         heading = Table([
                          [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), "Purchase Order"],
-                         ["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
-                         ["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')],
-                         ["T: 02-998-7490 F: 02-997-3251", ""],
-                         ["info@dellarobbiathailand.com", ""]
+                         #Testing of removing address and contact from logo area
+                         #["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
+                         #["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')],
+                         #["T: 02-998-7490 F: 02-997-3251", ""],
+                         #["info@dellarobbiathailand.com", ""]
+                         
+                         ["", "PO#: %s" % self.po.id]
+                         
+                         
                          ], colWidths=(300, 210))
         #create the heading format and apply
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
                              ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                             ('FONTSIZE', (0,0), (-1,-1), 8),
-                             ('VALIGN', (0,0), (0,-1), 'MIDDLE'),
+                             ('VALIGN', (0,0), (0,-1), 'BOTTOM'),
                              ('FONT', (0,0), (-1,-1), 'Helvetica'),
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                              ('VALIGN', (1,0), (1,-1), 'TOP'),
                              ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
-                             ('FONTSIZE', (1,0),(1,0), 14)
+                             ('FONTSIZE', (1,0),(1,0), 16),
+                             ('FONTSIZE', (1,-1),(1,-1), 10),
+                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))
                              ])
         heading.setStyle(headingStyle)
         #add heading and spacing
         Story.append(heading)
-        Story.append(Spacer(0,25))
+        Story.append(Spacer(0,50))
         
         #create the table to hold the data
         #about the supplier
         
-        #create table for supplier data
-        contact = Table(self.formatSupplierData(self.supplier))#, colWidths=(100, 180, 100, 150))
+        #create table for supplier and recipient data
+        contact = Table(self.formatSupplierData(self.supplier), colWidths=(60, 210, 50, 150))
         contact.setStyle(TableStyle([
                                      ('BOTTOMPADDING', (0,0), (-1,-1), 1),
                                      ('TOPPADDING', (0,0), (-1,-1), 1),
                                      ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                                      ('FONT', (0,0), (-1,-1), 'Helvetica'),
                                      
-                                     #('TOPPADDING', (0,-2), (-1,-2), 20)
+                                     #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))
                                      ]))
         Story.append(contact)
-        Story.append(Spacer(0,40))
+        Story.append(Spacer(0,20))
         
+        #Create table for po data
+        po_data = Table(self.formatPOData(), colWidths=(90,200))
+        po_data.setStyle(TableStyle([
+                                       ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+                                       ('TOPPADDING', (0,0), (-1,-1), 1),
+                                       ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                                       ('FONT', (0,0), (-1, -1), 'Helvetica')
+                                       ]))
+        Story.append(po_data)
+        Story.append(Spacer(0,40))
         #Alignes the header and supplier to the left
         for aStory in Story:
             aStory.hAlign = 'LEFT'
@@ -95,7 +112,6 @@ class PurchaseOrderPDF():
         tStyle = TableStyle(styleData)
         t.setStyle(tStyle)
         Story.append(t)
-        
         #create the signature
         s = [
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
@@ -143,26 +159,32 @@ class PurchaseOrderPDF():
         address = supplier.address_set.all()[0]
         
         #add name AND DELIVERY DATE
-        data.append(['Supplier:',supplier.name])
+        data.append(['Supplier:',supplier.name, 'Ship To:', "%s %s" %(self.employee.first_name, self.employee.last_name)])
         
         #add address data
-        data.append(['',address.address1])
-        #checks if see if second line needed fro address2
-        if address.address2 != None:
-            data.append(['',address.address2])
-        data.append(['', address.city+', '+address.territory])
-        data.append(['', "%s %s" %(address.country, address.zipcode)])
+        data.append(['',address.address1, '', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
+       
+        data.append(['', address.city+', '+address.territory, '', 'Lam Luk Ka, Pathum Thani'])
+        data.append(['', "%s %s" %(address.country, address.zipcode), '', 'Thailand 12150'])
         
         #checks if this po needs someone's attention
         if self.po.attention != None:
             
             data.append(['Attention:', self.po.attention])
         
+        
+        
+        return data
+    
+    def formatPOData(self):
+        
+        data = []
+        
         #determine what the terms are
-        if supplier.terms == 0:
+        if self.supplier.terms == 0:
             terms = "Payment Before Deliver"
         else:
-            terms = "%s Days" %supplier.terms
+            terms = "%s Days" %self.supplier.terms
             
         #add the terms to the data
         data.append(['Payment Terms:', terms])
@@ -175,11 +197,10 @@ class PurchaseOrderPDF():
             currency_description = "US Dollar(USD)"
         data.append(["Currency:", currency_description])
         #add the delivery date
+        data.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
         data.append(['Delivery Date:', self.po.delivery_date.strftime('%B %d, %Y')])
         
-        
         return data
-    
     
     def formatSuppliesData(self, supplies, style=None):
         #create an array

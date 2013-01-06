@@ -11,11 +11,11 @@ class Supply(models.Model):
     description = models.TextField(null=True)
     type = models.CharField(max_length=20, null=True)
     cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    width = models.IntegerField(db_column='width', default=0)
+    width = models.DecimalField(db_column='width', decimal_places=2, max_digits=12, default=0)
     width_units = models.CharField(max_length=4, default="mm")
-    depth = models.IntegerField(db_column='depth', default=0)
+    depth = models.DecimalField(db_column='depth', decimal_places=2, max_digits=12, default=0)
     depth_units = models.CharField(max_length=4, default="mm")
-    height = models.IntegerField(db_column='height', default=0)
+    height = models.DecimalField(db_column='height', decimal_places=2, max_digits=12, default=0)
     height_units = models.CharField(max_length=4, default="mm")
     units = models.CharField(max_length=20, default='mm')
     purchasing_units = models.CharField(max_length=10, default="pc")
@@ -29,12 +29,12 @@ class Supply(models.Model):
         data = {
             #'type':self.type,
             'supplier':self.supplier.get_data(),
-            'width':self.width,
+            'width':str(self.width),
             'widthUnits':self.width_units,
             'depthUnits':self.depth_units,
             'heightUnits':self.height_units,
-            'depth':self.depth,
-            'height':self.height,
+            'depth':str(self.depth),
+            'height':str(self.height),
             'description':self.description,
             'id':self.id,
             'cost':'%s' %self.cost,
@@ -61,9 +61,9 @@ class Supply(models.Model):
         data = {
                 'type':self.type,
                 'supplier':self.supplier.get_data(),
-                'width':self.width,
-                'depth':self.depth,
-                'height':self.height,
+                'width':str(self.width),
+                'depth':str(self.depth),
+                'height':str(self.height),
                 'widthUnits':self.width_units,
                 'depthUnits':self.depth_units,
                 'heightUnits':self.height_units,
@@ -87,7 +87,6 @@ class Supply(models.Model):
 class Fabric(Supply):
     pattern = models.TextField()
     color = models.TextField()
-    current_length = models.DecimalField(max_digits=12, decimal_places=2)
     
     #Methods
     
@@ -95,7 +94,7 @@ class Fabric(Supply):
     def add(self, length, employee=None, remark=None):
         
         #Add to current Length
-        self.current_length = self.current_length + Decimal(length)
+        self.depth = self.depth + Decimal(length)
         self.save()
         
         #Create log of addition
@@ -104,17 +103,17 @@ class Fabric(Supply):
         log_item.fabric = self
         log_item.action = "Add"
         log_item.length = length
-        log_item.current_length = self.current_length
+        log_item.current_length = self.depth
         log_item.save()
     
     #Subtract Length
     def subtract(self, length, employee=None, remark=None):
         
         #check if length to subtract is more than total length
-        if self.current_length > Decimal(length):
+        if self.depth > Decimal(length):
             
             #Subtract from current length
-            self.current_length = self.current_length - Decimal(length)
+            self.depth = self.depth - Decimal(length)
             self.save()
             
             #Create log
@@ -123,12 +122,12 @@ class Fabric(Supply):
             log_item.fabric = self
             log_item.action = "Subtract"
             log_item.length = length
-            log_item.current_length = self.current_length
+            log_item.current_length = self.depth
             log_item.save()
             
     def reset(self, length, employee=None, remark=None):
         
-        self.current_length = length
+        self.depth = length
         self.save()
         
         #Create log
@@ -137,7 +136,7 @@ class Fabric(Supply):
         log_item.fabric = self
         log_item.action = "Reset"
         log_item.length = length
-        log_item.current_length = self.current_length
+        log_item.current_length = self.depth
         log_item.save()
         
     #Set fabric data for REST
@@ -168,7 +167,7 @@ class Fabric(Supply):
         #sets the data for this supply
         data = {
                 'pattern':self.pattern,
-                'color':self.color
+                'color':self.color,
         }
         #merges with parent data
         data.update(self.get_parent_data())

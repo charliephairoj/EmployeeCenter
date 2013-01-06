@@ -1,4 +1,5 @@
 from django.contrib.auth.models import Permission, Group, User
+from auth.models import UserProfile
 import json
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -207,6 +208,11 @@ def user(request, user_id=0):
             
             #save the user
             user.save()
+            
+            #Create the User Profile
+            user_profile = UserProfile()
+            user_profile.user = user
+            user_profile.save()
         
         #build response
         response = HttpResponse(json.dumps(data), mimetype="application/json")
