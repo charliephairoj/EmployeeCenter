@@ -14,7 +14,7 @@ normalStyle = stylesheet['Normal']
 class PurchaseOrderPDF():
     
     #def methods
-    def __init__(self, supplier=None, supplies=None, po=None, misc=None):
+    def __init__(self, supplier=None, supplies=None, po=None, attention=None, misc=None):
         
         
         self.supplier = supplier
@@ -22,7 +22,7 @@ class PurchaseOrderPDF():
         self.supplies = supplies
         self.po = po
         self.employee = self.po.employee
-        
+        self.attention = attention
     
     #create method
     def create(self):
@@ -32,10 +32,23 @@ class PurchaseOrderPDF():
         doc = SimpleDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #initialize story array
         Story = []
+        
+        #Create Subheading with PO number
+        subheading = Table([
+                            ["Purchase Order"],
+                            ["PO#: %s" %self.po.id]
+                            ])
+        subheading.setStyle(TableStyle([
+                                        ('FONTSIZE', (0,0), (0,0), 15),
+                                        ('FONTSIZE', (0,1),(0,1), 11),
+                                        ('VALIGN', (0,0),(-1,-1), 'TOP'),
+                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                                        ('ALIGNMENT', (0,0), (-1,-1), 'RIGHT')
+                                        ]))
         #create the heading
         heading = Table([
                          [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), 
-                         Table([["Purchase Order"],["PO#: %s" %self.po.id]])]
+                         
                          #Testing of removing address and contact from logo area
                          #["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
                          #["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')],
@@ -44,8 +57,8 @@ class PurchaseOrderPDF():
                          
                          #["", "PO#: %s" % self.po.id]
                          
-                         
-                         ], colWidths=(300, 210))
+                         subheading]
+                         ], colWidths=(320, 210))
         #create the heading format and apply
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
                              ('BOTTOMPADDING', (0,0), (-1,-1), 0),
@@ -54,7 +67,6 @@ class PurchaseOrderPDF():
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                              ('VALIGN', (1,0), (1,-1), 'TOP'),
                              ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
-                             ('FONTSIZE', (1,0),(1,0), 16),
                              ('FONTSIZE', (1,-1),(1,-1), 10),
                              #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))
                              ])
@@ -168,13 +180,18 @@ class PurchaseOrderPDF():
         data.append(['', address.city+', '+address.territory, '', 'Lam Luk Ka, Pathum Thani'])
         data.append(['', "%s %s" %(address.country, address.zipcode), '', 'Thailand 12150'])
         
-        #checks if this po needs someone's attention
-        if self.po.attention != None:
+        #Checks if there is a contact to Attention to
+        #and sets the appropriate variables
+        
+        if self.attention != None:
             
-            data.append(['Attention:', self.po.attention])
-        
-        
-        
+            data.append(['Attention:', "%s %s" %(self.attention.first_name, self.attention.last_name), 'Email:', "%s" % self.employee.email])
+            data.append(['', self.attention.email, '',''])
+            data.append(['', self.attention.telephone, '',''])
+        else:
+            
+            data.append(['','','Email:', "%s" % self.employee.email])
+        data.append([])
         return data
     
     def formatPOData(self):

@@ -1,12 +1,15 @@
 from django.db import models
 from supplies.models import Supply
-from contacts.models import Supplier
+from contacts.models import Supplier, SupplierContact
 from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from django.conf import settings
 from decimal import Decimal
 import sys
 import datetime
+import logging
+
+logger = logging.getLogger('tester')
 
 
 
@@ -133,7 +136,14 @@ class PurchaseOrder(models.Model):
         
         #creates the PDF and retrieves the returned
         #data concerning location of file
-        pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self)
+        if "attention" in data: 
+            att_id = data["attention"]["id"]
+            att = SupplierContact.objects.get(id=att_id)
+        else:
+            att = None
+        
+        #Create the pdf object and have it create a pdf
+        pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self, attention=att)
         pdf_data = pdf.create()
         #sets the pdf
         self.url = pdf_data['url']
