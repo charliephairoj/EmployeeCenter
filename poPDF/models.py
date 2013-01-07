@@ -34,14 +34,15 @@ class PurchaseOrderPDF():
         Story = []
         #create the heading
         heading = Table([
-                         [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), "Purchase Order"],
+                         [self.getImage("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), 
+                         Table([["Purchase Order"],["PO#: %s" %self.po.id]])]
                          #Testing of removing address and contact from logo area
                          #["8/10 Moo 4 Lam Lukka Rd., Soi 65", "PO#: %s" % self.po.id], 
                          #["Lam Lukka, Pathum Thani, Thailand 12150", self.po.order_date.strftime('%B %d, %Y')],
                          #["T: 02-998-7490 F: 02-997-3251", ""],
                          #["info@dellarobbiathailand.com", ""]
                          
-                         ["", "PO#: %s" % self.po.id]
+                         #["", "PO#: %s" % self.po.id]
                          
                          
                          ], colWidths=(300, 210))
