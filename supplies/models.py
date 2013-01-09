@@ -140,7 +140,7 @@ class Fabric(Supply):
         log_item.save()
         
     #Set fabric data for REST
-    def set_data(self, data):
+    def set_data(self, data, employee=None):
         #set the type to fabric
         self.type = "fabric"
         
@@ -159,6 +159,8 @@ class Fabric(Supply):
         #set the supplier
         if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
         
+        #Set the current length of fabric
+        if "currentLength" in data: self.reset(data["currentLength"], employee, "Initial Current Length")
         self.save()
     
     #Get Data for REST

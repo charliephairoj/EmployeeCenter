@@ -50,7 +50,7 @@ def httpPOSTProcessor(request, Class):
     #Get the raw data
     data = json.loads(request.POST.get('data'))
     #convert the information to the model
-    model.set_data(data)
+    model.set_data(data, employee=request.user)
     model.save()
    
             
