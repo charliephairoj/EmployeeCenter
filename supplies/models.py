@@ -104,6 +104,7 @@ class Fabric(Supply):
         log_item.action = "Add"
         log_item.length = length
         log_item.current_length = self.depth
+        log_item.remarks = remark
         log_item.save()
     
     #Subtract Length
@@ -123,6 +124,7 @@ class Fabric(Supply):
             log_item.action = "Subtract"
             log_item.length = length
             log_item.current_length = self.depth
+            log_item.remarks = remark
             log_item.save()
             
     def reset(self, length, employee=None, remark=None):
@@ -137,6 +139,7 @@ class Fabric(Supply):
         log_item.action = "Reset"
         log_item.length = length
         log_item.current_length = self.depth
+        log_item.remarks = remark
         log_item.save()
         
     #Set fabric data for REST
@@ -185,6 +188,7 @@ class FabricLog(models.Model):
     action = models.CharField(max_length=15, null=False)
     length = models.DecimalField(max_digits=15, decimal_places=2)
     current_length = models.DecimalField(max_digits=15, decimal_places=2)
+    remarks = models.TextField()
     employee = models.ForeignKey(User)
 
 
