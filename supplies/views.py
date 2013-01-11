@@ -70,6 +70,31 @@ def fabric_reset(request, fabric_id):
     response.status_code = 200
     return response
 
+#Fabric Log 
+def fabric_log(request, fabric_id=0):
+    from supplies.models import FabricLog
+    
+    if request.method == "GET":
+        
+        logs = FabricLog.objects.filter(fabric_id=fabric_id)
+        data = []
+        for log in logs:
+            
+            data_item = {
+                         'action':log.action,
+                         'length':str(log.length),
+                         'total':str(log.current_length),
+                         'remarks':log.remarks,
+                         'employee':"%s %s" %(log.employee.first_name, log.employee.last_name)
+                         }
+            data.append(data_item)
+        
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        response.status_code = 200
+        return response
+        
+        
+        
 #foam
 def foam(request, foam_id=0):
     from supplies.models import Foam
