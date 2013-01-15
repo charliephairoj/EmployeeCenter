@@ -190,7 +190,7 @@ class FabricLog(models.Model):
     current_length = models.DecimalField(max_digits=15, decimal_places=2)
     remarks = models.TextField()
     employee = models.ForeignKey(User)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
 
 
