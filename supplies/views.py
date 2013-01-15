@@ -85,7 +85,8 @@ def fabric_log(request, fabric_id=0):
                          'length':str(log.length),
                          'total':str(log.current_length),
                          'remarks':log.remarks,
-                         'employee':"%s %s" %(log.employee.first_name, log.employee.last_name)
+                         'employee':"%s %s" %(log.employee.first_name, log.employee.last_name),
+                         'timestamp':log.timestamp.strftime('%B %d, %Y %H:%M:%S')
                          }
             data.append(data_item)
         
