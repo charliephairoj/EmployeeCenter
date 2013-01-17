@@ -152,7 +152,7 @@ class Supplier(Contact):
         #returns the data
         return data
     #set data
-    def set_data(self, data):
+    def set_data(self, data, employee=None):
         
         #set parent data
         super(Supplier, self).set_data(data)
