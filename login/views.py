@@ -50,6 +50,7 @@ def app_login(request):
             if user is not None:
                 #checks if user is still active
                 if user.is_active:
+                    from django.views.static import serve
                     #login the user
                     login(request, user)
                     
@@ -60,7 +61,7 @@ def app_login(request):
                     if user_profile.google_validated == False:
                         return HttpResponseRedirect('/auth')
                     
-                    return HttpResponseRedirect('index.html')
+                    return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
             else:
                 #returns unauthenticated users
                 #back to the login page
