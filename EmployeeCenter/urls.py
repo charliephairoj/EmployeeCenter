@@ -10,7 +10,8 @@ urlpatterns = patterns('login.views',
     url(r'^$', 'app_login'),
     url(r'^main$', 'main'),
     url(r'^login$', 'app_login'),
-    url(r'^auth$', 'auth_flow')
+    url(r'^auth$', 'auth_flow'),
+    url(r'^logout$', 'logout')
 )
 
 #creates the user profile for client side use

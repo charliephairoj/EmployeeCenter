@@ -7,9 +7,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 import json
-import logging
+from django.utils.log import getLogger
 
-logger = logging.getLogger('EmployeeCenter');
+
+
+
 # Create your views here.
 @login_required
 def main(request):
@@ -28,11 +30,33 @@ def app_login(request):
     
     #determines if this is get request
     if request.method == "GET":
-        #logout the request
-        logout(request)
-        #create a new login form
-        form = LoginForm()
-        return render(request, 'auth/login.html', {'form':form})
+        
+        """Determines if the user is authenticated.
+        Authenticated users are served the index page
+        while anonymous users are served the login page"""
+        if request.user.is_authenticated():
+            
+            from django.views.static import serve
+            
+                    
+            #Gets user profile to do checks
+            user_profile = request.user.get_profile()
+                    
+            #checks if authenticated for google
+            if user_profile.google_validated == False:
+                
+                return HttpResponseRedirect('/auth')
+            
+            else:
+                    
+                return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
+        
+        else:
+            #logout the request
+            logout(request)
+            #create a new login form
+            form = LoginForm()
+            return render(request, 'auth/login.html', {'form':form})
     #what to do with a post request
     elif request.method == "POST":
         #initialize form with post data
@@ -50,7 +74,9 @@ def app_login(request):
             if user is not None:
                 #checks if user is still active
                 if user.is_active:
-                    from django.views.static import serve
+                    
+                
+                    
                     #login the user
                     login(request, user)
                     
@@ -61,12 +87,23 @@ def app_login(request):
                     if user_profile.google_validated == False:
                         return HttpResponseRedirect('/auth')
                     
-                    return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
+                    else:
+                        
+                        return HttpResponseRedirect('/')
             else:
                 #returns unauthenticated users
                 #back to the login page
                 return HttpResponseRedirect('/login')
             
+
+#Logs user out
+def logout(request):
+    
+    from django.contrib.auth import logout
+    
+    logout(request)
+    
+    return HttpResponseRedirect('/')
 
 #Deals with google auth
 def auth_flow(request):
