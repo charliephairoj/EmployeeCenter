@@ -32,8 +32,9 @@ def fabric_image(request, fabric_id=0):
         if fabric_id != 0:
             
             image = request.FILES['image']
+            filename = settings.MEDIA_ROOT+fabric_id+'.jpg'
             
-            with open(settings.MEDIA_ROOT+fabric_id+'.jpg', 'wb+' ) as destination:
+            with open(filename, 'wb+' ) as destination:
                 for chunk in image.chunks():
                     destination.write(chunk)
             #start connection
@@ -47,10 +48,10 @@ def fabric_image(request, fabric_id=0):
             k.key = "supplies/fabric/%s.jpg" % fabric_id
             #upload file
             
-            k.set_contents_from_filename(fabric_id+'.jpg')
+            k.set_contents_from_filename(filename)
             
             #remove file from the system
-            os.remove(settings.MEDIA_ROOT+fabric_id+'.jpg')
+            os.remove(filename)
             #set the Acl
             k.set_canned_acl('public-read')
          
