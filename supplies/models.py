@@ -22,6 +22,9 @@ class Supply(models.Model):
     discount = models.IntegerField(default=0)
     reference = models.TextField()
     currency = models.CharField(max_length=10, default="THB")
+    image_url = models.TextField(null=True)
+    image_bucket = models.TextField(null=True)
+    image_key = models.TextField(null=True)
     
         
     #methods
@@ -42,6 +45,10 @@ class Supply(models.Model):
             'currency':self.currency
         }
         
+        if self.image_url != None:
+            
+            data.update({"image":{"url":self.image_url, "key":self.image_key, "bucket":self.image_bucket}})
+        
         return data
     
     def set_parent_data(self, data):
@@ -56,6 +63,10 @@ class Supply(models.Model):
         if "currency" in data: self.currency = data["currency"]
         if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
         if "supplierID" in data: self.supplier = Supplier.objects.get(id=data["supplierID"])
+        if "image" in data:
+            if "url" in data["image"]: self.image_url = data["image"]["url"]
+            if "key" in data["image"]: self.image_key = data["image"]["key"]
+            if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
         
     def get_data(self):
         data = {
@@ -80,6 +91,15 @@ class Supply(models.Model):
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
         if "depth" in data: self.depth = data["depth"]
+        
+        
+"""This Location class is used to track and location and in the future
+The access times of and movements of supplies, starting with fabrics"""
+class Location(models.Model):
+    
+    description = models.TextField()
+    row = models.CharField(max_length=10)
+    shelf = models.CharField(max_length=10)
      
      
 
@@ -87,6 +107,7 @@ class Supply(models.Model):
 class Fabric(Supply):
     pattern = models.TextField()
     color = models.TextField()
+    content = models.TextField()
     
     #Methods
     
@@ -154,6 +175,7 @@ class Fabric(Supply):
         #set the model data
         if "pattern" in data: self.pattern = data["pattern"]
         if "color" in data: self.color = data["color"]
+        if "content" in data: self.content = data["content"]
         
         if "description" in data: 
             self.description = data["description"]
@@ -173,6 +195,7 @@ class Fabric(Supply):
         data = {
                 'pattern':self.pattern,
                 'color':self.color,
+                'content':self.content
         }
         #merges with parent data
         data.update(self.get_parent_data())

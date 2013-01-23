@@ -19,6 +19,49 @@ def fabric(request, fabric_id=0):
     
     return processRequest(request, Fabric, fabric_id)
 
+#uploads a fabric
+def fabric_image(request, fabric_id=0):
+    
+    from django.conf import settings
+    from boto.s3.connection import S3Connection
+    from boto.s3.key import Key
+    
+    if request.method == "POST":
+        
+        if fabric_id != 0:
+            
+            image = request.FILES['image']
+            
+            with open(fabric_id+'.jpg', 'wb+' ) as destination:
+                for chunk in image.chunks():
+                    destination.write(chunk)
+            #start connection
+            conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+            #get the bucket
+            bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
+            #Create a key and assign it 
+            k = Key(bucket)
+                
+            #Set file name
+            k.key = "supplies/fabric/%s.jpg" % fabric_id
+            #upload file
+            
+            k.set_contents_from_filename(fabric_id+'.jpg')
+            #set the Acl
+            k.set_canned_acl('public-read')
+         
+            #set Url, key and bucket
+            data = {
+                    'url':k.generate_url(788400000),
+                    'key':k.key,
+                    'bucket':'media.dellarobbiathailand.com'
+            }
+            
+        #self.save()
+            response = HttpResponse(json.dumps(data), mimetype="application/json")
+            response.status_code = 201
+            return response
+
 #Add length to a fabric
 def fabric_add(request, fabric_id):
     

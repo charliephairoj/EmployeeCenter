@@ -63,6 +63,7 @@ urlpatterns += patterns('supplies.views',
     url(r'^fabric/(?P<fabric_id>\d+)/subtract$', 'fabric_subtract'),
     url(r'^fabric/(?P<fabric_id>\d+)/reset$', 'fabric_reset'),
     url(r'^fabric/(?P<fabric_id>\d+)/log$', 'fabric_log'),
+    url(r'^fabric/(?P<fabric_id>\d+)/image$', 'fabric_image'),
     
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
