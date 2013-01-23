@@ -59,6 +59,7 @@ urlpatterns += patterns('supplies.views',
 
     url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
+    url(r'^fabric/(?P<fabric_id>\d+)/reserve$', 'fabric_reserve'),
     url(r'^fabric/(?P<fabric_id>\d+)/add$', 'fabric_add'),
     url(r'^fabric/(?P<fabric_id>\d+)/subtract$', 'fabric_subtract'),
     url(r'^fabric/(?P<fabric_id>\d+)/reset$', 'fabric_reset'),

@@ -66,6 +66,22 @@ def fabric_image(request, fabric_id=0):
             response = HttpResponse(json.dumps(data), mimetype="application/json")
             response.status_code = 201
             return response
+        
+#Reserve fabric
+def fabric_reserve(request, fabric_id):
+    
+    from supplies.models import Fabric
+    
+    user = request.user
+    length = request.POST.get('length')
+    remark = request.POST.get('remark')
+    
+    fabric = Fabric.objects.get(id=fabric_id)
+    fabric.reserve(length, remark=remark, employee=user)
+    
+    response = HttpResponse(json.dumps(fabric.get_data()), mimetype="application/json")
+    response.status_code = 200
+    return response
 
 #Add length to a fabric
 def fabric_add(request, fabric_id):

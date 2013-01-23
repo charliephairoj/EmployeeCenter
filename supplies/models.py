@@ -111,6 +111,18 @@ class Fabric(Supply):
     
     #Methods
     
+    #Reserves fabric
+    def reserve(self, length, employee=None, remark=None):
+        
+        log_item = FabricLog()
+        log_item.employee = employee
+        log_item.fabric = self
+        log_item.action = "Reserve"
+        log_item.length = length
+        log_item.current_length = self.depth
+        log_item.remarks = "Ack#: %s" % remark
+        log_item.save()
+    
     #Add Length
     def add(self, length, employee=None, remark=None):
         
@@ -138,6 +150,15 @@ class Fabric(Supply):
             self.depth = self.depth - Decimal(length)
             self.save()
             
+            #Destroy Reservation log
+            #try
+            old_log_item = FabricLog.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
+            old_log_item.delete()
+            #except:
+                
+            #    pass
+            
+            
             #Create log
             log_item = FabricLog()
             log_item.employee = employee
@@ -145,7 +166,7 @@ class Fabric(Supply):
             log_item.action = "Subtract"
             log_item.length = length
             log_item.current_length = self.depth
-            log_item.remarks = remark
+            log_item.remarks = "Ack#: %s" % remark
             log_item.save()
             
     def reset(self, length, employee=None, remark=None):
@@ -191,15 +212,19 @@ class Fabric(Supply):
     #Get Data for REST
     def get_data(self):
         
+        from django.db.models import Sum
+        #Get the Reserve Length
+        sum_obj = FabricLog.objects.filter(action="Reserve", fabric_id=self.id).aggregate(Sum('length'))
+        
         #sets the data for this supply
         data = {
                 'pattern':self.pattern,
                 'color':self.color,
-                'content':self.content
+                'content':self.content,
+                'reserved_length':str(sum_obj["length__sum"])
         }
         #merges with parent data
         data.update(self.get_parent_data())
-        
         #returns the data
         return data
 
