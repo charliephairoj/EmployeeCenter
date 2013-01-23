@@ -25,6 +25,7 @@ def fabric_image(request, fabric_id=0):
     from django.conf import settings
     from boto.s3.connection import S3Connection
     from boto.s3.key import Key
+    import os
     
     if request.method == "POST":
         
@@ -32,7 +33,7 @@ def fabric_image(request, fabric_id=0):
             
             image = request.FILES['image']
             
-            with open(fabric_id+'.jpg', 'wb+' ) as destination:
+            with open(settings.MEDIA_ROOT+fabric_id+'.jpg', 'wb+' ) as destination:
                 for chunk in image.chunks():
                     destination.write(chunk)
             #start connection
@@ -47,6 +48,9 @@ def fabric_image(request, fabric_id=0):
             #upload file
             
             k.set_contents_from_filename(fabric_id+'.jpg')
+            
+            #remove file from the system
+            os.remove(settings.MEDIA_ROOT+fabric_id+'.jpg')
             #set the Acl
             k.set_canned_acl('public-read')
          
