@@ -2,7 +2,7 @@ from supplies.models import Supply
 from utilities.http import processRequest
 import json
 from django.http import HttpResponseRedirect, HttpResponse
-import logging
+import logging, time
 
 logger = logging.getLogger('EmployeeCenter');
 
@@ -45,7 +45,7 @@ def fabric_image(request, fabric_id=0):
             k = Key(bucket)
                 
             #Set file name
-            k.key = "supplies/fabric/%s.jpg" % fabric_id
+            k.key = "supplies/fabric/%s-%f.jpg" % (fabric_id,time.time())
             #upload file
             
             k.set_contents_from_filename(filename)
