@@ -23,6 +23,11 @@ urlpatterns += patterns('auth.views',
     
 )
 
+#Routes for the Library
+urlpatterns += patterns('library.views',
+    url(r'^library', 'book')
+)
+
 urlpatterns += patterns('products.views',
     url(r'^model$', 'model'),
     url(r'^model/(?P<model_id>\d+)$', 'model'),

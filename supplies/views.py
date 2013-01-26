@@ -54,10 +54,11 @@ def fabric_image(request, fabric_id=0):
             os.remove(filename)
             #set the Acl
             k.set_canned_acl('public-read')
+            k.make_public()
          
             #set Url, key and bucket
             data = {
-                    'url':k.generate_url(788400000),
+                    'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
                     'key':k.key,
                     'bucket':'media.dellarobbiathailand.com'
             }
@@ -140,7 +141,7 @@ def fabric_log(request, fabric_id=0):
     
     if request.method == "GET":
         
-        logs = FabricLog.objects.filter(fabric_id=fabric_id)
+        logs = FabricLog.objects.filter(fabric_id=fabric_id).order_by('-timestamp')
         data = []
         for log in logs:
             

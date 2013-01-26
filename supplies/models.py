@@ -151,12 +151,12 @@ class Fabric(Supply):
             self.save()
             
             #Destroy Reservation log
-            #try
-            old_log_item = FabricLog.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
-            old_log_item.delete()
-            #except:
+            try:
+                old_log_item = FabricLog.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
+                old_log_item.delete()
+            except:
                 
-            #    pass
+                pass
             
             
             #Create log
