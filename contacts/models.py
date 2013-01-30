@@ -8,8 +8,8 @@ class Contact(models.Model):
     telephone = models.TextField()
     fax = models.TextField()
     email = models.CharField(max_length=200, null=True)
-    isSupplier = models.BooleanField(default=False)
-    isCustomer = models.BooleanField(default=False)
+    is_supplier = models.BooleanField(default=False)
+    is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
     
     

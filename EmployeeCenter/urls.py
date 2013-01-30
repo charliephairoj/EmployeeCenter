@@ -99,6 +99,12 @@ urlpatterns += patterns('po.views',
    
 )
 
+#URLS for Acknowledgement
+
+urlpatterns += patterns('acknowledgements.views', 
+    url(r'^acknowledgement$', 'acknowledgement')
+)
+
 #this section deals with the administration routing area
 
 urlpatterns += patterns('administrator.views', 
