@@ -28,14 +28,14 @@ class Supply(models.Model):
     
         
     #methods
-    def get_parent_data(self):
+    def get_parent_data(self, **kwargs):
         data = {
-            #'type':self.type,
+            'type':self.type,
             'supplier':self.supplier.get_data(),
             'width':str(self.width),
-            'widthUnits':self.width_units,
-            'depthUnits':self.depth_units,
-            'heightUnits':self.height_units,
+            'width_units':self.width_units,
+            'depth_units':self.depth_units,
+            'height_units':self.height_units,
             'depth':str(self.depth),
             'height':str(self.height),
             'description':self.description,
@@ -51,33 +51,33 @@ class Supply(models.Model):
         
         return data
     
-    def set_parent_data(self, data):
+    def set_parent_data(self, data, **kwargs):
         if "reference" in data: self.reference = data["reference"]
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
-        if "widthUnits" in data: self.width_units = data['widthUnits']
+        if "width_units" in data: self.width_units = data['width_units']
         if "height" in data: self.height = data["height"]
-        if "heightUnits" in data: self.height_units = data['heightUnits']
+        if "height_units" in data: self.height_units = data['height_units']
         if "depth" in data: self.depth = data["depth"]
-        if "depthUnits" in data: self.depth_units = data['depthUnits']
+        if "depth_units" in data: self.depth_units = data['depth_units']
         if "currency" in data: self.currency = data["currency"]
         if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
-        if "supplierID" in data: self.supplier = Supplier.objects.get(id=data["supplierID"])
+        if "supplier_id" in data: self.supplier = Supplier.objects.get(id=data["supplier_id"])
         if "image" in data:
             if "url" in data["image"]: self.image_url = data["image"]["url"]
             if "key" in data["image"]: self.image_key = data["image"]["key"]
             if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
         
-    def get_data(self):
+    def get_data(self, **kwargs):
         data = {
                 'type':self.type,
                 'supplier':self.supplier.get_data(),
                 'width':str(self.width),
                 'depth':str(self.depth),
                 'height':str(self.height),
-                'widthUnits':self.width_units,
-                'depthUnits':self.depth_units,
-                'heightUnits':self.height_units,
+                'width_units':self.width_units,
+                'depth_units':self.depth_units,
+                'height_units':self.height_units,
                 'description':self.description,
                 'id':self.id,
                 'cost':'%s' % self.cost,
@@ -86,7 +86,7 @@ class Supply(models.Model):
         
         return data
         
-    def set_data(self, data):
+    def set_data(self, data, **kwargs):
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
@@ -185,32 +185,30 @@ class Fabric(Supply):
         log_item.save()
         
     #Set fabric data for REST
-    def set_data(self, data, employee=None):
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in data: user = data["user"]
+        #set parent data
+        super(Fabric, self.set_data(data, user=user))
         #set the type to fabric
-        self.type = "fabric"
-        
-       
-        #set parent properties
-        self.set_parent_data(data)
+        self.type = "Fabric"
+        #set purchasing units
         self.purchasing_units = "yard"
         #set the model data
         if "pattern" in data: self.pattern = data["pattern"]
         if "color" in data: self.color = data["color"]
         if "content" in data: self.content = data["content"]
-        
-        if "description" in data: 
-            self.description = data["description"]
-        else:
-            self.description = "%s %s" % (self.pattern, self.color)
+        self.description = "%s Col:%s" % (self.pattern, self.color)
         #set the supplier
-        if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
+        if "supplier_id" in data: self.supplier = Supplier.objects.get(id = data["supplier_id"])
         
         #Set the current length of fabric
-        if "currentLength" in data: self.reset(data["currentLength"], employee, "Initial Current Length")
+        if "current_length" in data: self.reset(data["current_length"], user, "Initial Current Length")
+        
         self.save()
     
     #Get Data for REST
-    def get_data(self):
+    def get_data(self, **kwargs):
         
         from django.db.models import Sum
         #Get the Reserve Length
@@ -224,7 +222,7 @@ class Fabric(Supply):
                 'reserved_length':str(sum_obj["length__sum"])
         }
         #merges with parent data
-        data.update(self.get_parent_data())
+        data.update(super(Fabric, self).get_data())
         #returns the data
         return data
 
@@ -251,7 +249,7 @@ class Foam(Supply):
     #methods 
     
     #get data
-    def get_data(self):
+    def get_data(self, **kwargs):
         #get data for foam
         data = {
                 'color':self.color,
@@ -259,18 +257,20 @@ class Foam(Supply):
                 }
         
         #merge with data from parent
-        data.update(self.get_parent_data())
+        data.update(super(Foam, self).get_data())
         
         #return the data
         return data
     
     #set data
-    def set_data(self,data):
-        
+    def set_data(self,data, **kwargs):
+        #extract data
+        if "user" in kwargs: user = kwargs["user"]
         #set the parent data
-        self.set_parent_data(data)
-        self.purchasing_units = "pc"
+        super(Foam, self).set_data(data, user=user)
         #set foam data
+        self.purchasing_units = "pc"
+        
         self.type = "foam"
         if "type" in data: self.foamType = data["type"]
         if "color" in data: self.color = data["color"]
@@ -286,17 +286,22 @@ class Lumber(Supply):
     wood_type = models.TextField(db_column  = "wood_type")
     
     #Methods
-    def set_data(self, data):
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
+        #set parent data
+        super(Lumber, self).set_data(data, user=user)
         #set the type to lumber
         self.type = "lumber"
         #set the wood type
         if "type" in data:self.wood_type = data["type"]
        
-        #set parent properties
+        
         self.set_parent_data(data)
-        if "widthUnits" in data: self.width_units = data["widthUnits"]
-        if "depthUnits" in data: self.depth_units = data["depthUnits"]
-        if "heightUnits" in data: self.height_units = data["heightUnits"]
+        #set parent properties
+        if "width_units" in data: self.width_units = data["width_units"]
+        if "depth_units" in data: self.depth_units = data["depth_units"]
+        if "height_units" in data: self.height_units = data["height_units"]
         self.purchasing_units = "pc"
         #set the description
         if "description" in data: 
@@ -305,18 +310,18 @@ class Lumber(Supply):
             self.description = "%s %s%sx%s%sx%s%s" % (self.wood_type, self.width, self.width_units, self.depth, self.depth_units, self.height, self.height_units)
             
         #set the supplier
-        if "supplierID" in data: self.supplier = Supplier.objects.get(id = data["supplierID"])
+        if "supplier_id" in data: self.supplier = Supplier.objects.get(id = data["supplier_id"])
         
         self.save()
         
-    def get_data(self):
+    def get_data(self, **kwargs):
         
         #sets the data for this supply
         data = {
                 'type':self.wood_type,
         }
         #merges with parent data
-        data.update(self.get_parent_data())
+        data.update(super(Lumber, self).get_data())
        
         #returns the data
         return data
@@ -333,7 +338,7 @@ class Screw(Supply):
     #method 
     
     #get data
-    def get_data(self):
+    def get_data(self, **kwargs):
         
         
         #get data
@@ -341,18 +346,20 @@ class Screw(Supply):
                 'boxQuantity':self.box_quantity
                 }
         #merge with parent data
-        data.update(self.get_parent_data())
+        data.update(super(Screw, self).get_data())
         #return the data
         return data
     
     #set data
-    def set_data(self, data):
-        
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         #set the parent data
-        self.set_parent_data(data)
+        super(Screw, self).set_data(data, user=user)
+        #set screw data
         self.purchasing_units = "box"
         self.type = "screw"
-        #set screw data
+        
         if "boxQuantity" in data: self.box_quantity = data['boxQuantity']
         #description
         self.description = "%sx%s Screw" % (self.width, self.height)
@@ -365,16 +372,19 @@ class SewingThread(Supply):
     color = models.TextField()
     
     #methods
-    def get_data(self):
-        
+    def get_data(self, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         data = {'color':self.color}
         #merge with parent data
-        data.update(self.get_parent_data())
+        data.update(super(SewingThread, self).get_data())
         return data
     
-    def set_data(self, data):
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
+        super(SewingThread, self).set_data(SewingThread, user=user)
         
-        self.set_parent_data(data)
         self.purchasing_units = "spool"
         self.type = "sewing thread"
         if "color" in data: self.color = data["color"]
@@ -389,17 +399,21 @@ class Staple(Supply):
     
     #methods
     
-    def get_data(self):
-        
+    def get_data(self, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         data = {'boxQuantity':self.box_quantity}
         #merge with parent data
-        data.update(self.get_parent_data())
+        data.update(super(Staple, self).get_data())
         return data
     
-    def set_data(self, data):
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
+        #set parent data
+        super(Staple, self).set_data(data, self)
         
         if "boxQuantity" in data: self.box_quantity = data['boxQuantity']
-        self.set_parent_data(data)
         self.purchasing_units = "box"
         self.type = "staple"
         #set description
@@ -413,17 +427,19 @@ class Webbing(Supply):
     #methods
     
     #get pdata
-    def get_data(self):
+    def get_data(self, **kwargs):
         data = {}
         
-        data.update(self.get_parent_data())
+        data.update(super(Webbing, self).get_data())
         
     #set data
     
-    def set_data(self, data):
-        
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         #set parent data
-        self.set_parent_data(data)
+        super(Webbing, self).set_data(data, user=user)
+        
         self.purchasing_units = "roll"
         self.type = "webbing"
         
@@ -435,24 +451,26 @@ class Wool(Supply):
     #methods
     
     #get data
-    def get_data(self):
+    def get_data(self, **kwargs):
         #get's this supply's data
         data = {
             'tex':self.tex,
         }
         
         #merges with parent data
-        data.update(self.get_parent_data())
+        data.update(super(Wool, self).get_data())
         #return the data
         return data
     
     #set data
-    def set_data(self, data):
-        
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         #set parent data
-        self.set_parent_data(data)
-        self.purchasing_units = "kg"
+        super(Wool, self).set_data(data, user=user)
         #set wool specific data
+        self.purchasing_units = "kg"
+        
         self.width = 0
         self.height = 0
         self.depth = 0
@@ -476,7 +494,7 @@ class Zipper(Supply):
     #methods
     
     #get data
-    def get_data(self):
+    def get_data(self, **kwargs):
         
         data = {
                 
@@ -485,16 +503,18 @@ class Zipper(Supply):
                 
                 }
         
-        data.update(self.get_parent_data())
+        data.update(super(Zipper, self).get_data())
         
         return data
     
     
     #set data
-    def set_data(self, data):
-        
+    def set_data(self, data, **kwargs):
+        #extract args
+        if "user" in kwargs: user = kwargs["user"]
         #set the parent data
-        self.set_parent_data(data)
+        super(Zipper, self).set_data(data, user=user)
+        
         self.purchasing_units = "roll"
         self.type = "zipper"
         #set the description

@@ -1,13 +1,14 @@
-from django.db import models
-from supplies.models import Supply
-from contacts.models import Supplier, SupplierContact
-from django.contrib.auth.models import User
-from boto.s3.connection import S3Connection
-from django.conf import settings
-from decimal import Decimal
 import sys
 import datetime
 import logging
+from decimal import Decimal
+from django.conf import settings
+from django.db import models
+from django.contrib.auth.models import User
+from boto.s3.connection import S3Connection
+from supplies.models import Supply
+from contacts.models import Supplier, SupplierContact
+
 
 logger = logging.getLogger('tester')
 
@@ -21,10 +22,8 @@ class PurchaseOrder(models.Model):
     order_date = models.DateField(db_column = "order_date", null=True, default = datetime.date.today())
     delivery_date = models.DateField(null=True)
     vat = models.IntegerField(default=0)
-    #shipping
     shipping_type = models.CharField(max_length=10, default="none")
     shipping_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
     currency = models.CharField(max_length=10, default="THB")
     #refers to the total of all items
     subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
@@ -32,11 +31,9 @@ class PurchaseOrder(models.Model):
     total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     #refers to the todal after vat
     grand_total = models.DecimalField(db_column='grand_total', default=0, decimal_places=2, max_digits=12)
-    
     url = models.TextField(null = True)
     key = models.TextField(null = True)
     bucket = models.TextField(null = True)
-    
     employee = models.ForeignKey(User)
     
     def create(self, data, user=None):
@@ -44,13 +41,10 @@ class PurchaseOrder(models.Model):
         from poPDF.models import PurchaseOrderPDF
         #We will create the purchase order first
         #and then save it before creating the purchase order items 
-        #so that the items have something to link to
-        
+        #so that the items have something to link to  
         #Set the employee that placed the order
-        if user != None:
-            
-            self.employee = user
-            
+        if user != None:    
+            self.employee = user    
         #get supplier from data
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"])
@@ -62,11 +56,9 @@ class PurchaseOrder(models.Model):
         #set the deliverydate
         if "deliveryDate" in data:
             delivery_date = datetime.date(data['deliveryDate']['year'], data['deliveryDate']['month'], data['deliveryDate']['date'])
-            self.delivery_date = delivery_date
-            
+            self.delivery_date = delivery_date     
         #save the purchase
         self.save()
-        
         #model to hold subtotal
         self.subtotal = 0
         #array to hold supplies
@@ -82,24 +74,18 @@ class PurchaseOrder(models.Model):
                 #save the item
                 poItem.save()
                 #add to array
-                self.supplies.append(poItem)
-                
+                self.supplies.append(poItem)                
                 #add supply total to po total
-                self.subtotal = self.subtotal + poItem.total
-                
+                self.subtotal = self.subtotal + poItem.total       
         #checks if there was a shipping charge
         if "shipping" in data:
             #checks whether shipping is charged
-            if data['shipping'] != False:
-                
+            if data['shipping'] != False:    
                 if "type" in data["shipping"]: self.shipping_type = data['shipping']['type']
-                if "amount" in data["shipping"]: self.shipping_amount = Decimal(data['shipping']['amount'])
-                
+                if "amount" in data["shipping"]: self.shipping_amount = Decimal(data['shipping']['amount'])     
                 #add shipping to subtotal
-                self.subtotal = self.subtotal + self.shipping_amount
-                
+                self.subtotal = self.subtotal + self.shipping_amount     
         #Calculates the totals of the PO
-        
         #calculate total after discount
         if self.supplier.discount != 0:
             #percentage 
@@ -114,8 +100,7 @@ class PurchaseOrder(models.Model):
         #if no supplier discount
         else:
             #total is equal to subtotal
-            self.total = self.subtotal
-            
+            self.total = self.subtotal       
         #calculate total after tax
         if self.vat != 0 or self.vat != '0':
             #get vat percentage
@@ -132,16 +117,14 @@ class PurchaseOrder(models.Model):
             self.grand_total = self.total
         
         #save the data
-        self.save()
-        
+        self.save()   
         #creates the PDF and retrieves the returned
         #data concerning location of file
         if "attention" in data: 
             att_id = data["attention"]["id"]
             att = SupplierContact.objects.get(id=att_id)
         else:
-            att = None
-        
+            att = None 
         #Create the pdf object and have it create a pdf
         pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self, attention=att)
         pdf_data = pdf.create()
@@ -154,8 +137,6 @@ class PurchaseOrder(models.Model):
     #get data
     def get_data(self):
         #get the url
-        
-        
         data = {
                 'url':self.get_url(),
                 'id':self.id,
@@ -171,8 +152,7 @@ class PurchaseOrder(models.Model):
         url = conn.generate_url(1800, 'GET', bucket=self.bucket, key = self.key, force_http=True)
         #return the url
         return url
-    
-    
+     
 class PurchaseOrderItems(models.Model):
     
     purchase_order = models.ForeignKey(PurchaseOrder, db_column = "purchase_order_id")
@@ -182,8 +162,6 @@ class PurchaseOrderItems(models.Model):
     unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0, db_column="unit_cost")
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     currency = models.CharField(max_length=10, default="THB")
-    
-    
     
     #set po
     def setPO(self, po):

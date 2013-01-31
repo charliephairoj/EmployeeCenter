@@ -29,44 +29,44 @@ def fabric_image(request, fabric_id=0):
     
     if request.method == "POST":
         
-        if fabric_id != 0:
+        
             
-            image = request.FILES['image']
-            filename = settings.MEDIA_ROOT+fabric_id+'.jpg'
-            
-            with open(filename, 'wb+' ) as destination:
-                for chunk in image.chunks():
-                    destination.write(chunk)
-            #start connection
-            conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-            #get the bucket
-            bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-            #Create a key and assign it 
-            k = Key(bucket)
+        image = request.FILES['image']
+        filename = settings.MEDIA_ROOT+str(time.time())+'.jpg'
+           
+        with open(filename, 'wb+' ) as destination:
+            for chunk in image.chunks():
+                destination.write(chunk)
+        #start connection
+        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        #get the bucket
+        bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
+        #Create a key and assign it 
+        k = Key(bucket)
                 
-            #Set file name
-            k.key = "supplies/fabric/%s-%f.jpg" % (fabric_id,time.time())
-            #upload file
+        #Set file name
+        k.key = "supplies/fabric/%f.jpg" % (time.time())
+        #upload file
             
-            k.set_contents_from_filename(filename)
+        k.set_contents_from_filename(filename)
             
-            #remove file from the system
-            os.remove(filename)
-            #set the Acl
-            k.set_canned_acl('public-read')
-            k.make_public()
+        #remove file from the system
+        os.remove(filename)
+        #set the Acl
+        k.set_canned_acl('public-read')
+        k.make_public()
          
-            #set Url, key and bucket
-            data = {
-                    'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
-                    'key':k.key,
-                    'bucket':'media.dellarobbiathailand.com'
-            }
+        #set Url, key and bucket
+        data = {
+                'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
+                'key':k.key,
+                'bucket':'media.dellarobbiathailand.com'
+        }
             
         #self.save()
-            response = HttpResponse(json.dumps(data), mimetype="application/json")
-            response.status_code = 201
-            return response
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        response.status_code = 201
+        return response
         
 #Reserve fabric
 def fabric_reserve(request, fabric_id):

@@ -33,7 +33,8 @@ urlpatterns += patterns('products.views',
     url(r'^model/(?P<model_id>\d+)$', 'model'),
     url(r'^configuration$', 'configuration'),
     url(r'^configuration/(?P<config_id>\d+)$', 'configuration'),
-    url(r'^upholstery', 'upholstery'),
+    url(r'^upholstery$', 'upholstery'),
+    url(r'^upholstery/image$', 'upholstery_image'),
     url(r'^upholstery/(?P<uphol_id>\d+)$', 'upholstery'),
     
 )

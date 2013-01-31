@@ -1,5 +1,7 @@
 
-""" This migration file helps to migrate the databse from the old system to the new system.
+""" Migrate to New Database.
+
+    This migration file helps to migrate the databse from the old system to the new system.
     Both Systems are Postgresql, but the tablenames are different because the old system used
     php and the new system uses python via Django ORM. 
 
@@ -17,8 +19,110 @@ cur1 = old_db_conn.cursor()
 cur2 = new_db_conn.cursor()
 
 
-
+def prepare_upsert(table, *args):
+    
+    query1 = "WITH upsert AS(UPDATE %s SET " %table
+    query2 = "INSERT INTO %s(" % table
+    query3 = "SELECT "
+    for key, arg in enumerate(args):
+        #build update statement
+        if key<len(args)-1:
+            #Check not id for upsert
+            if arg != "id":
+                query1 += "%s = %%(%s)s, " %(arg, arg)
+            #Adds comma to separate
+            query2 += "%s, " % arg
+            query3 += "%%(%s)s, " % arg
+        #add returning
+        if key == len(args)-1:
+            query1 += "%s = %%(%s)s" % (arg, arg)
+            query1 += " WHERE id = %(id)s RETURNING id) "
+            query2 += "%s)" % arg
+            query3 += "%%(%s)s WHERE NOT EXISTS (SELECT 1 FROM upsert)" % arg
+        #build insert statement
+            
+            query = query1 + query2 + query3
+            
+            def upsert(arg_dict):
+                
+                print "ID: %s" % arg_dict['id']
+                cur2.execute(query, arg_dict)
+                print cur2.statusmessage
+            
+            return upsert
+            
+            
+def update_models():
+    
+    print "Updating Models"
+    #Get all configurations
+    query1 = """SELECT model_id, model, name, company 
+                FROM models 
+                ORDER BY model_id DESC"""
+    cur1.execute(query1)
+    
+    #Create query for upsert at new db
+    upsert = prepare_upsert("products_model", "id", "name", "model", "collection")
+    
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract data and organize
+        data = {'id':row[0],
+                'model':row[1],
+                'name':row[2],
+                'collection':row[3]}
         
+        upsert(data)
+       
+
+
+
+def update_model_images():
+    
+    print "Updating Model Images"
+    #Get all configurations
+    query1 = """SELECT model_image_id, model_id, link, file_size, image_order
+                FROM model_images 
+                ORDER BY model_image_id DESC"""
+    cur1.execute(query1)
+    #Create query for upsert at new db
+    upsert = prepare_upsert('products_modelimage','id', 'model_id', 'url', 'file_size', 'image_order')
+    
+    #Fetch configurtion and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract data and organize
+        data = {'id':row[0],
+                'model_id':row[1],
+                'url':row[2],
+                'file_size':row[3],
+                'image_order':row[4]}
+        
+        upsert(data)
+        
+        
+        
+def update_configurations():
+    
+    print "Updating Configurations"
+    #Get all configurations
+    query1 = """SELECT configuration_id, configuration 
+                FROM configurations 
+                ORDER BY configuration_id DESC"""
+    cur1.execute(query1)
+    #Create query for upsert at new db
+    upsert = prepare_upsert('products_configuration','id', 'configuration')
+   
+    #Fetch configurtion and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract data and organize
+        data = {'id':row[0],
+                'configuration':row[1]}
+        
+        upsert(data)
+        
+#Update Upholstery     
 def update_upholstery():
     
     
@@ -28,15 +132,9 @@ def update_upholstery():
         depth, height, configuration_id, model_id FROM products ORDER BY product_id DESC"""
     cur1.execute(query1)
     #query for product table
-    query2 = """WITH upsert as 
-            (UPDATE products_product SET manufacture_price = %(manufacture_price)s, wholesale_price = %(wholesale_price)s, 
-                retail_price = %(retail_price)s, width = %(width)s, depth = %(depth)s, height = %(height)s 
-            WHERE id = %(id)s 
-            RETURNING id)
-            INSERT INTO products_product(id, manufacture_price, wholesale_price, retail_price, width, depth, height, type)
-            SELECT %(id)s, %(manufacture_price)s, %(wholesale_price)s, %(retail_price)s, %(width)s, %(depth)s, %(height)s,
-                'Upholstery' 
-            WHERE NOT EXISTS (SELECT 1 FROM upsert)"""
+    upsert1 = prepare_upsert('products_product', 'id', 'manufacture_price', 'wholesale_price', 
+                             'retail_price', 'width', 'depth','height')
+    
     #query for upholstery table
     query3 = """WITH upsert AS
             (UPDATE products_upholstery SET configuration_id = %(configuration_id)s, model_id = %(model_id)s 
@@ -60,9 +158,7 @@ def update_upholstery():
                 'configuration_id':row[7],
                 'model_id':row[8]}
         #upsert and print message
-        print "ID: %s" % data['id']
-        cur2.execute(query2, data)
-        print cur2.statusmessage
+        upsert1(data)
         cur2.execute(query3, data)
         print cur2.statusmessage
 
@@ -78,18 +174,9 @@ def update_acks():
         delivery_date, fob, shipping, status, remarks FROM acknowledgements ORDER BY acknowledgement_id DESC"""
     cur1.execute(query1) 
     #construct query for upsert
-    query2 = """WITH upsert AS (
-            UPDATE acknowledgements_acknowledgement
-            SET customer_id = %(customer_id)s, employee_id = %(employee_id)s, po_id = %(po_id)s,
-                time_created = %(time_created)s, delivery_date = %(delivery_date)s, fob = %(fob)s, 
-                shipping = %(shipping)s, status = %(status)s, remarks = %(remarks)s
-            WHERE id = %(id)s RETURNING id)
-            INSERT INTO acknowledgements_acknowledgement(id, customer_id, employee_id, po_id, time_created, delivery_date,
-                fob, shipping, status, remarks)
-            SELECT %(id)s, %(customer_id)s, %(employee_id)s, %(po_id)s,
-                %(time_created)s, %(delivery_date)s, %(fob)s, %(shipping)s, %(status)s, %(remarks)s 
-            WHERE NOT EXISTS (
-            SELECT 1 FROM upsert)"""
+    upsert = prepare_upsert('acknowledgements_acknowledgement', 'id', 'customer_id', 'employee_id',
+                            'po_id', 'time_created', 'delivery_date', 'fob', 'shipping', 'status', 'remarks')
+    
     #iterate over results
     rows = cur1.fetchall()
     for row in rows:
@@ -105,17 +192,9 @@ def update_acks():
                'status':row[8],
                'remarks':row[9]}
         print data['id']
-        #Insert into new db
-        cur2.execute(query2, data)
-        print cur2.statusmessage
-        
-    
-    #UPDATE THE SEQUENCE
-    cur2.execute("SELECT setval('acknowledgements_acknowledgement_acknowledgement_id_seq', (SELECT MAX(id) FROM acknowledgements_acknowledgement), TRUE)")
-    
-    
-    
-    
+        #update or insert data
+        upsert(data)
+  
 def update_ack_items():
     
     print "Updating Acknowledgement Items"
@@ -125,18 +204,9 @@ def update_ack_items():
     cur1.execute(query1)
     
     #upsert query
-    query2 = """WITH upsert AS (
-                UPDATE acknowledgements_acknowledgementitem 
-                SET product_id = %(product_id)s, acknowledgement_id = %(acknowledgement_id)s,
-                    quantity = %(quantity)s, fabric = %(fabric)s, width = %(width)s, depth = %(depth)s,
-                    height = %(height)s, is_custom_size = %(custom)s, price = %(price)s, description = %(description)s,
-                    status = %(status)s
-                WHERE id = %(id)s RETURNING id)
-                INSERT INTO acknowledgements_acknowledgementitem(id, product_id, acknowledgement_id, quantity, fabric,
-                    width, depth, height, is_custom_size, price, description, status)
-                SELECT %(id)s, %(product_id)s, %(acknowledgement_id)s, %(quantity)s, %(fabric)s, %(width)s, %(depth)s, 
-                    %(height)s, %(custom)s, %(price)s, %(description)s, %(status)s
-                WHERE NOT EXISTS (SELECT 1 FROM upsert)"""            
+    upsert = prepare_upsert("acknowledgements_acknowledgementitem", 'id', 'product_id', 'acknowledgement_id', 'quantity',
+                            'fabric', 'width', 'depth', 'height', 'is_custom_size', 'price', 'description', 'status')
+             
     #Get data and iterate
     rows = cur1.fetchall()
     for row in rows:
@@ -149,19 +219,20 @@ def update_ack_items():
                 'width':row[5],
                 'depth':row[6],
                 'height':row[7],
-                'custom':row[8],
+                'is_custom_size':row[8],
                 'price':row[9],
                 'description':row[10],
                 'status':row[11]}
-        print "ID %s" %data["id"]
-        #insert data
-        cur2.execute(query2, data)
-        print cur2.statusmessage
+        #update or insert data  
+        upsert(data)
 
-
-#update_upholstery()
-update_acks()
-#update_ack_items()
+def migrate():
+    update_models()
+    update_model_images()
+    update_configurations()
+    update_upholstery()
+    update_acks()
+    update_ack_items()
 
 
 

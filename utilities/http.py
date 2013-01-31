@@ -18,6 +18,10 @@ def processRequest(request, classObject, ID=0):
     
 #processes standard get requests
 def httpGETProcessor(request, Class, class_id):
+   
+    user = request.user
+   
+   
     #determine if to get a specific Item
     if class_id == 0 or class_id == '0':
         #create an array to hold data
@@ -25,11 +29,12 @@ def httpGETProcessor(request, Class, class_id):
         #loop through all items
         for model in Class.objects.all():
             #add the data to the model
-            data.append(model.get_data())
+            data.append(model.get_data(user=user))
     #If specific Item requested
     else:
+        
         #add data to object
-        data = Class.objects.get(id=class_id).get_data()
+        data = Class.objects.get(id=class_id).get_data(user=user)
         
     #create the response with serialized json data
     response = HttpResponse(json.dumps(data), mimetype="application/json")
@@ -50,12 +55,12 @@ def httpPOSTProcessor(request, Class):
     #Get the raw data
     data = json.loads(request.POST.get('data'))
     #convert the information to the model
-    model.set_data(data, employee=request.user)
+    model.set_data(data, user=request.user)
     model.save()
    
             
     #creates a response from serialize json      
-    response = HttpResponse(json.dumps(model.get_data()), mimetype="application/json")
+    response = HttpResponse(json.dumps(model.get_data(user=request.user)), mimetype="application/json")
     #adds status code
     response.status_code = 201
     #returns the response
@@ -77,11 +82,11 @@ def httpPUTProcessor(request, Class, class_id):
     data = json.loads(request.POST.get('data'))
     request.method = "PUT"
     #Assigns the data to the  model
-    model.set_data(data)
+    model.set_data(data, user=request.user)
     # attempt to save
     model.save()
     #create response from serialized json data
-    response = HttpResponse(json.dumps(model.get_data()), mimetype="application/json")
+    response = HttpResponse(json.dumps(model.get_data(user=request.user)), mimetype="application/json")
     response.status_code = 201
     return response
 

@@ -15,10 +15,7 @@ class PurchaseOrderPDF():
     
     #def methods
     def __init__(self, supplier=None, supplies=None, po=None, attention=None, misc=None):
-        
-        
-        self.supplier = supplier
-       
+        self.supplier = supplier  
         self.supplies = supplies
         self.po = po
         self.employee = self.po.employee
@@ -139,12 +136,10 @@ class PurchaseOrderPDF():
         sigStyle = TableStyle(s)
         
         #spacer
-        Story.append(Spacer(0, 50))
-        
+        Story.append(Spacer(0, 50))   
         signature = Table([['x', '', 'x'], ['Purchasing Agent', '', 'Manager']], colWidths=(200,100,200))
         signature.setStyle(sigStyle)
-        Story.append(signature)
-        
+        Story.append(signature)     
         doc.build(Story, onFirstPage=self.firstPage)
         #upload the file and return 
         #the upload data
@@ -153,8 +148,7 @@ class PurchaseOrderPDF():
         os.remove(self.location)
         #return the upload data
         return uploadData
-            
-            
+                   
     def firstPage(self, canvas, doc):
         canvas.saveState()
         canvas.setStrokeColor(colors.CMYKColor(black=60))
@@ -166,44 +160,33 @@ class PurchaseOrderPDF():
         #All data is in a single column 
         #so we will only best adding one value to 
         #each nested array
-        
         #create array to hold data with initial heading
         data = []
-        address = supplier.address_set.all()[0]
-        
+        address = supplier.address_set.all()[0] 
         #add name AND DELIVERY DATE
-        data.append(['Supplier:',supplier.name, 'Ship To:', "%s %s" %(self.employee.first_name, self.employee.last_name)])
-        
+        data.append(['Supplier:',supplier.name, 'Ship To:', "%s %s" %(self.employee.first_name, self.employee.last_name)])    
         #add address data
         data.append(['',address.address1, '', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
-       
         data.append(['', address.city+', '+address.territory, '', 'Lam Luk Ka, Pathum Thani'])
-        data.append(['', "%s %s" %(address.country, address.zipcode), '', 'Thailand 12150'])
-        
+        data.append(['', "%s %s" %(address.country, address.zipcode), '', 'Thailand 12150']) 
         #Checks if there is a contact to Attention to
-        #and sets the appropriate variables
-        
-        if self.attention != None:
-            
+        #and sets the appropriate variables 
+        if self.attention != None:      
             data.append(['Attention:', "%s %s" %(self.attention.first_name, self.attention.last_name), 'Email:', "%s" % self.employee.email])
             data.append(['', self.attention.email, '',''])
             data.append(['', self.attention.telephone, '',''])
-        else:
-            
+        else:    
             data.append(['','','Email:', "%s" % self.employee.email])
         data.append([])
         return data
     
-    def formatPOData(self):
-        
+    def formatPOData(self): 
         data = []
-        
         #determine what the terms are
         if self.supplier.terms == 0:
             terms = "Payment Before Deliver"
         else:
-            terms = "%s Days" %self.supplier.terms
-            
+            terms = "%s Days" %self.supplier.terms  
         #add the terms to the data
         data.append(['Payment Terms:', terms])
         #add currency
@@ -217,7 +200,6 @@ class PurchaseOrderPDF():
         #add the delivery date
         data.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
         data.append(['Delivery Date:', self.po.delivery_date.strftime('%B %d, %Y')])
-        
         return data
     
     def formatSuppliesData(self, supplies, style=None):
@@ -235,7 +217,6 @@ class PurchaseOrderPDF():
             data.append([i, supply.supply.reference, description, supply.supply.purchasing_units, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
             #increase the item number
             i = i+1
-        
         #add a shipping line item if there is a shipping charge
         if self.po.shipping_type != "none":
             #set the description
@@ -246,17 +227,13 @@ class PurchaseOrderPDF():
             elif self.po.shipping_type == "ground":
                 shipping_description = "Ground Freight"
             #Add to data
-            data.append(['', '', shipping_description, '','','', "%.2f" %float(self.po.shipping_amount)])
-        
-        
+            data.append(['', '', shipping_description, '','','', "%.2f" %float(self.po.shipping_amount)])    
         self.addTotal(data, style)
         #return the array
         return data
     
     def addTotal(self, data, style=None):
-       
-        #calculate the totals
-            
+        #calculate the totals     
         #what to do if there is vat or discount
         if self.po.vat !=0 or self.supplier.discount!=0:
             #get subtotal and add to pdf
@@ -265,8 +242,7 @@ class PurchaseOrderPDF():
             #add discount area if discount greater than 0
             if self.supplier.discount != 0:
                 discount = subtotal*(float(self.supplier.discount)/float(100))
-                data.append(['', '','','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])
-                
+                data.append(['', '','','','','Discount %s%%' % self.supplier.discount, "%.2f" % discount])       
             #add vat if vat is greater than 0
             if self.po.vat !=0:
                 if self.supplier.discount != 0:
@@ -275,11 +251,8 @@ class PurchaseOrderPDF():
                 #calculate vat and add to pdf
                 vat = float(self.po.total)*(float(self.po.vat)/float(100))
                 data.append(['', '','','','','Vat %s%%' % self.po.vat, "%.2f" % vat])
-
-        data.append(['', '','','','','Grand Total', "%.2f" % self.po.grand_total])
-            
-        #adjust the style based on vat and discount
-        
+        data.append(['', '','','','','Grand Total', "%.2f" % self.po.grand_total]) 
+        #adjust the style based on vat and discount  
         #if there is either vat or discount
         if self.po.vat !=0 or self.supplier.discount!=0:
             #if there is only vat or only discount
@@ -293,10 +266,8 @@ class PurchaseOrderPDF():
         #if there is no vat or discount
         else:
             style.append(('LINEABOVE', (0,-1), (-1,-1), 1, colors.CMYKColor(black=60)))
-            style.append(('ALIGNMENT', (-2,-1), (-1,-1), 'RIGHT'))
-            
+            style.append(('ALIGNMENT', (-2,-1), (-1,-1), 'RIGHT'))     
         style.append(('ALIGNMENT', (-2,-3), (-1,-1), 'RIGHT'))
-    
     #helps change the size and maintain ratio
     def getImage(self, path, width=None, height=None):
         img = utils.ImageReader(path)
@@ -309,10 +280,8 @@ class PurchaseOrderPDF():
         elif height!=None and width==None:
             ratio = imgWidth/imgHeight
             newHeight = height
-            newWidth = ratio*height
-            
+            newWidth = ratio*height     
         return Image(path, width=newWidth, height=newHeight)
-    
     
     #uploads the pdf
     def upload(self):
@@ -321,8 +290,7 @@ class PurchaseOrderPDF():
         #get the bucket
         bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
         #Create a key and assign it 
-        k = Key(bucket)
-            
+        k = Key(bucket)        
         #Set file name
         k.key = "purchase_order/%s" % self.filename
         #upload file
@@ -334,8 +302,7 @@ class PurchaseOrderPDF():
                 'url':"http://document.dellarobbiathailand.com.s3.amazonaws.com/"+k.key,
                 'key':k.key,
                 'bucket':'document.dellarobbiathailand.com'
-        }
-        
+        }  
         return data
         #self.save()
     

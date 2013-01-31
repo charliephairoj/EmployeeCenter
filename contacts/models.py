@@ -42,8 +42,8 @@ class Contact(models.Model):
                 'email':self.email,
                 'telephone':self.telephone,
                 'fax':self.fax,
-                'isSupplier':self.isSupplier,
-                'isCustomer':self.isCustomer,
+                'isSupplier':self.is_supplier,
+                'isCustomer':self.is_customer,
                 'addresses':addresses,
                 'currency':self.currency
                 }
@@ -116,8 +116,8 @@ class Supplier(Contact):
                 'email':self.email,
                 'telephone':self.telephone,
                 'fax':self.fax,
-                'isSupplier':self.isSupplier,
-                'isCustomer':self.isCustomer,
+                'isSupplier':self.is_supplier,
+                'isCustomer':self.is_customer,
                 'addressID':None,
                 'address1':None,
                 'address2':None,
