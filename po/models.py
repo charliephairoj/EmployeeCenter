@@ -133,7 +133,7 @@ class PurchaseOrder(models.Model):
         pdf = PurchaseOrderPDF(supplier=self.supplier, supplies=self.supplies, po=self, attention=att)
         filename = pdf.create()
         #update pdf
-        self.upload(filename)
+        self.__upload(filename)
         self.save()
 
     #get data
@@ -156,7 +156,7 @@ class PurchaseOrder(models.Model):
         return url
     
     #uploads the pdf
-    def upload(self, filename):
+    def __upload(self, filename):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
@@ -165,10 +165,11 @@ class PurchaseOrder(models.Model):
         k = Key(bucket)        
         #Set file name
         k.key = "purchase_order/Purchase_Order-%s.pdf" % self.id
-        #upload file
+        #upload file and set acl
         k.set_contents_from_filename(filename)
-        #set the Acl
         k.set_acl('private')
+        #Remove original
+        os.remove(filename)
         #set Url, key and bucket
         self.bucket = "document.dellarobbiathailand.com"
         self.key = k.key
@@ -236,50 +237,25 @@ class PurchaseOrderPDF():
     #create method
     def create(self):
         self.filename = "Purchase_Order-%s.pdf" % self.po.id
-        self.location = "%s%s" % (settings.MEDIA_ROOT,self.filename)
+        self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
         doc = SimpleDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #initialize story array
         Story = []
-       
         #add heading and spacing
         Story.append(self.__create_heading())
         Story.append(Spacer(0,50))
-        
-        #create the table to hold the data
-        #about the supplier
-        
         #create table for supplier and recipient data
         Story.append(self.__create_contact_section())
         Story.append(Spacer(0,20))
-        
         #Create table for po data
         Story.append(self.__create_po_section())
         Story.append(Spacer(0,40))
         #Alignes the header and supplier to the left
         for aStory in Story:
             aStory.hAlign = 'LEFT'
-        
         #creates the data to hold the supplies information
-        styleData = [
-                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                             #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
-                             #line under heading
-                             ('LINEBELOW', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
-                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
-                             ('ALIGNMENT', (4,0), (4,-1), 'RIGHT'),
-                             ('ALIGNMENT', (5,0), (5,-1), 'CENTER'),
-                             #align headers from description to total
-                             ('ALIGNMENT', (3,0), (-1,0), 'CENTER'),
-                             #align totals to the right
-                             ('ALIGNMENT', (-1,1), (-1,-1), 'RIGHT'),
-                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=80)),
-                             ('LEFTPADDING', (2,0), (2,-1), 10)
-                             ]
-        t = Table(self.formatSuppliesData(self.supplies, style=styleData), colWidths=(40,84,210,35, 50, 40, 65))
-        tStyle = TableStyle(styleData)
-        t.setStyle(tStyle)
-        Story.append(t)
+        Story.append(self.__create_supplies_section())
         #create the signature
         s = [
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
@@ -358,13 +334,19 @@ class PurchaseOrderPDF():
         data.append(['', address.address1])
         data.append(['', address.city+', '+ address.territory])
         data.append(['', "%s %s" % (address.country, address.zipcode)]) 
+        #Determines if we can add attention section 
+        if self.attention != None:      
+            data.append(['Attention:', "%s %s" %(self.attention.first_name, self.attention.last_name)])
+            data.append(['', self.attention.email])
+            data.append(['', self.attention.telephone])
         #Create Table
-        table = Table(data, colWidths=(60, 200))
+        table = Table(data, colWidths=(80, 200))
         #Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                             ('FONT', (0,0), (-1,-1), 'Helvetica')])
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return the Recipient Table
         return table
@@ -395,6 +377,12 @@ class PurchaseOrderPDF():
         t2 = self.__create_recipient_section()
         #create table for supplier and recipient data
         contact = Table([[t1, t2]])
+        #Create Style and apply
+        style = TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0), 
+                            ('ALIGNMENT', (0,0), (-1,-1), 'LEFT')])
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+        contact.setStyle(style)
+        #Return table
         return contact
         
     def __create_po_section(self):
@@ -406,16 +394,61 @@ class PurchaseOrderPDF():
         data.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
         data.append(['Delivery Date:', self.po.delivery_date.strftime('%B %d, %Y')])
         #Create table
-        table = Table(data, colWidths=(90, 200))
+        table = Table(data, colWidths=(80, 200))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                             ('FONT', (0,0), (-1, -1), 'Helvetica')])
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return Table
         return table
-        
+    
+    def __create_supplies_section(self):
+        #Create data array
+        data = []
+        #Add Column titles
+        data = [['Item No.','Ref', 'Description','Units', 'Unit Price', 'Qty', 'Total']]
+        i = 1
+        #iterate through the array
+        for supply in self.supplies:
+            #add the data
+            data.append([i, supply.supply.reference, self.__get_description(supply), supply.supply.purchasing_units, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
+            #increase the item number
+            i += 1
+        #add a shipping line item if there is a shipping charge
+        if self.po.shipping_type != "none":
+            shipping_description, shipping_amount = self.__get_shipping()
+            #Add to data
+            data.append(['', '', shipping_description, '','','', "%.2f" %float(self.po.shipping_amount)])
+        #Get totals data and style
+        totals_data, totals_style = self.__get_totals() 
+        #merge data
+        data += totals_data
+        #Create Table
+        table = Table(data, colWidths=(40,84,210,35, 50, 40, 65))\
+        #Create table style data and merge with totals style data
+        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                            ('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                            #line under heading
+                            ('LINEBELOW', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                            ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
+                            ('ALIGNMENT', (4,0), (4,-1), 'RIGHT'),
+                            ('ALIGNMENT', (5,0), (5,-1), 'CENTER'),
+                            #align headers from description to total
+                            ('ALIGNMENT', (3,0), (-1,0), 'CENTER'),
+                            #align totals to the right
+                            ('ALIGNMENT', (-1,1), (-1,-1), 'RIGHT'),
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=80)),
+                            ('LEFTPADDING', (2,0), (2,-1), 10)]
+        style_data += totals_style
+        #Create and apply table style
+        style = TableStyle(style_data)
+        table.setStyle(style)
+        #Return the table
+        return table
+    
     def __get_payment_terms(self):
         #determine Terms String
         # based on term length
@@ -438,39 +471,31 @@ class PurchaseOrderPDF():
         #return currency
         return currency
     
-   
+    def __get_description(self, supply):
+        #Set description
+        description = supply.description
+        #If there is a discount then append
+        # original price string
+        if supply.discount > 0:
+            description += " (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
+        #return description
+        return description
     
-    def formatSuppliesData(self, supplies, style=None):
-        #create an array
-        data = [['Item No.','Ref', 'Description','Units', 'Unit Price', 'Qty', 'Total']]
-        i = 1
-        #iterate through the array
-        for supply in supplies:
-            #determine if the supply has a discount
-            if supply.discount == 0:
-                description = supply.description
-            else:
-                description = "%s (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
-            #add the data
-            data.append([i, supply.supply.reference, description, supply.supply.purchasing_units, "%.2f" % float(supply.unit_cost), supply.quantity, "%.2f" % float(supply.total)])
-            #increase the item number
-            i = i+1
-        #add a shipping line item if there is a shipping charge
-        if self.po.shipping_type != "none":
-            #set the description
-            if self.po.shipping_type == "air":
-                shipping_description = "Air Freight"
-            elif self.po.shipping_type == "sea":
-                shipping_description = "Sea Freight"
-            elif self.po.shipping_type == "ground":
-                shipping_description = "Ground Freight"
-            #Add to data
-            data.append(['', '', shipping_description, '','','', "%.2f" %float(self.po.shipping_amount)])    
-        self.addTotal(data, style)
-        #return the array
-        return data
+    def __get_shipping(self):
+        #set the description
+        if self.po.shipping_type == "air":
+            description = "Air Freight"
+        elif self.po.shipping_type == "sea":
+            description = "Sea Freight"
+        elif self.po.shipping_type == "ground":
+            description = "Ground Freight"
+        #return descript and amount
+        return description, self.po.shipping_amount
     
-    def addTotal(self, data, style=None):
+    def __get_totals(self):
+        #Create data and style array
+        data = []
+        style = []
         #calculate the totals     
         #what to do if there is vat or discount
         if self.po.vat !=0 or self.supplier.discount!=0:
@@ -506,6 +531,9 @@ class PurchaseOrderPDF():
             style.append(('LINEABOVE', (0,-1), (-1,-1), 1, colors.CMYKColor(black=60)))
             style.append(('ALIGNMENT', (-2,-1), (-1,-1), 'RIGHT'))     
         style.append(('ALIGNMENT', (-2,-3), (-1,-1), 'RIGHT'))
+        #Return data and style
+        return data, style
+        
     #helps change the size and maintain ratio
     def get_image(self, path, width=None, height=None):
         img = utils.ImageReader(path)
