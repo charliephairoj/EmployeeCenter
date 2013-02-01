@@ -187,9 +187,9 @@ class Fabric(Supply):
     #Set fabric data for REST
     def set_data(self, data, **kwargs):
         #extract args
-        if "user" in data: user = data["user"]
+        if "user" in kwargs: user = kwargs["user"]
         #set parent data
-        super(Fabric, self.set_data(data, user=user))
+        super(Fabric, self).set_data(data, user=user)
         #set the type to fabric
         self.type = "Fabric"
         #set purchasing units
