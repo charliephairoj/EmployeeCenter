@@ -39,8 +39,8 @@ urlpatterns += patterns('products.views',
     
 )
 urlpatterns += patterns('contacts.views',
-    #url(r'^contact$', 'contact'),
-    #url(r'^contact/(?P<contactID>\d+)$', 'contact'),
+    url(r'^customer$', 'customer'),
+    url(r'^customer/(?P<customer_id>\d+)$', 'customer'),
     url(r'^supplier$', 'supplier'),
     url(r'^supplier/(?P<supplier_id>\d+)$', 'supplier'),  
     url(r'^supplier_contact$', 'supplierContact'),

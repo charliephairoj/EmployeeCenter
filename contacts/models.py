@@ -11,70 +11,56 @@ class Contact(models.Model):
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
-    
-    
-    
-    def get_data(self):
-        
-        #get all addresses
-        addresses = [];
-        #loop through all addresses
-        for address in self.address_set.all():
-            #temporary dict to hold address data
-            temp = {
-                    'id':address.id,
-                    'address1':address.address1,
-                    'address2':address.address2,
-                    'city':address.city,
-                    'territory':address.territory,
-                    'country':address.country,
-                    'zipcode':address.zipcode,
-                    'lat': address.latitude,
-                    'lng': address.longitude
-                    }
-            
-            #add to address array
-            addresses.append(temp)
-        #set the 
-        data = {
-                'id':self.id,
+ 
+    def get_data(self, user=None):
+        #Structure data
+        data = {'id':self.id,
                 'name':self.name,
                 'email':self.email,
                 'telephone':self.telephone,
                 'fax':self.fax,
                 'isSupplier':self.is_supplier,
                 'isCustomer':self.is_customer,
-                'addresses':addresses,
-                'currency':self.currency
-                }
+                'addresses':[],
+                'currency':self.currency}
+        #loop through all addresses and retrieve data
+        for address in self.address_set.all():
+            data['addresses'].append(address.get_data())
         #returns the data
         return data
     
-    def set_data(self, data):
+    def set_data(self, data, user=None):
         if "name" in data: self.name = data["name"]
         if "email" in data: self.email = data["email"]
         if "telephone" in data: self.telephone = data["telephone"]
         if "fax" in data: self.fax = data["fax"]
         if "term" in data: self.term = data["term"]
         if "currency" in data: self.currency = data["currency"]
-        
         #save the contact
         self.save()
-        
         #set address
         if "address" in data:
-            address = Address()
-            address.setData(data["address"])
+            print data["address"]["id"]
+            try:
+                address = Address.objects.get(id=data["address"]["id"])
+            except:
+                address = Address() 
+            address.set_data(data["address"])
             address.contact = self
             address.save()
         #set addresses
-        if "addresses" in data:
-            for dataset in data["addresses"]:
-                address = Address()
-                address.setData(dataset)
+        elif "addresses" in data:
+            #Loop through address
+            # and set data
+            for address_data in data["addresses"]:
+                try:
+                    address = Address.objects.get(id=address_data["id"])
+                except:
+                    address = Address()
+                address.set_data(address_data)
                 address.contact = self
                 address.save()
-        
+                
     
 class Address(models.Model):
     address1 = models.CharField(max_length=160, null=True)
@@ -87,8 +73,20 @@ class Address(models.Model):
     latitude = models.DecimalField(decimal_places=6, max_digits=9)
     longitude = models.DecimalField(decimal_places=6, max_digits=9)
     
-    
-    
+    def get_data(self):
+        #Structure data
+        data = {'id':self.id,
+                'address1':self.address1,
+                'address2':self.address2,
+                'city':self.city,
+                'territory':self.territory,
+                'country':self.country,
+                'zipcode':self.zipcode,
+                'lat':self.latitude,
+                'lng':self.longitude}
+        #Return Data
+        return data
+
     def set_data(self, data):
         if "address1" in data: self.address1 = data["address1"]
         if "address2" in data: self.address2 = data["address2"]
@@ -98,111 +96,68 @@ class Address(models.Model):
         if "zipcode" in data: self.country = data["zipcode"]
         if "lat" in data: self.latitude = data['lat']
         if "lng" in data: self.longitude = data['lng']
+       
+#Customer class
+class Customer(Contact):
+    
+    def get_data(self, user=None):
+        #Get parent data
+        data = super(Customer, self).get_data(user=None)
+        #Return data
+        return data
+    
+    def set_data(self, data, user=None):
+        #Set parent data
+        super(Customer, self).set_data(data, user=None)
     
 #supplier class
 class Supplier(Contact):
     terms = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
-    #methods
-    
+        
     #get data
-    def get_data(self):
-        
-        
-        #set the 
-        data = {
-                'id':self.id,
-                'name':self.name,
-                'email':self.email,
-                'telephone':self.telephone,
-                'fax':self.fax,
-                'isSupplier':self.is_supplier,
-                'isCustomer':self.is_customer,
-                'addressID':None,
-                'address1':None,
-                'address2':None,
-                'city':None,
-                'territory':None,
-                'country':None,
-                'zipcode':None,
-                'terms':self.terms,
+    def get_data(self, user=None): 
+        #Structure data
+        data = {'terms':self.terms,
                 'discount':self.discount,
-                'lat': None,
-                'lng': None,
-                'currency':self.currency
-                }
-        #sets address if exists
-        if len(self.address_set.all())>0:
-            address = self.address_set.all()[0]
-            
-            data["addressID"] = address.id
-            data["address1"] = address.address1
-            data["address2"] = address.address2
-            data["city"] = address.city
-            data["territory"] = address.territory
-            data["country"] = address.country
-            data["zipcode"] = address.zipcode
-            data["lng"] = address.longitude
-            data['lat'] = address.latitude
+                'contacts':[]}
         
-        data['contacts'] = []
+        #Update with Parent data
+        data.update(super(Supplier, self).get_data(user=user))
+        #Add address dict and remove
+        # the addresses dic
+        data['address'] = data['addresses'][0]
+        data.pop('addresses')
         #get supplier contacts
         for supplierContact in self.suppliercontact_set.all():
             data['contacts'].append(supplierContact.get_data())
         #returns the data
         return data
+    
     #set data
-    def set_data(self, data, employee=None):
-        
+    def set_data(self, data, user=None, employee=None):
         #set parent data
         super(Supplier, self).set_data(data)
-        
         #set supplier data
         if "discount" in data: self.discount = data["discount"]
         if "terms" in data: self.terms = data['terms']
-        
         #save self
         self.save()
-        
         #Add supplier contacts
         if "contacts" in data:
-            for contactData in data["contacts"]:
+            for contact_data in data["contacts"]:
                 #Decide if to create a new contact
                 #or if to retrieve an existsing one 
                 #based on if id exists
-                if "id" in contactData:
-                    contact = SupplierContact.objects.get(id=contactData['id'])
+                if "id" in contact_data:
+                    contact = SupplierContact.objects.get(id=contact_data['id'])
                 else:
-                    contact = SupplierContact()
-                
-                #sets the details
-                contact.set_data(contactData)
+                    contact = SupplierContact()  
+                #sets the details and save
+                contact.set_data(contact_data)
                 contact.supplier = self
-                
                 contact.save()
-        
-        #set the address
-        
-        if "addressID" in data:
-            address = Address.objects.get(id=data['addressID'])
-        else:
-            address = Address()
-            
-        if "address1" in data: address.address1 = data["address1"]
-        if "address2" in data: address.address2 = data["address2"]
-        if "city" in data: address.city = data["city"]
-        if "territory" in data: address.territory = data["territory"]
-        if "country" in data: address.country = data["country"]
-        if "zipcode" in data: address.zipcode = data["zipcode"]
-        if "lat" in data: address.latitude = data['lat']
-        if "lng" in data: address.longitude = data['lng']
-        if "terms" in data: self.term = data["terms"]
-        
-        #set the supplier to the address
-        address.contact = self
-        
-        #save the address
-        address.save()
+       
         
         
         
@@ -214,23 +169,23 @@ class SupplierContact(models.Model):
     telephone = models.TextField()
     supplier = models.ForeignKey(Supplier)
     
-    def get_data(self):
-        
+    def get_data(self, user=None):
+        #Stucture data
         data = {'id':self.id,
                 'firstName':self.first_name,
                 'lastName':self.last_name,
                 'email':self.email,
                 'telephone':self.telephone}
-        
+        #Return data
         return data
     
-    def set_data(self, data):
-        
+    def set_data(self, data, user=None):
+        #Set data
         if "firstName" in data: self.first_name = data["firstName"]
         if "lastName" in data: self.last_name = data["lastName"]
         if "email" in data: self.email = data["email"]
         if "telephone" in data: self.telephone = data["telephone"]
-    
+     
     
     
     

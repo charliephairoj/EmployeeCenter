@@ -1,9 +1,10 @@
 # Create your views here.
 
-#import
-from po.models import PurchaseOrder
-from django.http import HttpResponse
 import json
+from django.http import HttpResponse
+from utilities.http import httpGETProcessor
+from po.models import PurchaseOrder
+
 
 
 
@@ -27,15 +28,4 @@ def purchase_order(request, po_id=0):
         
     elif request.method == "GET":
         
-        if po_id == 0:
-            data = []
-            for po in PurchaseOrder.objects.all():
-                data.append(po.get_data())
-        
-        else:
-            
-            data = PurchaseOrder.objects.get(id=po_id).get_data()
-        
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
-        response.status_code = 201
-        return response
+        return httpGETProcessor(request, PurchaseOrder, po_id)

@@ -12,6 +12,7 @@ logger = logging.getLogger('django.request')
 # upholstery, tables, cabinets
 
 class Product(models.Model):
+    description = models.TextField()
     type = models.CharField(max_length=100)
     wholesale_price = models.DecimalField(null=True, max_digits=15, decimal_places=2, db_column='wholesale_price')
     manufacture_price = models.DecimalField(null=True, max_digits=15, decimal_places=2, db_column='manufacture_price')
@@ -51,10 +52,20 @@ class Product(models.Model):
                 'width':self.width,
                 'depth':self.depth,
                 'height':self.height,
-                'units':self.units}
-        #adds image info
-        if self.image_url != None:
-            data.update({'image':{'url':self.image_url}})
+                'units':self.units,
+                'type':self.type,
+                'description':self.description,
+                'url':self.image_url}
+        #Checks to see if there are pillows to add
+        pillows = self.pillow_set.all()
+        if len(pillows) > 0:
+            #Create pillow array in data
+            data["pillows"] = []
+            #loop through pillow types
+            for pillow in pillows:
+                #loop through invidual pillows
+                for p in range(pillow.quantity):
+                    data["pillows"].append({'type':pillow.type})
         #Checks permission
         if user != None:
             if user.has_perm('products.view_manufacture_price'):
@@ -242,6 +253,8 @@ class Upholstery(Product):
                          "name":self.model.name},
                 "configuration":{"id ":self.configuration.id,
                                  "configuration":self.configuration.configuration}}
+        
+            
         #merge with parent data
         data.update(super(Upholstery, self).get_data(user=user))
          
@@ -253,7 +266,6 @@ class Upholstery(Product):
         #extract arg
         if "user" in kwargs: user = kwargs["user"]
        
-        logger.debug(user.last_name);
         #set parent data
         super(Upholstery, self).set_data(data, user=user)
         #Searches for the corresponing Model
@@ -266,14 +278,22 @@ class Upholstery(Product):
         if "configuration_id" in data: 
             config = Configuration.objects.get(id=data["configuration_id"])
             self.configuration = config
-       
+        #Set description
+        self.description = "{0} {1}".format(self.model.model, self.configuration.configuration)
+        #Set type
+        self.type = "Upholstery"
         
        
 
 #Creates the pillows for the upholstery
-class UpholsteryPillows(models.Model):
-    upholstery = models.ForeignKey(Upholstery)
+class Pillow(models.Model):
+    product = models.ForeignKey(Product)
     type = models.CharField(max_length=50)
+    quantity = models.IntegerField()
+    
+    def get_data(self):
+        return {'type':self.type,
+                'quantity':self.quantity}
     
 #Creates the Table class
 #that inherits from Products

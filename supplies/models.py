@@ -81,12 +81,15 @@ class Supply(models.Model):
                 'description':self.description,
                 'id':self.id,
                 'cost':'%s' % self.cost,
-                'currency':self.currency
+                'currency':self.currency,
+                'image_url':self.image_url
         }
         
         return data
         
     def set_data(self, data, **kwargs):
+        #Set the supplier
+        if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
@@ -199,8 +202,6 @@ class Fabric(Supply):
         if "color" in data: self.color = data["color"]
         if "content" in data: self.content = data["content"]
         self.description = "%s Col:%s" % (self.pattern, self.color)
-        #set the supplier
-        if "supplier_id" in data: self.supplier = Supplier.objects.get(id = data["supplier_id"])
         
         #Set the current length of fabric
         if "current_length" in data: self.reset(data["current_length"], user, "Initial Current Length")

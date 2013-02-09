@@ -50,10 +50,52 @@ def prepare_upsert(table, *args):
                 print cur2.statusmessage
             
             return upsert
-            
+
+def update_contacts():
+    print "Updating Contacts"
+    #Get all configurations
+    query1 = """SELECT customer_id, name, telephone, fax
+                FROM customers 
+                ORDER BY customer_id DESC"""
+    cur1.execute(query1)
+    #Create query for upsert at new db
+    upsert = prepare_upsert("contacts_contact", "id", "name", "telephone", 'fax')
+    #Fetch data and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract data and organize
+        data = {'id':row[0],
+                'name':row[1],
+                'telephone':row[2],
+                'fax':row[3]}
+        #upsert
+        upsert(data)
+        
+def update_contact_addresses():
+    print "Updating Contact Addresses"
+    #Get all configurations
+    query1 = """SELECT address_id, address, city, territory, country, zipcode, customer_id
+                FROM customer_addresses
+                ORDER BY address_id DESC"""
+    cur1.execute(query1)
+    #Create query for upsert at new db
+    upsert = prepare_upsert("contacts_address", "id", "address1", "city", 'territory', 'country',
+                            'zipcode', 'contact_id')
+    #Fetch data and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract data and organize
+        data = {'id':row[0],
+                'address1':row[1],
+                'city':row[2],
+                'territory':row[3],
+                'country':row[4],
+                'zipcode':row[5],
+                'contact_id':row[6]}
+        #upsert
+        upsert(data)
             
 def update_models():
-    
     print "Updating Models"
     #Get all configurations
     query1 = """SELECT model_id, model, name, company 
@@ -133,7 +175,7 @@ def update_upholstery():
     cur1.execute(query1)
     #query for product table
     upsert1 = prepare_upsert('products_product', 'id', 'manufacture_price', 'wholesale_price', 
-                             'retail_price', 'width', 'depth','height')
+                             'retail_price', 'width', 'depth','height', 'type')
     
     #query for upholstery table
     query3 = """WITH upsert AS
@@ -156,12 +198,34 @@ def update_upholstery():
                 'depth':row[5],
                 'height':row[6],
                 'configuration_id':row[7],
-                'model_id':row[8]}
+                'model_id':row[8],
+                'type':'Upholstery'}
         #upsert and print message
         upsert1(data)
         cur2.execute(query3, data)
         print cur2.statusmessage
 
+#Update Upholstery     
+def update_upholstery_pillows():
+    
+    
+    print "Updating Upholstery Pillows"
+    #Get all products
+    query1 = """SELECT product_pillow_id, product_id, type, quantity FROM product_pillows ORDER BY product_pillow_id DESC"""
+    cur1.execute(query1)
+    #query for product table
+    upsert1 = prepare_upsert('products_pillow', 'id', 'product_id', 'type', 'quantity')
+    
+    #iterate and upsert data
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract and organize data
+        data = {'id':row[0],
+                'product_id':row[1],
+                'type':row[2],
+                'quantity':row[3]}
+        #upsert and print message
+        upsert1(data)
         
 #update acknowledgements
 def update_acks():
@@ -194,6 +258,9 @@ def update_acks():
         print data['id']
         #update or insert data
         upsert(data)
+    #Reset id
+    cur2.execute("""SELECT setval('acknowledgements_acknowledgement_acknowledgement_id_seq', (
+                    SELECT MAX(id) FROM acknowledgements_acknowledgement))""")
   
 def update_ack_items():
     
@@ -204,7 +271,7 @@ def update_ack_items():
     cur1.execute(query1)
     
     #upsert query
-    upsert = prepare_upsert("acknowledgements_acknowledgementitem", 'id', 'product_id', 'acknowledgement_id', 'quantity',
+    upsert = prepare_upsert("acknowledgements_item", 'id', 'product_id', 'acknowledgement_id', 'quantity',
                             'fabric', 'width', 'depth', 'height', 'is_custom_size', 'price', 'description', 'status')
              
     #Get data and iterate
@@ -225,15 +292,46 @@ def update_ack_items():
                 'status':row[11]}
         #update or insert data  
         upsert(data)
+        
+def update_ack_item_pillows():
+    
+    print "Updating Acknowledgement Item Pillows"
+    #query to get ack items    
+    query1 = """SELECT ap.acknowledgement_pillow_id, ap.acknowledgement_item_id, ap.fabric, ap.type, (
+                SELECT quantity FROM product_pillows WHERE product_pillow_id = ap.PRODUCT_PILLOW_ID) AS quantity
+                FROM acknowledgement_item_pillows AS ap"""
+    cur1.execute(query1)
+    
+    #upsert query
+    upsert = prepare_upsert("acknowledgements_pillow", 'id', 'item_id', 'fabric', 'type',
+                            'quantity')
+             
+    #Get data and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract and organize data
+        data = {'id':row[0],
+                'item_id':row[1],
+                'fabric':row[2],
+                'type':row[3],
+                'quantity':row[4]}
+        #update or insert data  
+        upsert(data)
 
 def migrate():
-    update_models()
-    update_model_images()
-    update_configurations()
-    update_upholstery()
-    update_acks()
-    update_ack_items()
+    #update_contacts()
+    #update_contact_addresses()
+    #update_models()
+    #update_model_images()
+    #update_configurations()
+    #update_upholstery()
+    update_upholstery_pillows()
+    #update_acks()
+    #update_ack_items()
+    #update_ack_item_pillows()
 
+
+migrate()
 
 
 new_db_conn.commit()

@@ -53,12 +53,11 @@ def httpPOSTProcessor(request, Class):
     #Create a new Class
     model = Class()
     #Get the raw data
-    data = json.loads(request.POST.get('data'))
+    data = json.loads(request.body)
     #convert the information to the model
     model.set_data(data, user=request.user)
     model.save()
    
-            
     #creates a response from serialize json      
     response = HttpResponse(json.dumps(model.get_data(user=request.user)), mimetype="application/json")
     #adds status code
@@ -71,7 +70,7 @@ def httpPOSTProcessor(request, Class):
 #which is to update an object
 
 def httpPUTProcessor(request, Class, class_id):
-    
+   
     # Create a Task
     model = Class.objects.get(id=class_id)
         
@@ -79,7 +78,8 @@ def httpPUTProcessor(request, Class, class_id):
     request.method = "POST"
     request._load_post_and_files();
     # Load data
-    data = json.loads(request.POST.get('data'))
+    data = json.loads(request.body)
+    
     request.method = "PUT"
     #Assigns the data to the  model
     model.set_data(data, user=request.user)

@@ -137,7 +137,7 @@ class PurchaseOrder(models.Model):
         self.save()
 
     #get data
-    def get_data(self):
+    def get_data(self, user=None):
         #get the url
         data = {
                 'url':self.get_url(),
@@ -151,7 +151,7 @@ class PurchaseOrder(models.Model):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the url
-        url = conn.generate_url(1800, 'GET', bucket=self.bucket, key = self.key, force_http=True)
+        url = conn.generate_url(1800, 'GET', bucket=self.bucket, key=self.key, force_http=True)
         #return the url
         return url
     
