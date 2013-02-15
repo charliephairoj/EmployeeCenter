@@ -42,7 +42,6 @@ class Product(models.Model):
         
     #Get Data
     def get_data(self, **kwargs):
-        logger.debug(kwargs['user'])
         #extract args
         if "user" in kwargs: user = kwargs["user"]
         

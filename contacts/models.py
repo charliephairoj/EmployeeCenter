@@ -11,7 +11,10 @@ class Contact(models.Model):
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
- 
+    
+    class Meta:
+        ordering = ['name']
+        
     def get_data(self, user=None):
         #Structure data
         data = {'id':self.id,
@@ -38,16 +41,19 @@ class Contact(models.Model):
         if "currency" in data: self.currency = data["currency"]
         #save the contact
         self.save()
+        print data
         #set address
         if "address" in data:
-            print data["address"]["id"]
             try:
                 address = Address.objects.get(id=data["address"]["id"])
             except:
-                address = Address() 
+                address = Address.objects.all()[0]
+            
             address.set_data(data["address"])
             address.contact = self
             address.save()
+            print address
+        
         #set addresses
         elif "addresses" in data:
             #Loop through address
@@ -56,7 +62,8 @@ class Contact(models.Model):
                 try:
                     address = Address.objects.get(id=address_data["id"])
                 except:
-                    address = Address()
+                    print "oops"
+                    #address = Address()
                 address.set_data(address_data)
                 address.contact = self
                 address.save()
@@ -93,12 +100,12 @@ class Address(models.Model):
         if "city" in data: self.city = data["city"]
         if "territory" in data: self.territory = data["territory"]
         if "country" in data: self.country = data["country"]
-        if "zipcode" in data: self.country = data["zipcode"]
+        if "zipcode" in data: self.zipcode = data["zipcode"]
         if "lat" in data: self.latitude = data['lat']
         if "lng" in data: self.longitude = data['lng']
-       
 #Customer class
 class Customer(Contact):
+    type = models.CharField(max_length=10, default="Retail")
     
     def get_data(self, user=None):
         #Get parent data
@@ -114,7 +121,7 @@ class Customer(Contact):
 class Supplier(Contact):
     terms = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
-        
+    
     #get data
     def get_data(self, user=None): 
         #Structure data
@@ -126,6 +133,7 @@ class Supplier(Contact):
         data.update(super(Supplier, self).get_data(user=user))
         #Add address dict and remove
         # the addresses dic
+        
         data['address'] = data['addresses'][0]
         data.pop('addresses')
         #get supplier contacts
@@ -141,6 +149,7 @@ class Supplier(Contact):
         #set supplier data
         if "discount" in data: self.discount = data["discount"]
         if "terms" in data: self.terms = data['terms']
+        self.is_supplier = True
         #save self
         self.save()
         #Add supplier contacts

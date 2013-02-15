@@ -103,7 +103,8 @@ urlpatterns += patterns('po.views',
 #URLS for Acknowledgement
 
 urlpatterns += patterns('acknowledgements.views', 
-    url(r'^acknowledgement$', 'acknowledgement')
+    url(r'^acknowledgement$', 'acknowledgement'),
+    url(r'^acknowledgement/item/image$', 'acknowledgement_item_image')
 )
 
 #this section deals with the administration routing area
