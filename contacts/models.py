@@ -45,7 +45,6 @@ class Contact(models.Model):
         if "currency" in data: self.currency = data["currency"]
         #save the contact
         self.save()
-        print data
         #set address
         if "address" in data:
             try:
@@ -56,7 +55,6 @@ class Contact(models.Model):
             address.set_data(data["address"])
             address.contact = self
             address.save()
-            print address
         
         #set addresses
         elif "addresses" in data:
@@ -66,8 +64,7 @@ class Contact(models.Model):
                 try:
                     address = Address.objects.get(id=address_data["id"])
                 except:
-                    print "oops"
-                    #address = Address()
+                    address = Address()
                 address.set_data(address_data)
                 address.contact = self
                 address.save()

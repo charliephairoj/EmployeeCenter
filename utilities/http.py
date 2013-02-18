@@ -53,7 +53,10 @@ def httpPOSTProcessor(request, Class):
     #Create a new Class
     model = Class()
     #Get the raw data
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except:
+        data = json.loads(request.POST.get('data'))
     #convert the information to the model
     model.set_data(data, user=request.user)
     model.save()
