@@ -22,7 +22,7 @@ class Acknowledgement(models.Model):
     #Customer's PO ID
     #We keep for customer
     #courtesy
-    po_id = models.TextField()
+    po_id = models.TextField(default=None)
     discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -63,6 +63,7 @@ class Acknowledgement(models.Model):
         date_obj = data['delivery_date']
         self.delivery_date = datetime.date(date_obj['year'], date_obj['month'], date_obj['date'])
         if "vat" in data: self.vat = int(data["vat"]) 
+        if "po" in data: self.po_id = data["po"]
         self.status = 'ACKNOWLEDGED'
         self.save()
         #Set products information
@@ -305,7 +306,7 @@ class AcknowledgementPDF():
                              #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
                              ('LINEBELOW', (0,0), (0,0), 1, colors.CMYKColor(black=60)),
                              ('LINEBELOW', (-1,0), (-1,0), 1, colors.CMYKColor(black=60)),
-                             ('ALIGNMENT', (0,-1), (-1,-1), 'CENTER'),
+                             ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT'),
                              
                              ]
@@ -420,6 +421,9 @@ class AcknowledgementPDF():
         data.append(['Currency:', self.__get_currency()])
         data.append(['Order Date:', self.ack.time_created.strftime('%B %d, %Y')])
         data.append(['Delivery Date:', self.ack.delivery_date.strftime('%B %d, %Y')])
+        #Adds po if exists
+        if self.ack.po_id != None:
+            data.append(['PO #:', self.ack.po_id])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
@@ -456,11 +460,9 @@ class AcknowledgementPDF():
         table = Table(data, colWidths=(520), repeatRows=1)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                      ('GRID', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                       ('TOPPADDING', (0,0), (-1,-1), 0),
                       ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-                      ('ALIGNMENT', (0,0), (-1,-2), 'CENTER'),
-                      ('ALIGNMENT', (0,-1), (-1,-1), 'RIGHT')]
+                      ('ALIGNMENT', (0,0), (-1,-1), 'CENTER')]
                            
         table.setStyle(TableStyle(style_data))
         #loop through index to add line below item
@@ -500,7 +502,7 @@ class AcknowledgementPDF():
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
-                data.append(['', '   {0} Pillow: {1}'.format(pillow.type.capitalize(), pillow.fabric.description), '', pillow.quantity, ''])
+                data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), '', '', ''])
         #Get Image url and add image
         image_url = self.connection.generate_url(100, 'GET', bucket=product.bucket, key=product.image_key, force_http=True)
@@ -577,37 +579,33 @@ class AcknowledgementPDF():
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
             #get subtotal and add to pdf
-            data.append(['Subtotal', "%.2f" % self.ack.subtotal])
+            data.append(['', '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
             total = self.ack.subtotal
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
                 discount = self.ack.subtotal*(Decimal(self.ack.discount)/Decimal(100))
-                data.append(['Discount %s%%' % self.ack.discount, "%.2f" % discount])       
+                data.append(['', '', '', 'Discount %s%%' % self.ack.discount, "%.2f" % discount])       
             #add vat if vat is greater than 0
             if self.ack.vat !=0:
                 if self.ack.discount != 0:
                     #append total to pdf
                     discount = self.ack.subtotal*(Decimal(self.ack.discount)/Decimal(100))
                     total -= discount
-                    data.append(['Total', "%.2f" % total])
+                    data.append(['', '', '', 'Total', "%.2f" % total])
                 #calculate vat and add to pdf
                 vat = Decimal(self.ack.total)*(Decimal(self.ack.vat)/Decimal(100))
-                data.append(['Vat %s%%' % self.ack.vat, "%.2f" % vat])
-        data.append(['Grand Total', "%.2f" % self.ack.total]) 
-        table = Table(data, colWidths=(60,65))
+                data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
+        data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total]) 
+        table = Table(data, colWidths=(65, 300, 30, 70, 65))
         style = TableStyle([('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                             #Lines around content
-                            ('LINEBELOW', (0,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
-                            ('LINEAFTER', (0,0), (-1,-1), 1, colors.CMYKColor(black=60)),
-                            ('LINEBEFORE', (0,0), (0,-1), 1, colors.CMYKColor(black=60)),
+                            ('LINEBELOW', (-2,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
+                            ('LINEAFTER', (-2,0), (-1,-1), 1, colors.CMYKColor(black=60)),
+                            ('LINEBEFORE', (-2,0), (-2,-1), 1, colors.CMYKColor(black=60)),
                             #General alignment
-                            ('ALIGNMENT', (0,0), (0,-1), 'LEFT'),
+                            ('ALIGNMENT', (-2,0), (-2,-1), 'LEFT'),
                             #Align description
-                            ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
-                            #Align Unit Price
-                            ('ALIGNMENT', (-3,0), (-3,-1), 'RIGHT'),
-                            #Align Quantity
-                            ('GRID', (0,0), (0,-1), 1, colors.CMYKColor(black=60))])
+                            ('ALIGNMENT', (-1,0), (-1,-1), 'RIGHT')])
         table.setStyle(style)
         style = TableStyle()
         

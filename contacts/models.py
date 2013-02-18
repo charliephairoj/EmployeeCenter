@@ -1,4 +1,8 @@
+from decimal import Decimal
 from django.db import models
+
+
+
 
 # Create your models here.
 
@@ -88,9 +92,15 @@ class Address(models.Model):
                 'city':self.city,
                 'territory':self.territory,
                 'country':self.country,
-                'zipcode':self.zipcode,
-                'lat':self.latitude,
-                'lng':self.longitude}
+                'zipcode':self.zipcode}
+                
+                
+        """We convert to string before float from Decimal in 
+        order to accomodate python pre 2.7"""
+        if self.latitude != None:
+            data.update({'lat':float(str(self.latitude))})
+        if self.longitude != None:
+            data.update({'lng':float(str(self.longitude))})
         #Return Data
         return data
 
@@ -101,19 +111,34 @@ class Address(models.Model):
         if "territory" in data: self.territory = data["territory"]
         if "country" in data: self.country = data["country"]
         if "zipcode" in data: self.zipcode = data["zipcode"]
-        if "lat" in data: self.latitude = data['lat']
-        if "lng" in data: self.longitude = data['lng']
+        """We have to change to str before decimal from float in order
+        to accomodate python pre 2.7"""
+        if "lat" in data: self.latitude = Decimal(str(data['lat']))
+        if "lng" in data: self.longitude = Decimal(str(data['lng']))
 #Customer class
 class Customer(Contact):
+    first_name = models.TextField()
+    last_name = models.TextField()
     type = models.CharField(max_length=10, default="Retail")
     
+    class Meta:
+        ordering = ['name']
+    
     def get_data(self, user=None):
+        data = {'type':self.type,
+                'first_name':self.first_name,
+                'last_name':self.last_name}
         #Get parent data
-        data = super(Customer, self).get_data(user=None)
+        data.update(super(Customer, self).get_data(user=None))
         #Return data
         return data
     
     def set_data(self, data, user=None):
+        self.is_customer = True
+        if "type" in data: self.type = data["type"]
+        if "first_name" in data: self.first_name = data["first_name"]
+        if "last_name" in data: self.last_name = data["last_name"]
+        self.name = "{0} {1}".format(self.first_name, self.last_name)
         #Set parent data
         super(Customer, self).set_data(data, user=None)
     
@@ -134,8 +159,9 @@ class Supplier(Contact):
         #Add address dict and remove
         # the addresses dic
         
-        data['address'] = data['addresses'][0]
-        data.pop('addresses')
+        if len(data['addresses']) > 0:
+            data['address'] = data['addresses'][0]
+            data.pop('addresses')
         #get supplier contacts
         for supplierContact in self.suppliercontact_set.all():
             data['contacts'].append(supplierContact.get_data())
