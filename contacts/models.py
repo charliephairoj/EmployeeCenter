@@ -47,10 +47,16 @@ class Contact(models.Model):
         self.save()
         #set address
         if "address" in data:
+            #if id in data["address"]:
             try:
                 address = Address.objects.get(id=data["address"]["id"])
             except:
-                address = Address.objects.all()[0]
+                try:
+                    address = self.address_set.all()[0]
+                except IndexError:
+                    address = Address()
+            #else:
+                #address = Address()
             
             address.set_data(data["address"])
             address.contact = self
