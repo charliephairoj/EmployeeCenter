@@ -3,10 +3,16 @@ from django.conf import settings
 
 
 
+#Public views
+
+urlpatterns = patterns('products.views',
+   
+    url(r'^public/upholstery', 'upholstery')
+)
 
 #primary login and url routing
 
-urlpatterns = patterns('login.views',
+urlpatterns += patterns('login.views',
     url(r'^$', 'app_login'),
     url(r'^main$', 'main'),
     url(r'^login$', 'app_login'),

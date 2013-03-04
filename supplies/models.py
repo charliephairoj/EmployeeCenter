@@ -94,7 +94,7 @@ class Supply(models.Model):
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
         if "depth" in data: self.depth = data["depth"]
-        
+        print data['cost']
         
 """This Location class is used to track and location and in the future
 The access times of and movements of supplies, starting with fabrics"""
@@ -189,6 +189,7 @@ class Fabric(Supply):
         
     #Set fabric data for REST
     def set_data(self, data, **kwargs):
+        print data
         #extract args
         if "user" in kwargs: user = kwargs["user"]
         #set parent data

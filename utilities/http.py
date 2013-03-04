@@ -5,11 +5,10 @@ import json
 #primary function to process requests for supplies
 #created in the REST format
 def processRequest(request, classObject, ID=0):
-    
     if request.method == "GET":
         return httpGETProcessor(request, classObject, ID)
     elif request.method == "POST":
-        return httpPOSTProcessor(request, classObject)         
+        return httpPOSTProcessor(request, classObject, ID)         
     elif request.method == "PUT":       
         return httpPUTProcessor(request, classObject, ID)
     elif request.method == "DELETE":      
@@ -47,33 +46,35 @@ def httpGETProcessor(request, Class, class_id):
 #Processes Post request
 #which is to create an object
 
-def httpPOSTProcessor(request, Class):
+def httpPOSTProcessor(request, Class, class_id=0):
     
-    
-    #Create a new Class
-    model = Class()
-    #Get the raw data
-    try:
-        data = json.loads(request.body)
-    except:
-        data = json.loads(request.POST.get('data'))
-    #convert the information to the model
-    model.set_data(data, user=request.user)
-    model.save()
-   
-    #creates a response from serialize json      
-    response = HttpResponse(json.dumps(model.get_data(user=request.user)), mimetype="application/json")
-    #adds status code
-    response.status_code = 201
-    #returns the response
-    return response
+    #Checks if a put processor should be used instead
+    if class_id == 0 or class_id == '0':
+        #Create a new Class
+        model = Class()
+        #Get the raw data
+        try:
+            data = json.loads(request.body)
+        except:
+            data = json.loads(request.POST.get('data'))
+        #convert the information to the model
+        model.set_data(data, user=request.user)
+        model.save()
+       
+        #creates a response from serialize json      
+        response = HttpResponse(json.dumps(model.get_data(user=request.user)), mimetype="application/json")
+        #adds status code
+        response.status_code = 201
+        #returns the response
+        return response
+    else:
+        return httpPUTProcessor(request, Class, class_id)
 
 
 #Processes PUT requests
 #which is to update an object
 
 def httpPUTProcessor(request, Class, class_id):
-   
     # Create a Task
     model = Class.objects.get(id=class_id)
         
