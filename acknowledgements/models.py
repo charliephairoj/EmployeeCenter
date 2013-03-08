@@ -7,13 +7,11 @@ from django.db import models
 from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-from reportlab.lib import colors, utils
-from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
+
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
+from acknowledgements.PDF import AcknowledgementPDF
 
 # Create your models here.
 
@@ -348,7 +346,7 @@ class AcknowledgementPDF():
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
                                    ('BOTTOMPADDING', (0,0), (-1,-1), 0),
                                    ('VALIGN', (0,0), (0,-1), 'BOTTOM'),
-                                   ('FONT', (0,0), (-1,-1), 'Helvetica'),
+                                   ('FONT', (0,0), (-1,-1), 'Tahoma'),
                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                                    ('VALIGN', (1,0), (1,-1), 'TOP'),
                                    ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
@@ -394,7 +392,7 @@ class AcknowledgementPDF():
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1,-1), 'Helvetica')])
+                            ('FONT', (0,0), (-1,-1), 'Tahoma')])
                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return the Recipient Table
@@ -430,7 +428,7 @@ class AcknowledgementPDF():
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1, -1), 'Helvetica')])
+                            ('FONT', (0,0), (-1, -1), 'Tahoma')])
                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return Table
@@ -505,6 +503,9 @@ class AcknowledgementPDF():
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), '', '', ''])
         #Get Image url and add image
+        print product.description
+        print product.bucket
+        print product.image_key
         image_url = self.connection.generate_url(100, 'GET', bucket=product.bucket, key=product.image_key, force_http=True)
         data.append(['', self.get_image(image_url, height=100)])
         #Create table
