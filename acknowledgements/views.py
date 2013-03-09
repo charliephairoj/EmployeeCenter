@@ -18,10 +18,9 @@ def acknowledgement(request):
     if request.method == "POST":
         data = json.loads(request.body)
         ack = Acknowledgement()
-        url = ack.create(data, user=request.user)
-        data = ack.get_data()
-        data.update({'url':url})
-        return HttpResponse(json.dumps(data), mimetype="application/json")
+        urls = ack.create(data, user=request.user)
+        data = urls.update(ack.get_data())
+        return HttpResponse(json.dumps(urls), mimetype="application/json")
     
 #Get url
 def acknowledgement_url(request, ack_id=0):
