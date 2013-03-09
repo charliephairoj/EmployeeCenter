@@ -73,14 +73,15 @@ class Acknowledgement(models.Model):
         self.insert_into_old_db()
         #Initialize and create pdf  
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=self.item_set.all())
-        #ack_filename = ack_pdf.create()
+        ack_filename = ack_pdf.create()
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=self.item_set.all())
         production_filename = production_pdf.create()
         #Upload and return the url
-        #self.upload_acknowledgement(ack_filename)
+        self.upload_acknowledgement(ack_filename)
         self.upload_production(production_filename)
         
-        urls = {'production_url':self.get_url(self.production_key)}#{'acknowledgement_url':self.get_url(self.acknowledgement_key), 
+        urls = {'production_url':self.get_url(self.production_key),
+                'acknowledgement_url':self.get_url(self.acknowledgement_key)} 
                 
     
         return urls
