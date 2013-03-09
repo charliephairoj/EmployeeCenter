@@ -16,8 +16,8 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from reportlab.lib import colors, utils
-from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -531,8 +531,16 @@ class ProductionPDF(AcknowledgementPDF):
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), ''])
         #Add comments
         if product.comments is not None:
-            comments = Table([['Comments:', product.comments]])
-            comments.setStyle(TableStyle[('PADDINGLEFT', (0,0), (-1,-1), 10)])
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Tahoma',
+                                   fontSize=14,
+                                   textColor=colors.CMYKColor(black=60))
+            paragraph = Paragraph(product.comments, style)
+            comments = Table([['  Comments:', paragraph]], colWidths=(100, 300))
+            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+                                          ('FONTSIZE', (0,0), (-1, -1), 16),
+                                          ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
             data.append(['', comments, ''])
         #Get Image url and add image
         data.append([''])
