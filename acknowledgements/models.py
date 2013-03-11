@@ -268,7 +268,10 @@ class Item(models.Model):
         elif customer.type == "Dealer":
             price = product.wholesale_price
         else:
-            price = product.retail_price
+            if product.retail_price != 0 and product.retail_price is not None:
+                price = product.retail_price
+            else:
+                price = 0
         #Set the unit price then total 
         self.unit_price = price
         self.total = self.unit_price*Decimal(self.quantity)
