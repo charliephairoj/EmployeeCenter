@@ -97,7 +97,6 @@ class ProductionDocTemplate(AckDocTemplate):
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
         barcode = code39.Extended39('{0}'.format(self.id), barWidth=1, barHeight=20)
-        print barcode.width
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 750)
@@ -574,10 +573,12 @@ class ProductionPDF(AcknowledgementPDF):
         data = []
         #Add Data
         time_created = self.ack.time_created
-        order_date_str = "{0} {1}".format(self.thai_months[time_created.month-1], time_created.strftime('%d, %Y'))
+        time_create_str = time_created.strftime('%d {0}, %Y')
+        order_date_str = time_create_str.format(self.thai_months[time_created.month-1])
         data.append(['Order Date:', order_date_str])
         delivery_date = self.ack.delivery_date
-        deliver_date_str = "{0} {1}".format(self.thai_months[delivery_date.month-1], delivery_date.strftime('%d, %Y'))
+        delivery_date_str = delivery_date.strftime('%d {0}, %Y')
+        deliver_date_str = delivery_date_str.format(self.thai_months[delivery_date.month-1])
         data.append(['กำหนดส่ง:', deliver_date_str])
         if self.ack.remarks is not None and self.ack.remarks != '':
             data.append(['Remarks', self.ack.remarks])

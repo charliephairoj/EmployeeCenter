@@ -73,9 +73,9 @@ class Acknowledgement(models.Model):
         #Insert into the previous database
         self.insert_into_old_db()
         #Initialize and create pdf  
-        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=self.item_set.all())
+        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=self.item_set.all().order_by('id'))
         ack_filename = ack_pdf.create()
-        production_pdf = ProductionPDF(customer=self.customer, ack=self, products=self.item_set.all())
+        production_pdf = ProductionPDF(customer=self.customer, ack=self, products=self.item_set.all().order_by('id'))
         production_filename = production_pdf.create()
         #Upload and return the url
         self.upload_acknowledgement(ack_filename)
