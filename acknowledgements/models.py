@@ -80,7 +80,7 @@ class Acknowledgement(models.Model):
         self.upload_acknowledgement(ack_filename)
         self.upload_production(production_filename)
         
-        urls = {'production_url':self.get_url(self.production_key),
+        urls = {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url':self.get_url(self.acknowledgement_key)} 
                 
     
@@ -194,15 +194,8 @@ class Acknowledgement(models.Model):
                     'employee_id':15001} 
         
         cur.execute(customer_upsert, customer_data)
-        print 'Upsert Customer'
-        print cur.statusmessage
         cur.execute(address_upsert, address_data)
-        print 'Upsert Address'
-        print cur.statusmessage
         cur.execute(ack_query, ack_data)
-        print 'Insert Acknowledgement'
-        print cur.statusmessage
-        print 'Insert Items'
         for item in self.item_set.all():
             item_data = {'item_id':item.id,
                          'product_id':item.product.id,
@@ -216,8 +209,6 @@ class Acknowledgement(models.Model):
                          'depth':item.depth,
                          'height':item.height}
             cur.execute(product_query, item_data)
-            print cur.statusmessage
-            print "Insert Pillows"
             for pillow in item.pillow_set.all():
                 pillow_data = {'id':pillow.id, 
                                'item_id':item.id,
@@ -225,7 +216,6 @@ class Acknowledgement(models.Model):
                                'quantity':pillow.quantity,
                                'fabric':pillow.fabric.description}
                 cur.execute(pillow_query, pillow_data)
-                print cur.statusmessage
         #Commit the changes
         conn.commit()
         

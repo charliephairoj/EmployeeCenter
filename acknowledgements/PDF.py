@@ -16,17 +16,92 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from reportlab.lib import colors, utils
-from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Image, Paragraph
+from reportlab.lib.units import mm
+from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.graphics.barcode import code39
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT+'Tahoma.ttf'))
 
 
+class AckDocTemplate(BaseDocTemplate):
+    
+    id = 0
+    top_padding = 150
+    
+    def __init__(self, filename, **kw):
+        if "id" in kw: self.id = kw["id"]
+        BaseDocTemplate.__init__(self, filename, **kw)
+        self.addPageTemplates(self._create_page_template())
+        
+    def _create_page_template(self):
+        frame = Frame(0, 0, 210*mm,297*mm, leftPadding=36, bottomPadding=30, rightPadding=36, topPadding=self.top_padding)
+        template = PageTemplate('Normal', [frame])
+        template.beforeDrawPage = self._create_header
+        return template
+    
+  
+    def _create_header(self, canvas, doc):
+        #Draw the logo in the upper left
+        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        #Read image from link
+        img = utils.ImageReader(path)
+        #Get Size
+        img_width, img_height = img.getSize()
+        new_width = (img_width*30)/img_height
+        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        
+        #Add Company Information in under the logo
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColorCMYK(0, 0, 0, 60)
+        canvas.drawString(42, 760, "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
+        canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
+        canvas.drawString(42, 740, "+66 2 998 7490")
+        canvas.drawString(42, 730, "www.dellarobbiathailand.com")
+        
+        #Create The document type and document number
+        canvas.setFont("Helvetica", 16)
+        canvas.drawRightString(550, 800, 'Acknowledgement') 
+        canvas.setFont("Helvetica", 12)
+        canvas.drawRightString(550, 780, 'Ack#: {0}'.format(self.id))
+        
+        #Create a barcode from the id
+        canvas.setFillColorCMYK(0, 0, 0, 1)
+        barcode = code39.Extended39('{0}'.format(self.id), barWidth=1, barHeight=20)
+        x_position = 570 - barcode.width
+        # drawOn puts the barcode on the canvas at the specified coordinates
+        barcode.drawOn(canvas,x_position,750)
 
-
+class ProductionDocTemplate(AckDocTemplate):
+    
+    id = 0
+    top_padding = 120
+    
+    def _create_header(self, canvas, doc):
+        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        #Read image from link
+        img = utils.ImageReader(path)
+        #Get Size
+        img_width, img_height = img.getSize()
+        new_width = (img_width*30)/img_height
+        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColorCMYK(0, 0, 0, 60)
+        canvas.setFont("Helvetica", 16)
+        canvas.drawRightString(550, 800, 'Production') 
+        canvas.setFont("Helvetica", 12)
+        canvas.drawRightString(550, 780, 'Ack#: {0}'.format(self.id))
+        #Create a barcode from the id
+        canvas.setFillColorCMYK(0, 0, 0, 1)
+        barcode = code39.Extended39('{0}'.format(self.id), barWidth=1, barHeight=20)
+        print barcode.width
+        x_position = 570 - barcode.width
+        # drawOn puts the barcode on the canvas at the specified coordinates
+        barcode.drawOn(canvas, x_position, 750)
+        
 class AcknowledgementPDF(object):
     """Class to create PO PDF"""
     
@@ -48,30 +123,45 @@ class AcknowledgementPDF(object):
         self.ack = ack
         self.employee = self.ack.employee
     
+    
     #create method
     def create(self):
         self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
-        doc = SimpleDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
+        doc = AckDocTemplate(self.location, id=self.ack.id, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
-        doc.build(stories, onFirstPage=self.firstPage)
+        doc.build(stories)
         #return the filename
         return self.location
                    
     def firstPage(self, canvas, doc):
-        canvas.saveState()
-        canvas.setStrokeColor(colors.CMYKColor(black=60))
-        #canvas.drawRightString(width-36, height-72, "Purchase Order")
-        canvas.restoreState()
+        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        #Read image from link
+        img = utils.ImageReader(path)
+        #Get Size
+        img_width, img_height = img.getSize()
+        new_width = (img_width*30)/img_height
+        canvas.drawImage(path, 45, 780, height=30, width=new_width)
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColorCMYK(0, 0, 0, 60)
+        canvas.drawString(45, 760, "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
+        canvas.drawString(45, 750, "Pathum Thani, Thailand, 12150")
+        canvas.setFont("Helvetica", 16)
+        canvas.drawRightString(550, 790, 'Acknowledgement') 
+        canvas.setFont("Helvetica", 12)
+        canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.id)) 
+        
+        
+        
+    
         
     def _get_stories(self):
         #initialize story array
         Story = []
         #add heading and spacing
-        Story.append(self._create_heading())
-        Story.append(Spacer(0,50))
+        
         #create table for supplier and recipient data
         Story.append(self._create_contact_section())
         Story.append(Spacer(0,20))
@@ -263,6 +353,19 @@ class AcknowledgementPDF(object):
             for pillow in product.pillow_set.all():
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), '', '', ''])
+        #Add comments if they exists
+        if product.comments is not None and product.comments != '':
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Tahoma',
+                                   fontSize=10,
+                                   textColor=colors.CMYKColor(black=60))
+            paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
+            comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
+            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+                                          ('FONTSIZE', (0,0), (-1, -1), 10),
+                                          ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
+            data.append(['', comments, ''])
         #Get Image url and add image
         if product.image_key is not None:
             image_url = self.connection.generate_url(100, 'GET', bucket=product.bucket, key=product.image_key, force_http=True)
@@ -409,17 +512,28 @@ class AcknowledgementPDF(object):
 
 class ProductionPDF(AcknowledgementPDF):
     
+    thai_months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.ิ","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
     document_type = "Production"
     
     def __init__(self, **kwargs):
         super(ProductionPDF, self).__init__(customer=kwargs["customer"], ack=kwargs["ack"], products=kwargs["products"])
     
+    #create method
+    def create(self):
+        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
+        self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
+        #create the doc template
+        doc = ProductionDocTemplate(self.location, id=self.ack.id, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
+        #Build the document with stories
+        stories = self._get_stories()
+        doc.build(stories)
+        #return the filename
+        return self.location
+    
     def _get_stories(self):
         #initialize story array
         Story = []
         #add heading and spacing
-        Story.append(self._create_heading())
-        Story.append(Spacer(0,30))
         Story.append(self._create_ack_section())
         Story.append(Spacer(0,30))
         #Alignes the header and supplier to the left
@@ -457,11 +571,13 @@ class ProductionPDF(AcknowledgementPDF):
         #Create data array
         data = []
         #Add Data
-        data.append(['Order Date:', self.ack.time_created.strftime('%B %d, %Y')])
-        data.append(['กำหนดส่ง:', self.ack.delivery_date.strftime('%B %d, %Y')])
-        #Adds po if exists
-        if self.ack.po_id != None:
-            data.append(['PO#:', self.ack.po_id])
+        time_created = self.ack.time_created
+        order_date_str = "{0} {1}".format(self.thai_months[time_created.month-1], time_created.strftime('%d, %Y'))
+        data.append(['Order Date:', order_date_str])
+        delivery_date = self.ack.delivery_date
+        deliver_date_str = "{0} {1}".format(self.thai_months[delivery_date.month-1], delivery_date.strftime('%d, %Y'))
+        data.append(['กำหนดส่ง:', deliver_date_str])
+       
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
@@ -530,12 +646,14 @@ class ProductionPDF(AcknowledgementPDF):
                 data.append(['', '   {0}'.format(pillow_type), pillow.quantity])
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), ''])
         #Add comments
-        if product.comments is not None:
+        print type(product.comments)
+        print product.comments
+        if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Tahoma',
                                    fontSize=14,
-                                   textColor=colors.CMYKColor(black=60))
-            paragraph = Paragraph(product.comments, style)
+                                   textColor='red')
+            paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
             comments = Table([['  Comments:', paragraph]], colWidths=(100, 300))
             comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
                                           ('FONTSIZE', (0,0), (-1, -1), 16),

@@ -59,7 +59,7 @@ def update_contacts():
                 ORDER BY customer_id DESC"""
     cur1.execute(query1)
     #Create query for upsert at new db
-    upsert = prepare_upsert("contacts_contact", "id", "name", "telephone", 'fax')
+    upsert = prepare_upsert("contacts_contact", "id", "name", "telephone", 'fax', 'is_supplier', 'is_customer')
     #Fetch data and iterate
     rows = cur1.fetchall()
     for row in rows:
@@ -67,7 +67,9 @@ def update_contacts():
         data = {'id':row[0],
                 'name':row[1],
                 'telephone':row[2],
-                'fax':row[3]}
+                'fax':row[3], 
+                'is_supplier': False,
+                'is_customer': True}
         #upsert
         upsert(data)
         
@@ -104,7 +106,7 @@ def update_models():
     cur1.execute(query1)
     
     #Create query for upsert at new db
-    upsert = prepare_upsert("products_model", "id", "name", "model", "collection")
+    upsert = prepare_upsert("products_model", "id", "name", "model", "collection", 'is_active')
     
     rows = cur1.fetchall()
     for row in rows:
@@ -112,7 +114,8 @@ def update_models():
         data = {'id':row[0],
                 'model':row[1],
                 'name':row[2],
-                'collection':row[3]}
+                'collection':row[3],
+                'is_active':True}
         
         upsert(data)
        
@@ -272,7 +275,7 @@ def update_ack_items():
     
     #upsert query
     upsert = prepare_upsert("acknowledgements_item", 'id', 'product_id', 'acknowledgement_id', 'quantity',
-                            'fabric', 'width', 'depth', 'height', 'is_custom_size', 'price', 'description', 'status')
+                            'fabric', 'width', 'depth', 'height', 'is_custom_size', 'total', 'description', 'status')
              
     #Get data and iterate
     rows = cur1.fetchall()
@@ -287,7 +290,7 @@ def update_ack_items():
                 'depth':row[6],
                 'height':row[7],
                 'is_custom_size':row[8],
-                'price':row[9],
+                'total':row[9],
                 'description':row[10],
                 'status':row[11]}
         #update or insert data  
@@ -319,16 +322,16 @@ def update_ack_item_pillows():
         upsert(data)
 
 def migrate():
-    #update_contacts()
-    #update_contact_addresses()
-    #update_models()
+    update_contacts()
+    update_contact_addresses()
+    update_models()
     update_model_images()
-    #update_configurations()
-    #update_upholstery()
-    #update_upholstery_pillows()
-    #update_acks()
-    #update_ack_items()
-    #update_ack_item_pillows()
+    update_configurations()
+    update_upholstery()
+    update_upholstery_pillows()
+    update_acks()
+    update_ack_items()
+    update_ack_item_pillows()
 
 
 migrate()
