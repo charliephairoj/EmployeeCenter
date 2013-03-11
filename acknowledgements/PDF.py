@@ -346,14 +346,14 @@ class AcknowledgementPDF(object):
         #add the data
         data.append([product.product.id, product.description, product.unit_price,product.quantity, product.total])
         if product.fabric != None:
-            data.append(['', '   Fabric: {0}'.format(product.fabric), '', '', ''])
+            data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         if product.is_custom_size:
             data.append(['', '   Width: %imm Depth: %imm Height: %imm' %(product.width, product.depth, product.height)])
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
-                data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), '', '', ''])
+                data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
@@ -392,6 +392,16 @@ class AcknowledgementPDF(object):
         table.setStyle(style)
         return table
     
+    def _get_fabric_table(self, fabric, string="   Fabric:"):
+        fabric_str = string+' {0}'
+        fabric_image = self.get_image(fabric.image_url, height=30)
+        fabric_table = Table([[fabric_str.format(fabric.description), fabric_image]], colWidths=(200, 50))
+        fabric_table.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+                                          ('FONTSIZE', (0,0), (-1, -1), 10),
+                                          ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
+        return fabric_table
+            
     def _get_payment_terms(self):
         #determine Terms String
         # based on term length
@@ -631,7 +641,7 @@ class ProductionPDF(AcknowledgementPDF):
         #add the data
         data.append([product.product.id, product.description, product.quantity])
         if product.fabric != None:
-            data.append(['', '   Fabric: {0}'.format(product.fabric), ''])
+            data.append(['', self._get_fabric_table(product.fabric, '   Fabric:'), ''])
         if product.is_custom_size:
             data.append(['', '   กว้าง: %imm' %(product.width)])
             data.append(['', '   ลึก: %imm' %(product.depth)])
@@ -648,7 +658,7 @@ class ProductionPDF(AcknowledgementPDF):
                 else:
                     pillow = "Pillow"
                 data.append(['', '   {0}'.format(pillow_type), pillow.quantity])
-                data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), ''])
+                data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
         #Add comments
        
         if product.comments is not None and product.comments != '':

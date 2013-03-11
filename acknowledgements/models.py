@@ -202,7 +202,7 @@ class Acknowledgement(models.Model):
                          'product_id':item.product.id,
                          'acknowledgement_id':self.id,
                          'quantity':item.quantity,
-                         'fabric':item.fabric,
+                         'fabric':item.fabric.description,
                          'description':item.description,
                          'is_custom_size':item.is_custom_size,
                          'is_custom_item':item.is_custom_item,
@@ -233,7 +233,8 @@ class Item(models.Model):
     depth = models.IntegerField(db_column='depth', default=0)
     height = models.IntegerField(db_column='height', default=0)
     units = models.CharField(max_length=20, default='mm')
-    fabric = models.TextField(default=None)
+    fabric = models.ForeignKey(Fabric)
+    fabric_description = models.TextField(default=None)
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
@@ -272,6 +273,8 @@ class Item(models.Model):
                 price = product.retail_price
             else:
                 price = 0
+        #Make price 0 if none
+        if price is None: price = 0
         #Set the unit price then total 
         self.unit_price = price
         self.total = self.unit_price*Decimal(self.quantity)
@@ -309,7 +312,7 @@ class Item(models.Model):
         #Checks if fabric in data
         if "fabric" in data:
             fabric = Fabric.objects.get(id=data["fabric"]["id"])
-            self.fabric = fabric.description
+            self.fabric = fabric
         #Checks if this item has pillows
         if "pillows" in data:
             pillows = []
