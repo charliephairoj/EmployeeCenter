@@ -82,9 +82,9 @@ class Supply(models.Model):
                 'id':self.id,
                 'cost':'%s' % self.cost,
                 'currency':self.currency,
-                'image_url':self.image_url
+                'image_url':self.image_url,
+                'image':{'url':self.image_url}
         }
-        
         return data
         
     def set_data(self, data, **kwargs):
@@ -94,8 +94,10 @@ class Supply(models.Model):
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
         if "depth" in data: self.depth = data["depth"]
-        print data['cost']
-        
+        if "image" in data:
+            if "url" in data["image"]: self.image_url = data["image"]["url"]
+            if "key" in data["image"]: self.image_key = data["image"]["key"]
+            if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
 """This Location class is used to track and location and in the future
 The access times of and movements of supplies, starting with fabrics"""
 class Location(models.Model):
@@ -189,7 +191,6 @@ class Fabric(Supply):
         
     #Set fabric data for REST
     def set_data(self, data, **kwargs):
-        print data
         #extract args
         if "user" in kwargs: user = kwargs["user"]
         #set parent data
