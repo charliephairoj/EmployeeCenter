@@ -649,8 +649,7 @@ class ProductionPDF(AcknowledgementPDF):
                 data.append(['', '   {0}'.format(pillow_type), pillow.quantity])
                 data.append(['', '       - Fabric: {0}'.format(pillow.fabric.description), ''])
         #Add comments
-        print type(product.comments)
-        print product.comments
+       
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Tahoma',
