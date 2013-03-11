@@ -61,6 +61,7 @@ class Acknowledgement(models.Model):
         self.delivery_date = datetime.date(date_obj['year'], date_obj['month'], date_obj['date'])
         if "vat" in data: self.vat = int(data["vat"]) 
         if "po_id" in data: self.po_id = data["po_id"]
+        if "remarks" in data: self.remarks = data["remarks"]
         self.status = 'ACKNOWLEDGED'
         self.save()
         #Set products information

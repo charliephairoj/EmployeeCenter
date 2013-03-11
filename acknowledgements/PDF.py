@@ -274,6 +274,8 @@ class AcknowledgementPDF(object):
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
+        if self.ack.remarks is not None and self.ack.remarks != '':
+            data.append(['Remarks', self.ack.remarks])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
@@ -577,7 +579,8 @@ class ProductionPDF(AcknowledgementPDF):
         delivery_date = self.ack.delivery_date
         deliver_date_str = "{0} {1}".format(self.thai_months[delivery_date.month-1], delivery_date.strftime('%d, %Y'))
         data.append(['กำหนดส่ง:', deliver_date_str])
-       
+        if self.ack.remarks is not None and self.ack.remarks != '':
+            data.append(['Remarks', self.ack.remarks])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
