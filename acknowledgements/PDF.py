@@ -504,13 +504,16 @@ class AcknowledgementPDF(object):
         size from the image. The correct dimensions for 
         image are calculated based on the desired with or
         height"""
-        #Read image from link
-        img = utils.ImageReader(path)
+        try:
+            #Read image from link
+            img = utils.ImageReader(path)
+        except:
+            return None
         #Get Size
         imgWidth, imgHeight = img.getSize()
         #Detect if there height or width provided
         if width!=None and height==None:
-            ratio = imgHeight/imgWidth
+            ratio = float(imgHeight)/float(imgWidth)
             newHeight = ratio*width
             newWidth = width
         elif height!=None and width==None:

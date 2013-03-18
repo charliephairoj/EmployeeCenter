@@ -197,12 +197,20 @@ class Acknowledgement(models.Model):
         cur.execute(customer_upsert, customer_data)
         cur.execute(address_upsert, address_data)
         cur.execute(ack_query, ack_data)
+        
+        
         for item in self.item_set.all():
+            #Attempt to get fabric and uses none 
+            #If there is no fabric
+            try:
+                fabric = item.fabric.description
+            except:
+                fabric = None
             item_data = {'item_id':item.id,
                          'product_id':item.product.id,
                          'acknowledgement_id':self.id,
                          'quantity':item.quantity,
-                         'fabric':item.fabric.description,
+                         'fabric':fabric,
                          'description':item.description,
                          'is_custom_size':item.is_custom_size,
                          'is_custom_item':item.is_custom_item,
