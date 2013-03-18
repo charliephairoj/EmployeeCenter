@@ -345,8 +345,10 @@ class AcknowledgementPDF(object):
         data = []
         #add the data
         data.append([product.product.id, product.description, product.unit_price,product.quantity, product.total])
-        if product.fabric != None:
+        try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
+        except:
+            pass
         if product.is_custom_size:
             data.append(['', '   Width: %imm Depth: %imm Height: %imm' %(product.width, product.depth, product.height)])
         #increase the item number
@@ -643,8 +645,10 @@ class ProductionPDF(AcknowledgementPDF):
         data = []
         #add the data
         data.append([product.product.id, product.description, product.quantity])
-        if product.fabric != None:
+        try:
             data.append(['', self._get_fabric_table(product.fabric, '   Fabric:'), ''])
+        except:
+            pass
         if product.is_custom_size:
             data.append(['', '   กว้าง: %imm' %(product.width)])
             data.append(['', '   ลึก: %imm' %(product.depth)])
