@@ -282,7 +282,12 @@ class Foam(Supply):
         #save the foam
         self.save()   
         
-        
+class Glue(Supply):
+    
+    def set_data(self, data, **kwargs):
+        self.type = "glue"
+        super(Glue, self).set_data(data, **kwargs)
+
 #Lumber section
 
 class Lumber(Supply):

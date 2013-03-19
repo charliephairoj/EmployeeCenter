@@ -68,7 +68,9 @@ urlpatterns += patterns('supplies.views',
     url(r'^foam$', 'foam'),
     url(r'^foam/(?P<foam_id>\d+)$', 'foam'),
     
-
+    url(r'^glue$', 'glue'),
+    url(r'^glue/(?P<glue_id>\d+)$', 'glue'),
+    
     url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)/reserve$', 'fabric_reserve'),

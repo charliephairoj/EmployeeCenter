@@ -166,7 +166,10 @@ def foam(request, foam_id=0):
     from supplies.models import Foam
      
     return processRequest(request, Foam, foam_id)
-    
+
+def glue(request, glue_id=0):
+    from supplies.models import Glue
+    return processRequest(request, Glue, glue_id)
 #lumber
 def lumber(request, lumber_id=0):
     from supplies.models import Lumber
