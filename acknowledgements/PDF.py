@@ -380,6 +380,7 @@ class AcknowledgementPDF(object):
                             ('LINEBELOW', (0,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
                             ('LINEAFTER', (0,0), (-1,-1), 1, colors.CMYKColor(black=60)),
                             ('LINEBEFORE', (0,0), (0,-1), 1, colors.CMYKColor(black=60)),
+                            ('FONT', (0,0), (-1,-1), 'Tahoma'),
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
                             #Align description
