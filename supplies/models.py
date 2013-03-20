@@ -48,6 +48,7 @@ class Supply(models.Model):
         return data
         
     def set_data(self, data, **kwargs):
+        if "reference" in data: self.reference = data["reference"]
         if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
