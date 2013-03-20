@@ -25,51 +25,11 @@ class Supply(models.Model):
     image_url = models.TextField(null=True)
     image_bucket = models.TextField(null=True)
     image_key = models.TextField(null=True)
-    
-        
-    #methods
-    def get_parent_data(self, **kwargs):
-        data = {
-            'type':self.type,
-            'supplier':self.supplier.get_data(),
-            'width':str(self.width),
-            'width_units':self.width_units,
-            'depth_units':self.depth_units,
-            'height_units':self.height_units,
-            'depth':str(self.depth),
-            'height':str(self.height),
-            'description':self.description,
-            'id':self.id,
-            'cost':'%s' %self.cost,
-            'reference':self.reference,
-            'currency':self.currency
-        }
-        
-        if self.image_url != None:
-            
-            data.update({"image":{"url":self.image_url, "key":self.image_key, "bucket":self.image_bucket}})
-        
-        return data
-    
-    def set_parent_data(self, data, **kwargs):
-        if "reference" in data: self.reference = data["reference"]
-        if "cost" in data: self.cost = Decimal(data["cost"])
-        if "width" in data: self.width = data['width']
-        if "width_units" in data: self.width_units = data['width_units']
-        if "height" in data: self.height = data["height"]
-        if "height_units" in data: self.height_units = data['height_units']
-        if "depth" in data: self.depth = data["depth"]
-        if "depth_units" in data: self.depth_units = data['depth_units']
-        if "currency" in data: self.currency = data["currency"]
-        if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
-        if "supplier_id" in data: self.supplier = Supplier.objects.get(id=data["supplier_id"])
-        if "image" in data:
-            if "url" in data["image"]: self.image_url = data["image"]["url"]
-            if "key" in data["image"]: self.image_key = data["image"]["key"]
-            if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
+    quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
         
     def get_data(self, **kwargs):
         data = {
+                'reference':self.reference,
                 'type':self.type,
                 'supplier':self.supplier.get_data(),
                 'width':str(self.width),
@@ -88,37 +48,105 @@ class Supply(models.Model):
         return data
         
     def set_data(self, data, **kwargs):
-        #Set the supplier
         if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
         if "cost" in data: self.cost = Decimal(data["cost"])
         if "width" in data: self.width = data['width']
         if "height" in data: self.height = data["height"]
         if "depth" in data: self.depth = data["depth"]
+        if "height_units" in data: self.height_units = data["height_units"]
+        if "width_units" in data: self.width_units = data["width_units"]
+        if "depth_units" in data: self.depth_units = data["depth_units"]
         if "image" in data:
             if "url" in data["image"]: self.image_url = data["image"]["url"]
             if "key" in data["image"]: self.image_key = data["image"]["key"]
             if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
-"""This Location class is used to track and location and in the future
-The access times of and movements of supplies, starting with fabrics"""
-class Location(models.Model):
+            
+    def create_log(self, action, employee, quantity=0, remarks=None, current_quantity=0):
+        """Creates a log in the supplie log. Requires at minimum an action
+        And the employee performing the action.
+        
+        If the quantity is not 0, then the current_quantity cannot be 0 and 
+        vice versa or an error will be raised.
+        """
+        if action is not None and employee is not None:
+            log = Log()
+            log.action = action
+            log.employee = employee
+            log.supply = self
+        else:
+            #Implement later
+            pass
+        #Check that if quantity != 0 then current_quantity != 0
+        if quantity != 0 and current_quantity != 0:
+            log.quantity = quantity
+            log.current_quantity = current_quantity
+        elif (quantity != 0 and current_quantity == 0) or (quantity == 0 and current_quantity != 0):
+            #Implement later
+            pass
+        if remarks is not None: log.remarks = remarks
+        if current_quantity != 0: log.current_quantity = current_quantity
+        log.save()
     
+    def reserve(self, quantity, employee=None, remarks=None):
+        self.create_log("Reserve", employee, quantity, remarks, self.quantity)
+    
+    def add(self, quantity, employee=None, remarks=None):
+        self.quantity = self.quantity + Decimal(quantity)
+        self.save()
+        self.create_log("Add", employee, quantity, remarks, self.quantity)
+    
+    def subtract(self, quantity, employee=None, remarks=None):
+        #check if length to subtract is more than total length
+        if self.quantity > Decimal(quantity):
+            #Subtract from current length
+            self.quantity = self.quantity - Decimal(quantity)
+            self.save()
+            #Destroy Reservation log
+            try:
+                old_log_item = Log.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
+                old_log_item.delete()
+            except:
+                pass
+            self.create_log("Subtract", employee, quantity, remarks, self.quantity)
+            
+    def reset(self, quantity, employee=None, remarks=None):
+        self.quantity = quantity
+        self.save()
+        self.create_log("Reset", employee, quantity, remarks, self.quantity)
+
+
+class Location(models.Model):
+    """This Location class is used to track and location and in the future
+    The access times of and movements of supplies, starting with fabrics
+    """
     description = models.TextField()
     row = models.CharField(max_length=10)
     shelf = models.CharField(max_length=10)
-     
-     
+    
 
-#Fabric Section
+class Log(models.Model):
+    """The general log class for supplies will keep track of actions, 
+    such as adding, subtracting, resetting items from the inventory
+    count.
+    
+    quantity = the quantity associate with the action
+    current_quantity = the quantity remaining after the action
+    """
+    supply = models.ForeignKey(Supply)
+    action = models.CharField(max_length=15, null=False)
+    quantity = models.DecimalField(max_digits=15, decimal_places=2)
+    current_quantity = models.DecimalField(max_digits=15, decimal_places=2)
+    remarks = models.TextField()
+    employee = models.ForeignKey(User)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+
 class Fabric(Supply):
     pattern = models.TextField()
     color = models.TextField()
     content = models.TextField()
-    
-    #Methods
-    
-    #Reserves fabric
+
     def reserve(self, length, employee=None, remark=None):
-        
         log_item = FabricLog()
         log_item.employee = employee
         log_item.fabric = self
@@ -128,9 +156,7 @@ class Fabric(Supply):
         log_item.remarks = "Ack#: %s" % remark
         log_item.save()
     
-    #Add Length
     def add(self, length, employee=None, remark=None):
-        
         #Add to current Length
         self.depth = self.depth + Decimal(length)
         self.save()
@@ -147,23 +173,17 @@ class Fabric(Supply):
     
     #Subtract Length
     def subtract(self, length, employee=None, remark=None):
-        
         #check if length to subtract is more than total length
         if self.depth > Decimal(length):
-            
             #Subtract from current length
             self.depth = self.depth - Decimal(length)
             self.save()
-            
             #Destroy Reservation log
             try:
                 old_log_item = FabricLog.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
                 old_log_item.delete()
             except:
-                
                 pass
-            
-            
             #Create log
             log_item = FabricLog()
             log_item.employee = employee
@@ -175,10 +195,8 @@ class Fabric(Supply):
             log_item.save()
             
     def reset(self, length, employee=None, remark=None):
-        
         self.depth = length
         self.save()
-        
         #Create log
         log_item = FabricLog()
         log_item.employee = employee
@@ -204,19 +222,15 @@ class Fabric(Supply):
         if "color" in data: self.color = data["color"]
         if "content" in data: self.content = data["content"]
         self.description = "%s Col:%s" % (self.pattern, self.color)
-        
         #Set the current length of fabric
         if "current_length" in data: self.reset(data["current_length"], user, "Initial Current Length")
-        
         self.save()
     
     #Get Data for REST
     def get_data(self, **kwargs):
-        
         from django.db.models import Sum
         #Get the Reserve Length
         sum_obj = FabricLog.objects.filter(action="Reserve", fabric_id=self.id).aggregate(Sum('length'))
-        
         #sets the data for this supply
         data = {
                 'pattern':self.pattern,
@@ -230,9 +244,8 @@ class Fabric(Supply):
         return data
 
 
-#Fabric Log
-
 class FabricLog(models.Model):
+    
     fabric = models.ForeignKey(Fabric)
     action = models.CharField(max_length=15, null=False)
     length = models.DecimalField(max_digits=15, decimal_places=2)
@@ -242,21 +255,16 @@ class FabricLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
-
-#Foam
-
 class Foam(Supply):
-    foamType = models.TextField(db_column="foam_type")
+    
+    foam_type = models.TextField(db_column="foam_type")
     color = models.CharField(max_length=20)
     
-    #methods 
-    
-    #get data
     def get_data(self, **kwargs):
         #get data for foam
         data = {
                 'color':self.color,
-                'type':self.foamType
+                'type':self.foam_type
                 }
         
         #merge with data from parent
@@ -275,7 +283,7 @@ class Foam(Supply):
         self.purchasing_units = "pc"
         
         self.type = "foam"
-        if "type" in data: self.foamType = data["type"]
+        if "type" in data: self.foam_type = data["type"]
         if "color" in data: self.color = data["color"]
         self.description = "%s Foam (%sX%sX%s)" % (self.color, self.width, self.depth, self.height)
         
