@@ -272,13 +272,13 @@ class Upholstery(Product):
         super(Upholstery, self).set_data(data, user=user)
         #Searches for the corresponing Model
         #and applies it to the upholster
-        if "model_id" in data:
-            model = Model.objects.get(id=data["model_id"])
+        if "model" in data:
+            model = Model.objects.get(id=data["model"]["id"])
             self.model = model
         #Searches for the corresponding Cofniguration
         #and applies it to the uploster
-        if "configuration_id" in data: 
-            config = Configuration.objects.get(id=data["configuration_id"])
+        if "configuration" in data: 
+            config = Configuration.objects.get(id=data["configuration"]["id"])
             self.configuration = config
         #Set description
         self.description = "{0} {1}".format(self.model.model, self.configuration.configuration)
