@@ -1,7 +1,14 @@
-from django.db import models
-from contacts.models import Contact, Supplier
+import os
+import time
 from decimal import Decimal
+
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import models
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+from contacts.models import Contact, Supplier
 
 # Create your models here.
 
@@ -114,6 +121,28 @@ class Supply(models.Model):
         self.quantity = quantity
         self.save()
         self.create_log("Reset", employee, quantity, remarks, self.quantity)
+
+    def upload_image(self, image, key="supplies/images/{0}.jpg".format(time.time())):
+        #start connection
+        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        #get the bucket
+        bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
+        #Create a key and assign it 
+        k = Key(bucket)
+        #Set file name
+        k.key = "supplies/images/{0}.jpg".format(time.time())
+        #upload file
+        k.set_contents_from_filename(image)
+        #set the Acl
+        k.set_canned_acl('public-read')
+        k.make_public()
+        #set Url, key and bucket
+        data = {
+                'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
+                'key':k.key,
+                'bucket':'media.dellarobbiathailand.com'
+        }
+        return data
 
 
 class Location(models.Model):
@@ -243,7 +272,7 @@ class Fabric(Supply):
         data.update(super(Fabric, self).get_data())
         #returns the data
         return data
-
+    
 
 class FabricLog(models.Model):
     

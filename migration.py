@@ -262,7 +262,7 @@ def update_acks():
         #update or insert data
         upsert(data)
     #Reset id
-    cur2.execute("""SELECT setval('acknowledgements_acknowledgement_acknowledgement_id_seq', (
+    cur2.execute("""SELECT setval('acknowledgements_acknowledgement_id_seq', (
                     SELECT MAX(id) FROM acknowledgements_acknowledgement))""")
   
 def update_ack_items():
@@ -275,7 +275,7 @@ def update_ack_items():
     
     #upsert query
     upsert = prepare_upsert("acknowledgements_item", 'id', 'product_id', 'acknowledgement_id', 'quantity',
-                            'fabric', 'width', 'depth', 'height', 'is_custom_size', 'total', 'description', 'status')
+                            'fabric_description', 'width', 'depth', 'height', 'is_custom_size', 'total', 'description', 'status')
              
     #Get data and iterate
     rows = cur1.fetchall()
@@ -285,7 +285,7 @@ def update_ack_items():
                 'product_id':row[1],
                 'acknowledgement_id':row[2],
                 'quantity':row[3],
-                'fabric':row[4],
+                'fabric_description':row[4],
                 'width':row[5],
                 'depth':row[6],
                 'height':row[7],
@@ -322,6 +322,7 @@ def update_ack_item_pillows():
         upsert(data)
 
 def migrate():
+    """
     update_contacts()
     update_contact_addresses()
     update_models()
@@ -329,9 +330,9 @@ def migrate():
     update_configurations()
     update_upholstery()
     update_upholstery_pillows()
-    update_acks()
+    update_acks()"""
     update_ack_items()
-    update_ack_item_pillows()
+    #update_ack_item_pillows()
 
 
 migrate()

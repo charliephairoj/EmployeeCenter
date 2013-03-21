@@ -47,9 +47,11 @@ class Acknowledgement(models.Model):
                 'remarks':self.remarks,
                 'fob':self.fob,
                 'shipping':self.shipping, 
-                'customer':self.customer.name,
-                'employee':'%s %s' %(self.employee.first_name, self.employee.last_name)}
-        
+                'customer':self.customer.get_data(),
+                'employee':'%s %s' %(self.employee.first_name, self.employee.last_name), 
+                'products':[]}
+        for item in self.item_set.all():
+            data['products'].append(item.get_data())
         return data
     
     #Create Acknowledgement
@@ -343,6 +345,25 @@ class Item(models.Model):
                 ack_pillow.quantity = pillow["quantity"]*self.quantity
                 ack_pillow.fabric = Fabric.objects.get(id=pillow["fabric"]["id"])
                 ack_pillow.save()
+    
+    def get_data(self):
+        data = {'id':self.id,
+                'is_custom_size':self.is_custom_size,
+                'width':self.width,
+                'height':self.height,
+                'depth':self.depth,
+                'description':self.description,
+                'comments':self.comments,
+                'image':{'url':self._get_image_url()}}
+        return data
+    
+    def _get_image_url(self):
+        if self.bucket is not None and self.image_key is not None:
+            conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+            url = conn.generate_url(1800, 'GET', bucket=self.bucket, key=self.image_key, force_http=True)
+        else:
+            url = None
+        return url
         
 #Pillows for Acknowledgement items
 class Pillow(models.Model):

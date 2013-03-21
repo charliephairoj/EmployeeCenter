@@ -36,6 +36,7 @@ urlpatterns += patterns('library.views',
 
 urlpatterns += patterns('products.views',
     url(r'^model$', 'model'),
+    url(r'^model/image$', 'model_image'),
     url(r'^model/(?P<model_id>\d+)$', 'model'),
     url(r'^configuration$', 'configuration'),
     url(r'^configuration/(?P<config_id>\d+)$', 'configuration'),
@@ -60,7 +61,15 @@ urlpatterns += patterns('supplies.views',
   
     url(r'^supply$', 'supply'),
     url(r'^supply/(?P<supply_id>\d+)$', 'supply'),
-
+    url(r'^supply/(?P<supply_id>\d+)$', 'fabric'),
+    url(r'^supply/(?P<supply_id>\d+)/reserve$', 'reserve'),
+    url(r'^supply/(?P<supply_id>\d+)/add$', 'add'),
+    url(r'^supply/(?P<supply_id>\d+)/subtract$', 'subtract'),
+    url(r'^supply/(?P<supply_id>\d+)/reset$', 'reset'),
+    url(r'^supply/(?P<supply_id>\d+)/log$', 'supply_log'),
+    url(r'^supply/(?P<supply_id>\d+)/image$', 'supply_image'),
+    url(r'^supply/image$', 'supply_image'),
+    
     url(r'^lumber$', 'lumber'),
     url(r'^lumber/(?P<lumber_id>\d+)$', 'lumber'),
     

@@ -143,7 +143,9 @@ class Model(models.Model):
     collection = models.CharField(max_length=100, null=True)
     isActive = models.BooleanField(default=True, db_column='is_active')
     dateCreated = models.DateField(auto_now=True, auto_now_add=True, null=True, db_column='date_created')
-    
+    bucket = models.TextField()
+    image_key = models.TextField()
+    image_url = models.TextField()
    
     #Get Data as object
     def get_data(self, **kwargs):
@@ -164,7 +166,8 @@ class Model(models.Model):
                 "collection":self.collection,
                 #"year":model.dateCreated.year,
                 "images":images, 
-                "configurations":configs}
+                "configurations":configs,
+                'image':{'image':{'url':self.image_url}}}
         #returns the data object
         return data
     
