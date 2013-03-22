@@ -354,6 +354,7 @@ class Item(models.Model):
                 'depth':self.depth,
                 'description':self.description,
                 'comments':self.comments,
+                'quantity':self.quantity,
                 'image':{'url':self._get_image_url()}}
         return data
     
