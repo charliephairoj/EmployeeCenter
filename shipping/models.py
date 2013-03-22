@@ -40,12 +40,14 @@ class Shipping(models.Model):
         self.acknowledgement = Acknowledgement.objects.get(id=data["acknowledgement"]['id'])
         self.employee = user
         self.delivery_date = datetime.datetime.fromtimestamp(data["delivery_date"]/1000.0)
-        if "remarks" in data: self.remarks = data["remarks"]
+        if "comments" in data: self.comments = data["comments"]
         self.save()
         
         #Set products information
         for product_data in data['products']:
             self.set_product(product_data)
+        
+        self.set_acknowledgement_data()
         
         #Initialize and create pdf  
         pdf = ShippingPDF(customer=self.customer, shipping=self, products=self.item_set.all().order_by('id'),
@@ -61,8 +63,17 @@ class Shipping(models.Model):
         item = Item()
         item.shipping = self
         item.set_data_from_acknowledgement_item(acknowledgement_item)
+        if "comments" in data: item.comments = data["comments"]
         item.save()
     
+    def set_acknowledgement_data(self):
+        self.acknowledgement.delivery_date = self.delivery_date
+        if len(self.acknowledgement.item_set.all()) == len(self.item_set.all()):
+            self.acknowledgement.status = 'SHIPPED'
+        else:
+            self.acknowledgement.status = 'PARTIALLY SHIPPED'
+        self.acknowledgement.save()
+            
     #uploads the pdf
     def upload(self, filename):
         #start connection
