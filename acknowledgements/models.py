@@ -50,7 +50,7 @@ class Acknowledgement(models.Model):
                 'customer':self.customer.get_data(),
                 'employee':u'{0} {1}'.format(self.employee.first_name, self.employee.last_name), 
                 'products':[]}
-        for item in self.item_set.all():
+        for item in self.item_set.all().order_by('id'):
             data['products'].append(item.get_data())
         return data
     
