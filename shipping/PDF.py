@@ -76,7 +76,7 @@ class ShippingDocTemplate(BaseDocTemplate):
         barcode = code39.Extended39('*S-{0}*'.format(self.id), barWidth=1, barHeight=30)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
-        barcode.drawOn(canvas,x_position,750)
+        barcode.drawOn(canvas,x_position,740)
 
         
 class ShippingPDF(object):
