@@ -189,9 +189,8 @@ def user(request, user_id=0):
         return response
             
     elif request.method == "POST":
-        
         #get data
-        data = json.loads(request.POST.get('data'))
+        data = json.loads(request.body)
         logger.debug(data)
         if "username" in data and "email" in data and "password" in data:
                     
