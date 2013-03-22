@@ -51,7 +51,6 @@ class Shipping(models.Model):
         pdf = ShippingPDF(customer=self.customer, shipping=self, products=self.item_set.all().order_by('id'),
                           connection=self.connection)
         shipping_filename = pdf.create()
-        print shipping_filename
         #Upload and return the url
         self.shipping_key = self.upload(shipping_filename)
         urls = {'url': self.get_url(self.shipping_key)} 

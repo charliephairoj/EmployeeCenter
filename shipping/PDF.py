@@ -249,7 +249,9 @@ class ShippingPDF(object):
         if len(pillows) > 0:
             for pillow in pillows:
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])
-                data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '',])
+                try:
+                    data.append(['', self._get_fabric_table(pillow.fabric.description, '       - Fabric:'), '',])
+                except: pass
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
