@@ -45,8 +45,8 @@ def app_login(request):
             #checks if authenticated for google
             if user_profile.google_validated == False:
                 
-                return HttpResponseRedirect('/auth')
-            
+                #return HttpResponseRedirect('/auth')
+                return serve(request, 'index.html', settings.STATIC_ROOT)
             else:
                     
                 return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
@@ -82,14 +82,15 @@ def app_login(request):
                     
                     #Gets user profile to do checks
                     user_profile = user.get_profile()
-                    
+                    return HttpResponseRedirect('/')
+                """
                     #checks if authenticated for google
                     if user_profile.google_validated == False:
                         return HttpResponseRedirect('/auth')
                     
                     else:
                         
-                        return HttpResponseRedirect('/')
+                        return HttpResponseRedirect('/')"""
             else:
                 #returns unauthenticated users
                 #back to the login page
