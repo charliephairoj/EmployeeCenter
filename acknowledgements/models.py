@@ -73,7 +73,7 @@ class Acknowledgement(models.Model):
         self.calculate_totals()
         self.save()
         #Insert into the previous database
-        self.insert_into_old_db()
+        #self.insert_into_old_db()
         #Initialize and create pdf  
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=self.item_set.all().order_by('id'))
         ack_filename = ack_pdf.create()
