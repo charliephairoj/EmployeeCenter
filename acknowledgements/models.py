@@ -46,7 +46,7 @@ class Acknowledgement(models.Model):
                 'status':self.status, 
                 'remarks':self.remarks,
                 'fob':self.fob,
-                'shipping':self.shipping, 
+                'shipping':self.shipping_method, 
                 'customer':self.customer.get_data(),
                 'employee':u'{0} {1}'.format(self.employee.first_name, self.employee.last_name), 
                 'products':[]}
