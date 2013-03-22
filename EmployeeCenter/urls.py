@@ -124,6 +124,11 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'^acknowledgement/item/image$', 'acknowledgement_item_image')
 )
 
+#URLS for Shipping
+urlpatterns += patterns('shipping.views', 
+    url(r'^shipping$', 'shipping'),
+)
+
 #this section deals with the administration routing area
 
 urlpatterns += patterns('administrator.views', 

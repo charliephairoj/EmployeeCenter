@@ -31,7 +31,7 @@ class Acknowledgement(models.Model):
     bucket = models.TextField()
     remarks = models.TextField()
     fob = models.TextField()
-    shipping = models.TextField()
+    shipping_method = models.TextField()
     subtotal = models.DecimalField(max_digits=15, decimal_places=2)
     total = models.DecimalField(max_digits=15, decimal_places=2)
     vat = models.IntegerField(default=0)
@@ -47,7 +47,7 @@ class Acknowledgement(models.Model):
                 'remarks':self.remarks,
                 'fob':self.fob,
                 'shipping':self.shipping, 
-                'customer':u'{0}'.format(self.customer.name),
+                'customer':self.customer.get_data(),
                 'employee':u'{0} {1}'.format(self.employee.first_name, self.employee.last_name), 
                 'products':[]}
         for item in self.item_set.all():

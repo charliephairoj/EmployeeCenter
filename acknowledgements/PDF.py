@@ -10,6 +10,7 @@ use by the production team and the office overseeing
 production"""
 
 from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
@@ -70,7 +71,7 @@ class AckDocTemplate(BaseDocTemplate):
         
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('{0}'.format(self.id), barWidth=1, barHeight=20)
+        barcode = code39.Extended39('*A-{0}*'.format(self.id), barWidth=1, barHeight=30)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas,x_position,750)
@@ -96,7 +97,7 @@ class ProductionDocTemplate(AckDocTemplate):
         canvas.drawRightString(550, 780, 'Ack#: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('{0}'.format(self.id), barWidth=1, barHeight=20)
+        barcode = code39.Extended39('*P-{0}*'.format(self.id), barWidth=1, barHeight=30)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 750)
