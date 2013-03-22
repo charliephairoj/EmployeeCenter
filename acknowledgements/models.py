@@ -47,7 +47,7 @@ class Acknowledgement(models.Model):
                 'remarks':self.remarks,
                 'fob':self.fob,
                 'shipping':self.shipping, 
-                'customer':'{0} {1}'.format(self.customer.first_name, self.customer.last_name),
+                'customer':'{0}'.format(self.customer.name),
                 'employee':'%s %s' %(self.employee.first_name, self.employee.last_name), 
                 'products':[]}
         for item in self.item_set.all():
