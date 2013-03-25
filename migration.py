@@ -320,6 +320,32 @@ def update_ack_item_pillows():
                 'quantity':row[4]}
         #update or insert data  
         upsert(data)
+        
+
+def update_shipping():
+    
+    print "Updating Acknowledgement Item Pillows"
+    #query to get ack items    
+    query1 = """SELECT ap.acknowledgement_pillow_id, ap.acknowledgement_item_id, ap.fabric, ap.type, (
+                SELECT quantity FROM product_pillows WHERE product_pillow_id = ap.PRODUCT_PILLOW_ID) AS quantity
+                FROM acknowledgement_item_pillows AS ap"""
+    cur1.execute(query1)
+    
+    #upsert query
+    upsert = prepare_upsert("acknowledgements_pillow", 'id', 'item_id', 'fabric', 'type',
+                            'quantity')
+             
+    #Get data and iterate
+    rows = cur1.fetchall()
+    for row in rows:
+        #extract and organize data
+        data = {'id':row[0],
+                'item_id':row[1],
+                'fabric':row[2],
+                'type':row[3],
+                'quantity':row[4]}
+        #update or insert data  
+        upsert(data)
 
 def migrate():
     """

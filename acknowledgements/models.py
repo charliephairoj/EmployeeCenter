@@ -8,6 +8,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+import boto.ses
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
@@ -82,11 +83,12 @@ class Acknowledgement(models.Model):
         #Upload and return the url
         self.upload_acknowledgement(ack_filename)
         self.upload_production(production_filename)
-        
+        #Email if decoroom
+        if "decoroom" in self.customer.name.lower():
+            self.email_decoroom()
+        Log("Acknowledgement {0} Created".format(self.id), self)
         urls = {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url':self.get_url(self.acknowledgement_key)} 
-                
-    
         return urls
     
     #Set the product from data
@@ -123,12 +125,75 @@ class Acknowledgement(models.Model):
         if product_data["type"] == "Upholstery":
             return Upholstery.objects.get(product_ptr_id=product_data["id"])
     
+    def email(self, key, recipients):
+        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        body = u"""<table width="500" cellpadding="3" cellspacing="0"> 
+                      <tr> 
+                          <td style="border-bottom-width:1px; border-bottom-style:solid; border-bottom-color:#777" width="70%"> 
+                              <a href="http://www.dellarobbiathailand.com"><img height="30px" src="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/DRLogo.jpg"></a> 
+                          </td> 
+                          <td style="border-bottom-width:1px; border-bottom-style:solid; border-bottom-color:#777; color:#777; font-size:14px" width="30%" align="right" valign="bottom">Order Received</td> 
+                      </tr> 
+                      <tr> 
+                          <td width="500" colspan="2"> 
+                          <br /> 
+                          <br /> 
+                          <p> Dear {customer}, 
+                          <br /> 
+                          <br /> Thank you for placing an order with us. Here are the details of your order, for your conveniece: 
+                          <br /> 
+                          <br /> 
+                          <table cellpadding="3" cellspacing="0" width="500"> 
+                              <tr> 
+                                  <td align="left"> <b style="color:#000">Order Number:</b> </td> 
+                                  <td align="right"> <b>{id}</b> </td> 
+                              </tr> 
+                              <tr> 
+                                  <td align="left"> 
+                                      <b style="color:#000">Acknowledgement:</b> 
+                                  </td> 
+                                  <td align="right"> 
+                                      <a href="{src}">View Your Acknowledgement(Link Valid for 72 Hours)</a> 
+                                  </td> 
+                              </tr> 
+                              <tr> 
+                                  <td align="left"> <b style="color:#000">Estimated Delivery Date:</b> 
+                                  </td> 
+                                  <td align="right"> <b>{delivery_date}</b> 
+                                  </td>
+                              </tr> 
+                          </table> 
+                          <br /> 
+                          <br /> 
+                          If you have any questions, comments or concerns, please don\'t hesistate to 
+                          <a href="info@dellarobbiathailand.com">contact us</a>. 
+                          <br /> 
+                          <br /> Sincerely,
+                          <br />The Dellarobbia Customer Service Team
+                      </p> 
+                  </td>
+              </tr> 
+          </table>""".format(id=self.id, customer=self.customer.name, 
+                             src=self.get_url(key, 259200), 
+                             delivery_date=self.delivery_date.strftime('%B %d, %Y'));    
+        
+        conn.send_email('no-replay@dellarobbiathailand.com', 
+                        'Acknowledgement of Order Placed',
+                        body,
+                        recipients,
+                        format='html')
+    
+    def email_decoroom(self):
+        self.email(self.acknowledgement_key, ['charliep@dellarobbiathailand.com', 'praparat@decoroom.com'])
+        self.email(self.production_key, ['sales@decoroom.com', 'charliep@dellarobbiathailand.com'])
+        
     #Get the Url of the document
-    def get_url(self, key):
+    def get_url(self, key, time=1800):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the url
-        url = conn.generate_url(1800, 'GET', bucket=self.bucket, key=key, force_http=True)
+        url = conn.generate_url(time, 'GET', bucket=self.bucket, key=key, force_http=True)
         #return the url
         return url
     
@@ -365,6 +430,7 @@ class Item(models.Model):
         else:
             url = None
         return url
+    
         
 #Pillows for Acknowledgement items
 class Pillow(models.Model):
@@ -374,8 +440,18 @@ class Pillow(models.Model):
     fabric = models.ForeignKey(Fabric)
         
     
-
-
-
+class Log(models.Model):
+    acknowledgement = models.ForeignKey(Acknowledgement)
+    delivery_date = models.DateField()
+    action = models.TextField()
+    
+    def __init__(self, action, acknowledgement, delivery_date=None):
+        self.action = action
+        self.acknowledgement = acknowledgement
+        if delivery_date is None:
+            self.delivery_date = self.acknowledgement.delivery_date
+        else:
+            self.delivery_date = delivery_date
+        self.save()
 
 

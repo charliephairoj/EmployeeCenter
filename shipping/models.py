@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from acknowledgements.models import Acknowledgement
+from acknowledgements.models import Acknowledgement, Log
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
@@ -47,14 +47,15 @@ class Shipping(models.Model):
         for product_data in data['products']:
             self.set_product(product_data)
         
-        self.set_acknowledgement_data()
-        
+        self.update_acknowledgement_data()
         #Initialize and create pdf  
         pdf = ShippingPDF(customer=self.customer, shipping=self, products=self.item_set.all().order_by('id'),
                           connection=self.connection)
         shipping_filename = pdf.create()
         #Upload and return the url
         self.shipping_key = self.upload(shipping_filename)
+        Log("Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id),
+            self.acknowledgement, self.delivery_date)
         urls = {'url': self.get_url(self.shipping_key)} 
         return urls
     
@@ -66,7 +67,7 @@ class Shipping(models.Model):
         if "comments" in data: item.comments = data["comments"]
         item.save()
     
-    def set_acknowledgement_data(self):
+    def update_acknowledgement_data(self):
         self.acknowledgement.delivery_date = self.delivery_date
         if len(self.acknowledgement.item_set.all()) == len(self.item_set.all()):
             self.acknowledgement.status = 'SHIPPED'

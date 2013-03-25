@@ -26,7 +26,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code39
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT+'Tahoma.ttf'))
-
+pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT+'Garuda.ttf'))
 
 class AckDocTemplate(BaseDocTemplate):
     
@@ -198,7 +198,7 @@ class AcknowledgementPDF(object):
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
                                    ('BOTTOMPADDING', (0,0), (-1,-1), 0),
                                    ('VALIGN', (0,0), (0,-1), 'BOTTOM'),
-                                   ('FONT', (0,0), (-1,-1), 'Tahoma'),
+                                   ('FONT', (0,0), (-1,-1), 'Garuda'),
                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                                    ('VALIGN', (1,0), (1,-1), 'TOP'),
                                    ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
@@ -244,7 +244,7 @@ class AcknowledgementPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1,-1), 'Tahoma')])
+                            ('FONT', (0,0), (-1,-1), 'Garuda')])
                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return the Recipient Table
@@ -282,7 +282,7 @@ class AcknowledgementPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1, -1), 'Tahoma')])
+                            ('FONT', (0,0), (-1, -1), 'Garuda')])
                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return Table
@@ -360,12 +360,12 @@ class AcknowledgementPDF(object):
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
-                                   fontName='Tahoma',
+                                   fontName='Garuda',
                                    fontSize=10,
                                    textColor=colors.CMYKColor(black=60))
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
             comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
-            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),
                                           ('FONTSIZE', (0,0), (-1, -1), 10),
                                           ('VALIGN', (0,0), (-1,-1), 'TOP'),
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
@@ -381,7 +381,7 @@ class AcknowledgementPDF(object):
                             ('LINEBELOW', (0,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
                             ('LINEAFTER', (0,0), (-1,-1), 1, colors.CMYKColor(black=60)),
                             ('LINEBEFORE', (0,0), (0,-1), 1, colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1,-1), 'Tahoma'),
+                            ('FONT', (0,0), (-1,-1), 'Garuda'),
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
                             #Align description
@@ -400,7 +400,7 @@ class AcknowledgementPDF(object):
         fabric_str = string+' {0}'
         fabric_image = self.get_image(fabric.image_url, height=30)
         fabric_table = Table([[fabric_str.format(fabric.description), fabric_image]], colWidths=(200, 50))
-        fabric_table.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+        fabric_table.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),
                                           ('FONTSIZE', (0,0), (-1, -1), 10),
                                           ('VALIGN', (0,0), (-1,-1), 'TOP'),
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
@@ -576,7 +576,7 @@ class ProductionPDF(AcknowledgementPDF):
         headingStyle = TableStyle([('TOPPADDING', (0,0), (-1,-1), 0),
                                    ('BOTTOMPADDING', (0,0), (-1,-1), 0),
                                    ('VALIGN', (0,0), (0,-1), 'BOTTOM'),
-                                   ('FONT', (0,0), (-1,-1), 'Tahoma'),
+                                   ('FONT', (0,0), (-1,-1), 'Garuda'),
                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                                    ('VALIGN', (1,0), (1,-1), 'TOP'),
                                    ('ALIGNMENT', (1,0), (1,-1), 'RIGHT'),
@@ -605,7 +605,7 @@ class ProductionPDF(AcknowledgementPDF):
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                            ('FONT', (0,0), (-1, -1), 'Tahoma')])
+                            ('FONT', (0,0), (-1, -1), 'Garuda')])
                             #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         #Return Table
@@ -672,12 +672,12 @@ class ProductionPDF(AcknowledgementPDF):
        
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
-                                   fontName='Tahoma',
+                                   fontName='Garuda',
                                    fontSize=14,
                                    textColor='red')
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
             comments = Table([['  Comments:', paragraph]], colWidths=(100, 300))
-            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Tahoma'),
+            comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),
                                           ('FONTSIZE', (0,0), (-1, -1), 16),
                                           ('VALIGN', (0,0), (-1,-1), 'TOP'),
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
@@ -697,7 +697,7 @@ class ProductionPDF(AcknowledgementPDF):
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
                             #Font
-                            ('FONT', (0,0), (-1,-1), 'Tahoma'),
+                            ('FONT', (0,0), (-1,-1), 'Garuda'),
                             #Align description
                             ('ALIGNMENT', (1,0), (1,-1), 'LEFT'),
                             ('FONTSIZE', (0,0), (-1,-1), 16)]
