@@ -54,7 +54,7 @@ class Shipping(models.Model):
         shipping_filename = pdf.create()
         #Upload and return the url
         self.shipping_key = self.upload(shipping_filename)
-        Log("Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id),
+        #Log("Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id),
             self.acknowledgement, self.delivery_date)
         urls = {'url': self.get_url(self.shipping_key)} 
         return urls

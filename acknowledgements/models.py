@@ -86,7 +86,7 @@ class Acknowledgement(models.Model):
         #Email if decoroom
         if "decoroom" in self.customer.name.lower():
             self.email_decoroom()
-        Log("Acknowledgement {0} Created".format(self.id), self)
+        #Log("Acknowledgement {0} Created".format(self.id), self)
         urls = {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url':self.get_url(self.acknowledgement_key)} 
         return urls
