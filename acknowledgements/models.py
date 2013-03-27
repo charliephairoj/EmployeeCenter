@@ -1,5 +1,6 @@
 import os
 import datetime
+import dateutil.parser
 
 from decimal import Decimal
 from django.conf import settings
@@ -43,8 +44,8 @@ class Acknowledgement(models.Model):
         date_format = '%B %d, %Y'
         data = {
                 'id': self.id,
-                'delivery_date': self.delivery_date.strftime(date_format),
-                'time_created': self.time_created.strftime(time_format),
+                'delivery_date': self.delivery_date.isoformat(),
+                'time_created': self.time_created.isoformat(),
                 'status': self.status,
                 'remarks': self.remarks,
                 'fob': self.fob,
@@ -62,10 +63,7 @@ class Acknowledgement(models.Model):
         #Set ack information
         self.customer = Customer.objects.get(id=data['customer']['id'])
         self.employee = user
-        date_obj = data['delivery_date']
-        self.delivery_date = datetime.date(date_obj['year'],
-                                           date_obj['month'],
-                                           date_obj['date'])
+        self.delivery_date = dateutil.parser.parse(data["delivery_date"])
         if "vat" in data:
             self.vat = int(data["vat"])
         if "po_id" in data:
