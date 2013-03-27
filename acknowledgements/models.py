@@ -1,7 +1,6 @@
-import sys, os
+import os
 import datetime
-import logging
-import psycopg2
+
 from decimal import Decimal
 from django.conf import settings
 from django.db import models
@@ -9,11 +8,12 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
+
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
-# Create your models here.
+
 
 #Create the __init__ial Acknowledgement category
 class Acknowledgement(models.Model):
@@ -36,35 +36,42 @@ class Acknowledgement(models.Model):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2)
     total = models.DecimalField(max_digits=15, decimal_places=2)
     vat = models.IntegerField(default=0)
-    
+
     #Get Data
     def get_data(self):
-        
+        time_format = "%B %d, %Y %H:%M:%S"
+        date_format = '%B %d, %Y'
         data = {
-                'id':self.id,
-                'delivery_date':self.delivery_date.strftime('%B %d, %Y'),
-                'time_created':self.time_created.strftime('%B %d, %Y %H:%M:%S'), 
-                'status':self.status, 
-                'remarks':self.remarks,
-                'fob':self.fob,
-                'shipping':self.shipping_method, 
-                'customer':self.customer.get_data(),
-                'employee':u'{0} {1}'.format(self.employee.first_name, self.employee.last_name), 
-                'products':[]}
+                'id': self.id,
+                'delivery_date': self.delivery_date.strftime(date_format),
+                'time_created': self.time_created.strftime(time_format),
+                'status': self.status,
+                'remarks': self.remarks,
+                'fob': self.fob,
+                'shipping': self.shipping_method,
+                'customer': self.customer.get_data(),
+                'employee': u'{0} {1}'.format(self.employee.first_name,
+                                              self.employee.last_name),
+                'products': []}
         for item in self.item_set.all().order_by('id'):
             data['products'].append(item.get_data())
         return data
-    
+
     #Create Acknowledgement
     def create(self, data, user=None):
         #Set ack information
         self.customer = Customer.objects.get(id=data['customer']['id'])
         self.employee = user
         date_obj = data['delivery_date']
-        self.delivery_date = datetime.date(date_obj['year'], date_obj['month'], date_obj['date'])
-        if "vat" in data: self.vat = int(data["vat"]) 
-        if "po_id" in data: self.po_id = data["po_id"]
-        if "remarks" in data: self.remarks = data["remarks"]
+        self.delivery_date = datetime.date(date_obj['year'],
+                                           date_obj['month'],
+                                           date_obj['date'])
+        if "vat" in data:
+            self.vat = int(data["vat"])
+        if "po_id" in data:
+            self.po_id = data["po_id"]
+        if "remarks" in data:
+            self.remarks = data["remarks"]
         self.status = 'ACKNOWLEDGED'
         self.save()
         #Set products information
@@ -75,10 +82,13 @@ class Acknowledgement(models.Model):
         self.save()
         #Insert into the previous database
         #self.insert_into_old_db()
-        #Initialize and create pdf  
-        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=self.item_set.all().order_by('id'))
+        #Initialize and create pdf
+        products = self.item_set.all().order_by('id')
+        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self,
+                                     products=products)
         ack_filename = ack_pdf.create()
-        production_pdf = ProductionPDF(customer=self.customer, ack=self, products=self.item_set.all().order_by('id'))
+        production_pdf = ProductionPDF(customer=self.customer, ack=self,
+                                       products=products)
         production_filename = production_pdf.create()
         #Upload and return the url
         self.upload_acknowledgement(ack_filename)
@@ -88,9 +98,9 @@ class Acknowledgement(models.Model):
             self.email_decoroom()
         #Log("Acknowledgement {0} Created".format(self.id), self)
         urls = {'production_url': self.get_url(self.production_key),
-                'acknowledgement_url':self.get_url(self.acknowledgement_key)} 
+                'acknowledgement_url': self.get_url(self.acknowledgement_key)}
         return urls
-    
+
     #Set the product from data
     def set_product(self, product_data):
         if "id" in product_data:
@@ -101,10 +111,10 @@ class Acknowledgement(models.Model):
         #Create Ack Item and assign product data
         ack_item = Item()
         ack_item.acknowledgement = self
-       
+
         ack_item.set_data(product, data=product_data, customer=self.customer)
         ack_item.save()
-        
+
     #Calculate totals and subtotals
     def calculate_totals(self):
         running_total = 0
@@ -114,80 +124,83 @@ class Acknowledgement(models.Model):
             running_total += product.total
         #Set Subtotal
         self.subtotal = running_total
-        discount = (Decimal(self.discount)/100)*running_total
+        discount = (Decimal(self.discount) / 100) * running_total
         running_total -= discount
-        vat = (Decimal(self.vat)/100)*running_total
+        vat = (Decimal(self.vat) / 100) * running_total
         running_total += vat
         self.total = running_total
-    
-    #Get the correct product based on type    
+
+    #Get the correct product based on type
     def get_product(self, product_data):
         if product_data["type"] == "Upholstery":
             return Upholstery.objects.get(product_ptr_id=product_data["id"])
-    
+
     def email(self, key, recipients):
-        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        body = u"""<table width="500" cellpadding="3" cellspacing="0"> 
-                      <tr> 
+        key_id = settings.AWS_ACCESS_KEY_ID
+        access_key = settings.AWS_SECRET_ACCESS_KEY
+        conn = boto.ses.connect_to_region('us-east-1',
+                                          aws_access_key_id=key_id,
+                                          aws_secret_access_key=access_key)
+        body = u"""<table width="500" cellpadding="3" cellspacing="0">
+                      <tr>
                           <td style="border-bottom-width:1px; border-bottom-style:solid; border-bottom-color:#777" width="70%"> 
                               <a href="http://www.dellarobbiathailand.com"><img height="30px" src="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/DRLogo.jpg"></a> 
-                          </td> 
+                          </td>
                           <td style="border-bottom-width:1px; border-bottom-style:solid; border-bottom-color:#777; color:#777; font-size:14px" width="30%" align="right" valign="bottom">Order Received</td> 
-                      </tr> 
-                      <tr> 
-                          <td width="500" colspan="2"> 
-                          <br /> 
-                          <br /> 
-                          <p> Dear {customer}, 
-                          <br /> 
+                      </tr>
+                      <tr>
+                          <td width="500" colspan="2">
+                          <br />
+                          <br />
+                          <p> Dear {customer},
+                          <br />
                           <br /> Thank you for placing an order with us. Here are the details of your order, for your conveniece: 
-                          <br /> 
-                          <br /> 
-                          <table cellpadding="3" cellspacing="0" width="500"> 
-                              <tr> 
-                                  <td align="left"> <b style="color:#000">Order Number:</b> </td> 
-                                  <td align="right"> <b>{id}</b> </td> 
-                              </tr> 
-                              <tr> 
-                                  <td align="left"> 
-                                      <b style="color:#000">Acknowledgement:</b> 
-                                  </td> 
-                                  <td align="right"> 
-                                      <a href="{src}">View Your Acknowledgement(Link Valid for 72 Hours)</a> 
-                                  </td> 
-                              </tr> 
-                              <tr> 
-                                  <td align="left"> <b style="color:#000">Estimated Delivery Date:</b> 
-                                  </td> 
-                                  <td align="right"> <b>{delivery_date}</b> 
+                          <br />
+                          <br />
+                          <table cellpadding="3" cellspacing="0" width="500">
+                              <tr>
+                                  <td align="left"> <b style="color:#000">Order Number:</b></td>
+                                  <td align="right"> <b>{id}</b> </td>
+                              </tr>
+                              <tr>
+                                  <td align="left">
+                                      <b style="color:#000">Acknowledgement:</b>
                                   </td>
-                              </tr> 
-                          </table> 
-                          <br /> 
-                          <br /> 
-                          If you have any questions, comments or concerns, please don\'t hesistate to 
-                          <a href="info@dellarobbiathailand.com">contact us</a>. 
-                          <br /> 
+                                  <td align="right">
+                                      <a href="{src}">View Your Acknowledgement(Link Valid for 72 Hours)</a>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td align="left"> <b style="color:#000">Estimated Delivery Date:</b>
+                                  </td>
+                                  <td align="right"> <b>{delivery_date}</b>
+                                  </td>
+                              </tr>
+                          </table>
+                          <br />
+                          <br />
+                          If you have any questions, comments or concerns, please don\'t hesistate to
+                          <a href="info@dellarobbiathailand.com">contact us</a>.
+                          <br />
                           <br /> Sincerely,
                           <br />The Dellarobbia Customer Service Team
-                      </p> 
+                      </p>
                   </td>
-              </tr> 
-          </table>""".format(id=self.id, customer=self.customer.name, 
-                             src=self.get_url(key, 259200), 
-                             delivery_date=self.delivery_date.strftime('%B %d, %Y'));    
-        
+              </tr>
+          </table>""".format(id=self.id, customer=self.customer.name,
+                             src=self.get_url(key, 259200),
+                             delivery_date=self.delivery_date.strftime('%B %d, %Y'))
+
         conn.send_email('no-replay@dellarobbiathailand.com', 
                         'Acknowledgement of Order Placed',
                         body,
                         recipients,
                         format='html')
-    
+
     def email_decoroom(self):
         self.email(self.acknowledgement_key, ['charliep@dellarobbiathailand.com', 'praparat@decoroom.com'])
         self.email(self.production_key, ['sales@decoroom.com', 'charliep@dellarobbiathailand.com'])
-        
+
     #Get the Url of the document
     def get_url(self, key, time=1800):
         #start connection
@@ -196,16 +209,15 @@ class Acknowledgement(models.Model):
         url = conn.generate_url(time, 'GET', bucket=self.bucket, key=key, force_http=True)
         #return the url
         return url
-    
-      
+
     #uploads the pdf
     def upload(self, filename, file_type):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
         bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
-        #Create a key and assign it 
-        k = Key(bucket)        
+        #Create a key and assign it
+        k = Key(bucket)
         #Set file name
         k.key = "acknowledgement/%s-%s.pdf" % (file_type, self.id)
         #upload file and set acl
@@ -216,85 +228,16 @@ class Acknowledgement(models.Model):
         #set Url, key and bucket
         self.bucket = "document.dellarobbiathailand.com"
         return k.key
-        
+
     def upload_acknowledgement(self, filename):
         self.acknowledgement_key = self.upload(filename, "Acknowledgement")
         self.save()
-        
+
     def upload_production(self, filename):
         self.production_key = self.upload(filename, "Production")
         self.save()
-        
-    def insert_into_old_db(self):
-        conn = psycopg2.connect(host='54.251.62.47', user='postgres', password='Har6401Vard88')
-        cur = conn.cursor()
-        customer_upsert = """WITH upsert AS (UPDATE customers SET name = %(name)s, telephone = %(telephone)s, email = %(email)s
-            WHERE customer_id = %(id)s RETURNING customer_id) INSERT INTO customers(customer_id, name, telephone, email) SELECT %(id)s, %(name)s,
-            %(telephone)s, %(email)s WHERE NOT EXISTS (SELECT 1 FROM upsert)"""
-        address_upsert = """WITH upsert AS (UPDATE customer_addresses SET customer_id = %(customer_id)s, address = %(address)s,
-            city = %(city)s, territory = %(territory)s, country = %(country)s, zipcode = %(zipcode)s WHERE address_id = %(id)s 
-            RETURNING customer_id) INSERT INTO customer_addresses(customer_id, address, city, territory, country, zipcode) SELECT %(id)s, 
-            %(address)s, %(city)s, %(territory)s, %(country)s, %(zipcode)s WHERE NOT EXISTS (SELECT 1 FROM upsert)"""
-        ack_query = """INSERT INTO acknowledgements (acknowledgement_id, customer_id, time_created, delivery_date, po_id, employee_id, status) 
-        VALUES(%(id)s, %(customer_id)s, %(time_created)s, %(delivery_date)s, %(po_id)s, %(employee_id)s, 'ACKNOWLEDGED')"""
-        product_query = """INSERT INTO acknowledgement_items(acknowledgement_item_id, acknowledgement_id, product_id, quantity,
-        fabric, item_description, custom, custom_item, width, depth, height, status) VALUES(%(item_id)s, %(acknowledgement_id)s, %(product_id)s,
-        %(quantity)s, %(fabric)s, %(description)s, %(is_custom_size)s, %(is_custom_item)s, %(width)s, %(depth)s, %(height)s, 'ACKNOWLEDGED')"""
-        pillow_query = """INSERT INTO acknowledgement_item_pillows(acknowledgement_pillow_id, acknowledgement_item_id, type,
-            quantity, fabric) VALUES(%(id)s, %(item_id)s, %(type)s, %(quantity)s, %(fabric)s)"""
-        customer_data = {'id':self.customer.id,
-                         'name':self.customer.name,
-                         'telephone':self.customer.telephone,
-                         'email':self.customer.email}
-        address = self.customer.address_set.all()[0]
-        address_data = {'id':address.id,
-                        'customer_id':address.contact.id,
-                        'address':address.address1,
-                        'city':address.city,
-                        'territory':address.territory,
-                        'country':address.country,
-                        'zipcode':address.zipcode}
-        ack_data = {'id':self.id, 
-                    'customer_id':self.customer.id,
-                    'time_created':self.time_created,
-                    'delivery_date':self.delivery_date,
-                    'po_id':self.po_id,
-                    'employee_id':15001} 
-        
-        cur.execute(customer_upsert, customer_data)
-        cur.execute(address_upsert, address_data)
-        cur.execute(ack_query, ack_data)
-        
-        
-        for item in self.item_set.all():
-            #Attempt to get fabric and uses none 
-            #If there is no fabric
-            try:
-                fabric = item.fabric.description
-            except:
-                fabric = None
-            item_data = {'item_id':item.id,
-                         'product_id':item.product.id,
-                         'acknowledgement_id':self.id,
-                         'quantity':item.quantity,
-                         'fabric':fabric,
-                         'description':item.description,
-                         'is_custom_size':item.is_custom_size,
-                         'is_custom_item':item.is_custom_item,
-                         'width':item.width,
-                         'depth':item.depth,
-                         'height':item.height}
-            cur.execute(product_query, item_data)
-            for pillow in item.pillow_set.all():
-                pillow_data = {'id':pillow.id, 
-                               'item_id':item.id,
-                               'type':pillow.type,
-                               'quantity':pillow.quantity,
-                               'fabric':pillow.fabric.description}
-                cur.execute(pillow_query, pillow_data)
-        #Commit the changes
-        conn.commit()
-        
+
+
 #Create the Acknowledgement Items
 class Item(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)
@@ -302,7 +245,8 @@ class Item(models.Model):
     type = models.CharField(max_length=20)
     #Price not including discount
     quantity = models.IntegerField(null=False)
-    unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
+    unit_price = models.DecimalField(null=True, max_digits=15,
+                                     decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     width = models.IntegerField(db_column='width', default=0)
     depth = models.IntegerField(db_column='depth', default=0)
@@ -311,22 +255,24 @@ class Item(models.Model):
     fabric = models.ForeignKey(Fabric)
     fabric_description = models.TextField(default=None)
     description = models.TextField()
-    is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
+    is_custom_size = models.BooleanField(db_column='is_custom_size',
+                                         default=False)
     is_custom_item = models.BooleanField(default=False)
     status = models.CharField(max_length=50)
     bucket = models.TextField()
     image_key = models.TextField()
     comments = models.TextField()
-    
+
     def set_data(self, product, data=None, user=None, customer=None):
         """Set the objects attributes with data from the product
         as defined by the database. After, if there is a data object
-        they data object will used to be set the attributes with the 
+        they data object will used to be set the attributes with the
         proper check for which can be overwritten and which can't"""
         #Set quantity used for calculation later
         if data != None:
-            if "quantity" in data: self.quantity = int(data["quantity"])
-            
+            if "quantity" in data:
+                self.quantity = int(data["quantity"])
+
         else:
             self.quantity = 0
         #Set from product
@@ -334,7 +280,7 @@ class Item(models.Model):
         #Set from data if exists
         if data != None:
             self._set_attr_from_data(data)
-                
+
     def _set_attr_from_product(self, product, customer):
         self.description = product.description
         self.product = product
@@ -349,10 +295,11 @@ class Item(models.Model):
             else:
                 price = 0
         #Make price 0 if none
-        if price is None: price = 0
-        #Set the unit price then total 
+        if price is None:
+            price = 0
+        #Set the unit price then total
         self.unit_price = price
-        self.total = self.unit_price*Decimal(self.quantity)
+        self.total = self.unit_price * Decimal(self.quantity)
         #Set dimensions
         self.width = product.width
         self.depth = product.depth
@@ -361,20 +308,23 @@ class Item(models.Model):
         self.bucket = product.bucket
         self.image_key = product.image_key
         self.save()
-        
-                
+
     def _set_attr_from_data(self, data):
         """Sets the attribute, but checks if they
         exists first."""
-        if "comments" in data: self.comments = data["comments"]
+        if "comments" in data:
+            self.comments = data["comments"]
         #Set dimensions
         if "is_custom_size" in data:
             if data["is_custom_size"] == True:
                 self.is_custom_size = True
                 #Checks if data is greater than 0
-                if "width" in data and data['width'] > 0: self.width = int(data['width'])
-                if "depth" in data and data['depth'] > 0: self.depth = int(data['depth'])
-                if "height" in data and data['height'] > 0: self.height = int(data['height'])
+                if "width" in data and data['width'] > 0:
+                    self.width = int(data['width'])
+                if "depth" in data and data['depth'] > 0:
+                    self.depth = int(data['depth'])
+                if "height" in data and data['height'] > 0:
+                    self.height = int(data['height'])
         #Checks if it a custom item
         if "is_custom" in data:
             if data["is_custom"] == True:
@@ -397,54 +347,56 @@ class Item(models.Model):
                             pillows[i]["quantity"] += 1
                             break
                 else:
-                    if "quantity" not in pillow: pillow["quantity"] = 1
+                    if "quantity" not in pillow:
+                        pillow["quantity"] = 1
                     pillows.append(pillow)
-                    
-           
             #Get pillows
-        
             for pillow in pillows:
                 ack_pillow = Pillow()
                 ack_pillow.item = self
                 ack_pillow.type = pillow["type"]
-                ack_pillow.quantity = pillow["quantity"]*self.quantity
-                ack_pillow.fabric = Fabric.objects.get(id=pillow["fabric"]["id"])
+                ack_pillow.quantity = pillow["quantity"] * self.quantity
+                fabric_id = pillow["fabric"]["id"]
+                ack_pillow.fabric = Fabric.objects.get(id=fabric_id)
                 ack_pillow.save()
-    
+
     def get_data(self):
-        data = {'id':self.id,
-                'is_custom_size':self.is_custom_size,
-                'width':self.width,
-                'height':self.height,
-                'depth':self.depth,
-                'description':self.description,
-                'comments':self.comments,
-                'quantity':self.quantity,
-                'image':{'url':self._get_image_url()}}
+        data = {'id': self.id,
+                'is_custom_size': self.is_custom_size,
+                'width': self.width,
+                'height': self.height,
+                'depth': self.depth,
+                'description': self.description,
+                'comments': self.comments,
+                'quantity': self.quantity,
+                'image': {'url': self._get_image_url()}}
         return data
-    
+
     def _get_image_url(self):
         if self.bucket is not None and self.image_key is not None:
-            conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-            url = conn.generate_url(1800, 'GET', bucket=self.bucket, key=self.image_key, force_http=True)
+
+            conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
+                                settings.AWS_SECRET_ACCESS_KEY)
+            url = conn.generate_url(1800, 'GET', bucket=self.bucket,
+                                    key=self.image_key, force_http=True)
         else:
             url = None
         return url
-    
-        
+
+
 #Pillows for Acknowledgement items
 class Pillow(models.Model):
     item = models.ForeignKey(Item)
     type = models.CharField(max_length=10, null=True)
     quantity = models.IntegerField()
     fabric = models.ForeignKey(Fabric)
-        
-    
+
+
 class Log(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)
     delivery_date = models.DateField()
     action = models.TextField()
-    
+
     def __init__(self, action, acknowledgement, delivery_date=None):
         self.action = action
         self.acknowledgement = acknowledgement
@@ -453,5 +405,3 @@ class Log(models.Model):
         else:
             self.delivery_date = delivery_date
         self.save()
-
-

@@ -5,10 +5,11 @@ import logging
 import time
 import json
 
-from django.http import HttpResponse
-from django.conf import settings
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from django.http import HttpResponse
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from products.models import Model, Configuration, Upholstery
 from utilities.http import processRequest
@@ -40,11 +41,14 @@ def upload_image(image, key, bucket='media.dellarobbiathailand.com', acl='public
             'bucket':'media.dellarobbiathailand.com'}
     return data
 
+
 #Handles request for Models
+@login_required
 def model(request, model_id=0):
     return processRequest(request, Model, model_id)
 
 
+@login_required
 def model_image(request):
     if request.method == "POST":
         filename = save_upload(request)
@@ -55,15 +59,18 @@ def model_image(request):
     
     
 #Handles request for configs
+@login_required
 def configuration(request, configuration_id=0):
     return processRequest(request, Configuration, configuration_id)
        
 
 #Handles request for u
+@login_required
 def upholstery(request, uphol_id=0):
     return processRequest(request, Upholstery, uphol_id)
         
-        
+
+@login_required
 def upholstery_image(request):
     if request.method == "POST":
         filename = save_upload(request)

@@ -3,10 +3,11 @@ import json
 import logging
 import time
 
-from django.conf import settings
-from django.http import HttpResponseRedirect, HttpResponse
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.decorators import login_required
 
 from supplies.models import Supply, Log
 from utilities.http import processRequest
@@ -16,11 +17,13 @@ logger = logging.getLogger('EmployeeCenter');
 
  
 #Supplies
+@login_required
 def supply(request, supply_id=0):
     return processRequest(request, Supply, supply_id)
 
 
 #Reserve fabric
+@login_required
 def reserve(request, supply_id):    
     length = request.POST.get('length')
     remark = request.POST.get('remark')
@@ -32,6 +35,7 @@ def reserve(request, supply_id):
 
 
 #Add length to a fabric
+@login_required
 def add(request, suppply_id):    
     length = request.POST.get('length')
     remark = request.POST.get('remark')
@@ -43,6 +47,7 @@ def add(request, suppply_id):
     
     
 #Subtracts length from a fabric
+@login_required
 def subtract(request, supply_id):    
     length = request.POST.get('length')
     remark = request.POST.get('remark')
@@ -54,6 +59,7 @@ def subtract(request, supply_id):
     
     
 #Resets Length from a fabric
+@login_required
 def reset(request, supply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
@@ -64,7 +70,8 @@ def reset(request, supply_id):
     return response
 
 
-#Fabric Log 
+#Fabric Log
+@login_required
 def supply_log(request, supply_id=0):
     if request.method == "GET":
         logs = Log.objects.filter(supply_id=supply_id).order_by('-timestamp')
@@ -85,6 +92,7 @@ def supply_log(request, supply_id=0):
     
 
 #uploads a fabric
+@login_required
 def supply_image(request, supply_id=0):
     if request.method == "POST":
         image = request.FILES['image']
@@ -120,12 +128,14 @@ def supply_image(request, supply_id=0):
     
     
 #fabric
+@login_required
 def fabric(request, fabric_id=0):
     from supplies.models import Fabric
     return processRequest(request, Fabric, fabric_id)
 
 
 #uploads a fabric
+@login_required
 def fabric_image(request, fabric_id=0):
     from django.conf import settings
     from boto.s3.connection import S3Connection
@@ -175,6 +185,7 @@ def fabric_image(request, fabric_id=0):
         
         
 #Reserve fabric
+@login_required
 def fabric_reserve(request, fabric_id):
     
     from supplies.models import Fabric
@@ -192,6 +203,7 @@ def fabric_reserve(request, fabric_id):
 
 
 #Add length to a fabric
+@login_required
 def fabric_add(request, fabric_id):
     
     from supplies.models import Fabric
@@ -209,6 +221,7 @@ def fabric_add(request, fabric_id):
     
     
 #Subtracts length from a fabric
+@login_required
 def fabric_subtract(request, fabric_id):
     
     from supplies.models import Fabric
@@ -227,6 +240,7 @@ def fabric_subtract(request, fabric_id):
     
     
 #Resets Length from a fabric
+@login_required
 def fabric_reset(request, fabric_id):
     
     from supplies.models import Fabric
@@ -245,6 +259,7 @@ def fabric_reset(request, fabric_id):
 
 
 #Fabric Log 
+@login_required
 def fabric_log(request, fabric_id=0):
     from supplies.models import FabricLog
     
@@ -271,47 +286,56 @@ def fabric_log(request, fabric_id=0):
         
         
 #foam
+@login_required
 def foam(request, foam_id=0):
     from supplies.models import Foam
     return processRequest(request, Foam, foam_id)
 
 
+@login_required
 def glue(request, glue_id=0):
     from supplies.models import Glue
     return processRequest(request, Glue, glue_id)
 
 
 #lumber
+@login_required
 def lumber(request, lumber_id=0):
     from supplies.models import Lumber
     return processRequest(request, Lumber, lumber_id)
     
 
+@login_required
 def sewing_thread(request, sewing_thread_id=0):
     from supplies.models import SewingThread
     return processRequest(request, SewingThread, sewing_thread_id)
 
 
+@login_required
 def screw(request, screw_id=0):
     from supplies.models import Screw
     return processRequest(request, Screw, screw_id)
 
 
+@login_required
 def staple(request, staple_id=0):
     from supplies.models import Staple
     return processRequest(request, Staple, staple_id)
 
 
+@login_required
 def webbing(request, webbing_id=0):
     from supplies.models import Webbing
     return processRequest(request, Webbing, webbing_id)
 
 
+@login_required
 def wool(request, wool_id=0):
     from supplies.models import Wool
     return processRequest(request, Wool, wool_id)
 
 
+@login_required
 def zipper(request, zipper_id=0):
     from supplies.models import Zipper
     return processRequest(request, Zipper, zipper_id)

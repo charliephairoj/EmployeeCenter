@@ -54,7 +54,8 @@ class Product(models.Model):
                 'units':self.units,
                 'type':self.type,
                 'description':self.description,
-                'url':self.image_url}
+                'url':self.image_url,
+                'image':{'url':self.image_url}}
         #Checks to see if there are pillows to add
         pillows = self.pillow_set.all()
         if len(pillows) > 0:
@@ -253,7 +254,7 @@ class Upholstery(Product):
         data = {"model":{"id":self.model.id,
                          "model":self.model.model,
                          "name":self.model.name},
-                "configuration":{"id ":self.configuration.id,
+                "configuration":{"id":self.configuration.id,
                                  "configuration":self.configuration.configuration}}
         
             
