@@ -13,12 +13,16 @@ from acknowledgements.models import Acknowledgement
 
 
 @login_required
-def acknowledgement(request):
+def acknowledgement(request, ack_id=0):
     #Get Request
     if request.method == "GET":
-        data = []
-        for ack in Acknowledgement.objects.all().order_by('-id'):
-            data.append(ack.get_data())
+        if ack_id == 0:
+            data = []
+            for ack in Acknowledgement.objects.all().order_by('-id'):
+                data.append(ack.get_data())
+        else:
+            ack = Acknowledgement.objects.get(id=ack_id)
+            data = ack.get_data()
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         return response
 
@@ -28,8 +32,8 @@ def acknowledgement(request):
         urls = ack.create(data, user=request.user)
         data = urls.update(ack.get_data())
         return HttpResponse(json.dumps(urls), mimetype="application/json")
-    
-    
+
+
 #Get url
 @login_required
 def acknowledgement_url(request, ack_id=0):
@@ -41,15 +45,15 @@ def acknowledgement_url(request, ack_id=0):
 def acknowledgement_item_image(request):
     if request.method == "POST":
         image = request.FILES['image']
-        filename = settings.MEDIA_ROOT+str(time.time())+'.jpg'
-        with open(filename, 'wb+' ) as destination:
+        filename = settings.MEDIA_ROOT + str(time.time()) + '.jpg'
+        with open(filename, 'wb+') as destination:
             for chunk in image.chunks():
                 destination.write(chunk)
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
         bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-        #Create a key and assign it 
+        #Create a key and assign it
         k = Key(bucket)
         #Set file name
         k.key = "acknowledgement/item/image/%f.jpg" % (time.time())
@@ -61,12 +65,11 @@ def acknowledgement_item_image(request):
         k.set_canned_acl('private')
         #set Url, key and bucket
         data = {
-                'url':k.generate_url(300, force_http=True),
-                'key':k.key,
-                'bucket':'media.dellarobbiathailand.com'
+                'url': k.generate_url(300, force_http=True),
+                'key': k.key,
+                'bucket': 'media.dellarobbiathailand.com'
         }
         #self.save()
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response
-        

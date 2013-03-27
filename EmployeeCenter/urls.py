@@ -2,16 +2,12 @@ from django.conf.urls import patterns, url
 from django.conf import settings
 
 
-
 #Public views
-
 urlpatterns = patterns('products.views',
-   
     url(r'^public/upholstery', 'upholstery')
 )
 
 #primary login and url routing
-
 urlpatterns += patterns('login.views',
     url(r'^$', 'app_login'),
     url(r'^main$', 'main'),
@@ -25,8 +21,6 @@ urlpatterns += patterns('auth.views',
     url(r'^auth_service$', 'current_user'),
     url(r'^auth_service/change_password$', 'change_password'),
     url(r'^oauth2callback', 'oauth_callback')
-   
-    
 )
 
 #Routes for the Library
@@ -43,22 +37,19 @@ urlpatterns += patterns('products.views',
     url(r'^upholstery$', 'upholstery'),
     url(r'^upholstery/image$', 'upholstery_image'),
     url(r'^upholstery/(?P<uphol_id>\d+)$', 'upholstery'),
-    
 )
+
 urlpatterns += patterns('contacts.views',
     url(r'^customer$', 'customer'),
     url(r'^customer/(?P<customer_id>\d+)$', 'customer'),
     url(r'^supplier$', 'supplier'),
-    url(r'^supplier/(?P<supplier_id>\d+)$', 'supplier'),  
+    url(r'^supplier/(?P<supplier_id>\d+)$', 'supplier'),
     url(r'^supplier_contact$', 'supplierContact'),
-    url(r'^supplier_contact/(?P<supplier_contact_id>\d+)$', 'supplierContact'),  
+    url(r'^supplier_contact/(?P<supplier_contact_id>\d+)$', 'supplierContact'),
 )
 
-
 #URL settings for supplies
-
-urlpatterns += patterns('supplies.views', 
-  
+urlpatterns += patterns('supplies.views',
     url(r'^supply$', 'supply'),
     url(r'^supply/(?P<supply_id>\d+)$', 'supply'),
     url(r'^supply/(?P<supply_id>\d+)$', 'fabric'),
@@ -69,17 +60,12 @@ urlpatterns += patterns('supplies.views',
     url(r'^supply/(?P<supply_id>\d+)/log$', 'supply_log'),
     url(r'^supply/(?P<supply_id>\d+)/image$', 'supply_image'),
     url(r'^supply/image$', 'supply_image'),
-    
     url(r'^lumber$', 'lumber'),
     url(r'^lumber/(?P<lumber_id>\d+)$', 'lumber'),
-    
-
     url(r'^foam$', 'foam'),
     url(r'^foam/(?P<foam_id>\d+)$', 'foam'),
-    
     url(r'^glue$', 'glue'),
     url(r'^glue/(?P<glue_id>\d+)$', 'glue'),
-    
     url(r'^fabric$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)$', 'fabric'),
     url(r'^fabric/(?P<fabric_id>\d+)/reserve$', 'fabric_reserve'),
@@ -88,7 +74,6 @@ urlpatterns += patterns('supplies.views',
     url(r'^fabric/(?P<fabric_id>\d+)/reset$', 'fabric_reset'),
     url(r'^fabric/(?P<fabric_id>\d+)/log$', 'fabric_log'),
     url(r'^fabric/(?P<fabric_id>\d+)/image$', 'fabric_image'),
-    
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
 
@@ -106,43 +91,39 @@ urlpatterns += patterns('supplies.views',
 
     url(r'^zipper$', 'zipper'),
     url(r'^zipper/(?P<zipper_id>\d+)$', 'zipper'),
-    
 )
 
 #URLS for Purchase Order
 
-urlpatterns += patterns('po.views', 
+urlpatterns += patterns('po.views',
     url(r'^purchase_order$', 'purchase_order'),
     url(r'^purchase_order/(?P<po_id>\d+)$', 'purchase_order'),
-   
 )
 
 #URLS for Acknowledgement
 
-urlpatterns += patterns('acknowledgements.views', 
+urlpatterns += patterns('acknowledgements.views',
     url(r'^acknowledgement$', 'acknowledgement'),
+    url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
     url(r'^acknowledgement/item/image$', 'acknowledgement_item_image')
 )
 
 #URLS for Shipping
-urlpatterns += patterns('shipping.views', 
+urlpatterns += patterns('shipping.views',
     url(r'^shipping$', 'shipping'),
 )
 
 #this section deals with the administration routing area
 
-urlpatterns += patterns('administrator.views', 
+urlpatterns += patterns('administrator.views',
     url(r'^permission$', 'permission'),
     url(r'^group$', 'group'),
     url(r'^group/(?P<group_id>\d+)$', 'group'),
     url(r'^user$', 'user'),
     url(r'^user/(?P<user_id>\d+)$', 'user'),
-
 )
 
 urlpatterns += patterns('',
-    url(r'^(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT})
+    url(r'^(?P<path>.*)$', 'django.views.static.serve',
+        {'document_root': settings.STATIC_ROOT})
 )
-
-
-
