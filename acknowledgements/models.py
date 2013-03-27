@@ -369,7 +369,15 @@ class Item(models.Model):
                 'description': self.description,
                 'comments': self.comments,
                 'quantity': self.quantity,
+                'pillows': [],
                 'image': {'url': self._get_image_url()}}
+        for pillow in self.pillow_set.all():
+            data["pillows"].append(pillow.get_data())
+        try:
+            data.update({'fabric': {'fabric': self.fabric.description,
+                                    'image': {'url': self.fabric.image_url}}})
+        except:
+            pass
         return data
 
     def _get_image_url(self):
@@ -387,9 +395,19 @@ class Item(models.Model):
 #Pillows for Acknowledgement items
 class Pillow(models.Model):
     item = models.ForeignKey(Item)
-    type = models.CharField(max_length=10, null=True)
+    type = models.CharField(db_column="type", max_length=10, null=True)
     quantity = models.IntegerField()
     fabric = models.ForeignKey(Fabric)
+
+    def get_data(self):
+        data = {'type': self.type,
+                'quantity': self.quantity}
+        try:
+            data.update({'fabric': {'description': self.fabric.description,
+                                    'image': {'url': self.fabric.image_url}}})
+        except:
+            pass
+        return data
 
 
 class Log(models.Model):
