@@ -2,6 +2,7 @@
 import json
 import os
 import time
+import dateutil.parser
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -17,8 +18,28 @@ def acknowledgement(request, ack_id=0):
     #Get Request
     if request.method == "GET":
         if ack_id == 0:
+            get_data = request.GET
             data = []
-            for ack in Acknowledgement.objects.all().order_by('-id'):
+            acks = Acknowledgement.objects.all().order_by('-id')
+
+            #Additional filters from parameters
+            if "start_date" in get_data and "end_date" in get_data:
+                start_date = dateutil.parser.parse(get_data['start_date'])
+                end_date = dateutil.parser.parse(get_data['end_date'])
+                print start_date
+                print end_date
+                acks = acks.filter(delivery_date__range=[start_date, end_date])
+            elif "start_date" in request.GET:
+                start_date = dateutil.parser.parse(get_data['start_date'])
+                acks = acks.filter(delivery_date__gte=start_date)
+            elif "end_date" in get_data:
+                end_date = dateutil.parser.parse(get_data['end_date'])
+                acks = acks.filter(delivery_date__lte=end_date)
+            elif "date" in get_data:
+                date = dateutil.parser.parse(get_data['date'])
+                acks = acks.filter(delivery_date=date)
+
+            for ack in acks:
                 data.append(ack.get_data())
         else:
             ack = Acknowledgement.objects.get(id=ack_id)
@@ -50,7 +71,8 @@ def acknowledgement_item_image(request):
             for chunk in image.chunks():
                 destination.write(chunk)
         #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
+                            settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
         bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
         #Create a key and assign it

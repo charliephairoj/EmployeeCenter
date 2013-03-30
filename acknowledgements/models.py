@@ -40,8 +40,6 @@ class Acknowledgement(models.Model):
 
     #Get Data
     def get_data(self):
-        time_format = "%B %d, %Y %H:%M:%S"
-        date_format = '%B %d, %Y'
         data = {
                 'id': self.id,
                 'delivery_date': self.delivery_date.isoformat(),
