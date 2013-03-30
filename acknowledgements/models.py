@@ -48,6 +48,7 @@ class Acknowledgement(models.Model):
                 'status': self.status,
                 'remarks': self.remarks,
                 'fob': self.fob,
+                'vat': self.vat,
                 'shipping': self.shipping_method,
                 'customer': self.customer.get_data(),
                 'employee': u'{0} {1}'.format(self.employee.first_name,
@@ -80,20 +81,14 @@ class Acknowledgement(models.Model):
         #Insert into the previous database
         #self.insert_into_old_db()
         #Initialize and create pdf
-        products = self.item_set.all().order_by('id')
-        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self,
-                                     products=products)
-        ack_filename = ack_pdf.create()
-        production_pdf = ProductionPDF(customer=self.customer, ack=self,
-                                       products=products)
-        production_filename = production_pdf.create()
+        ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
         self.upload_acknowledgement(ack_filename)
         self.upload_production(production_filename)
         #Email if decoroom
         if "decoroom" in self.customer.name.lower():
             self.email_decoroom()
-        #Log("Acknowledgement {0} Created".format(self.id), self)
+        self.create_log("Ack# {0} Created", self.delivery_date, self.employee)
         urls = {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url': self.get_url(self.acknowledgement_key)}
         return urls
@@ -101,6 +96,26 @@ class Acknowledgement(models.Model):
     def update(self, data, employee=None):
         if "delivery_date" in data:
             self.set_delivery_date(data["delivery_date"], employee=employee)
+        ack_filename, production_filename = self.create_pdfs()
+        #Upload and return the url
+        self.upload_acknowledgement(ack_filename, '-revision')
+        self.upload_production(production_filename, '-revision')
+        #Email if decoroom
+        """if "decoroom" in self.customer.name.lower():
+            self.email_decoroom()"""
+        urls = {'production_url': self.get_url(self.production_key),
+                'acknowledgement_url': self.get_url(self.acknowledgement_key)}
+        return urls
+
+    def create_pdfs(self):
+        products = self.item_set.all().order_by('id')
+        ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self,
+                                     products=products)
+        ack_filename = ack_pdf.create()
+        production_pdf = ProductionPDF(customer=self.customer, ack=self,
+                                       products=products)
+        production_filename = production_pdf.create()
+        return ack_filename, production_filename
 
     def create_log(self, action, delivery_date=None, employee=None):
         log = AcknowledgementLog()
@@ -237,15 +252,17 @@ class Acknowledgement(models.Model):
         return url
 
     #uploads the pdf
-    def upload(self, filename, file_type):
+    def upload(self, filename, file_type, appendix=''):
         #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
+                            settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
         bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
         #Create a key and assign it
         k = Key(bucket)
         #Set file name
-        k.key = "acknowledgement/%s-%s.pdf" % (file_type, self.id)
+        k.key = "acknowledgement/{0}-{1}{2}.pdf".format(file_type, self.id,
+                                                        appendix)
         #upload file and set acl
         k.set_contents_from_filename(filename)
         k.set_acl('private')
@@ -255,12 +272,12 @@ class Acknowledgement(models.Model):
         self.bucket = "document.dellarobbiathailand.com"
         return k.key
 
-    def upload_acknowledgement(self, filename):
-        self.acknowledgement_key = self.upload(filename, "Acknowledgement")
+    def upload_acknowledgement(self, filename, **kwargs):
+        self.acknowledgement_key = self.upload(filename, "Acknowledgement", **kwargs)
         self.save()
 
-    def upload_production(self, filename):
-        self.production_key = self.upload(filename, "Production")
+    def upload_production(self, filename, **kwargs):
+        self.production_key = self.upload(filename, "Production", **kwargs)
         self.save()
 
 
