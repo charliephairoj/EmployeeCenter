@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 
 from supplies.models import Supply, Log
-from utilities.http import processRequest
+from utilities.http import processRequest, httpGETProcessor, httpPOSTProcessor, httpPUTProcessor, httpDELETEProcessor
 
 
 logger = logging.getLogger('EmployeeCenter');
@@ -19,8 +19,28 @@ logger = logging.getLogger('EmployeeCenter');
 #Supplies
 @login_required
 def supply(request, supply_id=0):
-    return processRequest(request, Supply, supply_id)
-
+    from supplies.models import Supply
+    if request.method == "GET":
+        if supply_id == 0:
+            get_data = request.GET
+            data = []
+            supplies = Supply.objects.all()
+            if "supplier_id" in get_data:
+                supplies = supplies.filter(supplier_id=get_data["supplier_id"])
+            for supply in supplies:
+                data.append(supply.get_data())
+            response = HttpResponse(json.dumps(data), mimetype="application/json")
+            response.status_code = 200
+            return response
+        else:
+            httpGETProcessor(request, Supply, supply_id)
+    elif request.method == "POST":
+        if supply_id == 0:
+            return httpPOSTProcessor(request, Supply, supply_id)
+        else:
+            return httpPUTProcessor(request, Supply, supply_id)
+    elif request.method == "DELETE":
+        return httpDELETEProcessor(request, Supply, supply_id)
 
 #Reserve fabric
 @login_required

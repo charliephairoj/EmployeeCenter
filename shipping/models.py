@@ -18,7 +18,7 @@ import acknowledgements
 
 
 class Shipping(models.Model):
-    delivery_date = models.DateField()
+    delivery_date = models.DateTimeField()
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     acknowledgement = models.ForeignKey(Acknowledgement,
                                         on_delete=models.PROTECT)

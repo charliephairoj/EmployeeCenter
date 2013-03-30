@@ -27,7 +27,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateField()
+    delivery_date = models.DateTimeField()
     status = models.TextField()
     production_key = models.TextField()
     acknowledgement_key = models.TextField()
@@ -94,18 +94,20 @@ class Acknowledgement(models.Model):
         return urls
 
     def update(self, data, employee=None):
+        print data["delivery_date"]
         if "delivery_date" in data:
             self.set_delivery_date(data["delivery_date"], employee=employee)
-        ack_filename, production_filename = self.create_pdfs()
+        self.save()
+        """ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
+
         ack_key = self.upload(ack_filename, 'Acknowledgement', appendix='-revision')
         production_key = self.upload(production_filename, 'Production', appendix='-revision')
         #Email if decoroom
-        """if "decoroom" in self.customer.name.lower():
-            self.email_decoroom()"""
         urls = {'production_url': self.get_url(production_key),
                 'acknowledgement_url': self.get_url(ack_key)}
-        return urls
+        return urls"""
+        return {}
 
     def create_pdfs(self):
         products = self.item_set.all().order_by('id')
@@ -455,7 +457,7 @@ class Pillow(models.Model):
 
 class AcknowledgementLog(Log):
     acknowledgement = models.ForeignKey(Acknowledgement)
-    delivery_date = models.DateField()
+    delivery_date = models.DateTimeField()
 
 
 
