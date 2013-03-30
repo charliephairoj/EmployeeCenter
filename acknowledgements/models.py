@@ -98,13 +98,13 @@ class Acknowledgement(models.Model):
             self.set_delivery_date(data["delivery_date"], employee=employee)
         ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
-        self.upload_acknowledgement(ack_filename, appendix='-revision')
-        self.upload_production(production_filename, appendix='-revision')
+        ack_key = self.upload(ack_filename, 'Acknowledgement', appendix='-revision')
+        production_key = self.upload(production_filename, 'Production', appendix='-revision')
         #Email if decoroom
         """if "decoroom" in self.customer.name.lower():
             self.email_decoroom()"""
-        urls = {'production_url': self.get_url(self.production_key),
-                'acknowledgement_url': self.get_url(self.acknowledgement_key)}
+        urls = {'production_url': self.get_url(production_key),
+                'acknowledgement_url': self.get_url(ack_key)}
         return urls
 
     def create_pdfs(self):
