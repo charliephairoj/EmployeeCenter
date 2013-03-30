@@ -123,10 +123,7 @@ class Acknowledgement(models.Model):
         delivery_date = dateutil.parser.parse(delivery_date)
         if self.delivery_date != None:
             action = "Change Delivery Date to {0}".format(delivery_date.strftime('%B %d, %Y'))
-            if user is not None:
-                self.create_log(action, delivery_date, employee=employee)
-            else:
-                self.create_log(action, delivery_date)
+            self.create_log(action, delivery_date, employee=employee)
 
         self.delivery_date = delivery_date
 

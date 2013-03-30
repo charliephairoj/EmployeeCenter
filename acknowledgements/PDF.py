@@ -298,7 +298,7 @@ class AcknowledgementPDF(object):
         except:
             pass
         if product.is_custom_size:
-            dimension_str = 'Width: {0}imm Depth: {1}imm Height: {2}imm'.format(product.width,
+            dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width,
                                                                 product.depth,
                                                                 product.height)
             data.append(['', dimension_str])
