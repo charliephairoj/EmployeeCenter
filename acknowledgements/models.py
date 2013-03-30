@@ -98,8 +98,8 @@ class Acknowledgement(models.Model):
             self.set_delivery_date(data["delivery_date"], employee=employee)
         ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
-        self.upload_acknowledgement(ack_filename, '-revision')
-        self.upload_production(production_filename, '-revision')
+        self.upload_acknowledgement(ack_filename, appendix='-revision')
+        self.upload_production(production_filename, appendix='-revision')
         #Email if decoroom
         """if "decoroom" in self.customer.name.lower():
             self.email_decoroom()"""
@@ -252,7 +252,7 @@ class Acknowledgement(models.Model):
         return url
 
     #uploads the pdf
-    def upload(self, filename, file_type, appendix=''):
+    def upload(self, filename, file_type, appendix='', *args, **kwargs):
         #start connection
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
                             settings.AWS_SECRET_ACCESS_KEY)
@@ -272,12 +272,12 @@ class Acknowledgement(models.Model):
         self.bucket = "document.dellarobbiathailand.com"
         return k.key
 
-    def upload_acknowledgement(self, filename, **kwargs):
-        self.acknowledgement_key = self.upload(filename, "Acknowledgement", **kwargs)
+    def upload_acknowledgement(self, filename, *args, **kwargs):
+        self.acknowledgement_key = self.upload(filename, "Acknowledgement", *args, **kwargs)
         self.save()
 
-    def upload_production(self, filename, **kwargs):
-        self.production_key = self.upload(filename, "Production", **kwargs)
+    def upload_production(self, filename, *args, **kwargs):
+        self.production_key = self.upload(filename, "Production", *args, **kwargs)
         self.save()
 
 
