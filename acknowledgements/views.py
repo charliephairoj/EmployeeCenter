@@ -59,8 +59,8 @@ def acknowledgement(request, ack_id=0):
             data = json.loads(request.body)
             ack = Acknowledgement.objects.get(id=ack_id)
             urls = ack.update(data, request.user)
-            data = urls.update(ack.get_data())
-            return HttpResponse(json.dumps(data),
+            urls.update(ack.get_data())
+            return HttpResponse(json.dumps(urls),
                                 mimetype="application/json")
 
 
