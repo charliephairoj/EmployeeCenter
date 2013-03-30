@@ -14,6 +14,7 @@ from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
+from auth.models import Log
 
 
 #Create the __init__ial Acknowledgement category
@@ -61,7 +62,7 @@ class Acknowledgement(models.Model):
         #Set ack information
         self.customer = Customer.objects.get(id=data['customer']['id'])
         self.employee = user
-        self.delivery_date = dateutil.parser.parse(data["delivery_date"])
+        self.set_delivery_date(data['delivery_date'])
         if "vat" in data:
             self.vat = int(data["vat"])
         if "po_id" in data:
@@ -96,6 +97,38 @@ class Acknowledgement(models.Model):
         urls = {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url': self.get_url(self.acknowledgement_key)}
         return urls
+
+    def update(self, data, employee=None):
+        if "delivery_date" in data:
+            self.set_delivery_date(data["delivery_date"], employee=employee)
+
+    def create_log(self, action, delivery_date=None, employee=None):
+        log = AcknowledgementLog()
+        log.acknowledgement = self
+        if employee is not None:
+            log.employee = employee
+        else:
+            log.employee = self.employee
+        if delivery_date is None:
+            log.delivery_date = self.delivery_date
+        else:
+            log.delivery_date = delivery_date
+        log.action = action
+        log.save()
+
+    def set_delivery_date(self, delivery_date, employee=None):
+        """This function sets the delivery date and then
+        conditionally performs additional actions if the
+        delivery_date has been previously set."""
+        delivery_date = dateutil.parser.parse(delivery_date)
+        if self.delivery_date != None:
+            action = "Change Delivery Date to {0}".format(delivery_date.strftime('%B %d, %Y'))
+            if user is not None:
+                self.create_log(action, delivery_date, employee=employee)
+            else:
+                self.create_log(action, delivery_date)
+
+        self.delivery_date = delivery_date
 
     #Set the product from data
     def set_product(self, product_data):
@@ -194,8 +227,8 @@ class Acknowledgement(models.Model):
                         format='html')
 
     def email_decoroom(self):
-        self.email(self.acknowledgement_key, ['charliep@dellarobbiathailand.com', 'praparat@decoroom.com'])
-        self.email(self.production_key, ['sales@decoroom.com', 'charliep@dellarobbiathailand.com'])
+        self.email(self.acknowledgement_key, ['praparat@decoroom.com'])
+        self.email(self.production_key, ['sales@decoroom.com'])
 
     #Get the Url of the document
     def get_url(self, key, time=1800):
@@ -406,16 +439,9 @@ class Pillow(models.Model):
         return data
 
 
-class Log(models.Model):
+class AcknowledgementLog(Log):
     acknowledgement = models.ForeignKey(Acknowledgement)
     delivery_date = models.DateField()
-    action = models.TextField()
 
-    def __init__(self, action, acknowledgement, delivery_date=None):
-        self.action = action
-        self.acknowledgement = acknowledgement
-        if delivery_date is None:
-            self.delivery_date = self.acknowledgement.delivery_date
-        else:
-            self.delivery_date = delivery_date
-        self.save()
+
+

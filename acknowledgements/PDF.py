@@ -298,10 +298,10 @@ class AcknowledgementPDF(object):
         except:
             pass
         if product.is_custom_size:
-            str = 'Width: %imm Depth: %imm Height: %imm'.format(product.width,
+            dimension_str = 'Width: {0}imm Depth: {1}imm Height: {2}imm'.format(product.width,
                                                                 product.depth,
                                                                 product.height)
-            data.append(['', str])
+            data.append(['', dimension_str])
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():

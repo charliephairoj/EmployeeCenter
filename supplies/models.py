@@ -9,6 +9,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
 from contacts.models import Contact, Supplier
+from auth.models import Log
 
 # Create your models here.
 
@@ -97,12 +98,12 @@ class Supply(models.Model):
     
     def reserve(self, quantity, employee=None, remarks=None):
         self.create_log("Reserve", employee, quantity, remarks, self.quantity)
-    
+
     def add(self, quantity, employee=None, remarks=None):
         self.quantity = self.quantity + Decimal(quantity)
         self.save()
         self.create_log("Add", employee, quantity, remarks, self.quantity)
-    
+
     def subtract(self, quantity, employee=None, remarks=None):
         #check if length to subtract is more than total length
         if self.quantity > Decimal(quantity):
@@ -111,12 +112,14 @@ class Supply(models.Model):
             self.save()
             #Destroy Reservation log
             try:
-                old_log_item = Log.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
+                old_log_item = Log.objects.get(fabric_id=self.id,
+                                               action='Reserve',
+                                               remarks="Ack#: %s" % remarks)
                 old_log_item.delete()
             except:
                 pass
             self.create_log("Subtract", employee, quantity, remarks, self.quantity)
-            
+
     def reset(self, quantity, employee=None, remarks=None):
         self.quantity = quantity
         self.save()
@@ -127,7 +130,7 @@ class Supply(models.Model):
         conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #get the bucket
         bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-        #Create a key and assign it 
+        #Create a key and assign it
         k = Key(bucket)
         #Set file name
         k.key = "supplies/images/{0}.jpg".format(time.time())
@@ -138,9 +141,9 @@ class Supply(models.Model):
         k.make_public()
         #set Url, key and bucket
         data = {
-                'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
-                'key':k.key,
-                'bucket':'media.dellarobbiathailand.com'
+                'url': 'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
+                'key': k.key,
+                'bucket': 'media.dellarobbiathailand.com'
         }
         return data
 
@@ -152,23 +155,21 @@ class Location(models.Model):
     description = models.TextField()
     row = models.CharField(max_length=10)
     shelf = models.CharField(max_length=10)
-    
 
-class Log(models.Model):
-    """The general log class for supplies will keep track of actions, 
+
+class SupplyLog(Log):
+    """The general log class for supplies will keep track of actions,
     such as adding, subtracting, resetting items from the inventory
     count.
-    
+
     quantity = the quantity associate with the action
     current_quantity = the quantity remaining after the action
     """
     supply = models.ForeignKey(Supply)
-    action = models.CharField(max_length=15, null=False)
     quantity = models.DecimalField(max_digits=15, decimal_places=2)
     current_quantity = models.DecimalField(max_digits=15, decimal_places=2)
     remarks = models.TextField()
-    employee = models.ForeignKey(User)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    
 
 
 class Fabric(Supply):
@@ -185,12 +186,12 @@ class Fabric(Supply):
         log_item.current_length = self.depth
         log_item.remarks = "Ack#: %s" % remark
         log_item.save()
-    
+
     def add(self, length, employee=None, remark=None):
         #Add to current Length
         self.depth = self.depth + Decimal(length)
         self.save()
-        
+
         #Create log of addition
         log_item = FabricLog()
         log_item.employee = employee
@@ -200,7 +201,7 @@ class Fabric(Supply):
         log_item.current_length = self.depth
         log_item.remarks = remark
         log_item.save()
-    
+
     #Subtract Length
     def subtract(self, length, employee=None, remark=None):
         #check if length to subtract is more than total length
@@ -210,7 +211,9 @@ class Fabric(Supply):
             self.save()
             #Destroy Reservation log
             try:
-                old_log_item = FabricLog.objects.get(fabric_id=self.id, action='Reserve', remarks="Ack#: %s" % remark)
+                old_log_item = FabricLog.objects.get(fabric_id=self.id,
+                                                     action='Reserve',
+                                                     remarks="Ack#: %s" % remark)
                 old_log_item.delete()
             except:
                 pass
@@ -223,7 +226,7 @@ class Fabric(Supply):
             log_item.current_length = self.depth
             log_item.remarks = "Ack#: %s" % remark
             log_item.save()
-            
+
     def reset(self, length, employee=None, remark=None):
         self.depth = length
         self.save()
@@ -236,11 +239,12 @@ class Fabric(Supply):
         log_item.current_length = self.depth
         log_item.remarks = remark
         log_item.save()
-        
+
     #Set fabric data for REST
     def set_data(self, data, **kwargs):
         #extract args
-        if "user" in kwargs: user = kwargs["user"]
+        if "user" in kwargs:
+            user = kwargs["user"]
         #set parent data
         super(Fabric, self).set_data(data, user=user)
         #set the type to fabric
@@ -248,14 +252,18 @@ class Fabric(Supply):
         #set purchasing units
         self.purchasing_units = "yard"
         #set the model data
-        if "pattern" in data: self.pattern = data["pattern"]
-        if "color" in data: self.color = data["color"]
-        if "content" in data: self.content = data["content"]
+        if "pattern" in data:
+            self.pattern = data["pattern"]
+        if "color" in data:
+            self.color = data["color"]
+        if "content" in data:
+            self.content = data["content"]
         self.description = "%s Col:%s" % (self.pattern, self.color)
         #Set the current length of fabric
-        if "current_length" in data: self.reset(data["current_length"], user, "Initial Current Length")
+        if "current_length" in data:
+            self.reset(data["current_length"], user, "Initial Current Length")
         self.save()
-    
+
     #Get Data for REST
     def get_data(self, **kwargs):
         from django.db.models import Sum
@@ -263,19 +271,19 @@ class Fabric(Supply):
         sum_obj = FabricLog.objects.filter(action="Reserve", fabric_id=self.id).aggregate(Sum('length'))
         #sets the data for this supply
         data = {
-                'pattern':self.pattern,
-                'color':self.color,
-                'content':self.content,
-                'reserved_length':str(sum_obj["length__sum"])
+                'pattern': self.pattern,
+                'color': self.color,
+                'content': self.content,
+                'reserved_length': str(sum_obj["length__sum"])
         }
         #merges with parent data
         data.update(super(Fabric, self).get_data())
         #returns the data
         return data
-    
+
 
 class FabricLog(models.Model):
-    
+
     fabric = models.ForeignKey(Fabric)
     action = models.CharField(max_length=15, null=False)
     length = models.DecimalField(max_digits=15, decimal_places=2)
@@ -286,42 +294,45 @@ class FabricLog(models.Model):
 
 
 class Foam(Supply):
-    
+
     foam_type = models.TextField(db_column="foam_type")
     color = models.CharField(max_length=20)
-    
+
     def get_data(self, **kwargs):
         #get data for foam
         data = {
-                'color':self.color,
-                'type':self.foam_type
+                'color': self.color,
+                'type': self.foam_type
                 }
-        
+
         #merge with data from parent
         data.update(super(Foam, self).get_data())
-        
+
         #return the data
         return data
-    
+
     #set data
-    def set_data(self,data, **kwargs):
+    def set_data(self, data, **kwargs):
         #extract data
-        if "user" in kwargs: user = kwargs["user"]
+        if "user" in kwargs:
+            user = kwargs["user"]
         #set the parent data
         super(Foam, self).set_data(data, user=user)
         #set foam data
         self.purchasing_units = "pc"
-        
+
         self.type = "foam"
-        if "type" in data: self.foam_type = data["type"]
-        if "color" in data: self.color = data["color"]
+        if "type" in data:
+            self.foam_type = data["type"]
+        if "color" in data:
+            self.color = data["color"]
         self.description = "%s Foam (%sX%sX%s)" % (self.color, self.width, self.depth, self.height)
-        
+
         #save the foam
-        self.save()   
-        
+        self.save()
+
 class Glue(Supply):
-    
+
     def set_data(self, data, **kwargs):
         self.type = "glue"
         super(Glue, self).set_data(data, **kwargs)
@@ -330,7 +341,7 @@ class Glue(Supply):
 
 class Lumber(Supply):
     wood_type = models.TextField(db_column  = "wood_type")
-    
+
     #Methods
     def set_data(self, data, **kwargs):
         #extract args
@@ -341,8 +352,8 @@ class Lumber(Supply):
         self.type = "lumber"
         #set the wood type
         if "type" in data:self.wood_type = data["type"]
-       
-        
+
+
         self.set_parent_data(data)
         #set parent properties
         if "width_units" in data: self.width_units = data["width_units"]

@@ -48,11 +48,19 @@ def acknowledgement(request, ack_id=0):
         return response
 
     if request.method == "POST":
-        data = json.loads(request.body)
-        ack = Acknowledgement()
-        urls = ack.create(data, user=request.user)
-        data = urls.update(ack.get_data())
-        return HttpResponse(json.dumps(urls), mimetype="application/json")
+        if ack_id == 0:
+            data = json.loads(request.body)
+            ack = Acknowledgement()
+            urls = ack.create(data, user=request.user)
+            data = urls.update(ack.get_data())
+            return HttpResponse(json.dumps(urls),
+                                mimetype="application/json")
+        else:
+            data = json.loads(request.body)
+            ack = Acknowledgement.objects.get(id=ack_id)
+            ack.update(data, request.user)
+            return HttpResponse(json.dumps(ack.get_data()),
+                                mimetype="application/json")
 
 
 #Get url
