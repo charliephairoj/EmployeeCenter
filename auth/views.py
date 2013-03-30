@@ -31,6 +31,8 @@ def current_user(request):
     modules = []
     if user.has_module_perms('contacts'):
         modules.append('contacts')
+    if user.has_module_perms('products'):
+        modules.append('products')
     if user.has_module_perms('po'):
         modules.append('orders')
     if user.has_module_perms('acknowledgements'):
