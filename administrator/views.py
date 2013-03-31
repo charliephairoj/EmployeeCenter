@@ -132,6 +132,7 @@ def user(request, user_id=0):
                             'id': user.id,
                             'username': user.username,
                             'email': user.email,
+                            'last_login': user.last_login.isoformat(),
                             'groups': groupData
                             #'permissions':permissionData
                             }
