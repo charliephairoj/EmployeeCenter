@@ -18,27 +18,29 @@ def acknowledgement(request, ack_id=0):
     #Get Request
     if request.method == "GET":
         if ack_id == 0:
-            get_data = request.GET
+            GET_data = request.GET
             data = []
             acks = Acknowledgement.objects.all().order_by('-id')
 
             #Additional filters from parameters
-            if "start_date" in get_data and "end_date" in get_data:
-                start_date = dateutil.parser.parse(get_data['start_date'])
-                end_date = dateutil.parser.parse(get_data['end_date'])
+            if "start_date" in GET_data and "end_date" in GET_data:
+                start_date = dateutil.parser.parse(GET_data['start_date'])
+                end_date = dateutil.parser.parse(GET_data['end_date'])
                 print start_date
                 print end_date
                 acks = acks.filter(delivery_date__range=[start_date, end_date])
-            elif "start_date" in request.GET:
-                start_date = dateutil.parser.parse(get_data['start_date'])
+            elif "start_date" in GET_data:
+                start_date = dateutil.parser.parse(GET_data['start_date'])
                 acks = acks.filter(delivery_date__gte=start_date)
-            elif "end_date" in get_data:
-                end_date = dateutil.parser.parse(get_data['end_date'])
+            elif "end_date" in GET_data:
+                end_date = dateutil.parser.parse(GET_data['end_date'])
                 acks = acks.filter(delivery_date__lte=end_date)
-            elif "date" in get_data:
-                date = dateutil.parser.parse(get_data['date'])
+            elif "date" in GET_data:
+                date = dateutil.parser.parse(GET_data['date'])
                 acks = acks.filter(delivery_date=date)
-
+            if "last_modified" in GET_data:
+                timestamp = dateutil.parser.parse(GET_data["last_modified"])
+                acks = acks.filter(last_modified__gte=timestamp)
             for ack in acks:
                 data.append(ack.get_data())
         else:

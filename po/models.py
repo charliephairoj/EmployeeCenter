@@ -40,6 +40,7 @@ class PurchaseOrder(models.Model):
     key = models.TextField(null=True)
     bucket = models.TextField(null=True)
     employee = models.ForeignKey(User)
+    last_modified = models.DateTimeField()
 
     def create(self, data, user=None):
 

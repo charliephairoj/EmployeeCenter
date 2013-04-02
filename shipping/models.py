@@ -27,6 +27,7 @@ class Shipping(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     shipping_key = models.TextField()
     comments = models.TextField()
+    last_modified = models.DateTimeField()
     connection = S3Connection(settings.AWS_ACCESS_KEY_ID,
                               settings.AWS_SECRET_ACCESS_KEY)
 

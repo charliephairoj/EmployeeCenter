@@ -635,7 +635,7 @@ class ProductionPDF(AcknowledgementPDF):
         if product.is_custom_size:
             data.append(['', u'   กว้าง: %imm' % (product.width)])
             data.append(['', u'   ลึก: %imm' % (product.depth)])
-            data.append(['', u'   ลึก: %imm' % (product.height)])
+            data.append(['', u'   สูง: %imm' % (product.height)])
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
