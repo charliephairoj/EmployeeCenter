@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 """
 Collection of the classes that create pdf files
 for an Acnowledgement. The Acknowledgement creates
@@ -6,8 +8,7 @@ for customers. The production pdf is created to be
 use by the production team and the office overseeing
 production
 """
-#!/usr/local/bin/python
-# coding: utf-8
+
 from decimal import Decimal
 from pytz import timezone
 
@@ -160,7 +161,6 @@ class AcknowledgementPDF(object):
         canvas.setFont("Helvetica", 12)
         canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.id))
 
-
     def _get_stories(self):
         #initialize story array
         Story = []
@@ -226,9 +226,13 @@ class AcknowledgementPDF(object):
         #Create data array
         data = []
         #Add Data
+        order_date, odObj = self.outputBKKTime(self.ack.time_created, '%B %d, %Y')
+        delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
+        print order_date
+        print delivery_date
         data.append(['Currency:', self._get_currency()])
-        data.append(['Order Date:', self.outputBKKTime(self.ack.time_created, '%B %d, %Y')])
-        data.append(['Delivery Date:', self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')])
+        data.append(['Order Date:', order_date])
+        data.append(['Delivery Date:', delivery_date])
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
