@@ -1,15 +1,14 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-
-"""Collection of the classes that create pdf files
+"""
+Collection of the classes that create pdf files
 for an Acnowledgement. The Acknowledgement creates
 an order confirmation to be used for the office and
 for customers. The production pdf is created to be
 use by the production team and the office overseeing
-production"""
+production
+"""
 
 from decimal import Decimal
+from pytz import timezone
 
 from django.conf import settings
 from django.db import models
@@ -227,8 +226,8 @@ class AcknowledgementPDF(object):
         data = []
         #Add Data
         data.append(['Currency:', self._get_currency()])
-        data.append(['Order Date:', self.ack.time_created.strftime('%B %d, %Y')])
-        data.append(['Delivery Date:', self.ack.delivery_date.strftime('%B %d, %Y')])
+        data.append(['Order Date:', self.outputBKKTime(self.ack.time_created, '%B %d, %Y')])
+        data.append(['Delivery Date:', self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')])
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
@@ -500,6 +499,17 @@ class AcknowledgementPDF(object):
 
         return Image(path, width=newWidth, height=newHeight)
 
+    def outputBKKTime(self, dateTimeObj, fmt):
+        """
+        The function accepts the datetime object
+        and the preferred output str format to return
+        the datetime as. This function then converts
+        from the current utc(preferred) to the 'Asia/Bangkok'
+        timezone
+        """
+        bkkTz = timezone('Asia/Bangkok')
+        bkkDateTime = dateTimeObj.astimezone(bkkTz)
+        return bkkDateTime.strftime(fmt), bkkDateTime
 
 class ProductionPDF(AcknowledgementPDF):
     thai_months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.ิ",
@@ -567,13 +577,11 @@ class ProductionPDF(AcknowledgementPDF):
         #Create data array
         data = []
         #Add Data
-        time_created = self.ack.time_created
-        time_create_str = time_created.strftime('%d {0}, %Y')
-        order_date_str = time_create_str.format(self.thai_months[time_created.month-1])
+        time_create_str, date_obj = self.outputBKKTime(self.ack.time_created, '%d {0}, %Y')
+        order_date_str = time_create_str.format(self.thai_months[date_obj.month-1])
         data.append(['Order Date:', order_date_str])
-        delivery_date = self.ack.delivery_date
-        delivery_date_str = delivery_date.strftime('%d {0}, %Y')
-        deliver_date_str = delivery_date_str.format(self.thai_months[delivery_date.month-1])
+        delivery_date_str, date_obj = self.outputBKKTime(self.ack.delivery_date, '%d {0}, %Y')
+        deliver_date_str = delivery_date_str.format(self.thai_months[date_obj.month-1])
         data.append(['กำหนดส่ง:', deliver_date_str])
         if self.ack.remarks is not None and self.ack.remarks != '':
             data.append(['Remarks', self.ack.remarks])
