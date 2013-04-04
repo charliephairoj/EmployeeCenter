@@ -6,7 +6,8 @@ for customers. The production pdf is created to be
 use by the production team and the office overseeing
 production
 """
-
+#!/usr/local/bin/python
+# coding: utf-8
 from decimal import Decimal
 from pytz import timezone
 
