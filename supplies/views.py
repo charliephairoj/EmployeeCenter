@@ -13,9 +13,9 @@ from supplies.models import Supply, Log
 from utilities.http import processRequest, httpGETProcessor, httpPOSTProcessor, httpPUTProcessor, httpDELETEProcessor
 
 
-logger = logging.getLogger('EmployeeCenter');
+logger = logging.getLogger('EmployeeCenter')
 
- 
+
 #Supplies
 @login_required
 def supply(request, supply_id=0):

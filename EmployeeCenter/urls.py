@@ -113,6 +113,12 @@ urlpatterns += patterns('shipping.views',
     url(r'^shipping$', 'shipping'),
 )
 
+#Urls for Accounting
+urlpatterns += patterns('accounting.views',
+    url(r'^transaction$', 'transaction'),
+    url(r'^transaction/(?P<transaction_id>\d+)$', 'transaction'),
+)
+
 #this section deals with the administration routing area
 
 urlpatterns += patterns('administrator.views',
