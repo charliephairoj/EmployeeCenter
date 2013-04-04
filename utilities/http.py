@@ -27,8 +27,11 @@ def httpGETProcessor(request, Class, class_id):
         data = []
         objs = Class.objects.all()
         if "last_modified" in GET_data:
-            timestamp = dateutil.parser.parse(GET_data["last_modified"])
-            objs = objs.filter(last_modified__gte=timestamp)
+            try:
+                timestamp = dateutil.parser.parse(GET_data["last_modified"])
+                objs = objs.filter(last_modified__gte=timestamp)
+            except:
+                pass
         #loop through all items
         for model in objs:
             #add the data to the model
