@@ -41,6 +41,8 @@ def current_user(request):
         modules.append('orders')
     if user.has_module_perms('supplies'):
         modules.append('supplies')
+    if user.has_module_perms('accounting'):
+        modules.append('accounting')
     if user.is_superuser:
         modules.append('administrator')
     user_data['modules'] = modules

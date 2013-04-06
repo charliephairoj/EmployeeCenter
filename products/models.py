@@ -31,7 +31,7 @@ class Product(models.Model):
     image_key = models.TextField()
     image_url = models.TextField()
     schematic_key = models.TextField()
-    last_modified = models.DateTimeField()
+    last_modified = models.DateTimeField(auto_now=True)
 
     #Meta
     class Meta:
@@ -154,7 +154,7 @@ class Model(models.Model):
     bucket = models.TextField()
     image_key = models.TextField()
     image_url = models.TextField()
-    last_modified = models.DateTimeField()
+    last_modified = models.DateTimeField(auto_now=True)
 
     #Get Data as object
     def get_data(self, **kwargs):
