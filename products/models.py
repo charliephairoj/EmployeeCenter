@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+from decimal import Decimal
 
 from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key
@@ -95,13 +96,13 @@ class Product(models.Model):
         #Check permissions
         if user.has_perm('products.edit_manufacture_price'):
             if "manufacture_price" in data:
-                self.manufacture_price = data["manufacture_price"]
+                self.manufacture_price = Decimal(str(data["manufacture_price"]))
         if user.has_perm('products.edit_retail_price'):
             if "retail_price" in data:
-                self.retail_p = data["retail_price"]
+                self.retail_price = Decimal(str(data["retail_price"]))
         if user.has_perm('products.edit_wholesale_price'):
             if "wholesale_price" in data:
-                self.wholesale_price = data["wholesale_price"]
+                self.wholesale_price = Decimal(str(data["wholesale_price"]))
         #Set Image
         if "image" in data:
             self.set_image(key=data['image']['key'], url=data['image']['url'])
