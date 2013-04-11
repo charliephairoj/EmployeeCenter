@@ -188,6 +188,13 @@ class Model(models.Model):
             self.name = data["name"]
         if "collection" in data:
             self.collection = data["collection"]
+        if "image" in data:
+            if "key" in data["image"]:
+                self.image_key = data["image"]["key"]
+            if "url" in data["image"]:
+                self.image_url = data["image"]["url"]
+            if "bucket" in data["image"]:
+                self.bucket = data["image"]["bucket"]
 
 
 class ModelImage(models.Model):
