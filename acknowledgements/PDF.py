@@ -25,6 +25,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code39
+from reportlab.graphics.barcode import code128
 
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
@@ -73,11 +74,10 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.drawRightString(550, 800, 'Acknowledgement')
         canvas.setFont("Helvetica", 12)
         canvas.drawRightString(550, 780, 'Ack#: {0}'.format(self.id))
-
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('*A-{0}*'.format(self.id),
-                                    barWidth=1, barHeight=30)
+        code = "A-{0}".format(self.id)
+        barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 740)
@@ -103,8 +103,8 @@ class ProductionDocTemplate(AckDocTemplate):
         canvas.drawRightString(550, 780, 'Ack#: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('*P-{0}*'.format(self.id),
-                                    barWidth=1, barHeight=30)
+        code = "A-{0}".format(self.id)
+        barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 740)

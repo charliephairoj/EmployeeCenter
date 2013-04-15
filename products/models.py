@@ -114,6 +114,7 @@ class Product(models.Model):
             #set data
             self.image_key = key
             self.image_url = url
+            self.bucket = 'media.dellarobbiathailand.com'
         #if there is a file name
         else:
             #upload image
@@ -178,7 +179,7 @@ class Model(models.Model):
                 #"year":model.date_created.year,
                 "images":images,
                 "configurations":configs,
-                'image':{'image':{'url':self.image_url}}}
+                'image':{'url':self.image_url}}
         #returns the data object
         return data
 

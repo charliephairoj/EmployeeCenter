@@ -24,7 +24,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.graphics.barcode import code39
+from reportlab.graphics.barcode import code128
 
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT+'Tahoma.ttf'))
@@ -73,7 +73,8 @@ class ShippingDocTemplate(BaseDocTemplate):
         
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('*S-{0}*'.format(self.id), barWidth=1, barHeight=30)
+        code = "S-{0}".format(self.id)
+        barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas,x_position,740)

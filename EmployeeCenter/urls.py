@@ -111,6 +111,7 @@ urlpatterns += patterns('acknowledgements.views',
 #URLS for Shipping
 urlpatterns += patterns('shipping.views',
     url(r'^shipping$', 'shipping'),
+    url(r'^shipping/(?P<shipping_id>\d+)$', 'shipping'),
 )
 
 #Urls for Accounting

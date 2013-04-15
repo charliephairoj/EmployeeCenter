@@ -15,19 +15,28 @@ from acknowledgements.models import Acknowledgement
 
 
 @login_required
-def shipping(request):
+def shipping(request, shipping_id=0):
     #Get Request
     if request.method == "GET":
-        GET_data = request.GET
-        data = []
-        shippings = Shipping.objects.all().order_by('-id')
-        if "last_modified" in GET_data:
-            timestamp = dateutil.parser.parse(GET_data["last_modified"])
-            shippings = shippings.filter(last_modified__gte=timestamp)
-        for shipping in shippings:
-            data.append(shipping.get_data())
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
-        return response
+        
+        if shipping_id ==  0:
+            GET_data = request.GET
+            data = []
+            shippings = Shipping.objects.all().order_by('-id')
+            if "last_modified" in GET_data:
+                timestamp = dateutil.parser.parse(GET_data["last_modified"])
+                shippings = shippings.filter(last_modified__gte=timestamp)
+            for shipping in shippings:
+                data.append(shipping.get_data())
+            response = HttpResponse(json.dumps(data), mimetype="application/json")
+            return response
+        
+        else:
+            
+            shipping = Shipping.objects.get(id=shipping_id)
+            
+            response = HttpResponse(json.dumps(shipping.get_data()), mimetype="application/json")
+            return response
 
     if request.method == "POST":
         data = json.loads(request.body)

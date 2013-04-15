@@ -8,6 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 import json
 from django.utils.log import getLogger
+from django.utils.safestring import mark_safe
+
+from auth.views import current_user
 
 
 
@@ -16,41 +19,34 @@ from django.utils.log import getLogger
 @login_required
 def main(request):
     from django.contrib.staticfiles.views import serve
-
-
-    
     serve(request, 'templates/auth/login.html')
 
-    
 
 def app_login(request):
     #create the form object
     #to hand the inputs
     form = LoginForm()
-    
+
     #determines if this is get request
     if request.method == "GET":
-        
         """Determines if the user is authenticated.
         Authenticated users are served the index page
         while anonymous users are served the login page"""
         if request.user.is_authenticated():
-            
-            from django.views.static import serve
-            
-                    
             #Gets user profile to do checks
             user_profile = request.user.get_profile()
-                    
+            #Get User data
+            user_data = current_user(request)
+            jsonStr = mark_safe(json.dumps(user_data))
             #checks if authenticated for google
             if user_profile.google_validated == False:
-                
+
                 #return HttpResponseRedirect('/auth')
-                return serve(request, 'index.html', settings.STATIC_ROOT)
+                #return serve(request, 'index.html', settings.STATIC_ROOT)
+                return render(request, 'home.html', {'user_data': jsonStr})
             else:
-                    
-                return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
-        
+                #return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
+                return render(request, 'home.html', {'user_data': jsonStr})
         else:
             #logout the request
             logout(request)

@@ -32,11 +32,16 @@ class Shipping(models.Model):
                               settings.AWS_SECRET_ACCESS_KEY)
 
     def get_data(self):
-        data = {'delivery_date': self.delivery_date.isoformat(),
+
+        data = {'acknowledgement': {'id': self.acknowledgement.id},
+                'delivery_date': self.delivery_date.isoformat(),
                 'customer': self.customer.get_data(),
                 'id': self.id,
                 'employee': '{0} {1}'.format(self.employee.first_name,
-                                            self.employee.last_name)}
+                                             self.employee.last_name),
+                'products': []}
+        for product in self.item_set.all():
+            data['products'].append(product.get_data())
         return data
 
     def create(self, data, user):
@@ -120,3 +125,12 @@ class Item(models.Model):
         self.item = item
         self.description = item.description
         self.quantity = item.quantity
+
+    def get_data(self):
+        data = {'id': self.id,
+                'description': self.description,
+                'quantity': self.quantity,
+                'comments': self.comments}
+        data.update(self.item.get_data())
+        return data
+    
