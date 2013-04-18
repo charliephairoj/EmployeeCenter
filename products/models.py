@@ -119,13 +119,13 @@ class Product(models.Model):
                 key = None
             self.set_image(key=key, url=data['image']['url'])
 
-        if "back_pillow" in data:
+        if "back_pillow" in data and int(data["back_pillow"]) > 0:
             self._add_pillow('back', data["back_pillow"])
-        if "accent_pillow" in data:
+        if "accent_pillow" in data and int(data["accent_pillow"]) > 0:
             self._add_pillow('accent', data["accent_pillow"])
-        if "lumbar_pillow" in data:
+        if "lumbar_pillow" in data and int(data["lumbar_pillow"]) > 0:
             self._add_pillow('lumbar', data["lumbar_pillow"])
-        if "corner_pillow" in data:
+        if "corner_pillow" in data and int(data["corner_pillow"]) > 0:
             self._add_pillow('corner', data["corner_pillow"])
 
     def _add_pillow(self, type, quantity):
@@ -134,7 +134,7 @@ class Product(models.Model):
         pillow.quantity = int(quantity)
         pillow.product = self
         pillow.save()
-        
+
     #Add Image
     def set_image(self, filename=None, key=None, url=None):
         #If there is no filename
