@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django_hstore import hstore
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
@@ -34,6 +35,10 @@ class Supply(models.Model):
     image_bucket = models.TextField(null=True)
     image_key = models.TextField(null=True)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    data = hstore.DictionaryField()
+    objects = hstore.HStoreManager()
+
         
     def get_data(self, **kwargs):
         data = {
@@ -56,19 +61,38 @@ class Supply(models.Model):
         return data
         
     def set_data(self, data, **kwargs):
-        if "reference" in data: self.reference = data["reference"]
-        if "supplier" in data: self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
-        if "cost" in data: self.cost = Decimal(data["cost"])
-        if "width" in data: self.width = data['width']
-        if "height" in data: self.height = data["height"]
-        if "depth" in data: self.depth = data["depth"]
-        if "height_units" in data: self.height_units = data["height_units"]
-        if "width_units" in data: self.width_units = data["width_units"]
-        if "depth_units" in data: self.depth_units = data["depth_units"]
+        if "reference" in data:
+            self.reference = data["reference"]
+            del data["reference"]
+        if "supplier" in data:
+            self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
+            del data["supplier"]
+        if "cost" in data:
+            self.cost = Decimal(data["cost"])
+            del data["cost"]
+        if "width" in data:
+            self.width = data['width']
+            del data["width"]
+        if "height" in data:
+            self.height = data["height"]
+            del data["height"]
+        if "depth" in data:
+            self.depth = data["depth"]
+            del data["depth"]
+        if "height_units" in data:
+            self.height_units = data["height_units"]
+            del data["height_units"]
+        if "width_units" in data:
+            self.width_units = data["width_units"]
+            del data["width_units"]
+        if "depth_units" in data:
+            self.depth_units = data["depth_units"]
+            del data["depth_units"]
         if "image" in data:
             if "url" in data["image"]: self.image_url = data["image"]["url"]
             if "key" in data["image"]: self.image_key = data["image"]["key"]
             if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
+            del data["image"]
             
     def create_log(self, action, employee, quantity=0, remarks=None, current_quantity=0):
         """Creates a log in the supplie log. Requires at minimum an action

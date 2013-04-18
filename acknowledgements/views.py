@@ -70,7 +70,21 @@ def acknowledgement(request, ack_id=0):
 @login_required
 def acknowledgement_url(request, ack_id=0):
     if ack_id != 0 and request.method == "GET":
-        ack = Acknowledgement.object.get(id=ack_id)
+        ack = Acknowledgement.objects.get(id=ack_id)
+
+
+@login_required
+def pdf(request, ack_id):
+    if "type" in request.GET:
+        ack = Acknowledgement.objects.get(id=ack_id)
+        if request.GET["type"] == "acknowledgement":
+            key = ack.acknowledgement_key
+        elif request.GET["type"] == "production":
+            key = ack.production_key
+
+        data = {'url': ack.get_url(key)}
+        return HttpResponse(json.dumps(data),
+                            mimetype="application/json")
 
 
 @login_required

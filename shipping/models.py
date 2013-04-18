@@ -27,7 +27,7 @@ class Shipping(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     shipping_key = models.TextField()
     comments = models.TextField()
-    last_modified = models.DateTimeField()
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     connection = S3Connection(settings.AWS_ACCESS_KEY_ID,
                               settings.AWS_SECRET_ACCESS_KEY)
 
@@ -66,6 +66,7 @@ class Shipping(models.Model):
         shipping_filename = pdf.create()
         #Upload and return the url
         self.shipping_key = self.upload(shipping_filename)
+        self.save()
         #Log("Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id),
             #self.acknowledgement, self.delivery_date)
         urls = {'url': self.get_url(self.shipping_key)}

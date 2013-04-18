@@ -105,6 +105,7 @@ urlpatterns += patterns('po.views',
 urlpatterns += patterns('acknowledgements.views',
     url(r'^acknowledgement$', 'acknowledgement'),
     url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
+    url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
     url(r'^acknowledgement/item/image$', 'acknowledgement_item_image')
 )
 
@@ -112,6 +113,7 @@ urlpatterns += patterns('acknowledgements.views',
 urlpatterns += patterns('shipping.views',
     url(r'^shipping$', 'shipping'),
     url(r'^shipping/(?P<shipping_id>\d+)$', 'shipping'),
+    url(r'^shipping/(?P<shipping_id>\d+)/pdf$', 'pdf'),
 )
 
 #Urls for Accounting

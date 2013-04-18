@@ -38,7 +38,7 @@ class Acknowledgement(models.Model):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2)
     total = models.DecimalField(max_digits=15, decimal_places=2)
     vat = models.IntegerField(default=0)
-    last_modified = models.DateTimeField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     #Get Data
     def get_data(self):

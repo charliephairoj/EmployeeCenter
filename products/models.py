@@ -22,6 +22,7 @@ class Product(models.Model):
     wholesale_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     manufacture_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     retail_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    export_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     width = models.IntegerField(db_column='width', default=0)
     depth = models.IntegerField(db_column='depth', default=0)
     height = models.IntegerField(db_column='height', default=0)
@@ -39,11 +40,13 @@ class Product(models.Model):
         #permision
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
                        ('edit_manufacture_price', 'Can edit the manufacture price'),
-                       ('view_wholesale_price', 'Can view the wholsale_price'),
-                       ('edit_wholesale_price', 'Can edit the wholsale_price'),
-                       ('view_retail_price', 'Can view the retail_price'),
-                       ('edit_retail_price', 'Can edit the retail_price'))
-        
+                       ('view_wholesale_price', 'Can view the wholsale price'),
+                       ('edit_wholesale_price', 'Can edit the wholsale price'),
+                       ('view_retail_price', 'Can view the retail price'),
+                       ('edit_retail_price', 'Can edit the retail price'),
+                       ('view_export_price', 'Can view the export price'),
+                       ('edit_export_price', 'Can edit the export price'))
+
     #Get Data
     def get_data(self, **kwargs):
         #extract args
@@ -78,6 +81,8 @@ class Product(models.Model):
                 data.update({'wholesale_price': str(self.wholesale_price)})
             if user.has_perm('products.view_retail_price'):
                 data.update({'retail_price': str(self.retail_price)})
+            if user.has_perm('products.view_export_price'):
+                data.update({'export_price': str(self.export_price)})
 
         return data
 
@@ -103,16 +108,38 @@ class Product(models.Model):
         if user.has_perm('products.edit_wholesale_price'):
             if "wholesale_price" in data:
                 self.wholesale_price = Decimal(str(data["wholesale_price"]))
+        if user.has_perm('products.edit_export_price'):
+            if "export_price" in data:
+                self.export_price = Decimal(str(data["export_price"]))
         #Set Image
         if "image" in data:
-            self.set_image(key=data['image']['key'], url=data['image']['url'])
+            if 'key' in data['image']:
+                key = data['image']['key']
+            else:
+                key = None
+            self.set_image(key=key, url=data['image']['url'])
 
+        if "back_pillow" in data:
+            self._add_pillow('back', data["back_pillow"])
+        if "accent_pillow" in data:
+            self._add_pillow('accent', data["accent_pillow"])
+        if "lumbar_pillow" in data:
+            self._add_pillow('lumbar', data["lumbar_pillow"])
+        if "corner_pillow" in data:
+            self._add_pillow('corner', data["corner_pillow"])
+
+    def _add_pillow(self, type, quantity):
+        pillow = Pillow()
+        pillow.type = type
+        pillow.quantity = int(quantity)
+        pillow.product = self
+        pillow.save()
+        
     #Add Image
     def set_image(self, filename=None, key=None, url=None):
         #If there is no filename
         if filename == None:
             #set data
-            self.image_key = key
             self.image_url = url
             self.bucket = 'media.dellarobbiathailand.com'
         #if there is a file name
