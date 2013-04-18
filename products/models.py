@@ -119,13 +119,13 @@ class Product(models.Model):
                 key = None
             self.set_image(key=key, url=data['image']['url'])
 
-        if "back_pillow" in data and int(data["back_pillow"]) > 0:
+        if "back_pillow" in data and data["back_pillow"] != '':
             self._add_pillow('back', data["back_pillow"])
-        if "accent_pillow" in data and int(data["accent_pillow"]) > 0:
+        if "accent_pillow" in data and data["accent_pillow"] != '':
             self._add_pillow('accent', data["accent_pillow"])
-        if "lumbar_pillow" in data and int(data["lumbar_pillow"]) > 0:
+        if "lumbar_pillow" in data and data["lumbar_pillow"] != '':
             self._add_pillow('lumbar', data["lumbar_pillow"])
-        if "corner_pillow" in data and int(data["corner_pillow"]) > 0:
+        if "corner_pillow" in data and data["corner_pillow"] != '':
             self._add_pillow('corner', data["corner_pillow"])
 
     def _add_pillow(self, type, quantity):
