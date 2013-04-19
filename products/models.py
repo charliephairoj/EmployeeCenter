@@ -140,6 +140,7 @@ class Product(models.Model):
         #If there is no filename
         if filename == None:
             #set data
+            self.image_key = key
             self.image_url = url
             self.bucket = 'media.dellarobbiathailand.com'
         #if there is a file name

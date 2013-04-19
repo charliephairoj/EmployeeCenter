@@ -16,7 +16,7 @@
         window.current_user = {{user_data}};
     </script>
   </head>
-  <body ng-app="employeeApp" data-scanner>
+  <body ng-app="employeeApp">
     <!--[if lt IE 7]>
       <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
     <![endif]-->
@@ -42,7 +42,7 @@
             <li class="menuItem" ng-show="currentUser.hasModule('supplies')">
                 <a href="#/supply">Supplies</a>
             </li>
-            <li class="menuItem" ng-show="currentUser.hasModule('acknowledgements') || currentUser.hasModule('shipping') || currentUser.hasModule('orders')">
+            <li class="menuItem" ng-show="currentUser.hasModule('orders')">
                 <a href="#/order">Orders</a>
             </li>
             <li class="menuItem" ng-show="currentUser.hasModule('accounting')">

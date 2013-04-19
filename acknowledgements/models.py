@@ -157,6 +157,7 @@ class Acknowledgement(models.Model):
         ack_item.acknowledgement = self
 
         ack_item.set_data(product, data=product_data, customer=self.customer)
+        ack_item.status = 'ACKNOWLEDGED'
         ack_item.save()
 
     #Calculate totals and subtotals
@@ -326,6 +327,7 @@ class Item(models.Model):
         #Set from data if exists
         if data != None:
             self._set_attr_from_data(data)
+        self.save()
 
     def _set_attr_from_product(self, product, customer):
         self.description = product.description

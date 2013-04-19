@@ -81,6 +81,9 @@ class Shipping(models.Model):
             item.comments = data["comments"]
         item.save()
 
+        acknowledgement_item.status = 'SHIPPED'
+        acknowledgement_item.save()
+
     def update_acknowledgement_data(self):
         self.acknowledgement.delivery_date = self.delivery_date
         if len(self.acknowledgement.item_set.all()) == len(self.item_set.all()):

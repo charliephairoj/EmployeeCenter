@@ -30,9 +30,9 @@ def save_upload(request, filename=None):
 def upload_image(image, key, bucket='media.dellarobbiathailand.com', acl='public-read'):
     conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
     bucket = conn.get_bucket(bucket, True)
-    k = Key(bucket)      
+    k = Key(bucket)
     k.key = key
-    k.set_contents_from_filename(image)   
+    k.set_contents_from_filename(image)
     os.remove(image)
     k.set_canned_acl(acl)
     k.make_public()
