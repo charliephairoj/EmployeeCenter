@@ -418,6 +418,7 @@ class Item(models.Model):
                 'comments': self.comments,
                 'quantity': self.quantity,
                 'pillows': [],
+                'status': self.status,
                 'image': {'url': self._get_image_url()}}
         for pillow in self.pillow_set.all():
             data["pillows"].append(pillow.get_data())
