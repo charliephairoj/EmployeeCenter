@@ -106,7 +106,8 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'^acknowledgement$', 'acknowledgement'),
     url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
     url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
-    url(r'^acknowledgement/item/image$', 'acknowledgement_item_image')
+    url(r'^acknowledgement/item/image$', 'acknowledgement_item_image'),
+    url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
 
 #URLS for Shipping

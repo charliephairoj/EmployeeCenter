@@ -10,7 +10,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from acknowledgements.models import Acknowledgement
+from acknowledgements.models import Acknowledgement, Item
 
 
 @login_required
@@ -63,6 +63,29 @@ def acknowledgement(request, ack_id=0):
             urls = ack.update(data, request.user)
             urls.update(ack.get_data())
             return HttpResponse(json.dumps(urls),
+                                mimetype="application/json")
+
+
+@login_required
+def item(request, ack_item_id=0):
+    #Get Request
+    if request.method == "GET":
+        if ack_item_id == 0:
+            data = {}
+        else:
+            ack_item = Item.objects.get(id=ack_item_id)
+            data = ack_item.get_data()
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        return response
+
+    if request.method == "POST":
+        if ack_item_id == 0:
+            pass
+        else:
+            data = json.loads(request.body)
+            ack_item = Item.objects.get(id=ack_item_id)
+            ack_item.set_data(data)
+            return HttpResponse(json.dumps(ack_item.get_data()),
                                 mimetype="application/json")
 
 
