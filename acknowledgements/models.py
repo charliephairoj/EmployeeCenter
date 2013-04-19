@@ -99,7 +99,7 @@ class Acknowledgement(models.Model):
         if "delivery_date" in data:
             self.set_delivery_date(data["delivery_date"], employee=employee)
         self.save()
-        """ack_filename, production_filename = self.create_pdfs()
+        ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
 
         ack_key = self.upload(ack_filename, 'Acknowledgement', appendix='-revision')
@@ -107,8 +107,7 @@ class Acknowledgement(models.Model):
         #Email if decoroom
         urls = {'production_url': self.get_url(production_key),
                 'acknowledgement_url': self.get_url(ack_key)}
-        return urls"""
-        return {}
+        return urls
 
     def create_pdfs(self):
         products = self.item_set.all().order_by('id')
