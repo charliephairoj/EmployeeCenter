@@ -275,7 +275,7 @@ class Fabric(Supply):
         #set parent data
         super(Fabric, self).set_data(data, user=user)
         #set the type to fabric
-        self.type = "Fabric"
+        self.type = "fabric"
         #set purchasing units
         self.purchasing_units = "yard"
         #set the model data
