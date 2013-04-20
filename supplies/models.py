@@ -59,7 +59,7 @@ class Supply(models.Model):
                 'image':{'url':self.image_url}
         }
         return data
-        
+
     def set_data(self, data, **kwargs):
         if "reference" in data:
             self.reference = data["reference"]
@@ -67,6 +67,9 @@ class Supply(models.Model):
         if "supplier" in data:
             self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
             del data["supplier"]
+        if "type" in data:
+            self.type = data["type"]
+            del data["type"]
         if "cost" in data:
             self.cost = Decimal(data["cost"])
             del data["cost"]

@@ -27,6 +27,8 @@ def supply(request, supply_id=0):
             supplies = Supply.objects.all()
             if "supplier_id" in get_data:
                 supplies = supplies.filter(supplier_id=get_data["supplier_id"])
+            if "type" in get_data:
+                supplies = supplies.filter(type=get_data["type"])
             for supply in supplies:
                 data.append(supply.get_data())
             response = HttpResponse(json.dumps(data), mimetype="application/json")
@@ -145,8 +147,8 @@ def supply_image(request, supply_id=0):
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response
-    
-    
+
+
 #fabric
 @login_required
 def fabric(request, fabric_id=0):
@@ -323,7 +325,7 @@ def glue(request, glue_id=0):
 def lumber(request, lumber_id=0):
     from supplies.models import Lumber
     return processRequest(request, Lumber, lumber_id)
-    
+
 
 @login_required
 def sewing_thread(request, sewing_thread_id=0):

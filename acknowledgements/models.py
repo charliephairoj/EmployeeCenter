@@ -31,6 +31,7 @@ class Acknowledgement(models.Model):
     status = models.TextField()
     production_key = models.TextField()
     acknowledgement_key = models.TextField()
+    original_acknowledgement_key = models.TextField()
     bucket = models.TextField()
     remarks = models.TextField()
     fob = models.TextField()
@@ -84,21 +85,24 @@ class Acknowledgement(models.Model):
         #Initialize and create pdf
         ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
-        self.upload_acknowledgement(ack_filename)
+        key = self.upload_acknowledgement(ack_filename)
+        self.original_acknowledgement_key = key
+        self.save()
         self.upload_production(production_filename)
+        self.save()
         #Email if decoroom
         if "decoroom" in self.customer.name.lower():
             self.email_decoroom()
         self.create_log("Ack# {0} Created", self.delivery_date, self.employee)
-        urls = {'production_url': self.get_url(self.production_key),
-                'acknowledgement_url': self.get_url(self.acknowledgement_key)}
-        return urls
 
-    def update(self, data, employee=None):
-        print data["delivery_date"]
-        if "delivery_date" in data:
-            self.set_delivery_date(data["delivery_date"], employee=employee)
-        self.save()
+        return {'production_url': self.get_url(self.production_key),
+                'acknowledgement_url': self.get_url(self.acknowledgement_key)}
+
+    def update(self, data=None, employee=None):
+        if data is not None:
+            if "delivery_date" in data:
+                self.set_delivery_date(data["delivery_date"], employee=employee)
+            self.save()
         ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
 
@@ -107,6 +111,7 @@ class Acknowledgement(models.Model):
         #Email if decoroom
         urls = {'production_url': self.get_url(production_key),
                 'acknowledgement_url': self.get_url(ack_key)}
+
         return urls
 
     def create_pdfs(self):
@@ -278,11 +283,12 @@ class Acknowledgement(models.Model):
     def upload_acknowledgement(self, filename, *args, **kwargs):
         self.acknowledgement_key = self.upload(filename, "Acknowledgement", *args, **kwargs)
         self.save()
+        return self.acknowledgement_key
 
     def upload_production(self, filename, *args, **kwargs):
         self.production_key = self.upload(filename, "Production", *args, **kwargs)
         self.save()
-
+        return self.production_key
 
 #Create the Acknowledgement Items
 class Item(models.Model):
@@ -309,7 +315,7 @@ class Item(models.Model):
     image_key = models.TextField()
     comments = models.TextField()
 
-    def set_data(self, product, data=None, user=None, customer=None):
+    def set_data(self, product=None, data=None, user=None, customer=None):
         """Set the objects attributes with data from the product
         as defined by the database. After, if there is a data object
         they data object will used to be set the attributes with the
@@ -318,13 +324,12 @@ class Item(models.Model):
         if data != None:
             if "quantity" in data:
                 self.quantity = int(data["quantity"])
-
         else:
             self.quantity = 0
-        #Set from product
-        self._set_attr_from_product(product, customer)
+        if product is not None and customer is not None:
+            self._set_attr_from_product(product, customer)
         #Set from data if exists
-        if data != None:
+        if data is not None:
             self._set_attr_from_data(data)
         self.save()
 
