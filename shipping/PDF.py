@@ -10,6 +10,7 @@ use by the production team and the office overseeing
 production"""
 
 from decimal import Decimal
+from pytz import timezone
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -178,13 +179,15 @@ class ShippingPDF(object):
         contact.setStyle(style)
         #Return table
         return contact
-        
+
     def _create_ack_section(self):
         #Create data array
         data = []
         #Add Data
-        data.append(['Order Date:', self.shipping.acknowledgement.time_created.strftime('%B %d, %Y')])
-        data.append(['Delivery Date:', self.shipping.delivery_date.strftime('%B %d, %Y')])
+        order_date, od_obj = self.outputBKKTime(self.shipping.acknowledgement.time_created, '%B %d, %Y')
+        delivery_date, dd_obj = self.outputBKKTime(self.shipping.delivery_date, '%B %d, %Y')
+        data.append(['Order Date:', order_date])
+        data.append(['Delivery Date:', delivery_date])
         #Adds po if exists
         if self.shipping.acknowledgement.po_id != None:
             data.append(['PO #:', self.ack.po_id])
@@ -333,7 +336,18 @@ class ShippingPDF(object):
             newWidth = ratio*height
            
         return Image(path, width=newWidth, height=newHeight)
-
+    
+    def outputBKKTime(self, dateTimeObj, fmt):
+        """
+        The function accepts the datetime object
+        and the preferred output str format to return
+        the datetime as. This function then converts
+        from the current utc(preferred) to the 'Asia/Bangkok'
+        timezone
+        """
+        bkkTz = timezone('Asia/Bangkok')
+        bkkDateTime = dateTimeObj.astimezone(bkkTz)
+        return bkkDateTime.strftime(fmt), bkkDateTime
 
 
     

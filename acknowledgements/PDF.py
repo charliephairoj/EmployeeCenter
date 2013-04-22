@@ -228,8 +228,6 @@ class AcknowledgementPDF(object):
         #Add Data
         order_date, odObj = self.outputBKKTime(self.ack.time_created, '%B %d, %Y')
         delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
-        print order_date
-        print delivery_date
         data.append(['Currency:', self._get_currency()])
         data.append(['Order Date:', order_date])
         data.append(['Delivery Date:', delivery_date])

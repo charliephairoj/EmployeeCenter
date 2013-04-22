@@ -44,9 +44,10 @@ def supply(request, supply_id=0):
     elif request.method == "DELETE":
         return httpDELETEProcessor(request, Supply, supply_id)
 
+
 #Reserve fabric
 @login_required
-def reserve(request, supply_id):    
+def reserve(request, supply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=supply_id)
