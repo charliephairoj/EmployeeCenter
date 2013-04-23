@@ -1,4 +1,6 @@
 from decimal import Decimal
+import dateutil.parser
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -13,6 +15,7 @@ class Transaction(models.Model):
     vendor = models.TextField()
     comments = models.TextField()
     employee = models.ForeignKey(User)
+    transaction_date = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     class Meta:
         permissions = (('can_view_transactions', 'Can View Transactions'),)
@@ -26,7 +29,8 @@ class Transaction(models.Model):
                 'invoice': {'id': self.invoice_id},
                 'vendor': self.vendor,
                 'comments': self.comments,
-                'employee': self.employee.first_name + ' ' + self.employee.last_name}
+                'employee': self.employee.first_name + ' ' + self.employee.last_name,
+                'transaction_date': self.transaction_date.isoformat()}
 
     def set_data(self, data, **kwargs):
         if "name" in data:
@@ -46,4 +50,6 @@ class Transaction(models.Model):
             self.comments = data["comments"]
         if "user" in kwargs:
             self.employee = kwargs["user"]
-                
+        if "transaction_date" in data:
+            self.transaction_date = dateutil.parser.parse(data["transaction_date"])
+
