@@ -15,7 +15,7 @@ class Transaction(models.Model):
     vendor = models.TextField()
     comments = models.TextField()
     employee = models.ForeignKey(User)
-    transaction_date = models.DateTimeField(auto_now=True, auto_now_add=True)
+    transaction_date = models.DateTimeField()
 
     class Meta:
         permissions = (('can_view_transactions', 'Can View Transactions'),)
