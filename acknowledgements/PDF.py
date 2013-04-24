@@ -235,7 +235,13 @@ class AcknowledgementPDF(object):
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
         if self.ack.remarks is not None and self.ack.remarks != '':
-            data.append(['Remarks', self.ack.remarks])
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   fontSize=10,
+                                   textColor=colors.CMYKColor(black=60))
+            paragraph = Paragraph(self.ack.remarks.replace('\n', '<br/>'),
+                                  style)
+            data.append(['Remarks', paragraph])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
@@ -587,7 +593,13 @@ class ProductionPDF(AcknowledgementPDF):
         deliver_date_str = delivery_date_str.format(self.thai_months[date_obj.month-1])
         data.append(['กำหนดส่ง:', deliver_date_str])
         if self.ack.remarks is not None and self.ack.remarks != '':
-            data.append(['Remarks', self.ack.remarks])
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   fontSize=10,
+                                   textColor=colors.CMYKColor(black=60))
+            paragraph = Paragraph(self.ack.remarks.replace('\n', '<br/>'),
+                                  style)
+            data.append(['Remarks', paragraph])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style

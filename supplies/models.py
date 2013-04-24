@@ -39,25 +39,35 @@ class Supply(models.Model):
     data = hstore.DictionaryField()
     objects = hstore.HStoreManager()
 
-        
+    class Meta:
+        permissions = (('view_supplier', 'Can view the Supplier'),
+                       ('view_props', 'Can view props'))
+
     def get_data(self, **kwargs):
         data = {
-                'reference':self.reference,
-                'type':self.type,
-                'supplier':self.supplier.get_data(),
-                'width':str(self.width),
-                'depth':str(self.depth),
-                'height':str(self.height),
-                'width_units':self.width_units,
-                'depth_units':self.depth_units,
-                'height_units':self.height_units,
-                'description':self.description,
-                'id':self.id,
-                'cost':'%s' % self.cost,
-                'currency':self.currency,
-                'image_url':self.image_url,
-                'image':{'url':self.image_url}
+                'reference': self.reference,
+                'type': self.type,
+                'supplier': self.supplier.get_data(),
+                'width': str(self.width),
+                'depth': str(self.depth),
+                'height': str(self.height),
+                'width_units': self.width_units,
+                'depth_units': self.depth_units,
+                'height_units': self.height_units,
+                'description': self.description,
+                'id': self.id,
+                'cost': '%s' % self.cost,
+                'currency': self.currency,
+                'image_url': self.image_url,
+                'image': {'url': self.image_url}
         }
+
+        try:
+            user = kwargs["user"]
+            if user.has_perm('supplies.view_supplier'):
+                data.update({'supplier': self.supplier.get_date()})
+        except:
+            pass
         return data
 
     def set_data(self, data, **kwargs):
