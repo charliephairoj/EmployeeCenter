@@ -606,9 +606,8 @@ class ProductionPDF(AcknowledgementPDF):
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
-                            ('TEXTCOLOR', (0, 0), (-1, -1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                             colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda')])
         table.setStyle(style)
         #Return Table
