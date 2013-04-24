@@ -108,11 +108,13 @@ class Acknowledgement(models.Model):
 
         ack_key = self.upload(ack_filename, 'Acknowledgement', appendix='-revision')
         production_key = self.upload(production_filename, 'Production', appendix='-revision')
-        #Email if decoroom
-        urls = {'production_url': self.get_url(production_key),
-                'acknowledgement_url': self.get_url(ack_key)}
 
-        return urls
+        self.acknowledgement_key = ack_key
+        self.production_key = production_key
+        self.save()
+        #Email if decoroom
+        return {'production_url': self.get_url(production_key),
+                'acknowledgement_url': self.get_url(ack_key)}
 
     def create_pdfs(self):
         products = self.item_set.all().order_by('id')
