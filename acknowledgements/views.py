@@ -84,9 +84,8 @@ def item(request, ack_item_id=0):
         else:
             data = json.loads(request.body)
             ack_item = Item.objects.get(id=ack_item_id)
-            ack_item.set_data(data)
             ack = ack_item.acknowledgement
-            ack.update()
+            ack.update({'products':[data]})
             return HttpResponse(json.dumps(ack_item.get_data()),
                                 mimetype="application/json")
 
