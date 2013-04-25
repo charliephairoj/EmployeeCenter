@@ -204,6 +204,7 @@ class Acknowledgement(models.Model):
         message = "Changed fabric to {0}".format(fabric.description)
         self.create_log(message, employee)
         product.fabric = fabric
+        product.save()
 
     def email(self, key, recipients):
         key_id = settings.AWS_ACCESS_KEY_ID
