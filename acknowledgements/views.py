@@ -108,7 +108,7 @@ def log(request, ack_id=0):
             for log in logs:
                 data.append({'event': log.action,
                              'employee': "{0} {1}".format(log.employee.first_name, log.employee.last_name),
-                             'delivery_date': log.delivery_date,
+                             'delivery_date': log.delivery_date.isoformat(),
                              'timestamp': log.timestamp.isoformat()})
             return HttpResponse(json.dumps(data),
                             mimetype="application/json")
