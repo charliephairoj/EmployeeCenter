@@ -197,10 +197,12 @@ class Acknowledgement(models.Model):
 
     def change_fabric(self, product, fabric, employee=None):
         try:
-            message = "Changed fabric from {0} to {1}".format(product.fabric.description, fabric.description)
+            message = "Changed fabric from {1}".format(product.fabric.description)
             self.create_log(message, employee)
         except:
             pass
+        message = "Changed fabric to {1}".format(product.fabric.description, fabric.description)
+        self.create_log(message, employee)
         product.fabric = fabric
 
     def email(self, key, recipients):
