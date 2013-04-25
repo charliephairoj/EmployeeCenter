@@ -105,8 +105,9 @@ class Acknowledgement(models.Model):
             self.save()
 
             if "products" in data:
-                for product in data["products"]:
-                    if "fabric" in product:
+                for product_data in data["products"]:
+                    product = Item.objects.get(id=product_data["id"])
+                    if "fabric" in product_data:
                         fabric = Fabric.objects.get(id=product["fabric"]["id"])
                         self.change_fabric(product, fabric, employee)
         ack_filename, production_filename = self.create_pdfs()
