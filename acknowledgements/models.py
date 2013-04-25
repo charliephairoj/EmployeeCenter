@@ -202,7 +202,7 @@ class Acknowledgement(models.Model):
         except:
             pass
         message = "Changed fabric to {0}".format(fabric.description)
-        self.create_log(message, employee)
+        self.create_log(message, employee=employee)
         product.fabric = fabric
         product.save()
 
