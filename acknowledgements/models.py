@@ -196,10 +196,9 @@ class Acknowledgement(models.Model):
             return Upholstery.objects.get(product_ptr_id=product_data["id"])
 
     def change_fabric(self, product, fabric, employee=None):
-        if product.fabric is not None:
-            if product.fabric.id != fabric.id:
-                message = "Changed fabric from {0} to {1}".format(product.fabric.description, fabric.description)
-                self.create_log(message, employee)
+        message = "Changed fabric from {0} to {1}".format(product.fabric.description, fabric.description)
+        self.create_log(message, employee)
+        product.fabric = fabric
 
     def email(self, key, recipients):
         key_id = settings.AWS_ACCESS_KEY_ID
