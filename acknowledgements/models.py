@@ -93,7 +93,7 @@ class Acknowledgement(models.Model):
         #Email if decoroom
         if "decoroom" in self.customer.name.lower():
             self.email_decoroom()
-        self.create_log("Ack# {0} Created", self.delivery_date, self.employee)
+        self.create_log("Ack# {0} Created".format(self.id), self.delivery_date, self.employee)
 
         return {'production_url': self.get_url(self.production_key),
                 'acknowledgement_url': self.get_url(self.acknowledgement_key)}
@@ -103,6 +103,12 @@ class Acknowledgement(models.Model):
             if "delivery_date" in data:
                 self.set_delivery_date(data["delivery_date"], employee=employee)
             self.save()
+
+            if "products" in data:
+                for product in data["products"]:
+                    if "fabric" in product:
+                        fabric = Fabric.objects.get(id=product["fabric"]["id"])
+                        self.change_fabric(product, fabric, employee)
         ack_filename, production_filename = self.create_pdfs()
         #Upload and return the url
 
@@ -146,7 +152,9 @@ class Acknowledgement(models.Model):
         delivery_date has been previously set."""
         delivery_date = dateutil.parser.parse(delivery_date)
         if self.delivery_date != None:
-            action = "Change Delivery Date to {0}".format(delivery_date.strftime('%B %d, %Y'))
+            old_dd = self.delivery_date().strftime('%B %d. %Y')
+            new_dd = delivery_date.strftime('%B %d, %Y')
+            action = "Change Delivery Date from {0} to {1}".format(old_dd, new_dd)
             self.create_log(action, delivery_date, employee=employee)
 
         self.delivery_date = delivery_date
@@ -185,6 +193,11 @@ class Acknowledgement(models.Model):
     def get_product(self, product_data):
         if product_data["type"] == "Upholstery":
             return Upholstery.objects.get(product_ptr_id=product_data["id"])
+
+    def change_fabric(self, product, fabric, employee=None):
+        if product.fabric is not None and product.fabric != fabric:
+            message = "Changed fabric from {0} to {1}".format(product.fabric.description, fabric.description)
+            self.create_log(message, employee)
 
     def email(self, key, recipients):
         key_id = settings.AWS_ACCESS_KEY_ID
@@ -363,7 +376,7 @@ class Item(models.Model):
         self.image_key = product.image_key
         self.save()
 
-    def _set_attr_from_data(self, data):
+    def _set_attr_from_data(self, data, employee=None):
         """Sets the attribute, but checks if they
         exists first."""
         if "comments" in data:

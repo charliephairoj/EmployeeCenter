@@ -99,6 +99,23 @@ def acknowledgement_url(request, ack_id=0):
 
 
 @login_required
+def log(request, ack_id=0):
+    if request.method == "GET":
+        if ack_id != 0:
+            ack = Acknowledgement.objects.get(id=ack_id)
+            logs = ack.acknowledgementlog_set.all()
+            data = []
+            for log in logs:
+                data.append({'event': log.action,
+                             'employee': log.employee,
+                             'delivery_date': log.delivery_date,
+                             'timestamp': log.timestamp.isoformat()})
+            return HttpResponse(json.dumps(data),
+                            mimetype="application/json")
+    else:
+        pass
+
+@login_required
 def pdf(request, ack_id):
     if "type" in request.GET:
         ack = Acknowledgement.objects.get(id=ack_id)
