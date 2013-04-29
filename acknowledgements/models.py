@@ -3,6 +3,7 @@ import dateutil.parser
 import math
 from decimal import Decimal
 
+from pytz import timezone
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
@@ -132,10 +133,11 @@ class Acknowledgement(models.Model):
         conditionally performs additional actions if the
         delivery_date has been previously set.
         """
-        delivery_date = dateutil.parser.parse(delivery_date)
-
+        bkk_tz = timezone('Asia/Bangkok')
+        delivery_date = dateutil.parser.parse(delivery_date).astimezone(bkk_tz)
         if self.delivery_date != None:
-            dds = (self.delivery_date.strftime('%B %d. %Y'),
+            o_dd = self.delivery_date.astimezone(bkk_tz)
+            dds = (o_dd.strftime('%B %d. %Y'),
                    delivery_date.strftime('%B %d, %Y'))
             event = "Change Delivery Date from {0} to {1}".format(*dds)
         else:
@@ -520,6 +522,7 @@ class AcknowledgementLog(Log):
 
     def get_data(self):
         """Get the log data"""
+        
         return {'event': self.event,
                 'employee': "{0} {1}".format(self.employee.first_name, self.employee.last_name),
                 'timestamp': self.timestamp.isoformat()}
