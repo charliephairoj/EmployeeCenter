@@ -503,9 +503,11 @@ class Pillow(models.Model):
         """Gets all the pillow's data"""
         data = {'type': self.type,
                 'quantity': self.quantity}
-        if self.fabric:
+        try:
             data.update({'fabric': {'description': self.fabric.description,
                                     'image': {'url': self.fabric.image_url}}})
+        except self.DoesNotExist:
+            pass
         return data
 
 
