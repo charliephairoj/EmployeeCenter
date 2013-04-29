@@ -135,7 +135,7 @@ class Acknowledgement(models.Model):
         delivery_date = dateutil.parser.parse(delivery_date)
 
         if self.delivery_date != None:
-            dds = (self.delivery_date().strftime('%B %d. %Y'),
+            dds = (self.delivery_date.strftime('%B %d. %Y'),
                    delivery_date.strftime('%B %d, %Y'))
             event = "Change Delivery Date from {0} to {1}".format(dds)
         else:
