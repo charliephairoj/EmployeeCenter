@@ -137,11 +137,11 @@ class Acknowledgement(models.Model):
         if self.delivery_date != None:
             dds = (self.delivery_date.strftime('%B %d. %Y'),
                    delivery_date.strftime('%B %d, %Y'))
-            event = "Change Delivery Date from {0} to {1}".format(dds)
+            event = "Change Delivery Date from {0} to {1}".format(*dds)
         else:
             event = "Delivery Date set to {0}".format(delivery_date.strftime('%B %d, %Y'))
 
-            AcknowledgementLog.create(event, self, employee=employee)
+        AcknowledgementLog.create(event, self, employee=employee)
         self.delivery_date = delivery_date
 
     def _create_pdfs(self):
