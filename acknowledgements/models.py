@@ -522,5 +522,4 @@ class AcknowledgementLog(Log):
         """Get the log data"""
         return {'event': self.event,
                 'employee': "{0} {1}".format(self.employee.first_name, self.employee.last_name),
-                'delivery_date': self.delivery_date.isoformat(),
                 'timestamp': self.timestamp.isoformat()}
