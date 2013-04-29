@@ -36,8 +36,8 @@ class Supply(models.Model):
     image_key = models.TextField(null=True)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
-    data = hstore.DictionaryField()
-    objects = hstore.HStoreManager()
+    #data = hstore.DictionaryField()
+    #objects = hstore.HStoreManager()
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
@@ -102,9 +102,12 @@ class Supply(models.Model):
             self.depth_units = data["depth_units"]
             del data["depth_units"]
         if "image" in data:
-            if "url" in data["image"]: self.image_url = data["image"]["url"]
-            if "key" in data["image"]: self.image_key = data["image"]["key"]
-            if "bucket" in data["image"]: self.image_bucket = data["image"]["bucket"]
+            if "url" in data["image"]:
+                self.image_url = data["image"]["url"]
+            if "key" in data["image"]:
+                self.image_key = data["image"]["key"]
+            if "bucket" in data["image"]:
+                self.image_bucket = data["image"]["bucket"]
             del data["image"]
             
     def create_log(self, action, employee, quantity=0, remarks=None, current_quantity=0):
@@ -132,7 +135,7 @@ class Supply(models.Model):
         if remarks is not None: log.remarks = remarks
         if current_quantity != 0: log.current_quantity = current_quantity
         log.save()
-    
+
     def reserve(self, quantity, employee=None, remarks=None):
         self.create_log("Reserve", employee, quantity, remarks, self.quantity)
 

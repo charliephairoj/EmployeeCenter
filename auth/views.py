@@ -14,6 +14,7 @@ logger = logging.getLogger('EmployeeCenter');
 def current_user(request):
 
     user = request.user
+
     user_data = {'firstName': user.first_name,
                  'lastName': user.last_name}
     data = []

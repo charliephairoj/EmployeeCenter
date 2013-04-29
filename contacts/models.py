@@ -88,8 +88,8 @@ class Address(models.Model):
     country = models.CharField(max_length=150, null=True)
     zipcode = models.TextField(null=True)
     contact = models.ForeignKey(Contact)
-    latitude = models.DecimalField(decimal_places=6, max_digits=9)
-    longitude = models.DecimalField(decimal_places=6, max_digits=9)
+    latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
+    longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
 
     def get_data(self):
         #Structure data

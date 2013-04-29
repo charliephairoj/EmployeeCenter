@@ -18,52 +18,50 @@ def acknowledgement(request, ack_id=0):
     #Get Request
     if request.method == "GET":
         if ack_id == 0:
-            GET_data = request.GET
-            data = []
+            params = request.GET
             acks = Acknowledgement.objects.all().order_by('-id')
 
-            #Additional filters from parameters
-            if "start_date" in GET_data and "end_date" in GET_data:
-                start_date = dateutil.parser.parse(GET_data['start_date'])
-                end_date = dateutil.parser.parse(GET_data['end_date'])
-                print start_date
-                print end_date
+            if "start_date" in params and "end_date" in params:
+                start_date = dateutil.parser.parse(params['start_date'])
+                end_date = dateutil.parser.parse(params['end_date'])
                 acks = acks.filter(delivery_date__range=[start_date, end_date])
-            elif "start_date" in GET_data:
-                start_date = dateutil.parser.parse(GET_data['start_date'])
+            elif "start_date" in params:
+                start_date = dateutil.parser.parse(params['start_date'])
                 acks = acks.filter(delivery_date__gte=start_date)
-            elif "end_date" in GET_data:
-                end_date = dateutil.parser.parse(GET_data['end_date'])
+            elif "end_date" in params:
+                end_date = dateutil.parser.parse(params['end_date'])
                 acks = acks.filter(delivery_date__lte=end_date)
-            elif "date" in GET_data:
-                date = dateutil.parser.parse(GET_data['date'])
+            elif "date" in params:
+                date = dateutil.parser.parse(params['date'])
                 acks = acks.filter(delivery_date=date)
-            if "last_modified" in GET_data:
-                timestamp = dateutil.parser.parse(GET_data["last_modified"])
+            if "last_modified" in params:
+                timestamp = dateutil.parser.parse(params["last_modified"])
                 acks = acks.filter(last_modified__gte=timestamp)
-            for ack in acks:
-                data.append(ack.get_data())
+
+            data = [ack.get_data() for ack in acks]
         else:
             ack = Acknowledgement.objects.get(id=ack_id)
             data = ack.get_data()
+
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         return response
 
     if request.method == "POST":
         if ack_id == 0:
             data = json.loads(request.body)
-            ack = Acknowledgement()
-            urls = ack.create(data, user=request.user)
-            data = urls.update(ack.get_data())
-            return HttpResponse(json.dumps(urls),
-                                mimetype="application/json")
+            acknowledgement = Acknowledgement.create(data, request.user)
+            response_data = acknowledgement.get_data()
+            response_data["acknowledgement_url"] = acknowledgement.generate_url('acknowledgement')
+            response_data["production_url"] = acknowledgement.generate_url('production')
+            return HttpResponse(json.dumps(response_data), mimetype="application/json")
         else:
             data = json.loads(request.body)
-            ack = Acknowledgement.objects.get(id=ack_id)
-            urls = ack.update(data, request.user)
-            urls.update(ack.get_data())
-            return HttpResponse(json.dumps(urls),
-                                mimetype="application/json")
+            acknowledgement = Acknowledgement.objects.get(id=ack_id)
+            acknowledgement.update(data, request.user)
+            response_data = acknowledgement.get_data()
+            response_data["acknowledgement_url"] = acknowledgement.generate_url('acknowledgement')
+            response_data["production_url"] = acknowledgement.generate_url('production')
+            return HttpResponse(json.dumps(response_data), mimetype="application/json")
 
 
 @login_required
@@ -73,9 +71,8 @@ def item(request, ack_item_id=0):
         if ack_item_id == 0:
             data = {}
         else:
-            ack_item = Item.objects.get(id=ack_item_id)
-            data = ack_item.get_data()
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
+            item = Item.objects.get(id=ack_item_id)
+        response = HttpResponse(json.dumps(item.get_data()), mimetype="application/json")
         return response
 
     if request.method == "POST":
@@ -83,49 +80,34 @@ def item(request, ack_item_id=0):
             pass
         else:
             data = json.loads(request.body)
-            ack_item = Item.objects.get(id=ack_item_id)
-            ack = ack_item.acknowledgement
-            ack.update({'products': [data]}, employee=request.user)
-            return HttpResponse(json.dumps(ack_item.get_data()),
-                                mimetype="application/json")
-
-
-#Get url
-@login_required
-def acknowledgement_url(request, ack_id=0):
-    if ack_id != 0 and request.method == "GET":
-        ack = Acknowledgement.objects.get(id=ack_id)
+            item = Item.objects.get(id=ack_item_id)
+            item.update(data, request.user)
+            acknowledgement = item.acknowledgement
+            acknowledgement.update()
+            return HttpResponse(json.dumps(item.get_data()), mimetype="application/json")
 
 
 @login_required
 def log(request, ack_id=0):
     if request.method == "GET":
         if ack_id != 0:
-            ack = Acknowledgement.objects.get(id=ack_id)
-            logs = ack.acknowledgementlog_set.all()
-            data = []
-            for log in logs:
-                data.append({'event': log.action,
-                             'employee': "{0} {1}".format(log.employee.first_name, log.employee.last_name),
-                             'delivery_date': log.delivery_date.isoformat(),
-                             'timestamp': log.timestamp.isoformat()})
-            return HttpResponse(json.dumps(data),
-                            mimetype="application/json")
-    else:
-        pass
+            try:
+                data = [log.get_data() for log in Acknowledgement.objects.get(id=ack_id).acknowledgementlog_set.all()]
+            except Acknowledgement.DoesNotExist:
+                raise Exception
+            return HttpResponse(json.dumps(data), mimetype="application/json")
+
 
 @login_required
 def pdf(request, ack_id):
     if "type" in request.GET:
-        ack = Acknowledgement.objects.get(id=ack_id)
+        acknowledgement = Acknowledgement.objects.get(id=ack_id)
         if request.GET["type"] == "acknowledgement":
-            key = ack.acknowledgement_key
+            url = acknowledgement.generate_url('acknowledgement')
         elif request.GET["type"] == "production":
-            key = ack.production_key
-
-        data = {'url': ack.get_url(key)}
-        return HttpResponse(json.dumps(data),
-                            mimetype="application/json")
+            url = acknowledgement.generate_url('production')
+        data = {'url': url}
+        return HttpResponse(json.dumps(data), mimetype="application/json")
 
 
 @login_required

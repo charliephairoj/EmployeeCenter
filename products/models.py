@@ -29,11 +29,12 @@ class Product(models.Model):
     units = models.CharField(max_length=20, default='mm')
     internalUnits = 'mm',
     externalUnits = 'mm',
-    bucket = models.TextField()
-    image_key = models.TextField()
-    image_url = models.TextField()
-    schematic_key = models.TextField()
+    bucket = models.TextField(null=True)
+    image_key = models.TextField(null=True)
+    image_url = models.TextField(null=True)
+    schematic_key = models.TextField(null=True)
     last_modified = models.DateTimeField(auto_now=True)
+    collection = models.TextField(default="Dellarobbia Thailand")
 
     #Meta
     class Meta:

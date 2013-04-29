@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from oauth2client.django_orm import CredentialsField
 
-# Create your models here.
+
 class UserProfile(models.Model):
     #required field
     user = models.ForeignKey(User)
@@ -21,5 +21,5 @@ class CredentialsModel(models.Model):
 
 class Log(models.Model):
     employee = models.ForeignKey(User)
-    action = models.TextField()
+    event = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)

@@ -1,7 +1,6 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
-"""
-Collection of the classes that create pdf files
+"""Collection of the classes that create pdf files
 for an Acnowledgement. The Acknowledgement creates
 an order confirmation to be used for the office and
 for customers. The production pdf is created to be
@@ -80,7 +79,7 @@ class AckDocTemplate(BaseDocTemplate):
         barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
-        barcode.drawOn(canvas, x_position, 740)
+        barcode.drawOn(canvas, x_position, 750)
 
 
 class ProductionDocTemplate(AckDocTemplate):
@@ -107,7 +106,7 @@ class ProductionDocTemplate(AckDocTemplate):
         barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
-        barcode.drawOn(canvas, x_position, 740)
+        barcode.drawOn(canvas, x_position, 750)
 
 
 class AcknowledgementPDF(object):
@@ -182,7 +181,7 @@ class AcknowledgementPDF(object):
 
     def _create_customer_section(self):
         #extract supplier address
-        address = self.customer.address_set.all()[0] 
+        address = self.customer.address_set.all()[0]
         #Create data array
         data = []
         #Add supplier name
