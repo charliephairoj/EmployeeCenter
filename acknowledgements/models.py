@@ -442,6 +442,8 @@ class Item(models.Model):
             upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 10, 1) for key in dimensions)
         elif self.product.collection == "Dwell Living":
             upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 5, 1) for key in dimensions)
+        else:
+            upcharge_percentage = 0
         self.unit_price = self.unit_price + (self.unit_price * (Decimal(upcharge_percentage) / 100))
 
     def _calculate_upcharge(self, difference, boundary, initial, increment):
