@@ -508,7 +508,7 @@ class Pillow(models.Model):
         try:
             data.update({'fabric': {'description': self.fabric.description,
                                     'image': {'url': self.fabric.image_url}}})
-        except self.DoesNotExist:
+        except:
             pass
         return data
 
