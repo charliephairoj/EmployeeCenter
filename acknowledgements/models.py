@@ -33,8 +33,8 @@ class Acknowledgement(models.Model):
     remarks = models.TextField()
     fob = models.TextField(null=True)
     shipping_method = models.TextField(null=True)
-    subtotal = models.DecimalField(max_digits=15, decimal_places=2, null=True)
-    total = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
@@ -90,6 +90,8 @@ class Acknowledgement(models.Model):
                 self._set_delivery_date(data["delivery_date"], employee=employee)
             self.save()
 
+        self.calculate_totals()
+        
         ack_filename, production_filename = self._create_pdfs()
         ack_key = self._upload(ack_filename, 'Acknowledgement', appendix='-revision')
         production_key = self._upload(production_filename, 'Production', appendix='-revision')
