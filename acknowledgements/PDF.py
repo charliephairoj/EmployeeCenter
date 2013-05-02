@@ -663,7 +663,10 @@ class ProductionPDF(AcknowledgementPDF):
                 else:
                     pillow = "Pillow"
                 data.append(['', '   {0}'.format(pillow_type), pillow.quantity])
-                data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
+                try:
+                    data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
+                except:
+                    data.append(['', '       - Fabric:unspecified', ''])
         #Add comments
 
         if product.comments is not None and product.comments != '':
