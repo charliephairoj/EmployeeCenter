@@ -300,30 +300,22 @@ class AcknowledgementPDF(object):
         data.append([product.product.id, product.description,
                      product.unit_price, product.quantity, product.total])
         try:
-            data.append(['',
-                         self._get_fabric_table(product.fabric, "   Fabric:"),
-                         '', '', ''])
+            data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except:
             pass
         if product.is_custom_size:
-            dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width,
-                                                                product.depth,
-                                                                product.height)
+            dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
             data.append(['', dimension_str])
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
-                data.append(['',
-                             '   {0} Pillow'.format(pillow.type.capitalize()),
-                             '',
-                             pillow.quantity,
-                             ''])
-                data.append(['',
-                             self._get_fabric_table(pillow.fabric,
-                                                    '       - Fabric:'),
-                             '', '', ''])
+                data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
+                try:
+                    data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
+                except:
+                    data.append(['', '       - Fabric: unspecified', '', '', ''])
         #Add comments if they exists
-        if product.comments is not None and product.comments != '':
+        if product.comments:
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,

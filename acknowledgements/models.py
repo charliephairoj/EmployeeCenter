@@ -400,11 +400,11 @@ class Item(models.Model):
         if "is_custom_size" in data:
             if data["is_custom_size"] == True:
                 self.is_custom_size = True
-                if "width" in data and data['width'] > 0:
+                if "width" in data and data['width'] > 0 and data["width"]:
                     self.width = int(data['width'])
-                if "depth" in data and data['depth'] > 0:
+                if "depth" in data and data['depth'] > 0 and data["depth"]:
                     self.depth = int(data['depth'])
-                if "height" in data and data['height'] > 0:
+                if "height" in data and data['height'] > 0 and data["height"]:
                     self.height = int(data['height'])
                 self._calculate_custom_price()
 
