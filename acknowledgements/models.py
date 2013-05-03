@@ -340,6 +340,7 @@ class Item(models.Model):
 
     def update(self, data, employee):
         """Updates an item"""
+        print data
         if "fabric" in data:
             fabric = Fabric.objects.get(id=data["fabric"]["id"])
             try:
@@ -348,6 +349,14 @@ class Item(models.Model):
                 message = "Change fabric to {0}".format(fabric)
             self.fabric = fabric
             AcknowledgementLog.create(message, self.acknowledgement, employee)
+        if "pillows" in data:
+            for pillow_data in data["pillows"]:
+                pillow = Pillow.objects.get(id=pillow_data["id"])
+                fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
+                pillow.fabric = fabric
+                pillow.save()
+        
+        self.save()
 
     def get_data(self):
         """Retrieves data about the item"""
@@ -505,7 +514,8 @@ class Pillow(models.Model):
 
     def get_data(self):
         """Gets all the pillow's data"""
-        data = {'type': self.type,
+        data = {'id': self.id,
+                'type': self.type,
                 'quantity': self.quantity}
         try:
             data.update({'fabric': {'description': self.fabric.description,
