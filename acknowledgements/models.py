@@ -100,6 +100,10 @@ class Acknowledgement(models.Model):
         self.production_key = production_key
         self.save()
 
+    def ship(self, delivery_date, employee):
+        message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
+        AcknowledgementLog.create(message, self.acknowledgement, employee)
+
     def get_data(self):
         """Retrieves authorized information from the object.
 
@@ -343,20 +347,25 @@ class Item(models.Model):
         print data
         if "fabric" in data:
             fabric = Fabric.objects.get(id=data["fabric"]["id"])
-            try:
-                message = "Change fabric from {0} to {1}".format(self.fabric, fabric)
-            except Exception:
-                message = "Change fabric to {0}".format(fabric)
+            if self.fabric:
+                message = "Change fabric from {0} to {1}".format(self.fabric.description, fabric.description)
+            else:
+                message = "Change fabric to {0}".format(fabric.description)
             self.fabric = fabric
             AcknowledgementLog.create(message, self.acknowledgement, employee)
         if "pillows" in data:
             for pillow_data in data["pillows"]:
+                print pillow_data
                 pillow = Pillow.objects.get(id=pillow_data["id"])
                 fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
                 pillow.fabric = fabric
                 pillow.save()
-        
         self.save()
+
+    def ship(self, delivery_date, employee):
+        status = 'SHIPPED'
+        message = "Ack Item# {0}({1}) shipped on {2}".format(self.id, self.description, delivery_date.strftime(''))
+        AcknowledgementLog.create(message, self.acknowledgement, employee)
 
     def get_data(self):
         """Retrieves data about the item"""
@@ -372,7 +381,8 @@ class Item(models.Model):
                 'status': self.status,
                 'image': {'url': self._get_image_url()}}
         if self.fabric:
-            data.update({'fabric': {'fabric': self.fabric.description,
+            data.update({'fabric': {'id': self.fabric.id,
+                                    'fabric': self.fabric.description,
                                     'image': {'url': self.fabric.image_url}}})
         return data
 
@@ -478,9 +488,14 @@ class Item(models.Model):
         pillows = []
         for pillow in pillows_data:
             for i, item in enumerate(pillows):
-                if item["type"] == pillow["type"] and item["fabric"]["description"] == pillow["fabric"]["description"]:
+                if item["type"] == pillow["type"]:
+                    if "fabric" not in item and "fabric" not in pillow:
                         pillows[i]["quantity"] += 1
                         break
+                    elif "fabric" in item and "fabric" in pillow:
+                        if item["fabric"]["description"] == pillow["fabric"]["description"]:
+                            pillows[i]["quantity"] += 1
+                            break
             else:
                 if "quantity" not in pillow:
                     pillow["quantity"] = 1
@@ -518,7 +533,8 @@ class Pillow(models.Model):
                 'type': self.type,
                 'quantity': self.quantity}
         try:
-            data.update({'fabric': {'description': self.fabric.description,
+            data.update({'fabric': {'id': self.fabric.id,
+                                    'description': self.fabric.description,
                                     'image': {'url': self.fabric.image_url}}})
         except:
             pass
