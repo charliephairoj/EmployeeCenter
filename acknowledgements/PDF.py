@@ -319,7 +319,9 @@ class AcknowledgementPDF(object):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    leading=12,
-                                   wordWrap = 'CJK',
+                                   wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
                                    fontSize=10,
                                    textColor=colors.CMYKColor(black=60))
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
@@ -677,6 +679,8 @@ class ProductionPDF(AcknowledgementPDF):
                                    leading=17,
                                    fontSize=14,
                                    wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
                                    textColor='red')
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
                                   style)
