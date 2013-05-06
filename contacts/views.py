@@ -4,10 +4,16 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from contacts.models import Supplier, SupplierContact, Customer
+from contacts.models import Supplier, SupplierContact, Customer, Contact
 from utilities.http import httpPOSTProcessor, httpGETProcessor, httpPUTProcessor, httpDELETEProcessor, processRequest
 
+
 #Customer View
+@login_required
+def contact(request, contact_id=0):
+    return processRequest(request, Contact, contact_id)
+
+
 @login_required
 def customer(request, customer_id=0):
     return processRequest(request, Customer, customer_id)

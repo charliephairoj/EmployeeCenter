@@ -197,7 +197,7 @@ class AcknowledgementPDF(object):
         data.append(['', '%s, %s' % (city, territory)])
         data.append(['', "%s %s" % (country, zipcode)])
         #Create Table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(80, 440))
         #Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -242,7 +242,7 @@ class AcknowledgementPDF(object):
                                   style)
             data.append(['Remarks', paragraph])
         #Create table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(80, 440))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -593,7 +593,7 @@ class ProductionPDF(AcknowledgementPDF):
                                   style)
             data.append(['Remarks', paragraph])
         #Create table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(80, 440))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),

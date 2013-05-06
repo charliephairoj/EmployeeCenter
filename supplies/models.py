@@ -109,12 +109,12 @@ class Supply(models.Model):
             if "bucket" in data["image"]:
                 self.image_bucket = data["image"]["bucket"]
             del data["image"]
-            
+
     def create_log(self, action, employee, quantity=0, remarks=None, current_quantity=0):
         """Creates a log in the supplie log. Requires at minimum an action
         And the employee performing the action.
-        
-        If the quantity is not 0, then the current_quantity cannot be 0 and 
+
+        If the quantity is not 0, then the current_quantity cannot be 0 and
         vice versa or an error will be raised.
         """
         if action is not None and employee is not None:
@@ -132,8 +132,10 @@ class Supply(models.Model):
         elif (quantity != 0 and current_quantity == 0) or (quantity == 0 and current_quantity != 0):
             #Implement later
             pass
-        if remarks is not None: log.remarks = remarks
-        if current_quantity != 0: log.current_quantity = current_quantity
+        if remarks is not None:
+            log.remarks = remarks
+        if current_quantity != 0:
+            log.current_quantity = current_quantity
         log.save()
 
     def reserve(self, quantity, employee=None, remarks=None):
@@ -208,7 +210,6 @@ class SupplyLog(Log):
     supply = models.ForeignKey(Supply)
     quantity = models.DecimalField(max_digits=15, decimal_places=2)
     current_quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    remarks = models.TextField()
     
 
 

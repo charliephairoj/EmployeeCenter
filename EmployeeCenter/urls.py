@@ -40,6 +40,7 @@ urlpatterns += patterns('products.views',
 )
 
 urlpatterns += patterns('contacts.views',
+    url(r'^contact', 'contact'),
     url(r'^customer$', 'customer'),
     url(r'^customer/(?P<customer_id>\d+)$', 'customer'),
     url(r'^supplier$', 'supplier'),

@@ -3,11 +3,12 @@ import dateutil.parser
 
 from django.db import models
 from django.contrib.auth.models import User
+from contacts.models import Contact
 
 
 # Create your models here.
 class Transaction(models.Model):
-    name = models.TextField()
+    contact = models.ForeignKey(Contact)
     amount = models.DecimalField(decimal_places=2, max_digits=12)
     currency = models.CharField(max_length=3)
     type = models.CharField(max_length=10)
@@ -22,7 +23,7 @@ class Transaction(models.Model):
 
     def get_data(self, **kwargs):
         return {'id': self.id,
-                'name': self.name,
+                'name': self.contact.name,
                 'amount': str(self.amount),
                 'currency': self.currency,
                 'type': self.type,
@@ -33,6 +34,11 @@ class Transaction(models.Model):
                 'transaction_date': self.transaction_date.isoformat()}
 
     def set_data(self, data, **kwargs):
+        print data
+        try:
+            self.contact = Contact.objects.get(id=data["contact"]["id"])
+        except KeyError:
+            print "no contact"
         if "name" in data:
             self.name = data["name"]
         if "amount" in data:
