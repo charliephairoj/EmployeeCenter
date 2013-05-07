@@ -676,7 +676,7 @@ class ProductionPDF(AcknowledgementPDF):
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
-                                   leading=17,
+                                   leading=22,
                                    fontSize=14,
                                    wordWrap='CJK',
                                    allowWidows=1,
