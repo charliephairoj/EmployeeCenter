@@ -344,7 +344,6 @@ class Item(models.Model):
 
     def update(self, data, employee):
         """Updates an item"""
-        print data
         if "fabric" in data:
             fabric = Fabric.objects.get(id=data["fabric"]["id"])
             if self.fabric:
@@ -360,6 +359,10 @@ class Item(models.Model):
                 fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
                 pillow.fabric = fabric
                 pillow.save()
+        if "status" in data:
+            if data["status"] != self.status:
+                messgae = "Item#: {0} from Acknowledgement #{1} has been {2}".format(self.id, acknowledgement.id, self.status)
+                AcknowledgementLog.create(messgae, self.acknowledgement, employee)
         self.save()
 
     def ship(self, delivery_date, employee):

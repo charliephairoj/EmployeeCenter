@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from acknowledgements.models import Acknowledgement, Log
+from acknowledgements.models import Acknowledgement, AcknowledgementLog
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
@@ -67,8 +67,10 @@ class Shipping(models.Model):
         #Upload and return the url
         self.shipping_key = self.upload(shipping_filename)
         self.save()
-        #Log("Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id),
-            #self.acknowledgement, self.delivery_date)
+
+        message = "Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id)
+        AcknowledgementLog.create(message, self.acknowledgement, self.employee)
+
         urls = {'url': self.get_url(self.shipping_key)}
         return urls
 
