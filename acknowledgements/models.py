@@ -346,23 +346,25 @@ class Item(models.Model):
         """Updates an item"""
         if "fabric" in data:
             fabric = Fabric.objects.get(id=data["fabric"]["id"])
-            if self.fabric:
-                message = "Change fabric from {0} to {1}".format(self.fabric.description, fabric.description)
-            else:
-                message = "Change fabric to {0}".format(fabric.description)
-            self.fabric = fabric
-            AcknowledgementLog.create(message, self.acknowledgement, employee)
+            if fabric != self.fabric:
+                if self.fabric:
+                    message = "Change fabric from {0} to {1}".format(self.fabric.description, fabric.description)
+                else:
+                    message = "Change fabric to {0}".format(fabric.description)
+                self.fabric = fabric
+                AcknowledgementLog.create(message, self.acknowledgement, employee)
         if "pillows" in data:
             for pillow_data in data["pillows"]:
-                print pillow_data
                 pillow = Pillow.objects.get(id=pillow_data["id"])
                 fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
                 pillow.fabric = fabric
                 pillow.save()
         if "status" in data:
             if data["status"] != self.status:
-                messgae = "Item#: {0} from Acknowledgement #{1} has been {2}".format(self.id, acknowledgement.id, self.status)
+                self.status = data["status"]
+                messgae = "Item#: {0} from Acknowledgement #{1} has been {2}".format(self.id, self.acknowledgement.id, self.status)
                 AcknowledgementLog.create(messgae, self.acknowledgement, employee)
+
         self.save()
 
     def ship(self, delivery_date, employee):
@@ -373,6 +375,7 @@ class Item(models.Model):
     def get_data(self):
         """Retrieves data about the item"""
         data = {'id': self.id,
+                'acknowledgement': {'id': self.acknowledgement.id},
                 'is_custom_size': self.is_custom_size,
                 'width': self.width,
                 'height': self.height,
@@ -385,7 +388,7 @@ class Item(models.Model):
                 'image': {'url': self._get_image_url()}}
         if self.fabric:
             data.update({'fabric': {'id': self.fabric.id,
-                                    'fabric': self.fabric.description,
+                                    'description': self.fabric.description,
                                     'image': {'url': self.fabric.image_url}}})
         return data
 

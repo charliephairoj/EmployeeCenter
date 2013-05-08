@@ -69,10 +69,16 @@ def item(request, ack_item_id=0):
     #Get Request
     if request.method == "GET":
         if ack_item_id == 0:
-            data = {}
+            params = request.GET
+            items = Item.objects.all()
+            if "status" in params:
+                if params["status"] == 'available':
+                    items = items.exclude(status='SHIPPED')
+                    items = items.exclude(status='ACKNOWLEDGED')
+            data = [item.get_data() for item in items]
         else:
-            item = Item.objects.get(id=ack_item_id)
-        response = HttpResponse(json.dumps(item.get_data()), mimetype="application/json")
+            data = Item.objects.get(id=ack_item_id).get_data()
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
         return response
 
     if request.method == "POST":

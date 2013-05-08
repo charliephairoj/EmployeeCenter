@@ -55,6 +55,7 @@ def app_login(request):
             return render(request, 'auth/login.html', {'form':form})
     #what to do with a post request
     elif request.method == "POST":
+        print request
         #initialize form with post data
         form = LoginForm(request.POST)
         #check if form is valid
