@@ -362,8 +362,16 @@ class Item(models.Model):
         if "status" in data:
             if data["status"] != self.status:
                 self.status = data["status"]
-                messgae = "Item#: {0} from Acknowledgement #{1} has been {2}".format(self.id, self.acknowledgement.id, self.status)
-                AcknowledgementLog.create(messgae, self.acknowledgement, employee)
+                try:
+                    message = "Item# {0} from Acknowledgement #{1} has been {2} due to:{3}".format(self.id, 
+                                                                                                    self.acknowledgement.id, 
+                                                                                                    self.status,
+                                                                                                    data['status_message'])
+                except:
+                    message = "Item# {0} from Acknowledgement #{1} has been {2}".format(self.id, 
+                                                                                         self.acknowledgement.id, 
+                                                                                         self.status)
+                AcknowledgementLog.create(message, self.acknowledgement, employee)
 
         self.save()
 
