@@ -46,6 +46,7 @@ class Supply(models.Model):
 
     def get_data(self, **kwargs):
         data = {
+                'quantity': str(self.quantity),
                 'reference': self.reference,
                 'type': self.type,
                 'supplier': self.supplier.get_data(),
@@ -168,7 +169,7 @@ class Supply(models.Model):
             message = "Subtract {0} from {1}. {2} remaining".format(quantity, self.description, self.quantity)
             if acknowledgement_id:
                 try:
-                    SupplyLog.object.get(acknowledgement_id=acknowledgement_id).remove()
+                    SupplyLog.object.get(acknowledgement_id=acknowledgement_id).delete()
                 except:
                     pass
                 message = "Acknowledgement# {0}".format(acknowledgement_id) + message

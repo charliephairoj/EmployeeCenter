@@ -48,19 +48,24 @@ def supply(request, supply_id=0):
 #Reserve fabric
 @login_required
 def reserve(request, supply_id):
-    print request
-    length = request.POST.get('length')
-    remark = request.POST.get('remark')
+    data = json.loads(request.body)
+    quantity = data["quantity"]
+
+    try:
+        ack_id = data["acknowledgement_id"]
+    except:
+        ack_id = None
+
     supply = Supply.objects.get(id=supply_id)
-    supply.reserve(quantity=length, remark=remark, employee=request.user)
-    response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
+    supply.reserve(quantity=length, remark=remark, employee=request.user, acknowledgement_id=ack_id)
+    response = HttpResponse(json.dumps({'quantity': supply.quantity}), mimetype="application/json")
     response.status_code = 200
     return response
 
 
 #Add length to a fabric
 @login_required
-def add(request, suppply_id):    
+def add(request, suppply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=suppply_id)
@@ -68,20 +73,26 @@ def add(request, suppply_id):
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
-    
-    
+
+
 #Subtracts length from a fabric
 @login_required
-def subtract(request, supply_id):    
-    length = request.POST.get('length')
-    remark = request.POST.get('remark')
+def subtract(request, supply_id):
+    data = json.loads(request.body)
+    quantity = data["quantity"]
+
+    try:
+        ack_id = data["acknowledgement_id"]
+    except:
+        ack_id = None
+
     supply = Supply.objects.get(id=supply_id)
-    supply.subtract(quantity=length, remark=remark, employee=request.user)
+    supply.subtract(quantity=length, remark=remark, employee=request.user, acknowledgement_id=ack_id)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
-    
-    
+
+
 #Resets Length from a fabric
 @login_required
 def reset(request, supply_id):
