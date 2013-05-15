@@ -48,28 +48,31 @@ def supply(request, supply_id=0):
 #Reserve fabric
 @login_required
 def reserve(request, supply_id):
-    data = json.loads(request.body)
-    quantity = data["quantity"]
-
+    POST_data = json.loads(request.body)
+    quantity = POST_data["quantity"]
     try:
-        ack_id = data["acknowledgement_id"]
+        ack_id = POST_data["remarks"]
     except:
         ack_id = None
 
     supply = Supply.objects.get(id=supply_id)
-    supply.reserve(quantity=length, remark=remark, employee=request.user, acknowledgement_id=ack_id)
-    response = HttpResponse(json.dumps({'quantity': supply.quantity}), mimetype="application/json")
+    supply.reserve(quantity=quantity, employee=request.user, acknowledgement_id=ack_id)
+    response = HttpResponse(json.dumps({'quantity': str(supply.quantity)}), mimetype="application/json")
     response.status_code = 200
     return response
 
 
 #Add length to a fabric
 @login_required
-def add(request, suppply_id):
-    length = request.POST.get('length')
-    remark = request.POST.get('remark')
-    supply = Supply.objects.get(id=suppply_id)
-    supply.add(quantity=length, remark=remark, employee=request.user)
+def add(request, supply_id):
+    POST_data = json.loads(request.body)
+    quantity = POST_data["quantity"]
+    try:
+        remarks = POST_data["remarks"]
+    except:
+        remarks = None
+    supply = Supply.objects.get(id=supply_id)
+    supply.add(quantity=quantity, remarks=remarks, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -78,16 +81,15 @@ def add(request, suppply_id):
 #Subtracts length from a fabric
 @login_required
 def subtract(request, supply_id):
-    data = json.loads(request.body)
-    quantity = data["quantity"]
-
+    POST_data = json.loads(request.body)
+    quantity = POST_data["quantity"]
     try:
-        ack_id = data["acknowledgement_id"]
+        ack_id = POST_data["remarks"]
     except:
         ack_id = None
 
     supply = Supply.objects.get(id=supply_id)
-    supply.subtract(quantity=length, remark=remark, employee=request.user, acknowledgement_id=ack_id)
+    supply.subtract(quantity=quantity, employee=request.user, acknowledgement_id=ack_id)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -96,10 +98,15 @@ def subtract(request, supply_id):
 #Resets Length from a fabric
 @login_required
 def reset(request, supply_id):
-    length = request.POST.get('length')
-    remark = request.POST.get('remark')
+    POST_data = json.loads(request.body)
+    quantity = POST_data["quantity"]
+    try:
+        remarks = POST_data["remarks"]
+    except:
+        remarks = None
+
     supply = Supply.objects.get(id=supply_id)
-    supply.reset(quantity=length, remark=remark, employee=request.user)
+    supply.reset(quantity=quantity, remarks=remarks, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -113,9 +120,8 @@ def supply_log(request, supply_id=0):
         data = []
         for log in logs:
             data_item = {
-                         'action':log.action,
-                         'length':str(log.length),
-                         'total':str(log.current_length),
+                         'event':log.event,
+                         'quantity':str(log.quantity),
                          'remarks':log.remarks,
                          'employee':"%s %s" %(log.employee.first_name, log.employee.last_name),
                          'timestamp':log.timestamp.strftime('%B %d, %Y %H:%M:%S')

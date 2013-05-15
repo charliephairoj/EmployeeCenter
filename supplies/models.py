@@ -112,46 +112,21 @@ class Supply(models.Model):
                 self.image_bucket = data["image"]["bucket"]
             del data["image"]
 
-    def create_log(self, action, employee, quantity=0, remarks=None, current_quantity=0):
-        """Creates a log in the supplie log. Requires at minimum an action
-        And the employee performing the action.
-
-        If the quantity is not 0, then the current_quantity cannot be 0 and
-        vice versa or an error will be raised.
-        """
-        if action is not None and employee is not None:
-            log = Log()
-            log.action = action
-            log.employee = employee
-            log.supply = self
-        else:
-            #Implement later
-            pass
-        #Check that if quantity != 0 then current_quantity != 0
-        if quantity != 0 and current_quantity != 0:
-            log.quantity = quantity
-            log.current_quantity = current_quantity
-        elif (quantity != 0 and current_quantity == 0) or (quantity == 0 and current_quantity != 0):
-            #Implement later
-            pass
-        if remarks is not None:
-            log.remarks = remarks
-        if current_quantity != 0:
-            log.current_quantity = current_quantity
-        log.save()
-
-    def reserve(self, quantity, employee, remarks, acknowledgement_id=None):
-        message = "Reserve {0}"
+    
+    def reserve(self, quantity, employee, remarks=None, acknowledgement_id=None):
+        message = "Reserve {0} {1}".format(quantity, self.quantity_units)
         if acknowledgement_id:
             message += " for Acknowledgement# {0}".format(acknowledgement_id)
             try:
-                log = SupplyLog.object.get(acknowledgement_id=acknowledgement_id)
+                log = SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve')
                 log.event = message
                 log.save()
             except:
-                SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+                SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
+                                 supply=self, acknowledgement_id=acknowledgement_id)
         else:
-            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
+                             supply=self, acknowledgement_id=acknowledgement_id)
 
     def add(self, quantity, employee=None, remarks=None):
         self.quantity = self.quantity + Decimal(quantity)
@@ -167,14 +142,16 @@ class Supply(models.Model):
             self.save()
 
             message = "Subtract {0} from {1}. {2} remaining".format(quantity, self.description, self.quantity)
+            print acknowledgement_id
             if acknowledgement_id:
                 try:
-                    SupplyLog.object.get(acknowledgement_id=acknowledgement_id).delete()
+                    SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve').delete()
                 except:
                     pass
                 message = "Acknowledgement# {0}".format(acknowledgement_id) + message
 
-            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
+                             supply=self, acknowledgement_id=acknowledgement_id)
         else:
             raise Exception("Nothing left to subtract")
 
@@ -228,20 +205,17 @@ class SupplyLog(Log):
     supply = models.ForeignKey(Supply)
     quantity = models.DecimalField(max_digits=15, decimal_places=2)
     acknowledgement_id = models.TextField(null=True)
+    remarks = models.TextField(null=True)
 
     @classmethod
-    def create(cls, supply, event, quantity, employee, action):
-        supply = cls()
-        try:
-            supply.quantity = quantity
-            supply.supply = supply
-            supply.employee = employee
-            supply.event = event
-            supply.action = action
-        except Exception:
-            print 'oops'
-
-        supply.save()
+    def create(cls, supply, event, quantity, employee, acknowledgement_id=None):
+        supplyObj = cls()
+        supplyObj.quantity = quantity
+        supplyObj.supply = supply
+        supplyObj.employee = employee
+        supplyObj.event = event
+        supplyObj.acknowledgement_id = acknowledgement_id
+        supplyObj.save()
 
 
 class Fabric(Supply):
@@ -249,69 +223,7 @@ class Fabric(Supply):
     color = models.TextField()
     content = models.TextField()
 
-    def reserve(self, length, employee=None, remark=None):
-        log_item = FabricLog()
-        log_item.employee = employee
-        log_item.fabric = self
-        log_item.action = "Reserve"
-        log_item.length = length
-        log_item.current_length = self.depth
-        log_item.remarks = "Ack#: %s" % remark
-        log_item.save()
-
-    def add(self, length, employee=None, remark=None):
-        #Add to current Length
-        self.depth = self.depth + Decimal(length)
-        self.save()
-
-        #Create log of addition
-        log_item = FabricLog()
-        log_item.employee = employee
-        log_item.fabric = self
-        log_item.action = "Add"
-        log_item.length = length
-        log_item.current_length = self.depth
-        log_item.remarks = remark
-        log_item.save()
-
-    #Subtract Length
-    def subtract(self, length, employee=None, remark=None):
-        #check if length to subtract is more than total length
-        if self.depth > Decimal(length):
-            #Subtract from current length
-            self.depth = self.depth - Decimal(length)
-            self.save()
-            #Destroy Reservation log
-            try:
-                old_log_item = FabricLog.objects.get(fabric_id=self.id,
-                                                     action='Reserve',
-                                                     remarks="Ack#: %s" % remark)
-                old_log_item.delete()
-            except:
-                pass
-            #Create log
-            log_item = FabricLog()
-            log_item.employee = employee
-            log_item.fabric = self
-            log_item.action = "Subtract"
-            log_item.length = length
-            log_item.current_length = self.depth
-            log_item.remarks = "Ack#: %s" % remark
-            log_item.save()
-
-    def reset(self, length, employee=None, remark=None):
-        self.depth = length
-        self.save()
-        #Create log
-        log_item = FabricLog()
-        log_item.employee = employee
-        log_item.fabric = self
-        log_item.action = "Reset"
-        log_item.length = length
-        log_item.current_length = self.depth
-        log_item.remarks = remark
-        log_item.save()
-
+    
     #Set fabric data for REST
     def set_data(self, data, **kwargs):
         #extract args
@@ -331,38 +243,22 @@ class Fabric(Supply):
         if "content" in data:
             self.content = data["content"]
         self.description = "%s Col:%s" % (self.pattern, self.color)
-        #Set the current length of fabric
-        if "current_length" in data:
-            self.reset(data["current_length"], user, "Initial Current Length")
+       
         self.save()
 
     #Get Data for REST
     def get_data(self, **kwargs):
-        from django.db.models import Sum
-        #Get the Reserve Length
-        sum_obj = FabricLog.objects.filter(action="Reserve", fabric_id=self.id).aggregate(Sum('length'))
+
         #sets the data for this supply
         data = {
                 'pattern': self.pattern,
                 'color': self.color,
                 'content': self.content,
-                'reserved_length': str(sum_obj["length__sum"])
         }
         #merges with parent data
         data.update(super(Fabric, self).get_data())
         #returns the data
         return data
-
-
-class FabricLog(models.Model):
-
-    fabric = models.ForeignKey(Fabric)
-    action = models.CharField(max_length=15, null=False)
-    length = models.DecimalField(max_digits=15, decimal_places=2)
-    current_length = models.DecimalField(max_digits=15, decimal_places=2)
-    remarks = models.TextField()
-    employee = models.ForeignKey(User)
-    timestamp = models.DateTimeField(auto_now_add=True)
 
 
 class Foam(Supply):
