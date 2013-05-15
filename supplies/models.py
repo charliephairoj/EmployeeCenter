@@ -35,6 +35,7 @@ class Supply(models.Model):
     image_bucket = models.TextField(null=True)
     image_key = models.TextField(null=True)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     #data = hstore.DictionaryField()
     #objects = hstore.HStoreManager()
@@ -138,34 +139,50 @@ class Supply(models.Model):
             log.current_quantity = current_quantity
         log.save()
 
-    def reserve(self, quantity, employee=None, remarks=None):
-        self.create_log("Reserve", employee, quantity, remarks, self.quantity)
+    def reserve(self, quantity, employee, remarks, acknowledgement_id=None):
+        message = "Reserve {0}"
+        if acknowledgement_id:
+            message += " for Acknowledgement# {0}".format(acknowledgement_id)
+            try:
+                log = SupplyLog.object.get(acknowledgement_id=acknowledgement_id)
+                log.event = message
+                log.save()
+            except:
+                SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+        else:
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
 
     def add(self, quantity, employee=None, remarks=None):
         self.quantity = self.quantity + Decimal(quantity)
         self.save()
-        self.create_log("Add", employee, quantity, remarks, self.quantity)
+        message = "Added {0} to {1}. {2} remaining".format(quantity, self.description, self.quantity)
+        SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
 
-    def subtract(self, quantity, employee=None, remarks=None):
+    def subtract(self, quantity, employee=None, remarks=None, acknowledgement_id=None):
         #check if length to subtract is more than total length
         if self.quantity > Decimal(quantity):
             #Subtract from current length
             self.quantity = self.quantity - Decimal(quantity)
             self.save()
-            #Destroy Reservation log
-            try:
-                old_log_item = Log.objects.get(fabric_id=self.id,
-                                               action='Reserve',
-                                               remarks="Ack#: %s" % remarks)
-                old_log_item.delete()
-            except:
-                pass
-            self.create_log("Subtract", employee, quantity, remarks, self.quantity)
+
+            message = "Subtract {0} from {1}. {2} remaining".format(quantity, self.description, self.quantity)
+            if acknowledgement_id:
+                try:
+                    SupplyLog.object.get(acknowledgement_id=acknowledgement_id).remove()
+                except:
+                    pass
+                message = "Acknowledgement# {0}".format(acknowledgement_id) + message
+
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+        else:
+            raise Exception("Nothing left to subtract")
 
     def reset(self, quantity, employee=None, remarks=None):
         self.quantity = quantity
         self.save()
-        self.create_log("Reset", employee, quantity, remarks, self.quantity)
+
+        message = "Reset {0} to {1}".format(self.description, quantity)
+        SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
 
     def upload_image(self, image, key="supplies/images/{0}.jpg".format(time.time())):
         #start connection
@@ -209,8 +226,21 @@ class SupplyLog(Log):
     """
     supply = models.ForeignKey(Supply)
     quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    current_quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    
+    acknowledgement_id = models.TextField(null=True)
+
+    @classmethod
+    def create(cls, supply, event, quantity, employee, action):
+        supply = cls()
+        try:
+            supply.quantity = quantity
+            supply.supply = supply
+            supply.employee = employee
+            supply.event = event
+            supply.action = action
+        except Exception:
+            print 'oops'
+
+        supply.save()
 
 
 class Fabric(Supply):

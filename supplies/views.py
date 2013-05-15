@@ -9,7 +9,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from supplies.models import Supply, Log
+from supplies.models import Supply, SupplyLog
 from utilities.http import processRequest, httpGETProcessor, httpPOSTProcessor, httpPUTProcessor, httpDELETEProcessor
 
 
@@ -48,10 +48,11 @@ def supply(request, supply_id=0):
 #Reserve fabric
 @login_required
 def reserve(request, supply_id):
+    print request
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=supply_id)
-    supply.reserve(length, remark=remark, employee=request.user)
+    supply.reserve(quantity=length, remark=remark, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -63,7 +64,7 @@ def add(request, suppply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=suppply_id)
-    supply.add(length, remark=remark, employee=request.user)
+    supply.add(quantity=length, remark=remark, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -75,7 +76,7 @@ def subtract(request, supply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=supply_id)
-    supply.subtract(length, remark=remark, employee=request.user)
+    supply.subtract(quantity=length, remark=remark, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -87,7 +88,7 @@ def reset(request, supply_id):
     length = request.POST.get('length')
     remark = request.POST.get('remark')
     supply = Supply.objects.get(id=supply_id)
-    supply.reset(length, remark=remark, employee=request.user)
+    supply.reset(quantity=length, remark=remark, employee=request.user)
     response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
     response.status_code = 200
     return response
@@ -97,7 +98,7 @@ def reset(request, supply_id):
 @login_required
 def supply_log(request, supply_id=0):
     if request.method == "GET":
-        logs = Log.objects.filter(supply_id=supply_id).order_by('-timestamp')
+        logs = SupplyLog.objects.filter(supply_id=supply_id).order_by('-timestamp')
         data = []
         for log in logs:
             data_item = {
