@@ -113,6 +113,12 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
 
+#URLS for Delivery
+
+urlpatterns += patterns('acknowledgements.views',
+    url(r'^delivery$', 'delivery'),
+)
+
 #URLS for Shipping
 urlpatterns += patterns('shipping.views',
     url(r'^shipping$', 'shipping'),

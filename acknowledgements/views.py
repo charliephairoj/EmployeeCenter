@@ -10,7 +10,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from acknowledgements.models import Acknowledgement, Item
+from acknowledgements.models import Acknowledgement, Item, Delivery
 
 
 @login_required
@@ -149,3 +149,16 @@ def acknowledgement_item_image(request):
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response
+
+
+@login_required
+def delivery(request):
+    if request.method == "GET":
+        data = [d.get_data() for d in Delivery.objects.all()]
+        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        response.status_code = 201
+        return response
+        
+        
+        
+        

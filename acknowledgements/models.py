@@ -24,7 +24,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField()
+    _delivery_date = models.DateTimeField(db_column='delivery_date')
     status = models.TextField()
     production_key = models.TextField(null=True)
     acknowledgement_key = models.TextField(null=True)
@@ -38,6 +38,60 @@ class Acknowledgement(models.Model):
     vat = models.IntegerField(default=0, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
+    @property
+    def delivery_date(self):
+        return self._delivery_date
+
+    @delivery_date.setter
+    def delivery_date(self, new_date):
+        """
+        Sets the delivery date and logs it.
+
+        The setter will change the current delivery date,
+        log the change, and change the delivery item if
+        the new date is now the same as the current delivery
+        date
+        """
+        bkk_tz = timezone('Asia/Bangkok')
+        try:
+            delivery_date = new_date.astimezone(bkk_tz)
+        except:
+            delivery_date = dateutil.parser.parse(new_date).astimezone(bkk_tz)
+
+        if delivery_date != self._delivery_date.astimezone(bkk_tz):
+            old_delivery_date = self._delivery_date
+            self._delivery_date = dateutil.parser.parse(new_date)
+            employee = self.current_employee if self.current_employeee else self.employee
+            #Log the information as a change or set
+            try:
+                message = "Delivery Date for Acknowledgement# {0} set to {1}"
+                message.format(self.id, delivery_date.strftime('%B %d, %Y'))
+            except:
+                message = """Delivery Date for Acknowledgement# {0}
+                             changed from {1} to {2}"""
+                message.format(self.id,
+                               old_delivery_date.strftime('%B %d, %Y'),
+                               delivery_date.strftime('%B %d, %Y'))
+            AcknowledgementLog.create(message, self, employee)
+
+            #Change the corresponding delivery_item
+            try:
+                delivery = self.delivery_set.all()[0]
+            except:
+                description = "Acknowledgement# {0} for {1}"
+                description.format(self.id, self.customer.name)
+                delivery = Delivery.create(acknowledgement=self,
+                                           description=description,
+                                           delivery_date=self.delivery_date)
+                try:
+                    address = self.customer.address_set.all()[0]
+                    delivery.latitude = address.latitude
+                    delivery.longitude = address.longitude
+                except:
+                    pass
+            delivery.delivery_date = self.delivery_date
+            delivery.save()
+
     @classmethod
     def create(cls, data, user):
         """Creates the acknowledgement
@@ -49,6 +103,12 @@ class Acknowledgement(models.Model):
         acknowledgement = cls()
         acknowledgement.customer = Customer.objects.get(id=data['customer']['id'])
         acknowledgement.employee = user
+        acknowledgement.save()
+
+        AcknowledgementLog.create("Ack# {0} Created".format(acknowledgement.id),
+                                    acknowledgement,
+                                    acknowledgement.employee)
+
         acknowledgement.delivery_date = dateutil.parser.parse(data['delivery_date'])
         acknowledgement.status = 'ACKNOWLEDGED'
         if "vat" in data:
@@ -71,10 +131,6 @@ class Acknowledgement(models.Model):
         acknowledgement.original_acknowledgement_key = a_key
         acknowledgement.save()
 
-        AcknowledgementLog.create("Ack# {0} Created".format(acknowledgement.id),
-                                    acknowledgement,
-                                    acknowledgement.employee)
-
         if "decoroom" in acknowledgement.customer.name.lower():
             acknowledgement._email_decoroom()
         return acknowledgement
@@ -85,13 +141,15 @@ class Acknowledgement(models.Model):
         Updates the acknowledgement with the new data
         and creates a new pdf for acknowledgement and production
         """
-        if data:
-            if "delivery_date" in data:
-                self._set_delivery_date(data["delivery_date"], employee=employee)
+        self.current_employee = employee
+        try:
+            self.delivery_date = data["delivery_date"]
             self.save()
+        except:
+            pass
 
         self.calculate_totals()
-        
+
         ack_filename, production_filename = self._create_pdfs()
         ack_key = self._upload(ack_filename, 'Acknowledgement', appendix='-revision')
         production_key = self._upload(production_filename, 'Production', appendix='-revision')
@@ -568,7 +626,52 @@ class AcknowledgementLog(Log):
 
     def get_data(self):
         """Get the log data"""
-        
+
         return {'event': self.event,
                 'employee': "{0} {1}".format(self.employee.first_name, self.employee.last_name),
                 'timestamp': self.timestamp.isoformat()}
+
+
+class Delivery(models.Model):
+    acknowledgement = models.ForeignKey(Acknowledgement, null=True)
+    description = models.TextField()
+    _delivery_date = models.DateTimeField()
+    longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
+    latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+
+    @property
+    def delivery_date(self):
+        return self._delivery_date
+
+    @delivery_date.setter
+    def delivery_date(self, new_date):
+        self._delivery_date = new_date
+
+    @classmethod
+    def create(cls, **kwargs):
+        delivery = cls(**kwargs)
+        try:
+            delivery.description = kwargs["description"]
+            delivery.delivery_date = kwargs["delivery_date"]
+        except:
+            raise Exception("Missing required information")
+
+        try:
+            delivery.latitude = kwargs["latitude"]
+            delivery.longitude = kwargs["longitude"]
+        except:
+            pass
+
+        try:
+            delivery.acknowledgement = kwargs["acknowledgement"]
+        except:
+            pass
+
+        delivery.save()
+        return delivery
+
+    def get_data(self):
+        return {'id': self.id,
+                'description': self.description,
+                'delivery_date': self.delivery_date.isoformat()}
