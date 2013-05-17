@@ -73,7 +73,7 @@ def add(request, supply_id):
         remarks = None
     supply = Supply.objects.get(id=supply_id)
     supply.add(quantity=quantity, remarks=remarks, employee=request.user)
-    response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
+    response = HttpResponse(json.dumps({'quantity': str(supply.quantity)}), mimetype="application/json")
     response.status_code = 200
     return response
 
@@ -90,7 +90,7 @@ def subtract(request, supply_id):
 
     supply = Supply.objects.get(id=supply_id)
     supply.subtract(quantity=quantity, employee=request.user, acknowledgement_id=ack_id)
-    response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
+    response = HttpResponse(json.dumps({'quantity': str(supply.quantity)}), mimetype="application/json")
     response.status_code = 200
     return response
 
@@ -107,7 +107,7 @@ def reset(request, supply_id):
 
     supply = Supply.objects.get(id=supply_id)
     supply.reset(quantity=quantity, remarks=remarks, employee=request.user)
-    response = HttpResponse(json.dumps(supply.get_data()), mimetype="application/json")
+    response = HttpResponse(json.dumps({'quantity': str(supply.quantity)}), mimetype="application/json")
     response.status_code = 200
     return response
 
@@ -119,13 +119,12 @@ def supply_log(request, supply_id=0):
         logs = SupplyLog.objects.filter(supply_id=supply_id).order_by('-timestamp')
         data = []
         for log in logs:
-            data_item = {
-                         'event':log.event,
-                         'quantity':str(log.quantity),
-                         'remarks':log.remarks,
-                         'employee':"%s %s" %(log.employee.first_name, log.employee.last_name),
-                         'timestamp':log.timestamp.strftime('%B %d, %Y %H:%M:%S')
-                         }
+            data_item = {'acknowledgement_id': log.acknowledgement_id,
+                         'event': log.event,
+                         'quantity': str(log.quantity),
+                         'remarks': log.remarks,
+                         'employee': "%s %s" %(log.employee.first_name, log.employee.last_name),
+                         'timestamp': log.timestamp.strftime('%B %d, %Y %H:%M:%S')}
             data.append(data_item)
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 200

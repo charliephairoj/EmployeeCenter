@@ -116,7 +116,6 @@ class Supply(models.Model):
     def reserve(self, quantity, employee, remarks=None, acknowledgement_id=None):
         message = "Reserve {0} {1}".format(quantity, self.quantity_units)
         if acknowledgement_id:
-            message += " for Acknowledgement# {0}".format(acknowledgement_id)
             try:
                 log = SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve')
                 log.event = message
@@ -131,7 +130,7 @@ class Supply(models.Model):
     def add(self, quantity, employee=None, remarks=None):
         self.quantity = self.quantity + Decimal(quantity)
         self.save()
-        message = "Added {0} to {1}. {2} remaining".format(quantity, self.description, self.quantity)
+        message = "Added {0} {1}".format(quantity, self.quantity_units)
         SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
 
     def subtract(self, quantity, employee=None, remarks=None, acknowledgement_id=None):
@@ -141,14 +140,13 @@ class Supply(models.Model):
             self.quantity = self.quantity - Decimal(quantity)
             self.save()
 
-            message = "Subtract {0} from {1}. {2} remaining".format(quantity, self.description, self.quantity)
+            message = "Subtract {0} {1}".format(quantity, self.quantity_units)
             print acknowledgement_id
             if acknowledgement_id:
                 try:
                     SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve').delete()
                 except:
                     pass
-                message = "Acknowledgement# {0}".format(acknowledgement_id) + message
 
             SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
                              supply=self, acknowledgement_id=acknowledgement_id)
@@ -159,7 +157,7 @@ class Supply(models.Model):
         self.quantity = quantity
         self.save()
 
-        message = "Reset {0} to {1}".format(self.description, quantity)
+        message = "Reset to {0} {1}".format(self.quantity, self.quantity_units)
         SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
 
     def upload_image(self, image, key="supplies/images/{0}.jpg".format(time.time())):
