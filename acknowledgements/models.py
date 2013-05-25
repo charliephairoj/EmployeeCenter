@@ -61,7 +61,10 @@ class Acknowledgement(models.Model):
         if delivery_date != self._delivery_date.astimezone(bkk_tz):
             old_delivery_date = self._delivery_date
             self._delivery_date = delivery_date
-            employee = self.current_employee if self.current_employeee else self.employee
+            try:
+                employee = self.current_employee 
+            except:
+                employee = self.employee
             #Log the information as a change or set
             try:
                 message = "Delivery Date for Acknowledgement# {0} set to {1}"
