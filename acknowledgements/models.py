@@ -60,7 +60,7 @@ class Acknowledgement(models.Model):
 
         if delivery_date != self._delivery_date.astimezone(bkk_tz):
             old_delivery_date = self._delivery_date
-            self._delivery_date = dateutil.parser.parse(new_date)
+            self._delivery_date = delivery_date
             employee = self.current_employee if self.current_employeee else self.employee
             #Log the information as a change or set
             try:
