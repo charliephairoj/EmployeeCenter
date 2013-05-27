@@ -58,42 +58,45 @@ class Acknowledgement(models.Model):
         except:
             delivery_date = dateutil.parser.parse(new_date).astimezone(bkk_tz)
 
-        if delivery_date != self._delivery_date.astimezone(bkk_tz):
+        if self._delivery_date == None:
+            self._delivery_date = delivery_date
+        elif delivery_date != self._delivery_date.astimezone(bkk_tz):
             old_delivery_date = self._delivery_date
             self._delivery_date = delivery_date
-            try:
-                employee = self.current_employee 
-            except:
-                employee = self.employee
-            #Log the information as a change or set
-            try:
-                message = "Delivery Date for Acknowledgement# {0} set to {1}"
-                message.format(self.id, delivery_date.strftime('%B %d, %Y'))
-            except:
-                message = """Delivery Date for Acknowledgement# {0}
-                             changed from {1} to {2}"""
-                message.format(self.id,
-                               old_delivery_date.strftime('%B %d, %Y'),
-                               delivery_date.strftime('%B %d, %Y'))
-            AcknowledgementLog.create(message, self, employee)
 
-            #Change the corresponding delivery_item
+        try:
+            employee = self.current_employee
+        except:
+            employee = self.employee
+        #Log the information as a change or set
+        try:
+            message = "Delivery Date for Acknowledgement# {0} set to {1}"
+            message.format(self.id, delivery_date.strftime('%B %d, %Y'))
+        except:
+            message = """Delivery Date for Acknowledgement# {0}
+                         changed from {1} to {2}"""
+            message.format(self.id,
+                           old_delivery_date.strftime('%B %d, %Y'),
+                           delivery_date.strftime('%B %d, %Y'))
+        AcknowledgementLog.create(message, self, employee)
+
+        #Change the corresponding delivery_item
+        """try:
+            delivery = self.delivery_set.all()[0]
+        except:
+            description = "Acknowledgement# {0} for {1}"
+            description.format(self.id, self.customer.name)
+            delivery = Delivery.create(acknowledgement=self,
+                                       description=description,
+                                       delivery_date=self.delivery_date)
             try:
-                delivery = self.delivery_set.all()[0]
+                address = self.customer.address_set.all()[0]
+                delivery.latitude = address.latitude
+                delivery.longitude = address.longitude
             except:
-                description = "Acknowledgement# {0} for {1}"
-                description.format(self.id, self.customer.name)
-                delivery = Delivery.create(acknowledgement=self,
-                                           description=description,
-                                           delivery_date=self.delivery_date)
-                try:
-                    address = self.customer.address_set.all()[0]
-                    delivery.latitude = address.latitude
-                    delivery.longitude = address.longitude
-                except:
-                    pass
-            delivery.delivery_date = self.delivery_date
-            delivery.save()
+                pass
+        delivery.delivery_date = self.delivery_date
+        delivery.save()"""
 
     @classmethod
     def create(cls, data, user):
