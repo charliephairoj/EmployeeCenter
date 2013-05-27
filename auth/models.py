@@ -2,21 +2,11 @@ from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
 from oauth2client.django_orm import CredentialsField
+from django.contrib.auth.models import AbstractBaseUser
 
 
-class UserProfile(models.Model):
-    #required field
-    user = models.ForeignKey(User)
-    google_validated = models.BooleanField(default=False)
-    identity_validated = models.BooleanField(default=False)
-
-    class Meta:
-        app_label = 'auth'
-
-
-class CredentialsModel(models.Model):
-    id = models.ForeignKey(User, primary_key=True)
-    credential = CredentialsField()
+class User(AbstractBaseUser):
+    username = models.CharField(max_length=40, unique=True, db_index=True)
 
 
 class Log(models.Model):
