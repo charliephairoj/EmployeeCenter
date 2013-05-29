@@ -34,11 +34,12 @@ def app_login(request):
         while anonymous users are served the login page"""
         if request.user.is_authenticated():
             #Gets user profile to do checks
-            user_profile = request.user.get_profile()
+            #user_profile = request.user.get_profile()
             #Get User data
             user_data = current_user(request)
             jsonStr = mark_safe(json.dumps(user_data))
             #checks if authenticated for google
+            """
             if user_profile.google_validated == False:
 
                 #return HttpResponseRedirect('/auth')
@@ -47,6 +48,8 @@ def app_login(request):
             else:
                 #return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
                 return render(request, 'home.html', {'user_data': jsonStr})
+            """
+            return render(request, 'home.html', {'user_data': jsonStr})
         else:
             #logout the request
             logout(request)
