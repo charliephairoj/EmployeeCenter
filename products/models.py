@@ -12,10 +12,6 @@ from django.db import models
 logger = logging.getLogger('django.request')
 
 
-#Primary Product class
-#where all the other product
-#types will inherit from including
-# upholstery, tables, cabinets
 class Product(models.Model):
     description = models.TextField()
     type = models.CharField(max_length=100)
@@ -36,9 +32,7 @@ class Product(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     collection = models.TextField(default="Dellarobbia Thailand")
 
-    #Meta
     class Meta:
-        #permision
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
                        ('edit_manufacture_price', 'Can edit the manufacture price'),
                        ('view_wholesale_price', 'Can view the wholsale price'),
@@ -69,27 +63,27 @@ class Product(models.Model):
             if "retail_price" in kwargs:
                 obj.retail_price = Decimal(str(kwargs["retail_price"]))
         if user.has_perm('products.edit_wholesale_price'):
-            if "wholesale_price" in data:
-                obj.wholesale_price = Decimal(str(data["wholesale_price"]))
+            if "wholesale_price" in kwargs:
+                obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
         if user.has_perm('products.edit_export_price'):
-            if "export_price" in data:
-                obj.export_price = Decimal(str(data["export_price"]))
+            if "export_price" in kwargs:
+                obj.export_price = Decimal(str(kwargs["export_price"]))
         #Set Image
-        if "image" in data:
-            if 'key' in data['image']:
-                key = data['image']['key']
+        if "image" in kwargs:
+            if 'key' in kwargs['image']:
+                key = kwargs['image']['key']
             else:
                 key = None
-            obj.set_image(key=key, url=data['image']['url'])
+            obj.set_image(key=key, url=kwargs['image']['url'])
 
-        if "back_pillow" in data and data["back_pillow"] != '':
-            obj._add_pillow('back', data["back_pillow"])
-        if "accent_pillow" in data and data["accent_pillow"] != '':
-            obj._add_pillow('accent', data["accent_pillow"])
-        if "lumbar_pillow" in data and data["lumbar_pillow"] != '':
-            obj._add_pillow('lumbar', data["lumbar_pillow"])
-        if "corner_pillow" in data and data["corner_pillow"] != '':
-            obj._add_pillow('corner', data["corner_pillow"])
+        if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
+            obj._add_pillow('back', kwargs["back_pillow"])
+        if "accent_pillow" in kwargs and kwargs["accent_pillow"] != '':
+            obj._add_pillow('accent', kwargs["accent_pillow"])
+        if "lumbar_pillow" in kwargs and kwargs["lumbar_pillow"] != '':
+            obj._add_pillow('lumbar', kwargs["lumbar_pillow"])
+        if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
+            obj._add_pillow('corner', kwargs["corner_pillow"])
         obj.save()
         return obj
 
@@ -448,6 +442,25 @@ class Table(Product):
                                   "configuration": self.configuration.configuration},
                 'finish': self.finish,
                 'color': self.color}
+        data.update(super(Table, self).to_dict(user))
+        return data
+
+
+class Rug(Product):
+
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        obj = cls.create(user, **kwargs)
+        obj.type = 'rug'        
+        obj.save()
+        return obj
+
+    def update(self, user=None, **kwargs):
+        super(Table, self).update(user, **kwargs)
+        self.save()
+
+    def to_dict(self, user=None):
+        data = {}
         data.update(super(Table, self).to_dict(user))
         return data
 
