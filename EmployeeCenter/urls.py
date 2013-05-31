@@ -37,6 +37,9 @@ urlpatterns += patterns('products.views',
     url(r'^upholstery$', 'upholstery'),
     url(r'^upholstery/image$', 'upholstery_image'),
     url(r'^upholstery/(?P<uphol_id>\d+)$', 'upholstery'),
+    url(r'^table$', 'table'),
+    url(r'^table/image$', 'upholstery_image'),
+    url(r'^table/(?P<table_id>\d+)$', 'table'),
 )
 
 urlpatterns += patterns('contacts.views',

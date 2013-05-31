@@ -86,7 +86,7 @@ def process_api(request, cls, id):
 
 @login_required
 def model(request, model_id=0):
-    return processRequest(request, Model, model_id)
+    return process_api(request, Model, model_id)
 
 
 @login_required
@@ -98,16 +98,19 @@ def model_image(request):
         response.status_code = 201
         return response
 
-#Handles request for configs
 @login_required
 def configuration(request, configuration_id=0):
-    return processRequest(request, Configuration, configuration_id)
+    return process_api(request, Configuration, configuration_id)
 
 
-#Handles request for u
 @login_required
 def upholstery(request, uphol_id=0):
     return process_api(request, Upholstery, uphol_id)
+
+
+@login_required
+def table(request, table_id=0):
+    return process_api(request, Table, table_id)
 
 
 @login_required
@@ -118,4 +121,3 @@ def upholstery_image(request):
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response
-        

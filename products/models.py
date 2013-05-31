@@ -93,8 +93,47 @@ class Product(models.Model):
         obj.save()
         return obj
 
+    def update(self, user=None, **kwargs):
+
+        if 'width' in kwargs:
+            self.width = kwargs["width"]
+        if 'depth' in kwargs:
+            self.depth = kwargs["depth"]
+        if 'height' in kwargs:
+            self.height = kwargs["height"]
+
+        if user:
+            if user.has_perm('products.edit_manufacture_price'):
+                if "manufacture_price" in kwargs:
+                    self.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+            if user.has_perm('products.edit_retail_price'):
+                if "retail_price" in kwargs:
+                    self.retail_price = Decimal(str(kwargs["retail_price"]))
+            if user.has_perm('products.edit_wholesale_price'):
+                if "wholesale_price" in kwargs:
+                    self.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+            if user.has_perm('products.edit_export_price'):
+                if "export_price" in kwargs:
+                    self.export_price = Decimal(str(kwargs["export_price"]))
+
+        if "image" in kwargs:
+            if 'key' in kwargs['image']:
+                key = kwargs['image']['key']
+            else:
+                key = None
+            self.set_image(key=key, url=kwargs['image']['url'])
+
+        if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
+            self._add_pillow('back', kwargs["back_pillow"])
+        if "accent_pillow" in kwargs and kwargs["accent_pillow"] != '':
+            self._add_pillow('accent', kwargs["accent_pillow"])
+        if "lumbar_pillow" in kwargs and kwargs["lumbar_pillow"] != '':
+            self._add_pillow('lumbar', kwargs["lumbar_pillow"])
+        if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
+            self._add_pillow('corner', kwargs["corner_pillow"])
+        self.save()
+
     def to_dict(self, user=None,):
-        #Creates basic data set
         data = {'id': self.id,
                 'type': self.type,
                 'width': self.width,
@@ -183,7 +222,42 @@ class Model(models.Model):
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
     
-    def get_data(self, **kwargs):
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        obj = cls()
+        try:
+            self.model = data["model"]
+        except KeyError:
+            raise AttributeError("Missing Model")
+        try:
+            self.model = data["name"]
+        except KeyError:
+            raise AttributeError("Missing Name")
+        try:
+            self.model = data["collection"]
+        except KeyError:
+            raise AttributeError("Missing Collection")
+
+        if "image" in data:
+            if "key" in data["image"]:
+                self.image_key = data["image"]["key"]
+            if "url" in data["image"]:
+                self.image_url = data["image"]["url"]
+            if "bucket" in data["image"]:
+                self.bucket = data["image"]["bucket"]
+        obj.save()
+        return obj
+
+    def update(self, user=None, **kwargs):
+        if "model" in kwargs:
+            self.model = kwargs["model"]
+        if "name" in kwargs:
+            self.name = kwargs["name"]
+        if "collection" in kwargs:
+            self.collection = kwargs["collection"]
+        self.save()
+        
+    def to_dict(self, **kwargs):
         #prepares array for configs
         configs = []
         #loop through the products to get config
@@ -206,21 +280,6 @@ class Model(models.Model):
                 'image':{'url':self.image_url}}
         #returns the data object
         return data
-
-    def set_data(self, data, **kwargs):
-        if "model" in data:
-            self.model = data["model"]
-        if "name" in data:
-            self.name = data["name"]
-        if "collection" in data:
-            self.collection = data["collection"]
-        if "image" in data:
-            if "key" in data["image"]:
-                self.image_key = data["image"]["key"]
-            if "url" in data["image"]:
-                self.image_url = data["image"]["url"]
-            if "bucket" in data["image"]:
-                self.bucket = data["image"]["bucket"]
 
 
 class ModelImage(models.Model):
@@ -310,7 +369,7 @@ class Upholstery(Product):
         obj = super(Upholstery, cls).create(user, **kwargs)
         obj.model = model
         obj.configuration = configuration
-        #obj.save()
+        obj.save()
 
     def update(self, user=None, **kwargs):
         """
@@ -375,6 +434,11 @@ class Table(Product):
 
     def update(self, user=None, **kwargs):
         super(Table, self).update(user, **kwargs)
+        if 'finish' in kwargs:
+            self.finish = kwargs["finish"]
+        if 'color' in kwargs:
+            self.color = kwargs["color"]
+        self.save()
 
     def to_dict(self, user=None):
         data = {"model": {"id": self.model.id,
@@ -385,6 +449,6 @@ class Table(Product):
                 'finish': self.finish,
                 'color': self.color}
         data.update(super(Table, self).to_dict(user))
-
+        return data
 
 
