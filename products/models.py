@@ -48,11 +48,52 @@ class Product(models.Model):
                        ('view_export_price', 'Can view the export price'),
                        ('edit_export_price', 'Can edit the export price'))
 
-    #Get Data
-    def get_data(self, **kwargs):
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        obj = cls()
         #extract args
         if "user" in kwargs:
             user = kwargs["user"]
+
+        try:
+            obj.width = kwargs["width"]
+            obj.depth = kwargs["depth"]
+            obj.height = kwargs["height"]
+        except KeyError:
+            raise AttributeError("Product is missing dimensions")
+
+        if user.has_perm('products.edit_manufacture_price'):
+            if "manufacture_price" in kwargs:
+                obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+        if user.has_perm('products.edit_retail_price'):
+            if "retail_price" in kwargs:
+                obj.retail_price = Decimal(str(kwargs["retail_price"]))
+        if user.has_perm('products.edit_wholesale_price'):
+            if "wholesale_price" in data:
+                obj.wholesale_price = Decimal(str(data["wholesale_price"]))
+        if user.has_perm('products.edit_export_price'):
+            if "export_price" in data:
+                obj.export_price = Decimal(str(data["export_price"]))
+        #Set Image
+        if "image" in data:
+            if 'key' in data['image']:
+                key = data['image']['key']
+            else:
+                key = None
+            obj.set_image(key=key, url=data['image']['url'])
+
+        if "back_pillow" in data and data["back_pillow"] != '':
+            obj._add_pillow('back', data["back_pillow"])
+        if "accent_pillow" in data and data["accent_pillow"] != '':
+            obj._add_pillow('accent', data["accent_pillow"])
+        if "lumbar_pillow" in data and data["lumbar_pillow"] != '':
+            obj._add_pillow('lumbar', data["lumbar_pillow"])
+        if "corner_pillow" in data and data["corner_pillow"] != '':
+            obj._add_pillow('corner', data["corner_pillow"])
+        obj.save()
+        return obj
+
+    def to_dict(self, user=None,):
         #Creates basic data set
         data = {'id': self.id,
                 'type': self.type,
@@ -86,48 +127,6 @@ class Product(models.Model):
                 data.update({'export_price': str(self.export_price)})
 
         return data
-
-    #Set Data
-    def set_data(self, data, **kwargs):
-        #extract args
-        if "user" in kwargs:
-            user = kwargs["user"]
-        #set basic data
-        if "width" in data:
-            self.width = data["width"]
-        if "depth" in data:
-            self.depth = data["depth"]
-        if "height" in data:
-            self.height = data["height"]
-        #Check permissions
-        if user.has_perm('products.edit_manufacture_price'):
-            if "manufacture_price" in data:
-                self.manufacture_price = Decimal(str(data["manufacture_price"]))
-        if user.has_perm('products.edit_retail_price'):
-            if "retail_price" in data:
-                self.retail_price = Decimal(str(data["retail_price"]))
-        if user.has_perm('products.edit_wholesale_price'):
-            if "wholesale_price" in data:
-                self.wholesale_price = Decimal(str(data["wholesale_price"]))
-        if user.has_perm('products.edit_export_price'):
-            if "export_price" in data:
-                self.export_price = Decimal(str(data["export_price"]))
-        #Set Image
-        if "image" in data:
-            if 'key' in data['image']:
-                key = data['image']['key']
-            else:
-                key = None
-            self.set_image(key=key, url=data['image']['url'])
-
-        if "back_pillow" in data and data["back_pillow"] != '':
-            self._add_pillow('back', data["back_pillow"])
-        if "accent_pillow" in data and data["accent_pillow"] != '':
-            self._add_pillow('accent', data["accent_pillow"])
-        if "lumbar_pillow" in data and data["lumbar_pillow"] != '':
-            self._add_pillow('lumbar', data["lumbar_pillow"])
-        if "corner_pillow" in data and data["corner_pillow"] != '':
-            self._add_pillow('corner', data["corner_pillow"])
 
     def _add_pillow(self, type, quantity):
         pillow = Pillow()
@@ -173,9 +172,6 @@ class Product(models.Model):
         self.image_url = 'http://media.dellarobbiathailand.com.s3.amazonaws.com/%s' % k.key,
 
 
-#Upholstery section
-
-#Creates the Models
 class Model(models.Model):
     model = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=100, null=True)
@@ -186,8 +182,7 @@ class Model(models.Model):
     image_key = models.TextField()
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
-
-    #Get Data as object
+    
     def get_data(self, **kwargs):
         #prepares array for configs
         configs = []
@@ -234,9 +229,6 @@ class ModelImage(models.Model):
     bucket = models.TextField()
     key = models.TextField()
 
-    #Methods
-
-    #This method uploads the file to s3
     def upload_image(self, image, **kwargs):
 
         if image.content_type == "image/jpeg":
@@ -270,24 +262,31 @@ class ModelImage(models.Model):
 class Configuration(models.Model):
     configuration = models.CharField(max_length=200)
 
-    #Methods
     def __unicode__(self):
         return self.configuration
 
-    #Sets the data
-    def setData(self, data, **kwargs):
-        if "configurationID" in data:
-            self.id = data["configurationID"]
-        if "configuration" in data:
-            self.configuration = data["configuration"]
+    @classmethod
+    def create(cls):
+        obj = cls()
+        try:
+            obj.configuration = kwargs["configuration"]
+        except KeyError:
+            raise AttributeError("Missing configuration")
+        obj.save()
+        return obj
 
-    #Gets the data as an object
-    def get_data(self, **kwargs):
-        raw = {
+    def update(self, **kwargs):
+        try:
+            self.configuration = kwargs["configuration"]
+        except KeyError:
+            raise AttributeError("Missing configuration")
+
+    def to_dict(self):
+        data = {
             "id": self.id,
             "configuration": self.configuration
         }
-        return raw
+        return data
 
 
 #Creates the Upholster class
@@ -297,50 +296,45 @@ class Upholstery(Product):
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
     category = models.CharField(max_length=50)
 
-    #Get Data as object
-    def get_data(self, **kwargs):
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        try:
+            model = Model.objects.get(id=kwargs["model"]["id"])
+        except KeyError:
+            raise AttributeError("Missing the Model ID")
+        try:
+            configuration = Configuration.objects.get(id=kwargs["configuration"]["id"])
+        except KeyError:
+            raise AttributeError("Missing the Configuration ID")
 
-        #extract args
-        if "user" in kwargs:
-            user = kwargs["user"]
+        obj = super(Upholstery, cls).create(user, **kwargs)
+        obj.model = model
+        obj.configuration = configuration
+        #obj.save()
 
-        #get basic data
+    def update(self, user=None, **kwargs):
+        """
+        Updates the upholstery.
+
+        This method with update the parent attributes, and then the objects
+        attributes. The user object is required to update certain attributes
+        """
+        super(Upholstery, self).update(user, **kwargs)
+
+    def to_dict(self, user=None):
+        """
+        Returns the objects attributes as a dictionary
+        """
         data = {"model": {"id": self.model.id,
                           "model": self.model.model,
                           "name": self.model.name},
-                          "configuration": {"id": self.configuration.id,
-                                            "configuration": self.configuration.configuration}}
-        #merge with parent data
-        data.update(super(Upholstery, self).get_data(user=user))
+                "configuration": {"id": self.configuration.id,
+                                  "configuration": self.configuration.configuration}}
+
+        data.update(super(Upholstery, self).to_dict(user))
         return data
 
-    #Set the data
-    def set_data(self, data, **kwargs):
-        logger.debug(kwargs["user"])
-        #extract arg
-        if "user" in kwargs:
-            user = kwargs["user"]
 
-        #set parent data
-        super(Upholstery, self).set_data(data, user=user)
-        #Searches for the corresponing Model
-        #and applies it to the upholster
-        if "model" in data:
-            model = Model.objects.get(id=data["model"]["id"])
-            self.model = model
-        #Searches for the corresponding Cofniguration
-        #and applies it to the uploster
-        if "configuration" in data:
-            config = Configuration.objects.get(id=data["configuration"]["id"])
-            self.configuration = config
-        #Set description
-        self.description = "{0} {1}".format(self.model.model,
-                                            self.configuration.configuration)
-        #Set type
-        self.type = "Upholstery"
-
-
-#Creates the pillows for the upholstery
 class Pillow(models.Model):
     product = models.ForeignKey(Product)
     type = models.CharField(max_length=50)
@@ -351,7 +345,46 @@ class Pillow(models.Model):
                 'quantity': self.quantity}
 
 
-#Creates the Table class
-#that inherits from Products
-class Tables(Product):
+class Table(Product):
     model = models.ForeignKey(Model, on_delete=models.PROTECT)
+    configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
+    finish = models.TextField()
+    color = models.TextField()
+
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        obj = cls.create(user, **kwargs)
+        obj.type = 'table'
+
+        try:
+            model = Model.objects.get(id=kwargs["model"]["id"])
+            obj.model = model
+        except KeyError:
+            raise AttributeError("An existing model must be specified")
+
+        try:
+            config = Configuration.objects.get(id=kwargs["configuration"]["id"])
+            obj.configuration = config
+        except KeyError:
+            raise AttributeError("An existing model must be specified")
+
+        obj.description = "{0} {1}".format(obj.model.model,
+                                            obj.configuration.configuration)
+        obj.save()
+        return obj
+
+    def update(self, user=None, **kwargs):
+        super(Table, self).update(user, **kwargs)
+
+    def to_dict(self, user=None):
+        data = {"model": {"id": self.model.id,
+                          "model": self.model.model,
+                          "name": self.model.name},
+                "configuration": {"id": self.configuration.id,
+                                  "configuration": self.configuration.configuration},
+                'finish': self.finish,
+                'color': self.color}
+        data.update(super(Table, self).to_dict(user))
+
+
+
