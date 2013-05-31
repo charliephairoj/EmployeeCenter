@@ -34,11 +34,11 @@ def app_login(request):
         while anonymous users are served the login page"""
         if request.user.is_authenticated():
             #Gets user profile to do checks
-            user_profile = request.user.get_profile()
             #Get User data
             user_data = current_user(request)
             jsonStr = mark_safe(json.dumps(user_data))
             #checks if authenticated for google
+            """
             if user_profile.google_validated == False:
 
                 #return HttpResponseRedirect('/auth')
@@ -47,6 +47,9 @@ def app_login(request):
             else:
                 #return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
                 return render(request, 'home.html', {'user_data': jsonStr})
+            """
+            return render(request, 'home.html', {'user_data': jsonStr})
+
         else:
             #logout the request
             logout(request)
@@ -78,7 +81,6 @@ def app_login(request):
                     login(request, user)
                     
                     #Gets user profile to do checks
-                    user_profile = user.get_profile()
                     return HttpResponseRedirect('/')
                 """
                     #checks if authenticated for google
@@ -104,6 +106,7 @@ def logout(request):
     return HttpResponseRedirect('/')
 
 #Deals with google auth
+"""
 def auth_flow(request):
     flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
                            client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
@@ -170,7 +173,7 @@ def buildMenu(request):
             
             
             
-            
+"""
             
             
             
