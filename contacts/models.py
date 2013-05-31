@@ -156,7 +156,10 @@ class Customer(Contact):
             self.first_name = data["first_name"]
         if "last_name" in data:
             self.last_name = data["last_name"]
-        self.name = "{0} {1}".format(self.first_name, self.last_name)
+        try:
+            self.name = "{0} {1}".format(self.first_name, self.last_name)
+        except:
+            self.name = self.first_name
         #Set parent data
         super(Customer, self).set_data(data, user=None)
 
