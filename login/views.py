@@ -63,7 +63,7 @@ def app_login(request):
         form = LoginForm(request.POST)
         #check if form is valid
         if form.is_valid():
-            #gets the clean password and 
+            #gets the clean password and
             #clean username
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
@@ -74,12 +74,10 @@ def app_login(request):
             if user is not None:
                 #checks if user is still active
                 if user.is_active:
-                    
-                
-                    
+
                     #login the user
                     login(request, user)
-                    
+
                     #Gets user profile to do checks
                     return HttpResponseRedirect('/')
                 """
