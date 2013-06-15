@@ -8,6 +8,8 @@ from boto.s3.key import Key
 from django.conf import settings
 from django.db import models
 
+from auth.models import S3Object
+
 
 logger = logging.getLogger('django.request')
 
@@ -26,6 +28,7 @@ class Product(models.Model):
     internalUnits = 'mm',
     externalUnits = 'mm',
     bucket = models.TextField(null=True)
+    image = models.ForeignKey(S3Object, related_name='+')
     image_key = models.TextField(null=True)
     image_url = models.TextField(null=True)
     schematic_key = models.TextField(null=True)
@@ -69,12 +72,11 @@ class Product(models.Model):
             if "export_price" in kwargs:
                 obj.export_price = Decimal(str(kwargs["export_price"]))
         #Set Image
+        print kwargs
+        print kwargs['image']
         if "image" in kwargs:
-            if 'key' in kwargs['image']:
-                key = kwargs['image']['key']
-            else:
-                key = None
-            obj.set_image(key=key, url=kwargs['image']['url'])
+            if 'id' in kwargs['image']:
+                obj.image = S3Object.objects.get(id=kwargs['image']['id'])
 
         if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
             obj._add_pillow('back', kwargs["back_pillow"])
@@ -84,7 +86,6 @@ class Product(models.Model):
             obj._add_pillow('lumbar', kwargs["lumbar_pillow"])
         if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
             obj._add_pillow('corner', kwargs["corner_pillow"])
-        obj.save()
         return obj
 
     def update(self, user=None, **kwargs):
@@ -111,11 +112,8 @@ class Product(models.Model):
                     self.export_price = Decimal(str(kwargs["export_price"]))
 
         if "image" in kwargs:
-            if 'key' in kwargs['image']:
-                key = kwargs['image']['key']
-            else:
-                key = None
-            self.set_image(key=key, url=kwargs['image']['url'])
+            if 'id' in kwargs['image']:
+                obj.image = S3Object.objects.get(id=kwargs['images']['id'])
 
         if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
             self._add_pillow('back', kwargs["back_pillow"])
@@ -136,8 +134,11 @@ class Product(models.Model):
                 'units': self.units,
                 'type': self.type,
                 'description': self.description,
-                'url': self.image_url,
-                'image': {'url': self.image_url}}
+                'url': self.image_url}
+        try:
+                data.update({'image': {'url': self.image.generate_url()}})
+        except:
+            pass
         #Checks to see if there are pillows to add
         pillows = self.pillow_set.all()
         if len(pillows) > 0:
@@ -168,42 +169,6 @@ class Product(models.Model):
         pillow.product = self
         pillow.save()
 
-    #Add Image
-    def set_image(self, filename=None, key=None, url=None):
-        #If there is no filename
-        if filename == None:
-            #set data
-            self.image_key = key
-            self.image_url = url
-            self.bucket = 'media.dellarobbiathailand.com'
-        #if there is a file name
-        else:
-            #upload image
-            self.upload_image(filename)
-
-    #upload image to s3
-    def upload_image(self, filename, key="products/%f.jpg" % time.time()):
-
-        #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-        #get the bucket
-        bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-        #Create a key and assign it
-        k = Key(bucket)
-        #Set file name
-        k.key = key
-        #upload file
-        k.set_contents_from_filename(filename)
-        #remove file from the system
-        os.remove(filename)
-        #set the Acl
-        k.set_canned_acl('public-read')
-
-        #set Url, key and bucket
-        self.image_key = k.key
-        self.bucket = bucket
-        self.image_url = 'http://media.dellarobbiathailand.com.s3.amazonaws.com/%s' % k.key,
-
 
 class Model(models.Model):
     model = models.CharField(max_length=100, null=True)
@@ -212,33 +177,30 @@ class Model(models.Model):
     isActive = models.BooleanField(default=True, db_column='is_active')
     date_created = models.DateField(auto_now=True, auto_now_add=True)
     bucket = models.TextField()
+    images = models.ManyToManyField(S3Object, through='ModelImage')
     image_key = models.TextField()
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
-    
+
     @classmethod
     def create(cls, user=None, **kwargs):
         obj = cls()
         try:
-            self.model = data["model"]
+            obj.model = kwargs["model"]
         except KeyError:
             raise AttributeError("Missing Model")
         try:
-            self.model = data["name"]
+            obj.model = kwargs["name"]
         except KeyError:
             raise AttributeError("Missing Name")
         try:
-            self.model = data["collection"]
+            obj.model = kwargs["collection"]
         except KeyError:
             raise AttributeError("Missing Collection")
 
-        if "image" in data:
-            if "key" in data["image"]:
-                self.image_key = data["image"]["key"]
-            if "url" in data["image"]:
-                self.image_url = data["image"]["url"]
-            if "bucket" in data["image"]:
-                self.bucket = data["image"]["bucket"]
+        if "image" in kwargs:
+            if "id" in kwargs["image"]:
+                obj.images.add(S3Object.objects.get(id=kwargs["image"]["id"]))
         obj.save()
         return obj
 
@@ -250,68 +212,37 @@ class Model(models.Model):
         if "collection" in kwargs:
             self.collection = kwargs["collection"]
         self.save()
-        
-    def to_dict(self, **kwargs):
+
+    def to_dict(self, *args, **kwargs):
         #prepares array for configs
         configs = []
         #loop through the products to get config
         for product in self.upholstery_set.all():
             configs.append({'configuration': product.configuration.configuration,
                             'id': product.configuration.id})
-        #Prepares array to hold image
-        images = []
-        #iterates over images and adds url to array
-        for image in self.modelimage_set.all():
-            images.append(image.url)
-        #Sets the data object
-        data = {"id":self.id,
-                "model":self.model,
-                "name":self.name,
-                "collection":self.collection,
-                #"year":model.date_created.year,
-                "images":images,
-                "configurations":configs,
-                'image':{'url':self.image_url}}
+
+        data = {"id": self.id,
+                "model": self.model,
+                "name": self.name,
+                "collection": self.collection,
+                "configurations": configs,
+                'images': [image.generate_url() for image in self.images.all()]}
+        try:
+            data.update({'image': {'url': self.images.all()[0].generate_url()}})
+        except:
+            pass
         #returns the data object
         return data
 
 
 class ModelImage(models.Model):
     model = models.ForeignKey(Model)
+    image = models.ForeignKey(S3Object)
     url = models.TextField()
     bucket = models.TextField()
     key = models.TextField()
 
-    def upload_image(self, image, **kwargs):
 
-        if image.content_type == "image/jpeg":
-            #Get Filename and set extension
-            extension = 'jpg'
-
-            #Save self to get id
-            self.save()
-            #start connection
-            conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
-                                settings.AWS_SECRET_ACCESS_KEY)
-            #get the bucket
-            bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-            #Create a key and assign it
-            k = Key(bucket)
-
-            #Set file name
-            k.key = 'products/model_images/' + str(self.id) + '.' + extension
-            #upload file
-            k.set_contents_from_file(image)
-            #set the Acl
-            k.set_acl('public-read')
-            #set Url, key and bucket
-            self.url = "http://media.dellarobbiathailand.com.s3.amazonaws.com/" + k.key
-            self.key = k.key
-            self.bucket = 'media.dellarobbiathailand.com'
-            self.save()
-
-
-#Creates the Configurations
 class Configuration(models.Model):
     configuration = models.CharField(max_length=200)
 
@@ -334,7 +265,7 @@ class Configuration(models.Model):
         except KeyError:
             raise AttributeError("Missing configuration")
 
-    def to_dict(self):
+    def to_dict(self, user=None, **kwargs):
         data = {
             "id": self.id,
             "configuration": self.configuration
@@ -372,7 +303,7 @@ class Upholstery(Product):
         This method with update the parent attributes, and then the objects
         attributes. The user object is required to update certain attributes
         """
-        super(Upholstery, self).update(user, **kwargs)
+        super(Upholstery, self).update(user=user, **kwargs)
 
     def to_dict(self, user=None):
         """
@@ -406,7 +337,7 @@ class Table(Product):
 
     @classmethod
     def create(cls, user=None, **kwargs):
-        obj = cls.create(user, **kwargs)
+        obj = super(Table, cls).create(user, **kwargs)
         obj.type = 'table'
 
         try:
@@ -448,10 +379,13 @@ class Table(Product):
 
 class Rug(Product):
 
+    price_per_sq_meter = models.DecimalField(decimal_places=2, max_digits=9)
+    price_per_sq_foot = models.DecimalField(decimal_places=2, max_digits=9)
+
     @classmethod
     def create(cls, user=None, **kwargs):
-        obj = cls.create(user, **kwargs)
-        obj.type = 'rug'        
+        obj = super(Rug,cls).create(user, **kwargs)
+        obj.type = 'rug'
         obj.save()
         return obj
 

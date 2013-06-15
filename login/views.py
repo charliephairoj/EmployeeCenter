@@ -13,9 +13,6 @@ from django.utils.safestring import mark_safe
 from auth.views import current_user
 
 
-
-
-# Create your views here.
 @login_required
 def main(request):
     from django.contrib.staticfiles.views import serve
@@ -81,98 +78,20 @@ def app_login(request):
 
                     #Gets user profile to do checks
                     return HttpResponseRedirect('/')
-                """
-                    #checks if authenticated for google
-                    if user_profile.google_validated == False:
-                        return HttpResponseRedirect('/auth')
-                    
-                    else:
-                        
-                        return HttpResponseRedirect('/')"""
+
+                else:
+                    return HttpResponseRedirect('/login')
+
             else:
                 #returns unauthenticated users
                 #back to the login page
                 return HttpResponseRedirect('/login')
-            
+
 
 #Logs user out
 def logout(request):
-    
     from django.contrib.auth import logout
-    
     logout(request)
-    
     return HttpResponseRedirect('/')
 
-#Deals with google auth
-"""
-def auth_flow(request):
-    flow = OAuth2WebServerFlow(client_id='940056909424-57b143selist3s7uj8rnpcmt7f2s0g7u.apps.googleusercontent.com',
-                           client_secret='mgHATY9kYzp3HEHg2xKrYzmh',
-                           scope=['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/drive'],
-                           redirect_uri='http://data.dellarobbiathailand.com/oauth2callback')
-    
-    auth_uri = flow.step1_get_authorize_url()
-    
-    user = request.user
-    user_profile = user.get_profile()
-    user_profile.flow = flow
-    user_profile.save()
-    
-    return HttpResponseRedirect(auth_uri)
 
-def has_module(user, data):
-    
-    for module_name in data:
-        
-        if user.has_module_perms(module_name):
-            
-            return True
-        
-    return False
-#build the user permissions
-def buildMenu(request):
-    from django.contrib.auth.models import User, Permission
-    
-    user = request.user
-    
-    menu_data = {}
-    
-    #list of modules
-    
-    #supplies modules
-    supply_modules = ['supplies', 'wool', 'lumber', 'fabric']
-    
-    
-    if has_module(user, supply_modules):
-        
-        categories = []
-        for module in supply_modules:
-            actions = []
-            if user.has_perm('%s.%s_%s' %(module, 'add', module)):
-                
-                actions.append('Add %s' % module)
-            
-            if user.has_perm('%s.%s_%s' %(module, 'change', module)):
-                
-                actions.append('Add %s' % module)
-                
-            if user.has_perm('%s.%s_%s' %(module, 'delete', module)):
-                
-                actions.append('Add %s' % module)
-            
-            categories.append({'category':module, 'actions':actions})
-            
-            
-        menu_data.update({'section':'Supplies', 'categories':categories})
-            
-    
-    return HttpResponse(json.dumps(menu_data), mimetype="application/json")
-            
-            
-            
-            
-"""
-            
-            
-            

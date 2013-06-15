@@ -11,7 +11,19 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
 from acknowledgements.models import Acknowledgement, Item, Delivery
+from auth.models import S3Object
 
+
+def save_upload(request, filename=None):
+    if filename is None:
+        filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
+    #Save File to disk
+    image = request.FILES['image']
+    filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
+    with open(filename, 'wb+' ) as destination:
+        for chunk in image.chunks():
+            destination.write(chunk)
+    return filename
 
 @login_required
 def acknowledgement(request, ack_id=0):
@@ -119,34 +131,13 @@ def pdf(request, ack_id):
 @login_required
 def acknowledgement_item_image(request):
     if request.method == "POST":
-        image = request.FILES['image']
-        filename = settings.MEDIA_ROOT + str(time.time()) + '.jpg'
-        with open(filename, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
-        #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
-                            settings.AWS_SECRET_ACCESS_KEY)
-        #get the bucket
-        bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-        #Create a key and assign it
-        k = Key(bucket)
-        #Set file name
-        k.key = "acknowledgement/item/image/%f.jpg" % (time.time())
-        #upload file
-        k.set_contents_from_filename(filename)
-        #remove file from the system
-        os.remove(filename)
-        #set the Acl
-        k.set_canned_acl('private')
-        #set Url, key and bucket
-        data = {
-                'url': k.generate_url(300, force_http=True),
-                'key': k.key,
-                'bucket': 'media.dellarobbiathailand.com'
-        }
-        #self.save()
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
         response.status_code = 201
         return response
 

@@ -12,8 +12,9 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 
-from products.models import Model, Configuration, Upholstery, Table
+from products.models import Model, Configuration, Upholstery, Table, Rug
 from utilities.http import processRequest
+from auth.models import S3Object
 
 
 def save_upload(request, filename=None):
@@ -28,35 +29,22 @@ def save_upload(request, filename=None):
     return filename
 
 
-def upload_image(image, key, bucket='media.dellarobbiathailand.com', acl='public-read'):
-    conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-    bucket = conn.get_bucket(bucket, True)
-    k = Key(bucket)
-    k.key = key
-    k.set_contents_from_filename(image)
-    os.remove(image)
-    k.set_canned_acl(acl)
-    k.make_public()
-    data = {'url':'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
-            'key':k.key,
-            'bucket':'media.dellarobbiathailand.com'}
-    return data
-
-
-def process_api(request, cls, id):
+def process_api(request, cls, obj_id):
     """
     The API interface for the upholstery model.
     """
+    print obj_id
     if request.method == "GET":
-        if id == 0:
+        if obj_id == 0:
             data = [obj.to_dict(request.user) for obj in cls.objects.all()]
-            return HttpResponse(json.dumps(data), mimetype='application/json')
+            return HttpResponse(json.dumps(data), content_type='application/json')
         else:
             try:
-                obj = cls.objects.get(id=id)
-                return HttpResponse(json.dumps(obj.to_dict(request.user)), mimetype='application/json')
+                obj = cls.objects.get(id=obj_id)
             except:
                 return HttpResponseNotFound()
+
+            return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json')
 
     elif request.method == "POST":
         try:
@@ -64,19 +52,19 @@ def process_api(request, cls, id):
         except:
             return HttpResponseBadRequest("No data sent")
 
-        if id == 0:
+        if obj_id == 0:
             try:
                 obj = cls.create(user=request.user, **data)
             except AttributeError as e:
                 return HttpResponseBadRequest(e.message)
-            return HttpResponse(json.dumps(obj.to_dict(user=request.user), mimetype="application/json", status=201))
+            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
         else:
-            obj = get_object_or_404(Upholstery, pk=id)
+            obj = get_object_or_404(Upholstery, pk=obj_id)
             try:
-                obj.update(**data)
+                obj.update(user=request.user, **data)
             except AttributeError as e:
                 return HttpResponseBadRequest(e.message)
-            return HttpResponse(json.dumps(obj.to_dict(user=request.user), mimetype="application/json", status=201))
+            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
 
     elif request.method == "DELETE":
             obj = get_object_or_404(cls, pk=id)
@@ -93,8 +81,12 @@ def model(request, model_id=0):
 def model_image(request):
     if request.method == "POST":
         filename = save_upload(request)
-        data = upload_image(filename, "products/model/{0}.jpg".format(time.time()))
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        obj = S3Object.create(filename,
+                        "products/model/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
         response.status_code = 201
         return response
 
@@ -114,10 +106,19 @@ def table(request, table_id=0):
 
 
 @login_required
+def rug(request, rug_id=0):
+    return process_api(request, Rug, rug_id)
+
+
+@login_required
 def upholstery_image(request):
     if request.method == "POST":
         filename = save_upload(request)
-        data = upload_image(filename, "products/upholstery/{0}.jpg".format(time.time()))
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
+        obj = S3Object.create(filename,
+                        "products/upholstery/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
         response.status_code = 201
         return response

@@ -40,6 +40,8 @@ urlpatterns += patterns('products.views',
     url(r'^table$', 'table'),
     url(r'^table/image$', 'upholstery_image'),
     url(r'^table/(?P<table_id>\d+)$', 'table'),
+    url(r'^rug$', 'rug'),
+    url(r'^rug/(?P<rug_id>\d+)$', 'rug'),
 )
 
 urlpatterns += patterns('contacts.views',

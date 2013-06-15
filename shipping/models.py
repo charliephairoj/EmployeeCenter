@@ -15,6 +15,7 @@ from acknowledgements.models import Acknowledgement, AcknowledgementLog
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
+from auth.models import S3Object
 
 
 class Shipping(models.Model):
@@ -26,6 +27,7 @@ class Shipping(models.Model):
     bucket = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
     shipping_key = models.TextField()
+    pdf = models.ForeignKey(S3Object, related_name='+')
     comments = models.TextField()
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     connection = S3Connection(settings.AWS_ACCESS_KEY_ID,
@@ -65,13 +67,15 @@ class Shipping(models.Model):
                           connection=self.connection)
         shipping_filename = pdf.create()
         #Upload and return the url
-        self.shipping_key = self.upload(shipping_filename)
+        self.pdf = S3Object.create(shipping_filename,
+                                   "shipping/Shipping-{0}.pdf".format(self.id),
+                                   'document.dellarobbiathailand.com')
         self.save()
 
         message = "Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id)
         AcknowledgementLog.create(message, self.acknowledgement, self.employee)
 
-        urls = {'url': self.get_url(self.shipping_key)}
+        urls = {'url': self.pdf.generate_url()}
         return urls
 
     def set_product(self, data):
@@ -95,31 +99,6 @@ class Shipping(models.Model):
             self.acknowledgement.status = 'PARTIALLY SHIPPED'
         self.acknowledgement.save()
 
-    #uploads the pdf
-    def upload(self, filename):
-        #start connection
-        conn = self.connection
-        bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
-        k = Key(bucket)
-        k.key = "shipping/Shipping-{0}.pdf".format(self.id)
-        #upload file and set acl
-        k.set_contents_from_filename(filename)
-        k.set_acl('private')
-        os.remove(filename)
-        #set Url, key and bucket
-        self.bucket = "document.dellarobbiathailand.com"
-        return k.key
-
-    #Get the Url of the document
-    def get_url(self, key):
-        #start connection
-        conn = self.connection
-        #get the url
-        url = conn.generate_url(1800, 'GET', bucket=self.bucket, key=key,
-                                force_http=True)
-        #return the url
-        return url
-
 
 class Item(models.Model):
     shipping = models.ForeignKey(Shipping)
@@ -140,4 +119,4 @@ class Item(models.Model):
                 'comments': self.comments}
         data.update(self.item.get_data())
         return data
-    
+

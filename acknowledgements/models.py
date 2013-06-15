@@ -15,7 +15,7 @@ from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
-from auth.models import Log
+from auth.models import Log, S3Object
 
 
 class Acknowledgement(models.Model):
@@ -37,6 +37,9 @@ class Acknowledgement(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    acknowledgement_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="acknowledgement_pdf")
+    production_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="production_pdf")
+    original_acknowledgement_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="original_acknowledgement_pdf")
 
     @property
     def delivery_date(self):
@@ -132,9 +135,15 @@ class Acknowledgement(models.Model):
         acknowledgement.save()
 
         ack, production = acknowledgement._create_pdfs()
-        a_key = acknowledgement._upload_acknowledgement(ack)
-        p_key = acknowledgement._upload_production(production)
-        acknowledgement.original_acknowledgement_key = a_key
+        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(acknowledgement.id)
+        production_key = "acknowledgement/Production-{0}.pdf".format(acknowledgement.id)
+        bucket = "document.dellarobbiathailand.com"
+        ack_pdf = S3Object.create(ack, ack_key, bucket)
+        prod_pdf = S3Object.create(production, production_key, bucket)
+        acknowledgement.acknowledgement_pdf = ack_pdf
+        acknowledgement.production_pdf = prod_pdf
+        acknowledgement.original_acknowledgement_pdf = ack_pdf
+
         acknowledgement.save()
 
         if "decoroom" in acknowledgement.customer.name.lower():
@@ -157,11 +166,15 @@ class Acknowledgement(models.Model):
         self.calculate_totals()
 
         ack_filename, production_filename = self._create_pdfs()
-        ack_key = self._upload(ack_filename, 'Acknowledgement', appendix='-revision')
-        production_key = self._upload(production_filename, 'Production', appendix='-revision')
+        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(acknowledgement.id)
+        production_key = "acknowledgement/Production-{0}-revision.pdf".format(acknowledgement.id)
+        bucket = "document.dellarobbiathailand.com"
+        ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
+        prod_pdf = S3Object.create(production_filename, production_key, bucket)
 
-        self.acknowledgement_key = ack_key
-        self.production_key = production_key
+        self.acknowledgement_pdf = ack_pdf
+        self.production_pdf = prod_pdf
+
         self.save()
 
     def ship(self, delivery_date, employee):
@@ -192,29 +205,9 @@ class Acknowledgement(models.Model):
     def generate_url(self, file_type, expires=1800):
         """Generates an url for the file type"""
         if file_type.lower() == "acknowledgement":
-            return self._generate_url(self.acknowledgement_key, expires)
+            return self.acknowledgement_pdf.generate_url()
         elif file_type.lower() == "production":
-            return self._generate_url(self.production_key, expires)
-
-    def _set_delivery_date(self, delivery_date, employee=None):
-        """Changes the delivery date.
-
-        This function sets the delivery date and then
-        conditionally performs additional actions if the
-        delivery_date has been previously set.
-        """
-        bkk_tz = timezone('Asia/Bangkok')
-        delivery_date = dateutil.parser.parse(delivery_date).astimezone(bkk_tz)
-        if self.delivery_date != None:
-            o_dd = self.delivery_date.astimezone(bkk_tz)
-            dds = (o_dd.strftime('%B %d. %Y'),
-                   delivery_date.strftime('%B %d, %Y'))
-            event = "Change Delivery Date from {0} to {1}".format(*dds)
-        else:
-            event = "Delivery Date set to {0}".format(delivery_date.strftime('%B %d, %Y'))
-
-        AcknowledgementLog.create(event, self, employee=employee)
-        self.delivery_date = delivery_date
+            return self.production_pdf.generate_url()
 
     def _create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
@@ -255,7 +248,7 @@ class Acknowledgement(models.Model):
         product.fabric = fabric
         product.save()
 
-    def _email(self, key, recipients):
+    def _email(self, pdf, recipients):
         """Emails an order confirmation"""
         key_id = settings.AWS_ACCESS_KEY_ID
         access_key = settings.AWS_SECRET_ACCESS_KEY
@@ -307,7 +300,7 @@ class Acknowledgement(models.Model):
                   </td>
               </tr>
           </table>""".format(id=self.id, customer=self.customer.name,
-                             src=self._generate_url(key, 259200),
+                             src=pdf.generate_url(),
                              delivery_date=self.delivery_date.strftime('%B %d, %Y'))
 
         conn.send_email('no-replay@dellarobbiathailand.com',
@@ -318,57 +311,12 @@ class Acknowledgement(models.Model):
 
     def _email_decoroom(self):
         """Emails decoroom"""
-        self._email(self.acknowledgement_key, ['praparat@decoroom.com'])
-        self._email(self.production_key, ['sales@decoroom.com'])
-
-    #Get the Url of the document
-    def _generate_url(self, key, time=1800):
-        """generate a url for the key"""
-        #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-        #get the url
-        url = conn.generate_url(time, 'GET', bucket=self.bucket, key=key, force_http=True)
-        #return the url
-        return url
-
-    #uploads the pdf
-    def _upload(self, filename, file_type, appendix='', *args, **kwargs):
-        """Uploads the file to the to our S3 service
-
-        Requies the filename, the file type. if an Appendix is provided
-        then the file is appended with that before the filetype.
-        """
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-        bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
-        k = Key(bucket)
-        k.key = "acknowledgement/{0}-{1}{2}.pdf".format(file_type, self.id, appendix)
-        k.set_contents_from_filename(filename)
-        k.set_acl('private')
-        os.remove(filename)
-        self.bucket = "document.dellarobbiathailand.com"
-        return k.key
-
-    def _upload_acknowledgement(self, filename, *args, **kwargs):
-        """Uploads the file as an acknowledgement
-
-        Requires the filename. This method will upload the file and
-        store it in the S3 service and the database as the acknowledgement
-        """
-        self.acknowledgement_key = self._upload(filename, "Acknowledgement", *args, **kwargs)
-        return self.acknowledgement_key
-
-    def _upload_production(self, filename, *args, **kwargs):
-        """Uploads the file as an production
-
-        Requires the filename. This method will upload the file and
-        store it in the S3 service and the database as the production
-        """
-        self.production_key = self._upload(filename, "Production", *args, **kwargs)
-        return self.production_key
+        self._email(self.acknowledgement_pdf, ['praparat@decoroom.com'])
+        self._email(self.production_pdf, ['sales@decoroom.com'])
 
 
 class Item(models.Model):
-    acknowledgement = models.ForeignKey(Acknowledgement)
+    acknowledgement = models.ForeignKey(Acknowledgement, null=True)
     product = models.ForeignKey(Product)
     type = models.CharField(max_length=20)
     quantity = models.IntegerField(null=False)
@@ -386,9 +334,11 @@ class Item(models.Model):
     bucket = models.TextField(null=True)
     image_key = models.TextField(null=True)
     comments = models.TextField(null=True)
+    location = models.TextField(null=True)
+    image = models.ForeignKey(S3Object, null=True)
 
     @classmethod
-    def create(cls, data, acknowledgement, **kwargs):
+    def create(cls, data, acknowledgement=None, **kwargs):
         """Creates an Item"""
         item = cls(**kwargs)
         item.acknowledgement = acknowledgement
@@ -484,8 +434,7 @@ class Item(models.Model):
         self.depth = self.product.depth
         self.height = self.product.height
 
-        self.bucket = self.product.bucket
-        self.image_key = self.product.image_key
+        self.image = self.product.image 
         self.save()
 
     def _apply_data(self, data):
@@ -513,8 +462,8 @@ class Item(models.Model):
                 self.description = data["description"]
 
                 if "image" in data:
-                    self.image_key = data["image"]["key"]
-                    self.bucket = data["image"]["bucket"]
+                    self.image = S3Object.objects.get(id=data["image"]["id"])
+
 
         if "fabric" in data:
             self.fabric = Fabric.objects.get(id=data["fabric"]["id"])
