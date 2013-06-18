@@ -318,6 +318,8 @@ class Upholstery(Product):
         obj.configuration = configuration
         obj.save()
 
+        return obj
+
     def update(self, user=None, **kwargs):
         """
         Updates the upholstery.
