@@ -72,8 +72,6 @@ class Product(models.Model):
             if "export_price" in kwargs:
                 obj.export_price = Decimal(str(kwargs["export_price"]))
         #Set Image
-        print kwargs
-        print kwargs['image']
         if "image" in kwargs:
             if 'id' in kwargs['image']:
                 obj.image = S3Object.objects.get(id=kwargs['image']['id'])
@@ -115,14 +113,37 @@ class Product(models.Model):
             if 'id' in kwargs['image']:
                 self.image = S3Object.objects.get(id=kwargs['image']['id'])
 
-        if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
-            self._add_pillow('back', kwargs["back_pillow"])
-        if "accent_pillow" in kwargs and kwargs["accent_pillow"] != '':
-            self._add_pillow('accent', kwargs["accent_pillow"])
-        if "lumbar_pillow" in kwargs and kwargs["lumbar_pillow"] != '':
-            self._add_pillow('lumbar', kwargs["lumbar_pillow"])
-        if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
-            self._add_pillow('corner', kwargs["corner_pillow"])
+        if "back_pillow" in kwargs:
+            try:
+                pillow = self.pillow_set.get(type='back')
+                pillow.quantity = kwargs['back_pillow']
+                pillow.save()
+            except Pillow.DoesNotExist:
+                self._add_pillow('back', kwargs['back_pillow'])
+
+        if "accent_pillow" in kwargs:
+            try:
+                pillow = self.pillow_set.get(type='accent')
+                pillow.quantity = kwargs['accent_pillow']
+                pillow.save()
+            except Pillow.DoesNotExist:
+                self._add_pillow('accent', kwargs["accent_pillow"])
+
+        if "lumbar_pillow" in kwargs:
+            try:
+                pillow = self.pillow_set.get(type='lumbar')
+                pillow.quantity = kwargs['lumbar_pillow']
+                pillow.save()
+            except Pillow.DoesNotExist:
+                self._add_pillow('lumbar', kwargs["lumbar_pillow"])
+
+        if "corner_pillow" in kwargs:
+            try:
+                pillow = self.pillow_set.get(type='corner')
+                pillow.quantity = kwargs['corner_pillow']
+                pillow.save()
+            except Pillow.DoesNotExist:
+                self._add_pillow('corner', kwargs["corner_pillow"])
         self.save()
 
     def to_dict(self, user=None,):
@@ -146,6 +167,7 @@ class Product(models.Model):
             data["pillows"] = []
             #loop through pillow types
             for pillow in pillows:
+                data['{0}_pillow'.format(pillow.type)] = pillow.quantity
                 #loop through invidual pillows
                 for p in range(pillow.quantity):
                     data["pillows"].append({'type': pillow.type})
