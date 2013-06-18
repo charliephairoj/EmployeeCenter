@@ -334,12 +334,8 @@ class AcknowledgementPDF(object):
                                            colors.CMYKColor(black=60))]))
             data.append(['', comments, ''])
         #Get Image url and add image
-        if product.image_key is not None:
-            image_url = self.connection.generate_url(100, 'GET',
-                                                     bucket=product.bucket,
-                                                     key=product.image_key,
-                                                     force_http=True)
-            data.append(['', self.get_image(image_url, height=100)])
+        if product.image:
+            data.append(['', self.get_image(product.image.generate_url(), height=100)])
         #Create table
         table = Table(data, colWidths=(65, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
@@ -693,12 +689,8 @@ class ProductionPDF(AcknowledgementPDF):
             data.append(['', comments, ''])
         #Get Image url and add image
         data.append([''])
-        if product.image_key is not None:
-            image_url = self.connection.generate_url(100, 'GET',
-                                                     bucket=product.bucket,
-                                                     key=product.image_key,
-                                                     force_http=True)
-            data.append(['', self.get_image(image_url, height=100)])
+        if product.image:
+            data.append(['', self.get_image(product.image.generate_url(), height=100)])
         #Create table
         table = Table(data, colWidths=(65, 420, 40))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),

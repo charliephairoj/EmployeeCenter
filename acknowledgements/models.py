@@ -433,8 +433,11 @@ class Item(models.Model):
         self.width = self.product.width
         self.depth = self.product.depth
         self.height = self.product.height
-
-        self.image = self.product.image 
+        
+        try:
+            self.image = self.product.image
+        except:
+            pass
         self.save()
 
     def _apply_data(self, data):
@@ -444,6 +447,11 @@ class Item(models.Model):
         cannot be applied"""
         if "comments" in data:
             self.comments = data["comments"]
+
+        if "custom_price" in data:
+            if self.acknowledgement.employee.first_name == 'Charlie' and self.acknowledgement.employee.last_name == 'Phairojmahakij':
+                self.unit_price = Decimal(data["custom_price"])
+                self.total = self.unit_price = Decimal(self.quantity)
 
         if "is_custom_size" in data:
             if data["is_custom_size"] == True:

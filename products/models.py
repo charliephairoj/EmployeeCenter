@@ -113,7 +113,7 @@ class Product(models.Model):
 
         if "image" in kwargs:
             if 'id' in kwargs['image']:
-                obj.image = S3Object.objects.get(id=kwargs['images']['id'])
+                self.image = S3Object.objects.get(id=kwargs['image']['id'])
 
         if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
             self._add_pillow('back', kwargs["back_pillow"])
