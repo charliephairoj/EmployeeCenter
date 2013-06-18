@@ -166,8 +166,8 @@ class Acknowledgement(models.Model):
         self.calculate_totals()
 
         ack_filename, production_filename = self._create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(acknowledgement.id)
-        production_key = "acknowledgement/Production-{0}-revision.pdf".format(acknowledgement.id)
+        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
+        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
         prod_pdf = S3Object.create(production_filename, production_key, bucket)
