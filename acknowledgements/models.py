@@ -449,10 +449,13 @@ class Item(models.Model):
             self.comments = data["comments"]
 
         if "custom_price" in data:
-            if self.acknowledgement.employee.first_name == 'Charlie' and self.acknowledgement.employee.last_name == 'Phairojmahakij':
-                self.unit_price = Decimal(data["custom_price"])
-                self.total = self.unit_price = Decimal(self.quantity)
-
+            print self.acknowledgement.employee.first_name
+            print self.acknowledgement.employee.last_name
+            print data["custom_price"]
+            self.unit_price = Decimal(data["custom_price"])
+            self.total = self.unit_price * Decimal(self.quantity)
+            print self.unit_price
+            print self.total
         if "is_custom_size" in data:
             if data["is_custom_size"] == True:
                 self.is_custom_size = True
