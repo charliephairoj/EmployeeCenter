@@ -407,7 +407,7 @@ class Item(models.Model):
                 'quantity': self.quantity,
                 'pillows': [pillow.get_data() for pillow in self.pillow_set.all()],
                 'status': self.status,
-                'image': {'url': self._get_image_url()}}
+                'image': {'url': self.image.generate_url()}}
         if self.fabric:
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
@@ -433,7 +433,7 @@ class Item(models.Model):
         self.width = self.product.width
         self.depth = self.product.depth
         self.height = self.product.height
-        
+
         try:
             self.image = self.product.image
         except:

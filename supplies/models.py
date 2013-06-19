@@ -10,7 +10,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
 from contacts.models import Contact, Supplier
-from auth.models import Log
+from auth.models import Log, S3Object
 
 # Create your models here.
 
