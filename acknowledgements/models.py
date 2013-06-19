@@ -484,9 +484,10 @@ class Item(models.Model):
             for pillow in pillows:
                 try:
                     pillow = Pillow.create(item=self, type=pillow["type"],
-                                           quantity=pillow["quantity"] * self.quantity,
+                                           quantity=1 * self.quantity,
                                            fabric=Fabric.objects.get(id=pillow["fabric"]["id"]))
-                except KeyError:
+                except KeyError as e:
+                    print e
                     print "Missing type or quantity"
                 except Fabric.DoesNotExist:
                     pillow = Pillow.create(item=self, type=pillow["type"],
