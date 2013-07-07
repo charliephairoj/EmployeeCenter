@@ -127,6 +127,7 @@ def supply_image(request):
 #fabric
 @login_required
 def fabric(request, fabric_id=0):
+    from supplies.models import Fabric
     return process_api(request, Fabric, fabric_id)
 
 

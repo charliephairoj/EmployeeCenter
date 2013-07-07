@@ -347,7 +347,7 @@ class Upholstery(Product):
         obj.configuration = configuration
         obj.description = "{0} {1}".format(obj.model.model,
                                             obj.configuration.configuration)
-        obj.type = "upholstery"
+        obj.type = "Upholstery"
         obj.save()
         #Post save stuff
 
