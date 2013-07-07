@@ -37,9 +37,18 @@ class Acknowledgement(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
-    acknowledgement_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="acknowledgement_pdf")
-    production_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="production_pdf")
-    original_acknowledgement_pdf = models.ForeignKey(S3Object, null=True, related_name='+', db_column="original_acknowledgement_pdf")
+    acknowledgement_pdf = models.ForeignKey(S3Object,
+                                            null=True,
+                                            related_name='+',
+                                            db_column="acknowledgement_pdf")
+    production_pdf = models.ForeignKey(S3Object,
+                                       null=True,
+                                       related_name='+',
+                                       db_column="production_pdf")
+    original_acknowledgement_pdf = models.ForeignKey(S3Object,
+                                                     null=True,
+                                                     related_name='+',
+                                                     db_column="original_acknowledgement_pdf")
 
     @property
     def delivery_date(self):
@@ -72,37 +81,20 @@ class Acknowledgement(models.Model):
         except:
             employee = self.employee
         #Log the information as a change or set
-        try:
-            message = "Delivery Date for Acknowledgement# {0} set to {1}"
-            message.format(self.id, delivery_date.strftime('%B %d, %Y'))
-        except:
-            message = """Delivery Date for Acknowledgement# {0}
-                         changed from {1} to {2}"""
-            message.format(self.id,
-                           old_delivery_date.strftime('%B %d, %Y'),
-                           delivery_date.strftime('%B %d, %Y'))
-        AcknowledgementLog.create(message, self, employee)
-
-        #Change the corresponding delivery_item
-        """try:
-            delivery = self.delivery_set.all()[0]
-        except:
-            description = "Acknowledgement# {0} for {1}"
-            description.format(self.id, self.customer.name)
-            delivery = Delivery.create(acknowledgement=self,
-                                       description=description,
-                                       delivery_date=self.delivery_date)
+        if self.id:
             try:
-                address = self.customer.address_set.all()[0]
-                delivery.latitude = address.latitude
-                delivery.longitude = address.longitude
+                message = "Delivery Date for Acknowledgement# {0} set to {1}"
+                message.format(self.id, delivery_date.strftime('%B %d, %Y'))
             except:
-                pass
-        delivery.delivery_date = self.delivery_date
-        delivery.save()"""
+                message = """Delivery Date for Acknowledgement# {0}
+                             changed from {1} to {2}"""
+                message.format(self.id,
+                               old_delivery_date.strftime('%B %d, %Y'),
+                               delivery_date.strftime('%B %d, %Y'))
+            AcknowledgementLog.create(message, self, employee)
 
     @classmethod
-    def create(cls, data, user):
+    def create(cls, user, **kwargs):
         """Creates the acknowledgement
 
         This method accept data to set and then creates
@@ -110,42 +102,53 @@ class Acknowledgement(models.Model):
         Object is required to authorize certain data
         """
         acknowledgement = cls()
-        acknowledgement.customer = Customer.objects.get(id=data['customer']['id'])
+        acknowledgement.customer = Customer.objects.get(id=kwargs['customer']['id'])
         acknowledgement.employee = user
+
+        acknowledgement.delivery_date = dateutil.parser.parse(kwargs['delivery_date'])
+        acknowledgement.status = 'ACKNOWLEDGED'
+        try:
+            acknowledgement.vat = int(kwargs["vat"])
+        except KeyError:
+            acknowledgement.vat = 0
+        try:
+            acknowledgement.po_id = kwargs["po_id"]
+        except KeyError:
+            raise AttributeError("Missing Purchase Order number.")
+        try:
+            acknowledgement.remarks = kwargs["remarks"]
+        except KeyError:
+            pass
+        #Create the products without saving
+        acknowledgement.items = [Item.create(acknowledgement=acknowledgement,
+                                             commit=False,
+                                             **product_data) for product_data in kwargs['products']]
+
+        acknowledgement.calculate_totals(acknowledgement.items)
+        
+        #Save the ack and by overriden method, the items
         acknowledgement.save()
 
+        #Log creation of the acknowledgement
         AcknowledgementLog.create("Ack# {0} Created".format(acknowledgement.id),
                                     acknowledgement,
                                     acknowledgement.employee)
 
-        acknowledgement.delivery_date = dateutil.parser.parse(data['delivery_date'])
-        acknowledgement.status = 'ACKNOWLEDGED'
-        if "vat" in data:
-            acknowledgement.vat = int(data["vat"])
-        if "po_id" in data:
-            acknowledgement.po_id = data["po_id"]
-        if "remarks" in data:
-            acknowledgement.remarks = data["remarks"]
-        acknowledgement.save()
-
-        for product_data in data['products']:
-            Item.create(product_data, acknowledgement=acknowledgement)
-
-        acknowledgement.calculate_totals()
-        acknowledgement.save()
-
+        #Create the order PDFs
         ack, production = acknowledgement._create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(acknowledgement.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(acknowledgement.id)
         bucket = "document.dellarobbiathailand.com"
-        ack_pdf = S3Object.create(ack, ack_key, bucket)
-        prod_pdf = S3Object.create(production, production_key, bucket)
+        ack_pdf = S3Object.create(ack, ack_key, bucket, encrypt_key=True)
+        prod_pdf = S3Object.create(production, production_key, bucket, encrypt_key=True)
         acknowledgement.acknowledgement_pdf = ack_pdf
         acknowledgement.production_pdf = prod_pdf
         acknowledgement.original_acknowledgement_pdf = ack_pdf
 
+        #Save Ack with pdf data
         acknowledgement.save()
 
+        #Email decoroom
         if "decoroom" in acknowledgement.customer.name.lower():
             acknowledgement._email_decoroom()
         return acknowledgement
@@ -178,10 +181,18 @@ class Acknowledgement(models.Model):
         self.save()
 
     def ship(self, delivery_date, employee):
-        message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
+        """Changes status to 'SHIPPED'
+
+        Change the order status to ship and logs who ships it
+        """
+        try:
+            message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
+        except AttributeError:
+            raise TypeError("Missing Delivery Date")
+
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def get_data(self):
+    def to_dict(self):
         """Retrieves authorized information from the object.
 
         Requires User object to gain full access to the data.
@@ -196,9 +207,9 @@ class Acknowledgement(models.Model):
                 'fob': self.fob,
                 'vat': self.vat,
                 'shipping': self.shipping_method,
-                'customer': self.customer.get_data(),
+                'customer': self.customer.to_dict(),
                 'employee': u'{0} {1}'.format(self.employee.first_name, self.employee.last_name),
-                'products': [item.get_data() for item in self.item_set.all().order_by('id')]}
+                'products': [item.to_dict() for item in self.item_set.all().order_by('id')]}
 
         return data
 
@@ -208,6 +219,12 @@ class Acknowledgement(models.Model):
             return self.acknowledgement_pdf.generate_url()
         elif file_type.lower() == "production":
             return self.production_pdf.generate_url()
+
+    def save(self):
+        super(Acknowledgement, self).save()
+        for item in self.items:
+            item.acknowledgement = self
+            item.save()
 
     def _create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
@@ -223,9 +240,22 @@ class Acknowledgement(models.Model):
         production_filename = production_pdf.create()
         return ack_filename, production_filename
 
-    def calculate_totals(self):
+    def calculate_totals(self, items=None):
+        """Calculates the total of the order
+
+        Uses the items argument to calculate the cost
+        of the project. If the argument is null then the
+        items are pulled from the database relationship.
+        We use the argument first in the case of where
+        we are creating a new Acknowledgement, and the
+        items and acknowledgement have not yet been saved
+        """
         running_total = 0
-        for product in self.item_set.all():
+
+        #Define items if not already defined
+        if not items:
+            items = self.item_set.all()
+        for product in items:
             running_total += product.total
         self.subtotal = running_total
         discount = (Decimal(self.discount) / 100) * running_total
@@ -338,22 +368,29 @@ class Item(models.Model):
     image = models.ForeignKey(S3Object, null=True)
 
     @classmethod
-    def create(cls, data, acknowledgement=None, **kwargs):
+    def create(cls, acknowledgement=None, commit=True, **kwargs):
         """Creates an Item"""
-        item = cls(**kwargs)
+        item = cls()
         item.acknowledgement = acknowledgement
+
         try:
-            item.product = Product.objects.get(id=data["id"])
+            item.product = Product.objects.get(id=kwargs["id"])
         except:
             item.product = Product.objects.get(id=10436)
         item.status = "ACKNOWLEDGED"
+
         try:
-            item.quantity = data["quantity"]
+            item.quantity = int(kwargs["quantity"])
         except KeyError:
-            raise Exception
+            raise AttributeError("Missing Quantity.")
+
         item._apply_product_data()
-        item._apply_data(data)
-        item.save()
+        item._apply_data(**kwargs)
+
+        #Save the item if commit is true
+        if commit:
+            item.save()
+
         return item
 
     def update(self, data, employee):
@@ -389,12 +426,27 @@ class Item(models.Model):
 
         self.save()
 
+    def save(self):
+        """
+        Saves the object
+        
+        This method first saves the object, and then saves any unsaved pillows
+        via the pillow attribute
+        """
+        super(Item, self).save()
+        try:
+            for pillow in self.pillows:
+                pillow.item = self
+                pillow.save()
+        except AttributeError:
+            pass
+
     def ship(self, delivery_date, employee):
         status = 'SHIPPED'
         message = "Ack Item# {0}({1}) shipped on {2}".format(self.id, self.description, delivery_date.strftime(''))
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def get_data(self):
+    def to_dict(self):
         """Retrieves data about the item"""
         data = {'id': self.id,
                 'acknowledgement': {'id': self.acknowledgement.id},
@@ -405,9 +457,13 @@ class Item(models.Model):
                 'description': self.description,
                 'comments': self.comments,
                 'quantity': self.quantity,
-                'pillows': [pillow.get_data() for pillow in self.pillow_set.all()],
-                'status': self.status,
-                'image': {'url': self.image.generate_url()}}
+                'pillows': [pillow.to_dict() for pillow in self.pillow_set.all()],
+                'status': self.status}
+        try:
+                data['image'] = {'url': self.image.generate_url()}
+        except AttributeError:
+            pass
+
         if self.fabric:
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
@@ -438,60 +494,56 @@ class Item(models.Model):
             self.image = self.product.image
         except:
             pass
-        self.save()
 
-    def _apply_data(self, data):
+    def _apply_data(self, **kwargs):
         """Applies data to the attributes
 
         Requires a User to authenticate what can and
         cannot be applied"""
-        if "comments" in data:
-            self.comments = data["comments"]
+        if "comments" in kwargs:
+            self.comments = kwargs["comments"]
 
-        if "custom_price" in data:
-            print self.acknowledgement.employee.first_name
-            print self.acknowledgement.employee.last_name
-            print data["custom_price"]
-            self.unit_price = Decimal(data["custom_price"])
-            self.total = self.unit_price * Decimal(self.quantity)
-            print self.unit_price
-            print self.total
-        if "is_custom_size" in data:
-            if data["is_custom_size"] == True:
+        #Set the size of item if custom
+        if "is_custom_size" in kwargs:
+            if kwargs["is_custom_size"] == True:
                 self.is_custom_size = True
-                if "width" in data and data['width'] > 0 and data["width"]:
-                    self.width = int(data['width'])
-                if "depth" in data and data['depth'] > 0 and data["depth"]:
-                    self.depth = int(data['depth'])
-                if "height" in data and data['height'] > 0 and data["height"]:
-                    self.height = int(data['height'])
+                if "width" in kwargs and kwargs['width'] > 0 and kwargs["width"]:
+                    self.width = int(kwargs['width'])
+                if "depth" in kwargs and kwargs['depth'] > 0 and kwargs["depth"]:
+                    self.depth = int(kwargs['depth'])
+                if "height" in kwargs and kwargs['height'] > 0 and kwargs["height"]:
+                    self.height = int(kwargs['height'])
+
+        #Calculate the price of the item
+        if "custom_price" in kwargs:
+            self.unit_price = Decimal(kwargs["custom_price"])
+            self.total = self.unit_price * Decimal(self.quantity)
+        else:
+            try:
                 self._calculate_custom_price()
+            except TypeError as e:
+                print e 
 
-        if "is_custom" in data:
-            if data["is_custom"] == True:
+        #Create a Item from a custom product
+        if "is_custom" in kwargs:
+            if kwargs["is_custom"] == True:
                 self.is_custom_item = True
-                self.description = data["description"]
+                self.description = kwargs["description"]
+                if "image" in kwargs:
+                    self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
+        if "fabric" in kwargs:
+            try:
+                self.fabric = Fabric.objects.get(pk=kwargs["fabric"]["id"])
+            except Fabric.DoesNotExist as e:
+                print "Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
 
-                if "image" in data:
-                    self.image = S3Object.objects.get(id=data["image"]["id"])
+        if "pillows" in kwargs:
+            pillows = self._condense_pillows(kwargs["pillows"])
+            self.pillows = [self._create_pillow(keys[0],
+                                                pillows[keys],
+                                                keys[1]) for keys in pillows]
 
-
-        if "fabric" in data:
-            self.fabric = Fabric.objects.get(id=data["fabric"]["id"])
-
-        if "pillows" in data:
-            pillows = self._condense_pillows(data["pillows"])
-            for pillow in pillows:
-                try:
-                    pillow = Pillow.create(item=self, type=pillow["type"],
-                                           quantity=1 * self.quantity,
-                                           fabric=Fabric.objects.get(id=pillow["fabric"]["id"]))
-                except KeyError as e:
-                    print e
-                    print "Missing type or quantity"
-                except Fabric.DoesNotExist:
-                    pillow = Pillow.create(item=self, type=pillow["type"],
-                                           quantity=pillow["quantity"] * self.quantity)
+            print pillows
 
     def _calculate_custom_price(self):
         """Caluates the custom price based on dimensions."""
@@ -505,6 +557,7 @@ class Item(models.Model):
         else:
             upcharge_percentage = 0
         self.unit_price = self.unit_price + (self.unit_price * (Decimal(upcharge_percentage) / 100))
+        self.total = self.unit_price * self.quantity
 
     def _calculate_upcharge(self, difference, boundary, initial, increment):
         """Returns the correct upcharge percentage as a whole number
@@ -524,22 +577,37 @@ class Item(models.Model):
         Duplicates pillows are added together and the duplicates are removed
         with the presence reflected in the quantity of a single pillow
         """
-        pillows = []
+
+        pillows = {}
         for pillow in pillows_data:
-            for i, item in enumerate(pillows):
-                if item["type"] == pillow["type"]:
-                    if "fabric" not in item and "fabric" not in pillow:
-                        pillows[i]["quantity"] += 1
-                        break
-                    elif "fabric" in item and "fabric" in pillow:
-                        if item["fabric"]["description"] == pillow["fabric"]["description"]:
-                            pillows[i]["quantity"] += 1
-                            break
-            else:
-                if "quantity" not in pillow:
-                    pillow["quantity"] = 1
-                pillows.append(pillow)
+            try:
+                pillows[(pillow["type"], pillow["fabric"]["id"])] += 1
+            except KeyError:
+                try:
+                    pillows[(pillow["type"], pillow["fabric"]["id"])] = 1
+                except KeyError:
+                    try:
+                        pillows[(pillow["type"], None)] += 1
+                    except KeyError:
+                        pillows[(pillow["type"], None)] = 1
         return pillows
+    
+    def _create_pillow(self, type, quantity, fabric_id=None):
+        """
+        Creates and returns a pillow
+        
+        This method will create a pillow. If there is a corresponding fabric
+        it is added to the pillow, if not then the pillow is returned without one
+        """
+        try:
+            return Pillow(item=self,
+                          type=type,
+                          quantity=quantity,
+                          fabric=Fabric.objects.get(pk=fabric_id))
+        except Fabric.DoesNotExist:
+            return Pillow(item=self,
+                          type=type,
+                          quantity=quantity)
 
     def _get_image_url(self):
         """Gets the item's default image."""
@@ -555,9 +623,9 @@ class Item(models.Model):
 
 class Pillow(models.Model):
     item = models.ForeignKey(Item)
-    type = models.CharField(db_column="type", max_length=10, null=True)
+    type = models.CharField(db_column="type", max_length=10)
     quantity = models.IntegerField()
-    fabric = models.ForeignKey(Fabric)
+    fabric = models.ForeignKey(Fabric, null=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -566,7 +634,7 @@ class Pillow(models.Model):
         pillow.save()
         return pillow
 
-    def get_data(self):
+    def to_dict(self):
         """Gets all the pillow's data"""
         data = {'id': self.id,
                 'type': self.type,
@@ -591,7 +659,7 @@ class AcknowledgementLog(Log):
         log.save()
         return log
 
-    def get_data(self):
+    def to_dict(self):
         """Get the log data"""
 
         return {'event': self.event,
@@ -638,7 +706,7 @@ class Delivery(models.Model):
         delivery.save()
         return delivery
 
-    def get_data(self):
+    def to_dict(self):
         return {'id': self.id,
                 'description': self.description,
                 'delivery_date': self.delivery_date.isoformat()}

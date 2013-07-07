@@ -1,7 +1,11 @@
-
-import dateutil.parser
-from django.http import HttpResponse
+"""Utilities to help process views/REST Calls"""
 import json
+import dateutil.parser
+
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 
 
 #primary function to process requests for supplies
@@ -35,12 +39,12 @@ def httpGETProcessor(request, Class, class_id):
         #loop through all items
         for model in objs:
             #add the data to the model
-            data.append(model.get_data(user=user))
+            data.append(model.to_dict(user=user))
     #If specific Item requested
     else:
 
         #add data to object
-        data = Class.objects.get(id=class_id).get_data(user=user)
+        data = Class.objects.get(id=class_id).to_dict(user=user)
 
     #create the response with serialized json data
     response = HttpResponse(json.dumps(data), mimetype="application/json")
@@ -57,19 +61,16 @@ def httpPOSTProcessor(request, Class, class_id=0):
 
     #Checks if a put processor should be used instead
     if class_id == 0 or class_id == '0':
-        #Create a new Class
-        model = Class()
         #Get the raw data
         try:
             data = json.loads(request.body)
         except:
             data = json.loads(request.POST.get('data'))
         #convert the information to the model
-        model.set_data(data, user=request.user)
-        model.save()
+        model = Class.create(user=request.user, **data)
 
         #creates a response from serialize json
-        response = HttpResponse(json.dumps(model.get_data(user=request.user)),
+        response = HttpResponse(json.dumps(model.to_dict(user=request.user)),
                                 mimetype="application/json")
         #adds status code
         response.status_code = 201
@@ -92,11 +93,11 @@ def httpPUTProcessor(request, Class, class_id):
     data = json.loads(request.body)
     request.method = "PUT"
     #Assigns the data to the  model
-    model.set_data(data, user=request.user)
+    model.update(user=request.user, **data)
     # attempt to save
     model.save()
     #create response from serialized json data
-    response = HttpResponse(json.dumps(model.get_data(user=request.user)),
+    response = HttpResponse(json.dumps(model.to_dict(user=request.user)),
                             mimetype="application/json")
     response.status_code = 201
     return response
@@ -117,6 +118,56 @@ def httpDELETEProcessor(request, Class, class_id):
     return response
 
 
+def process_api(request, cls, obj_id):
+    """
+    The API interface for the upholstery model.
+    """
+    print obj_id
+    if request.method == "GET":
+        if obj_id == 0:
+            data = [obj.to_dict(request.user) for obj in cls.objects.all()]
+            return HttpResponse(json.dumps(data), content_type='application/json')
+        else:
+            obj = get_object_or_404(cls, pk=obj_id)
+            return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json')
 
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+        except:
+            return HttpResponseBadRequest("No data sent")
+
+        if obj_id == 0:
+            try:
+                obj = cls.create(user=request.user, **data)
+            except AttributeError as e:
+                return HttpResponseBadRequest(e.message)
+            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
+        else:
+            obj = get_object_or_404(cls, pk=obj_id)
+            try:
+                obj.update(user=request.user, **data)
+            except AttributeError as e:
+                return HttpResponseBadRequest(e.message)
+            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
+
+    elif request.method == "DELETE":
+            obj = get_object_or_404(cls, pk=id)
+            obj.delete()
+            return HttpResponse("Upholstery deleted.", status=200)
+
+def save_upload(request, filename=None):
+    """
+    Saves an uploaded file to disk and returns the filename
+    """
+    if filename is None:
+        filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
+    #Save File to disk
+    image = request.FILES['image']
+    filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
+    with open(filename, 'wb+' ) as destination:
+        for chunk in image.chunks():
+            destination.write(chunk)
+    return filename
 
 

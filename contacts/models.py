@@ -14,7 +14,79 @@ class Contact(models.Model):
     class Meta:
         ordering = ['name']
 
-    def get_data(self, user=None):
+    @classmethod
+    def create(cls, commit=True, **kwargs):
+        """Creates a new Contact"""
+        contact = cls()
+        try:
+            contact.name = kwargs["name"]
+        except KeyError:
+            raise AttributeError("Missing name.")
+        if "fax" in kwargs:
+            contact.fax = kwargs["fax"]
+        if "email" in kwargs:
+            contact.email = kwargs["email"]
+        if "is_supplier" in kwargs:
+            contact.is_supplier = kwargs["is_supplier"]
+            contact.is_customer = kwargs["is_customer"]
+        try:
+            contact.currency = kwargs["currency"]
+        except KeyError:
+            raise AttributeError("Missing currency.")
+
+        contact.save()
+
+        if "address" in kwargs:
+            address = Address.create(contact=contact, **kwargs["address"])
+        elif "addresses" in kwargs:
+            for address in kwargs["addresses"]:
+                Address.create(contact=contact, **address)
+        else:
+            raise AttributeError("No address submitted")
+
+        return contact
+
+    def update(self, **kwargs):
+        """
+        Sets the information to be stored for the contact.
+        The information that will be saved depends on the
+        permissions of the user
+        """
+        if "name" in kwargs:
+            self.name = kwargs["name"]
+        if "email" in kwargs:
+            self.email = kwargs["email"]
+        if "telephone" in kwargs:
+            self.telephone = kwargs["telephone"]
+        if "fax" in kwargs:
+            self.fax = kwargs["fax"]
+        if "term" in kwargs:
+            self.term = kwargs["term"]
+        if "currency" in kwargs:
+            self.currency = kwargs["currency"]
+        self.save()
+
+        if "address" in kwargs:
+            try:
+                address = Address.objects.get(id=kwargs["address"]["id"])
+            except:
+                try:
+                    address = self.address_set.all()[0]
+                except IndexError:
+                    address = Address()
+            address.update(kwargs["address"])
+            address.contact = self
+            address.save()
+        elif "addresses" in kwargs:
+            #Loop through address
+            # and set data
+            for address_data in kwargs["addresses"]:
+                try:
+                    Address.objects.get(id=address_data["id"]).update(**address_data)
+                except:
+                    Address.create(contact=self, **address_data)
+
+    def to_dict(self, user=None):
         """
         Returns the information stored in the
         model. The information returned is depends
@@ -28,89 +100,47 @@ class Contact(models.Model):
                 'isSupplier': self.is_supplier,
                 'isCustomer': self.is_customer,
                 'addresses': [],
-                'currency': self.currency}
-
-        for address in self.address_set.all():
-            data['addresses'].append(address.get_data())
-
+                'currency': self.currency,
+                "addresses": [address.to_dict() for address in self.address_set.all()]}
         return data
-
-    def set_data(self, data, user=None):
-        """
-        Sets the information to be stored for the contact.
-        The information that will be saved depends on the
-        permissions of the user
-        """
-        if "name" in data:
-            self.name = data["name"]
-        if "email" in data:
-            self.email = data["email"]
-        if "telephone" in data:
-            self.telephone = data["telephone"]
-        if "fax" in data:
-            self.fax = data["fax"]
-        if "term" in data:
-            self.term = data["term"]
-        if "currency" in data:
-            self.currency = data["currency"]
-
-        self.save()
-
-        if "address" in data:
-            try:
-                address = Address.objects.get(id=data["address"]["id"])
-            except:
-                try:
-                    address = self.address_set.all()[0]
-                except IndexError:
-                    address = Address()
-            address.set_data(data["address"])
-            address.contact = self
-            address.save()
-        elif "addresses" in data:
-            #Loop through address
-            # and set data
-            for address_data in data["addresses"]:
-                try:
-                    address = Address.objects.get(id=address_data["id"])
-                except:
-                    address = Address()
-                address.set_data(address_data)
-                address.contact = self
-                address.save()
 
 
 class Address(models.Model):
-    address1 = models.CharField(max_length=160, null=True)
+    address1 = models.CharField(max_length=160)
     address2 = models.CharField(max_length=160, null=True)
-    city = models.CharField(max_length=100, null=True)
-    territory = models.CharField(max_length=150, null=True)
-    country = models.CharField(max_length=150, null=True)
-    zipcode = models.TextField(null=True)
+    city = models.CharField(max_length=100)
+    territory = models.CharField(max_length=150)
+    country = models.CharField(max_length=150)
+    zipcode = models.TextField()
     contact = models.ForeignKey(Contact)
     latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
 
-    def get_data(self):
-        #Structure data
-        data = {'id': self.id,
-                'address1': self.address1,
-                'address2': self.address2,
-                'city': self.city,
-                'territory': self.territory,
-                'country': self.country,
-                'zipcode': self.zipcode}
+    @classmethod
+    def create(cls, **kwargs):
+        address = cls(**kwargs)
 
-        """We convert to string before float from Decimal in
-        order to accomodate python pre 2.7"""
-        if self.latitude != None:
-            data.update({'lat': float(str(self.latitude))})
-        if self.longitude != None:
-            data.update({'lng': float(str(self.longitude))})
-        #Return Data
-        return data
+        if not address.address1:
+            raise AttributeError("Missing 'address'")
+        if not address.city:
+            raise AttributeError("Missing 'city'")
+        if not address.territory:
+            raise AttributeError("Missing 'territory'")
+        if not address.country:
+            raise AttributeError("Missing 'country'")
+        if not address.zipcode:
+            raise AttributeError("Missing 'zipcode'")
 
-    def set_data(self, data):
+        try:
+            address.latitude = kwargs["lat"]
+            address.longitude = kwargs["lng"]
+        except:
+            pass
+
+        address.save()
+        return address
+
+    def update(self, data):
         if "address1" in data:
             self.address1 = data["address1"]
         if "address2" in data:
@@ -129,6 +159,26 @@ class Address(models.Model):
             self.latitude = Decimal(str(data['lat']))
         if "lng" in data:
             self.longitude = Decimal(str(data['lng']))
+        self.save()
+
+    def to_dict(self):
+        #Structure data
+        data = {'id': self.id,
+                'address1': self.address1,
+                'address2': self.address2,
+                'city': self.city,
+                'territory': self.territory,
+                'country': self.country,
+                'zipcode': self.zipcode}
+
+        """We convert to string before float from Decimal in
+        order to accomodate python pre 2.7"""
+        if self.latitude != None:
+            data['lat'] = float(str(self.latitude))
+        if self.longitude != None:
+            data['lng'] = float(str(self.longitude))
+
+        return data
 
 
 class Customer(Contact):
@@ -139,16 +189,35 @@ class Customer(Contact):
     class Meta:
         ordering = ['name']
 
-    def get_data(self, user=None):
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Creates and returns a new customer
+        """
+        #Extract name
+        try:
+            name = kwargs["first_name"]
+        except KeyError:
+            raise ValueError("Missing first_name")
+        if "last_name" in kwargs:
+            name = "{0} {1}".format(name, kwargs["last_name"])
+
+        customer = super(Customer, cls).create(commit=False, name=name, **kwargs)
+
+        customer.is_customer = True
+        customer.save()
+        return customer
+
+    def to_dict(self, user=None):
         data = {'type': self.type,
                 'first_name': self.first_name,
                 'last_name': self.last_name}
         #Get parent data
-        data.update(super(Customer, self).get_data(user=None))
+        data.update(super(Customer, self).to_dict(user=None))
         #Return data
         return data
 
-    def set_data(self, data, user=None):
+    def update(self, data, user=None):
         self.is_customer = True
         if "type" in data:
             self.type = data["type"]
@@ -161,68 +230,98 @@ class Customer(Contact):
         except:
             self.name = self.first_name
         #Set parent data
-        super(Customer, self).set_data(data, user=None)
+        super(Customer, self).update(data, user=None)
 
 
 class Supplier(Contact):
     terms = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
 
-    #get data
-    def get_data(self, user=None):
-        #Structure data
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Creates and returns a new Customer object
+        """
+        supplier = super(Supplier, cls).create(commit=False, **kwargs)
+        supplier.is_supplier = True
+        supplier.save()
+        return supplier
+
+    def update(self, **kwargs):
+        """
+        Updates the object's attributes
+        """
+        super(Supplier, self).update(**kwargs)
+        #set supplier data
+        if "discount" in kwargs:
+            self.discount = kwargs["discount"]
+        if "terms" in kwargs:
+            self.terms = kwargs['terms']
+        self.save()
+        #Add supplier contacts
+        if "contacts" in kwargs:
+            for contact_data in kwargs["contacts"]:
+                try:
+                    contact = SupplierContact.objects.get(id=contact_data['id'])
+                except KeyError, SupplierContact.DoesNotExist:
+                    contact = SupplierContact.create(supplier=self, **contact_data)
+
+    def to_dict(self, user=None):
+        """
+        Returns the object's attributes as a dictionary
+        """
         data = {'terms': self.terms,
                 'discount': self.discount,
-                'contacts': []}
+                'contacts': [contact.to_dict() for contact in self.suppliercontact_set.all()]}
 
-        #Update with Parent data
-        data.update(super(Supplier, self).get_data(user=user))
-        #Add address dict and remove
-        # the addresses dic
+        data.update(super(Supplier, self).to_dict(user=user))
 
         if len(data['addresses']) > 0:
             data['address'] = data['addresses'][0]
-            data.pop('addresses')
-        #get supplier contacts
-        for supplierContact in self.suppliercontact_set.all():
-            data['contacts'].append(supplierContact.get_data())
-        #returns the data
+            del data['addresses']
+
         return data
 
-    #set data
-    def set_data(self, data, user=None, employee=None):
-        #set parent data
-        super(Supplier, self).set_data(data)
-        #set supplier data
-        if "discount" in data:
-            self.discount = data["discount"]
-        if "terms" in data:
-            self.terms = data['terms']
-        self.is_supplier = True
-        #save self
-        self.save()
-        #Add supplier contacts
-        if "contacts" in data:
-            for contact_data in data["contacts"]:
-                if "id" in contact_data:
-                    contact = SupplierContact.objects.get(id=contact_data['id'])
-                else:
-                    contact = SupplierContact()
-                #sets the details and save
-                contact.set_data(contact_data)
-                contact.supplier = self
-                contact.save()
+    def add_contact(self, **kwargs):
+        """
+        Creates a contact for the supplier and and associates it
+        """
+        self.suppliercontact_set.add(SupplierContact.create(supplier=self, **kwargs))
 
 
 class SupplierContact(models.Model):
-
     first_name = models.TextField()
     last_name = models.TextField()
     email = models.TextField()
     telephone = models.TextField()
     supplier = models.ForeignKey(Supplier)
 
-    def get_data(self, user=None):
+    @classmethod
+    def create(cls, commit=True, **kwargs):
+        sc = cls(**kwargs)
+        if commit:
+            sc.save()
+        return sc
+
+    def update(self, **kwargs):
+        #Set data
+        if "firstName" in kwargs:
+            self.first_name = kwargs["firstName"]
+        if "lastName" in kwargs:
+            self.last_name = kwargs["lastName"]
+        if "email" in kwargs:
+            self.email = kwargs["email"]
+        if "telephone" in kwargs:
+            self.telephone = kwargs["telephone"]
+        if "supplier" in kwargs:
+            try:
+                self.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
+            except KeyError:
+                print "Missing Supplier ID."
+            except Supplier.DoesNotExist:
+                print "Supplier does not exists."
+
+    def to_dict(self, user=None):
         #Stucture data
         data = {'id': self.id,
                 'firstName': self.first_name,
@@ -232,15 +331,5 @@ class SupplierContact(models.Model):
         #Return data
         return data
 
-    def set_data(self, data, user=None):
-        #Set data
-        if "firstName" in data:
-            self.first_name = data["firstName"]
-        if "lastName" in data:
-            self.last_name = data["lastName"]
-        if "email" in data:
-            self.email = data["email"]
-        if "telephone" in data:
-            self.telephone = data["telephone"]
 
 

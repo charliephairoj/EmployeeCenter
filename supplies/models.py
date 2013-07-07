@@ -6,13 +6,13 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django_hstore import hstore
+from django.shortcuts import get_object_or_404
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
 from contacts.models import Contact, Supplier
 from auth.models import Log, S3Object
 
-# Create your models here.
 
 #Creates the main supplies class
 class Supply(models.Model):
@@ -37,14 +37,124 @@ class Supply(models.Model):
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    image = models.ForeignKey(S3Object, null=True)
     #data = hstore.DictionaryField()
     #objects = hstore.HStoreManager()
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
                        ('view_props', 'Can view props'))
+    
+    @classmethod
+    def create(cls, user=None, commit=True, **kwargs):
+        """
+        Creates and returns a new supply
+        """
+        supply = cls()
+        if "width" in kwargs:
+            supply.width = kwargs["width"]
+        if "depth" in kwargs:
+            supply.depth = kwargs["depth"]
+        if "height" in kwargs:
+            supply.height = kwargs["height"]
 
-    def get_data(self, **kwargs):
+        try:
+            supply.reference = kwargs["reference"]
+        except KeyError:
+            raise AttributeError("Missing supplier reference number.")
+
+        try:
+            supply.quantity = Decimal(str(kwargs["quantity"]))
+        except KeyError:
+            raise AttributeError("Missing quantity.")
+
+        try:
+            supply.cost = kwargs["cost"]
+        except KeyError:
+            try:
+                supply.cost = kwargs["unit_cost"]
+            except:
+                raise AttributeError("Missing supply's cost.")
+
+        try:
+            supply.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
+        except KeyError:
+            raise AttributeError("Missing supplier")
+        except Supplier.DoesNotExist:
+            raise AttributeError("Supplier not found.")
+
+        if "description" in kwargs:
+            supply.description = kwargs["description"]
+
+        if "image" in kwargs:
+                try:
+                    supply.image = S3Object.objects.get(pk=kwargs["image"]["id"])
+                except KeyError:
+                    raise IntegrityError("Missing image's ID")
+                except S3Object.DoesNotExist:
+                    raise TypeError("Image does not exist")
+
+        if "width_units" in kwargs:
+            supply.width_units = kwargs["width_units"]
+        if "depth_units" in kwargs:
+            supply.depth_units = kwargs["depth_units"]
+        if "height_units" in kwargs:
+            supply.height_units = kwargs["height_units"]
+        if "quantity_units" in kwargs:
+            supply.quantity_units = kwargs["quantity_units"]
+        if "purchasing_units" in kwargs:
+            supply.purchasing_units = kwargs["purchasing_units"]
+
+        if commit:
+            supply.save()
+
+        return supply
+
+    def update(self, user=None, **kwargs):
+        """
+        Updates the supply
+        """
+        if "quantity" in kwargs:
+            self.quantity = Decimal(str(kwargs["quantity"]))
+        if "cost" in kwargs or "unit_cost"in kwargs:
+            try:
+                self.cost = kwargs["cost"]
+            except:
+                self.cost = kwargs["unit_cost"]
+        if "width" in kwargs:
+            self.width = kwargs["width"]
+        if "depth" in kwargs:
+            self.depth = kwargs["depth"]
+        if "height" in kwargs:
+            self.height = kwargs["height"]
+
+        #units
+        if "width_units" in kwargs:
+            self.width_units = kwargs["width_units"]
+        if "depth_units" in kwargs:
+            self.depth_units = kwargs["depth_units"]
+        if "height_units" in kwargs:
+            self.height_units = kwargs["height_units"]
+        if "quantity_units" in kwargs:
+            self.quantity_units = kwargs["quantity_units"]
+        if "purchasing_units" in kwargs:
+            self.purchasing_units = kwargs["purchasing_units"]
+
+        if "image" in kwargs:
+                old_img = self.image
+                try:
+                    self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
+                    if old_img:
+                        old_img.delete()
+                except KeyError:
+                    raise IntegrityError("Missing image's ID")
+                except S3Object.DoesNotExist:
+                    raise TypeError("Image does not exist")
+
+    def to_dict(self, **kwargs):
+        """
+        Returns the supply's attributes as a dictionary
+        """
         data = {
                 'quantity': str(self.quantity),
                 'reference': self.reference,
@@ -60,10 +170,10 @@ class Supply(models.Model):
                 'id': self.id,
                 'cost': '%s' % self.cost,
                 'currency': self.currency,
-                'image_url': self.image_url,
-                'image': {'url': self.image_url}
         }
 
+        if self.image:
+            data['image'] = {'url': self.image.generate_url()}
         try:
             user = kwargs["user"]
             if user.has_perm('supplies.view_supplier'):
@@ -72,93 +182,69 @@ class Supply(models.Model):
             pass
         return data
 
-    def set_data(self, data, **kwargs):
-        if "reference" in data:
-            self.reference = data["reference"]
-            del data["reference"]
-        if "supplier" in data:
-            self.supplier = Supplier.objects.get(id=data["supplier"]["id"])
-            del data["supplier"]
-        if "type" in data:
-            self.type = data["type"]
-            del data["type"]
-        if "cost" in data:
-            self.cost = Decimal(data["cost"])
-            del data["cost"]
-        if "width" in data:
-            self.width = data['width']
-            del data["width"]
-        if "height" in data:
-            self.height = data["height"]
-            del data["height"]
-        if "depth" in data:
-            self.depth = data["depth"]
-            del data["depth"]
-        if "height_units" in data:
-            self.height_units = data["height_units"]
-            del data["height_units"]
-        if "width_units" in data:
-            self.width_units = data["width_units"]
-            del data["width_units"]
-        if "depth_units" in data:
-            self.depth_units = data["depth_units"]
-            del data["depth_units"]
-        if "image" in data:
-            if "url" in data["image"]:
-                self.image_url = data["image"]["url"]
-            if "key" in data["image"]:
-                self.image_key = data["image"]["key"]
-            if "bucket" in data["image"]:
-                self.image_bucket = data["image"]["bucket"]
-            del data["image"]
-
-    
     def reserve(self, quantity, employee, remarks=None, acknowledgement_id=None):
-        message = "Reserve {0} {1}".format(quantity, self.quantity_units)
-        if acknowledgement_id:
-            try:
-                log = SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve')
-                log.event = message
-                log.save()
-            except:
+        """
+        Reserve a quantity of supply
+        """
+        if employee:
+            message = "Reserved {0}{1} of {2}".format(quantity, self.quantity_units, self.description)
+            if acknowledgement_id:
+                try:
+                    log = SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve')
+                    log.event = message
+                    log.save()
+                except:
+                    SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
+                                     supply=self, acknowledgement_id=acknowledgement_id)
+            else:
                 SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
                                  supply=self, acknowledgement_id=acknowledgement_id)
         else:
-            SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
-                             supply=self, acknowledgement_id=acknowledgement_id)
+            raise ValueError("An employee is required to reserve")
 
-    def add(self, quantity, employee=None, remarks=None):
-        self.quantity = self.quantity + Decimal(quantity)
-        self.save()
-        message = "Added {0} {1}".format(quantity, self.quantity_units)
-        SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+    def add(self, quantity, employee, remarks=None):
+        """
+        Add a quantity to the supply
+        """
+        if employee:
+            self.quantity = Decimal(str(self.quantity)) + Decimal(quantity)
+            self.save()
+            message = "Added {0}{1} to {2}".format(quantity, self.quantity_units, self.description)
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+        else:
+            raise ValueError("An employee is required to add.")
 
-    def subtract(self, quantity, employee=None, remarks=None, acknowledgement_id=None):
-        #check if length to subtract is more than total length
-        if self.quantity > Decimal(quantity):
-            #Subtract from current length
-            self.quantity = self.quantity - Decimal(quantity)
+    def subtract(self, quantity, employee, remarks=None, acknowledgement_id=None):
+        if employee:
+            #check if length to subtract is more than total length
+            if self.quantity > quantity:
+                #Subtract from current length
+                self.quantity = Decimal(str(self.quantity)) - Decimal(str(quantity))
+                self.save()
+
+                message = "Subtracted {0}{1} from {2}".format(quantity, self.quantity_units, self.description)
+                if acknowledgement_id:
+                    try:
+                        SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve').delete()
+                    except:
+                        pass
+
+                SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
+                                 supply=self, acknowledgement_id=acknowledgement_id)
+            else:
+                raise ValueError("Nothing left to subtract")
+        else:
+            raise ValueError("An employee is required to subtract.")
+
+    def reset(self, quantity, employee, remarks=None):
+        if employee:
+            self.quantity = Decimal(str(quantity))
             self.save()
 
-            message = "Subtract {0} {1}".format(quantity, self.quantity_units)
-            print acknowledgement_id
-            if acknowledgement_id:
-                try:
-                    SupplyLog.objects.get(acknowledgement_id=acknowledgement_id, event__icontains='Reserve').delete()
-                except:
-                    pass
-
-            SupplyLog.create(event=message, employee=employee, quantity=self.quantity,
-                             supply=self, acknowledgement_id=acknowledgement_id)
+            message = "Reset {0} to {1}{2}".format(self.description, self.quantity, self.quantity_units)
+            SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
         else:
-            raise Exception("Nothing left to subtract")
-
-    def reset(self, quantity, employee=None, remarks=None):
-        self.quantity = quantity
-        self.save()
-
-        message = "Reset to {0} {1}".format(self.quantity, self.quantity_units)
-        SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
+            raise ValueError("An employee is required to reset.")
 
     def upload_image(self, image, key="supplies/images/{0}.jpg".format(time.time())):
         #start connection
@@ -221,41 +307,57 @@ class Fabric(Supply):
     color = models.TextField()
     content = models.TextField()
 
-    
-    #Set fabric data for REST
-    def set_data(self, data, **kwargs):
-        #extract args
-        if "user" in kwargs:
-            user = kwargs["user"]
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Creates a new fabric object and returns it
+        """
+        obj = super(Fabric, cls).create(commit=False, **kwargs)
+        try:
+            obj.pattern = kwargs["pattern"]
+        except KeyError:
+            raise AttributeError("Missing fabric pattern.")
+        try:
+            obj.color = kwargs["color"]
+        except KeyError:
+            raise AttributeError("Missing fabric color")
+        
+        obj.description = "Pattern: {0}, Col: {1}".format(obj.pattern, obj.color)
+
+        obj.save()
+        return obj
+
+    def update(self, user=None, **kwargs):
+        """
+        Updates the fabric
+        """
         #set parent data
-        super(Fabric, self).set_data(data, user=user)
+        super(Fabric, self).update(user=user, **kwargs)
         #set the type to fabric
         self.type = "fabric"
         #set purchasing units
         self.purchasing_units = "yard"
         #set the model data
-        if "pattern" in data:
-            self.pattern = data["pattern"]
-        if "color" in data:
-            self.color = data["color"]
-        if "content" in data:
-            self.content = data["content"]
+        if "pattern" in kwargs:
+            self.pattern = kwargs["pattern"]
+        if "color" in kwargs:
+            self.color = kwargs["color"]
+        if "content" in kwargs:
+            self.content = kwargs["content"]
         self.description = "%s Col:%s" % (self.pattern, self.color)
-       
+
         self.save()
 
     #Get Data for REST
-    def get_data(self, **kwargs):
-
-        #sets the data for this supply
-        data = {
-                'pattern': self.pattern,
+    def to_dict(self, **kwargs):
+        """
+        Returns the fabric's attributes as a dictionary
+        """
+        data = {'pattern': self.pattern,
                 'color': self.color,
-                'content': self.content,
-        }
-        #merges with parent data
-        data.update(super(Fabric, self).get_data())
-        #returns the data
+                'content': self.content,}
+        data.update(super(Fabric, self).to_dict())
+
         return data
 
 
@@ -264,38 +366,57 @@ class Foam(Supply):
     foam_type = models.TextField(db_column="foam_type")
     color = models.CharField(max_length=20)
 
-    def get_data(self, **kwargs):
-        #get data for foam
-        data = {
-                'color': self.color,
-                'type': self.foam_type
-                }
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        """
+        Creates a new foam object and returns it
+        """
+        obj = super(Fabric, cls).create(commit=False, **kwargs)
+        try:
+            obj.foam_type = kwargs["type"]
+        except KeyError:
+            try:
+                obj.foam_type = kwargs["foam_type"]
+            except KeyError:
+                raise AttributeError("Missing fabric pattern.")
+        try:
+            obj.color = kwargs["color"]
+        except KeyError:
+            raise AttributeError("Missing fabric color")
 
-        #merge with data from parent
-        data.update(super(Foam, self).get_data())
+        obj.purchasing_units = "pc"
 
-        #return the data
-        return data
+        obj.save()
+        return obj
 
-    #set data
-    def set_data(self, data, **kwargs):
-        #extract data
-        if "user" in kwargs:
-            user = kwargs["user"]
-        #set the parent data
-        super(Foam, self).set_data(data, user=user)
+    def update(self, user=None, **kwargs):
+        """
+        Updates the foam
+        """
+        super(Foam, self).update(user=user, **kwargs)
         #set foam data
         self.purchasing_units = "pc"
 
         self.type = "foam"
-        if "type" in data:
-            self.foam_type = data["type"]
-        if "color" in data:
-            self.color = data["color"]
+        if "type" in kwargs:
+            self.foam_type = kwargs["type"]
+        if "color" in kwargs:
+            self.color = kwargs["color"]
         self.description = "%s Foam (%sX%sX%s)" % (self.color, self.width, self.depth, self.height)
 
-        #save the foam
         self.save()
+
+    def to_dict(self, **kwargs):
+        """
+        Returns foam attributes as a dictionary
+        """
+        data = {'color': self.color,
+                'type': self.foam_type}
+
+        data.update(super(Foam, self).to_dict())
+
+        return data
+
 
 class Glue(Supply):
 

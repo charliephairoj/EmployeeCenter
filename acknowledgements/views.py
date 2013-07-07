@@ -50,10 +50,10 @@ def acknowledgement(request, ack_id=0):
                 timestamp = dateutil.parser.parse(params["last_modified"])
                 acks = acks.filter(last_modified__gte=timestamp)
 
-            data = [ack.get_data() for ack in acks]
+            data = [ack.to_dict() for ack in acks]
         else:
             ack = Acknowledgement.objects.get(id=ack_id)
-            data = ack.get_data()
+            data = ack.to_dict()
 
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         return response
@@ -61,16 +61,28 @@ def acknowledgement(request, ack_id=0):
     if request.method == "POST":
         if ack_id == 0:
             data = json.loads(request.body)
-            acknowledgement = Acknowledgement.create(data, request.user)
-            response_data = acknowledgement.get_data()
+
+            #Create the acknowledgement
+            try:
+                acknowledgement = Acknowledgement.create(request.user, **data)
+            except TypeError as e:
+                print e
+                message = "Error: {0}".format(e)
+                print message
+                response = HttpResponse(message, mimetype="plain/text")
+                response.status_code = 501
+                return response
+
+            response_data = acknowledgement.to_dict()
             response_data["acknowledgement_url"] = acknowledgement.generate_url('acknowledgement')
             response_data["production_url"] = acknowledgement.generate_url('production')
             return HttpResponse(json.dumps(response_data), mimetype="application/json")
+
         else:
             data = json.loads(request.body)
             acknowledgement = Acknowledgement.objects.get(id=ack_id)
             acknowledgement.update(data, request.user)
-            response_data = acknowledgement.get_data()
+            response_data = acknowledgement.to_dict()
             response_data["acknowledgement_url"] = acknowledgement.generate_url('acknowledgement')
             response_data["production_url"] = acknowledgement.generate_url('production')
             return HttpResponse(json.dumps(response_data), mimetype="application/json")
@@ -87,9 +99,9 @@ def item(request, ack_item_id=0):
                 if params["status"] == 'available':
                     items = items.exclude(status='SHIPPED')
                     items = items.exclude(status='ACKNOWLEDGED')
-            data = [item.get_data() for item in items]
+            data = [item.to_dict() for item in items]
         else:
-            data = Item.objects.get(id=ack_item_id).get_data()
+            data = Item.objects.get(id=ack_item_id).to_dict()
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         return response
 
@@ -102,7 +114,7 @@ def item(request, ack_item_id=0):
             item.update(data, request.user)
             acknowledgement = item.acknowledgement
             acknowledgement.update()
-            return HttpResponse(json.dumps(item.get_data()), mimetype="application/json")
+            return HttpResponse(json.dumps(item.to_dict()), mimetype="application/json")
 
 
 @login_required
@@ -110,7 +122,7 @@ def log(request, ack_id=0):
     if request.method == "GET":
         if ack_id != 0:
             try:
-                data = [log.get_data() for log in Acknowledgement.objects.get(id=ack_id).acknowledgementlog_set.all()]
+                data = [log.to_dict() for log in Acknowledgement.objects.get(id=ack_id).acknowledgementlog_set.all()]
             except Acknowledgement.DoesNotExist:
                 raise Exception
             return HttpResponse(json.dumps(data), mimetype="application/json")
@@ -145,7 +157,7 @@ def acknowledgement_item_image(request):
 @login_required
 def delivery(request):
     if request.method == "GET":
-        data = [d.get_data() for d in Delivery.objects.all()]
+        data = [d.to_dict() for d in Delivery.objects.all()]
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response

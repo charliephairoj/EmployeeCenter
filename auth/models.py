@@ -19,7 +19,10 @@ class S3Object(models.Model):
     key = models.TextField()
 
     @classmethod
-    def create(cls, filename, key, bucket):
+    def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False):
+        """
+        Creates S3object for a file
+        """
         obj = cls()
         if key:
             obj.key = key
@@ -29,27 +32,57 @@ class S3Object(models.Model):
             obj.bucket = bucket
         else:
             raise AttributeError("Missing object bucket")
-        obj._upload(filename)
+        obj._upload(filename, delete_original, encrypt_key=encrypt_key)
         obj.save()
         return obj
 
     def generate_url(self, time=1800):
         """generate a url for the object"""
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        conn = self._get_connection()
         url = conn.generate_url(time, 'GET', bucket=self.bucket, key=self.key, force_http=True)
         return url
 
-    def _upload(self, filename):
-        """Uploads the file to the to our S3 service
+    def delete(self, **kwargs):
+        bucket = self._get_bucket()
+        bucket.delete_key(self.key)
+        super(S3Object, self).delete(**kwargs)
+
+    def _get_connection(self):
+        """
+        Returns the S3 Connection of the object
+        """
+        return S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+
+    def _get_bucket(self):
+        """
+        Returns the S3 Bucket of the object
+        """
+        if self.bucket:
+            conn = self._get_connection()
+            return conn.get_bucket(self.bucket, True)
+        else:
+            raise AttributeError("Missing bucket name.")
+
+    def _get_key(self):
+        """
+        Returns the S3 Key of the object
+        """
+        bucket = self._get_bucket()
+        return bucket.get_key(self.key)
+
+    def _upload(self, filename, delete_original=True, encrypt_key=False):
+        """
+        Uploads the file to the to our S3 service
 
         Requies the filename, the file type. if an Appendix is provided
         then the file is appended with that before the filetype.
         """
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-        bucket = conn.get_bucket(self.bucket, True)
+        bucket = self._get_bucket()
         k = Key(bucket)
         k.key = self.key
-        k.set_contents_from_filename(filename)
+        k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
-        os.remove(filename)
+        if delete_original:
+            os.remove(filename)
+
 

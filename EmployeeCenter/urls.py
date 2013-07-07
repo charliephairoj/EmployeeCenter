@@ -79,7 +79,8 @@ urlpatterns += patterns('supplies.views',
     url(r'^fabric/(?P<supply_id>\d+)/subtract$', 'subtract'),
     url(r'^fabric/(?P<supply_id>\d+)/reset$', 'reset'),
     url(r'^fabric/(?P<supply_id>\d+)/log$', 'supply_log'),
-    url(r'^fabric/(?P<fabric_id>\d+)/image$', 'fabric_image'),
+    url(r'^fabric/(?P<fabric_id>\d+)/image$', 'supply_image'),
+    
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
 
@@ -137,6 +138,17 @@ urlpatterns += patterns('accounting.views',
     url(r'^transaction/(?P<transaction_id>\d+)$', 'transaction'),
 )
 
+#Urls for Project
+urlpatterns += patterns("projects.views",
+    url(r'^project$', 'project'),
+    url(r'^project/(?P<project_id>\d+)$', "project"),
+
+    url(r'^project/room$', 'room'),
+    url(r'^project/room/(?P<room_id>\d+)$', "room"),
+
+    url(r'^project/item$', 'item'),
+    url(r'^project/item/(?P<item_id>\d+)$', "item"),
+)
 #this section deals with the administration routing area
 
 urlpatterns += patterns('administrator.views',
@@ -146,6 +158,7 @@ urlpatterns += patterns('administrator.views',
     url(r'^user$', 'user'),
     url(r'^user/(?P<user_id>\d+)$', 'user'),
 )
+
 
 urlpatterns += patterns('',
     url(r'^(?P<path>.*)$', 'django.views.static.serve',

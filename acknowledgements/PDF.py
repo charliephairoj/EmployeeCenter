@@ -335,7 +335,7 @@ class AcknowledgementPDF(object):
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(), height=100)])
+            data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=290)])
         #Create table
         table = Table(data, colWidths=(65, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
@@ -476,7 +476,7 @@ class AcknowledgementPDF(object):
         return signature
 
     #helps change the size and maintain ratio
-    def get_image(self, path, width=None, height=None):
+    def get_image(self, path, width=None, height=None, max_width=0):
         """Retrieves the image via the link and gets the
         size from the image. The correct dimensions for
         image are calculated based on the desired with or
@@ -489,16 +489,19 @@ class AcknowledgementPDF(object):
         #Get Size
         imgWidth, imgHeight = img.getSize()
         #Detect if there height or width provided
-        if width != None and height == None:
+        if width and height == None:
             ratio = float(imgHeight) / float(imgWidth)
-            newHeight = ratio * width
-            newWidth = width
-        elif height != None and width == None:
+            new_height = ratio * width
+            new_width = width
+        elif height and width == None:
             ratio = float(imgWidth) / float(imgHeight)
-            newHeight = height
-            newWidth = ratio * height
+            new_height = height
+            new_width = ratio * height
+            if max_width != 0 and new_width > max_width:
+                new_width = max_width
+                new_height = (float(imgHeight) / float(imgWidth)) * max_width
 
-        return Image(path, width=newWidth, height=newHeight)
+        return Image(path, width=new_width, height=new_height)
 
     def outputBKKTime(self, dateTimeObj, fmt):
         """
@@ -690,7 +693,7 @@ class ProductionPDF(AcknowledgementPDF):
         #Get Image url and add image
         data.append([''])
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(), height=100)])
+            data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=400)])
         #Create table
         table = Table(data, colWidths=(65, 420, 40))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),

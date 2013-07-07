@@ -28,7 +28,8 @@ class Product(models.Model):
     internalUnits = 'mm',
     externalUnits = 'mm',
     bucket = models.TextField(null=True)
-    image = models.ForeignKey(S3Object, related_name='+')
+    image = models.ForeignKey(S3Object, related_name='+', null=True)
+    schematic = models.ForeignKey(S3Object, null=True)
     image_key = models.TextField(null=True)
     image_url = models.TextField(null=True)
     schematic_key = models.TextField(null=True)
@@ -48,9 +49,6 @@ class Product(models.Model):
     @classmethod
     def create(cls, user=None, **kwargs):
         obj = cls()
-        #extract args
-        if "user" in kwargs:
-            user = kwargs["user"]
 
         try:
             obj.width = kwargs["width"]
@@ -59,19 +57,26 @@ class Product(models.Model):
         except KeyError:
             raise AttributeError("Product is missing dimensions")
 
-        if user.has_perm('products.edit_manufacture_price'):
-            if "manufacture_price" in kwargs:
-                obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
-        if user.has_perm('products.edit_retail_price'):
-            if "retail_price" in kwargs:
-                obj.retail_price = Decimal(str(kwargs["retail_price"]))
-        if user.has_perm('products.edit_wholesale_price'):
-            if "wholesale_price" in kwargs:
-                obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
-        if user.has_perm('products.edit_export_price'):
-            if "export_price" in kwargs:
-                obj.export_price = Decimal(str(kwargs["export_price"]))
-        #Set Image
+        if "description" in kwargs:
+            obj.description = kwargs["description"]
+
+        if user:
+            if user.has_perm('products.edit_manufacture_price'):
+                if "manufacture_price" in kwargs:
+                    obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+            if user.has_perm('products.edit_retail_price'):
+                if "retail_price" in kwargs:
+                    obj.retail_price = Decimal(str(kwargs["retail_price"]))
+            if user.has_perm('products.edit_wholesale_price'):
+                if "wholesale_price" in kwargs:
+                    obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+            if user.has_perm('products.edit_export_price'):
+                if "export_price" in kwargs:
+                    obj.export_price = Decimal(str(kwargs["export_price"]))
+
+        obj.save()
+        #Post save stuff
+
         if "image" in kwargs:
             if 'id' in kwargs['image']:
                 obj.image = S3Object.objects.get(id=kwargs['image']['id'])
@@ -84,6 +89,7 @@ class Product(models.Model):
             obj._add_pillow('lumbar', kwargs["lumbar_pillow"])
         if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
             obj._add_pillow('corner', kwargs["corner_pillow"])
+            
         return obj
 
     def update(self, user=None, **kwargs):
@@ -94,19 +100,19 @@ class Product(models.Model):
             self.depth = kwargs["depth"]
         if 'height' in kwargs:
             self.height = kwargs["height"]
-
+            
         if user:
-            if user.has_perm('products.edit_manufacture_price'):
-                if "manufacture_price" in kwargs:
+            if "manufacture_price" in kwargs:
+                if user.has_perm('products.edit_manufacture_price'):
                     self.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
-            if user.has_perm('products.edit_retail_price'):
-                if "retail_price" in kwargs:
+            if "retail_price" in kwargs:
+                if user.has_perm('products.edit_retail_price'):
                     self.retail_price = Decimal(str(kwargs["retail_price"]))
-            if user.has_perm('products.edit_wholesale_price'):
-                if "wholesale_price" in kwargs:
+            if "wholesale_price" in kwargs:
+                if user.has_perm('products.edit_wholesale_price'):
                     self.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
-            if user.has_perm('products.edit_export_price'):
-                if "export_price" in kwargs:
+            if "export_price" in kwargs:
+                if user.has_perm('products.edit_export_price'):
                     self.export_price = Decimal(str(kwargs["export_price"]))
 
         if "image" in kwargs:
@@ -156,10 +162,11 @@ class Product(models.Model):
                 'type': self.type,
                 'description': self.description,
                 'url': self.image_url}
-        try:
-                data.update({'image': {'url': self.image.generate_url()}})
-        except:
-            pass
+        if self.image:
+                data['image'] = {'url': self.image.generate_url()}
+        if self.wholesale_price:
+                data["has_price"] = True
+
         #Checks to see if there are pillows to add
         pillows = self.pillow_set.all()
         if len(pillows) > 0:
@@ -212,11 +219,11 @@ class Model(models.Model):
         except KeyError:
             raise AttributeError("Missing Model")
         try:
-            obj.model = kwargs["name"]
+            obj.name = kwargs["name"]
         except KeyError:
             raise AttributeError("Missing Name")
         try:
-            obj.model = kwargs["collection"]
+            obj.collection = kwargs["collection"]
         except KeyError:
             raise AttributeError("Missing Collection")
 
@@ -272,7 +279,7 @@ class Configuration(models.Model):
         return self.configuration
 
     @classmethod
-    def create(cls):
+    def create(cls, **kwargs):
         obj = cls()
         try:
             obj.configuration = kwargs["configuration"]
@@ -313,10 +320,49 @@ class Upholstery(Product):
         except KeyError:
             raise AttributeError("Missing the Configuration ID")
 
-        obj = super(Upholstery, cls).create(user, **kwargs)
+        obj = cls()
+
+        try:
+            obj.width = kwargs["width"]
+            obj.depth = kwargs["depth"]
+            obj.height = kwargs["height"]
+        except KeyError:
+            raise AttributeError("Product is missing dimensions")
+
+        if user:
+            if user.has_perm('products.edit_manufacture_price'):
+                if "manufacture_price" in kwargs:
+                    obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+            if user.has_perm('products.edit_retail_price'):
+                if "retail_price" in kwargs:
+                    obj.retail_price = Decimal(str(kwargs["retail_price"]))
+            if user.has_perm('products.edit_wholesale_price'):
+                if "wholesale_price" in kwargs:
+                    obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+            if user.has_perm('products.edit_export_price'):
+                if "export_price" in kwargs:
+                    obj.export_price = Decimal(str(kwargs["export_price"]))
+
         obj.model = model
         obj.configuration = configuration
+        obj.description = "{0} {1}".format(obj.model.model,
+                                            obj.configuration.configuration)
+        obj.type = "upholstery"
         obj.save()
+        #Post save stuff
+
+        if "image" in kwargs:
+            if 'id' in kwargs['image']:
+                obj.image = S3Object.objects.get(id=kwargs['image']['id'])
+
+        if "back_pillow" in kwargs and kwargs["back_pillow"] != '':
+            obj._add_pillow('back', kwargs["back_pillow"])
+        if "accent_pillow" in kwargs and kwargs["accent_pillow"] != '':
+            obj._add_pillow('accent', kwargs["accent_pillow"])
+        if "lumbar_pillow" in kwargs and kwargs["lumbar_pillow"] != '':
+            obj._add_pillow('lumbar', kwargs["lumbar_pillow"])
+        if "corner_pillow" in kwargs and kwargs["corner_pillow"] != '':
+            obj._add_pillow('corner', kwargs["corner_pillow"])
 
         return obj
 
@@ -348,7 +394,7 @@ class Pillow(models.Model):
     type = models.CharField(max_length=50)
     quantity = models.IntegerField()
 
-    def get_data(self):
+    def to_dict(self):
         return {'type': self.type,
                 'quantity': self.quantity}
 
@@ -361,24 +407,49 @@ class Table(Product):
 
     @classmethod
     def create(cls, user=None, **kwargs):
-        obj = super(Table, cls).create(user, **kwargs)
-        obj.type = 'table'
-
         try:
             model = Model.objects.get(id=kwargs["model"]["id"])
-            obj.model = model
         except KeyError:
-            raise AttributeError("An existing model must be specified")
+            raise AttributeError("Missing the Model ID")
+        try:
+            configuration = Configuration.objects.get(id=kwargs["configuration"]["id"])
+        except KeyError:
+            raise AttributeError("Missing the Configuration ID")
+
+        obj = cls()
 
         try:
-            config = Configuration.objects.get(id=kwargs["configuration"]["id"])
-            obj.configuration = config
+            obj.width = kwargs["width"]
+            obj.depth = kwargs["depth"]
+            obj.height = kwargs["height"]
         except KeyError:
-            raise AttributeError("An existing model must be specified")
+            raise AttributeError("Product is missing dimensions")
 
+        if user.has_perm('products.edit_manufacture_price'):
+            if "manufacture_price" in kwargs:
+                obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+        if user.has_perm('products.edit_retail_price'):
+            if "retail_price" in kwargs:
+                obj.retail_price = Decimal(str(kwargs["retail_price"]))
+        if user.has_perm('products.edit_wholesale_price'):
+            if "wholesale_price" in kwargs:
+                obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+        if user.has_perm('products.edit_export_price'):
+            if "export_price" in kwargs:
+                obj.export_price = Decimal(str(kwargs["export_price"]))
+
+        obj.model = model
+        obj.configuration = configuration
         obj.description = "{0} {1}".format(obj.model.model,
                                             obj.configuration.configuration)
+        obj.type = "table"
         obj.save()
+        #Post save stuff
+
+        if "image" in kwargs:
+            if 'id' in kwargs['image']:
+                obj.image = S3Object.objects.get(id=kwargs['image']['id'])
+
         return obj
 
     def update(self, user=None, **kwargs):
