@@ -40,9 +40,9 @@ def shipping(request, shipping_id=0):
 
     if request.method == "POST":
         data = json.loads(request.body)
-        ack = Shipping()
-        urls = ack.create(data, user=request.user)
-        data = urls.update(ack.get_data())
+        shipping = Shipping()
+        urls = shipping.create(data, user=request.user)
+        data = urls.update(shipping.get_data())
         return HttpResponse(json.dumps(urls), mimetype="application/json")
 
 

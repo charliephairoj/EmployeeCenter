@@ -37,13 +37,15 @@ class Shipping(models.Model):
 
         data = {'acknowledgement': {'id': self.acknowledgement.id},
                 'delivery_date': self.delivery_date.isoformat(),
-                'customer': self.customer.get_data(),
+                'customer': self.customer.to_dict(),
                 'id': self.id,
                 'employee': '{0} {1}'.format(self.employee.first_name,
-                                             self.employee.last_name),
-                'products': []}
-        for product in self.item_set.all():
-            data['products'].append(product.get_data())
+                                             self.employee.last_name)}
+        try:
+            data['products'] = [product.get_data() for product in self.item_set.all()]
+        except AttributeError:
+            data['products'] = [product.to_dict() for product in self.item_set.all()]
+       
         return data
 
     def create(self, data, user):
@@ -117,6 +119,9 @@ class Item(models.Model):
                 'description': self.description,
                 'quantity': self.quantity,
                 'comments': self.comments}
-        data.update(self.item.get_data())
+        try:
+            data.update(self.item.to_dict())
+        except:
+            data.update(self.item.get_data())
         return data
 
