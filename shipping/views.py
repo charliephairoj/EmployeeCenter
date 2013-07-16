@@ -30,11 +30,11 @@ def shipping(request, shipping_id=0):
                 data.append(shipping.get_data())
             response = HttpResponse(json.dumps(data), mimetype="application/json")
             return response
-        
+
         else:
-            
+
             shipping = Shipping.objects.get(id=shipping_id)
-            
+
             response = HttpResponse(json.dumps(shipping.get_data()), mimetype="application/json")
             return response
 

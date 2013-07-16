@@ -159,7 +159,7 @@ class Supply(models.Model):
                 'quantity': str(self.quantity),
                 'reference': self.reference,
                 'type': self.type,
-                'supplier': self.supplier.get_data(),
+                'supplier': self.supplier.to_dict(),
                 'width': str(self.width),
                 'depth': str(self.depth),
                 'height': str(self.height),
@@ -349,7 +349,7 @@ class Fabric(Supply):
         self.save()
 
     #Get Data for REST
-    def to_dict(self, **kwargs):
+    def to_dict(self, user=None, **kwargs):
         """
         Returns the fabric's attributes as a dictionary
         """

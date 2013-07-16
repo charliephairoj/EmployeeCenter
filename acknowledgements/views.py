@@ -96,7 +96,7 @@ def item(request, ack_item_id=0):
             params = request.GET
             items = Item.objects.all()
             if "status" in params:
-                if params["status"] == 'available':
+                if params["status"].lower() == 'inventory':
                     items = items.exclude(status='SHIPPED')
                     items = items.exclude(status='ACKNOWLEDGED')
             data = [item.to_dict() for item in items]
@@ -106,10 +106,12 @@ def item(request, ack_item_id=0):
         return response
 
     if request.method == "POST":
+        data = json.loads(request.body)
         if ack_item_id == 0:
-            pass
+            item = Item.create(**data) 
+            return HttpResponse(json.dumps(item.to_dict()), mimetype="application/json")
+
         else:
-            data = json.loads(request.body)
             item = Item.objects.get(id=ack_item_id)
             item.update(data, request.user)
             acknowledgement = item.acknowledgement

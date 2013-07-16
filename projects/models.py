@@ -17,7 +17,7 @@ class Project(models.Model):
     reference = models.TextField()
     codename = models.TextField()
     _due_date = models.DateField(db_column="due_date")
-    status = models.TextField("Planning")
+    status = models.TextField(default="Planning")
 
     @property
     def due_date(self):
@@ -78,10 +78,12 @@ class Project(models.Model):
         Returns the projects attribute as a dictionary
         """
         return {"id": self.id,
+                'customer': self.customer.to_dict(),
                 "reference": self.reference,
                 "codename": self.codename,
-                "due_date": self.due_date,
+                "due_date": self.due_date.isoformat(),
                 "status": self.status,
+                "type": self.type,
                 "rooms": [room.to_dict() for room in self.room_set.all()]}
 
     def _update_reference(self, new_reference):
@@ -148,7 +150,7 @@ class Room(models.Model):
                 room.schematic = S3Object.objects.get(pk=kwargs["schematic"]["id"])
             except KeyError:
                 raise ValueError("Missing schematic ID.")
-
+        print 'got here ok'
         room.save()
         return room
 
@@ -161,23 +163,30 @@ class Room(models.Model):
         if "status" in kwargs:
             self.status = kwargs["status"]
 
-    def to_dict(self):
+    def to_dict(self, user=None):
         """
         Returns the rooms attributes as a dictionary
         """
+        print 'start to dict'
         data = {"id": self.id,
-                "project": self.project.to_dict(),
+                "project": {'id': self.project.id,
+                            'type': self.project.type,
+                            'reference': self.project.reference,
+                            'codename': self.project.codename,
+                            'due_date': self.project.due_date.isoformat()},
                 "reference": self.reference,
-                "description": self.description, 
-                "status": self.status}
-
+                "description": self.description,
+                "status": self.status,
+                'items': [item.to_dict() for item in self.item_set.all()]}
+        print 'done dict'
+        """
         if self.image:
-            data["image"] = {"id": self.image.id, 
+            data["image"] = {"id": self.image.id,
                              "url": self.image.generate_url()},
         if self.schematic:
             data["schematic"] = {"id": self.schematic.id,
                                  "url": self.image.generate_url()}
-        
+        """
         return data
 
 class Item(models.Model):
@@ -188,11 +197,17 @@ class Item(models.Model):
     description = models.TextField()
     reference = models.TextField()
     image = models.ForeignKey(S3Object, null=True, related_name="+")
-    schematic = models.ForeignKey(S3Object, null=True, related_name="+")
+    schematic = models.ForeignKey(S3Object, db_column="schematic_id", null=True, related_name="+")
+    #schematic_last_modified = models.DateTimeField()
     type = models.TextField()
     product = models.ForeignKey(Product, null=True, related_name="+")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
+    """
+    @property
+    def schematic(self):
+        return {'url': self._schematic.generate_url(),
+                'last_modified': self.schematic_last_modified()}"""
     @property
     def due_date(self):
         return self._due_date

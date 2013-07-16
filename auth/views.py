@@ -16,17 +16,9 @@ def current_user(request):
     user = request.user
 
     user_data = {'firstName': user.first_name,
-                 'lastName': user.last_name}
-    data = []
-    #creates the permissions data
-    #that will be used client side
-    permissions = user.get_all_permissions()
-    for permission in permissions:
-        permission = permission.split('.')
-        code = permission[1]
-        data.append(code)
-
-    user_data["permissions"] = data
+                 'lastName': user.last_name,
+                 'permissions': [perm.split('.')[1] for perm in user.get_all_permissions()]}
+   
     #get all the verified modules to be
     #used client side
     modules = []
@@ -44,6 +36,8 @@ def current_user(request):
         modules.append('supplies')
     if user.has_module_perms('accounting'):
         modules.append('accounting')
+    if user.has_module_perms('projects'):
+        modules.append('projects')
     if user.is_superuser:
         modules.append('administrator')
     user_data['modules'] = modules

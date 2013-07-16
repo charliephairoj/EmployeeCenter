@@ -17,6 +17,7 @@ class Log(models.Model):
 class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField()
+    last_modified = models.DateTimeField()
 
     @classmethod
     def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False):
@@ -36,6 +37,10 @@ class S3Object(models.Model):
         obj.save()
         return obj
 
+    def upload(self, filename):
+        key = self._get_key()
+        key.set_contens_from_filename(filename)
+
     def generate_url(self, time=1800):
         """generate a url for the object"""
         conn = self._get_connection()
@@ -51,7 +56,7 @@ class S3Object(models.Model):
         """
         Returns the S3 Connection of the object
         """
-        return S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
+        return S3Connection()
 
     def _get_bucket(self):
         """
@@ -59,7 +64,9 @@ class S3Object(models.Model):
         """
         if self.bucket:
             conn = self._get_connection()
-            return conn.get_bucket(self.bucket, True)
+            bucket = conn.get_bucket(self.bucket, True)
+            bucket.configure_versioning(True)
+            return bucket
         else:
             raise AttributeError("Missing bucket name.")
 

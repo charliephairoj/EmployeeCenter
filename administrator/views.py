@@ -1,12 +1,30 @@
 import json
 import logging
 
+import boto
 from django.contrib.auth.models import Permission, Group, User
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+
 
 
 logger = logging.getLogger('EmployeeCenter')
+
+
+def get_access_key(iam, user):
+    try:
+        data = iam.get_all_access_keys(user.username)
+        return data["list_access_keys_response"]["list_access_keys_result"]["access_key_metadata"][0]["access_key_id"]
+    except IndexError:
+        data = iam.create_access_key(user.username)
+        return data["create_access_key_response"]["create_access_key_result"]["access_key"]["access_key_id"]
+    except boto.exception.BotoServerError as e:
+        print e
+        iam.create_user(user.username)
+        data = iam.create_access_key(user.username)
+        print data
+        return data["create_access_key_response"]["create_access_key_result"]["access_key"]["access_key_id"]
 
 
 #Deals with the permission
@@ -41,19 +59,15 @@ def get_group_data(request, group):
 def group(request, group_id=0):
     if request.method == "GET":
         if group_id == 0:
-            #Create the array
-            data = []
-            permData = []
-            #Loop to access all models
-            for group in Group.objects.all():
-                for perm in group.permissions.all():
-                    permData.append({'id': perm.id,
-                                     'name': perm.name})
-                #create dict with permissions
-                groupData = {'id': group.id, 'name': group.name,
-                             'permissions': permData}
-                #Add raw data to array
-                data.append(groupData)
+            #Function to create dict of attributes
+            def group_to_dict(group):
+                return {'id': group.id,
+                        'name': group.name,
+                        'permissions': [{'id': perm.id,
+                                         'name': perm.name} for perm in group.permissions.all()]}
+                
+            #Create array of items
+            data = [group_to_dict(group) for group in Group.objects.all()]
             #return data via http
             return HttpResponse(json.dumps(data), mimetype="application/json")
         else:
@@ -115,6 +129,7 @@ def group(request, group_id=0):
 @login_required
 def user(request, user_id=0):
     if request.method == "GET":
+        iam = boto.connect_iam()
         if user_id == 0:
             data = []
             for user in User.objects.all():
@@ -132,24 +147,26 @@ def user(request, user_id=0):
                             'username': user.username,
                             'email': user.email,
                             'last_login': user.last_login.isoformat(),
-                            'groups': groupData
-                            #'permissions':permissionData
+                            'groups': [{'id': group.id,
+                                        'name': group.name} for group in user.groups.all()]
                             }
+                userData["aws_access_key_id"] = get_access_key(iam, user)
+ 
                 data.append(userData)
 
         else:
             user = User.objects.get(id=user_id)
-            groupData = []
-            for group in user.groups.all():
-                groupData.append({'id': group.id, 'name': group.name})
             data = {
                             'id': user.id,
                             'username': user.username,
                             'email': user.email,
-                            'groups': groupData,
+                            'groups': [{'id': group.id, 'name': group.name} for group in user.groups.all()],
                             'first_name': user.first_name,
                             'last_name': user.last_name
                             }
+
+            data["aws_access_key_id"] = get_access_key(iam, user)
+
         #build response
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 200
@@ -216,7 +233,16 @@ def user(request, user_id=0):
         return response
 
     elif request.method == "DELETE":
+        iam = boto.connect_iam()
         user = User.objects.get(id=user_id)
+
+        #Delete access keys
+        keys = iam.get_all_access_keys(user.username)
+        for key in keys["list_access_keys_response"]["list_access_keys_result"]["access_key_metadata"]:
+            iam.delete_access_key(key["access_key_id"], user.username)
+        #Delete user from AWS
+        iam.delete_user(user.username)
+
         user.delete()
         #build response
         response = HttpResponse(json.dumps({'status': 'success'}),
@@ -224,3 +250,40 @@ def user(request, user_id=0):
         response.status_code = 200
         #return data via http
         return response
+
+
+def password(request, user_id):
+    """
+    Changes the password of the specified user
+    """
+    if request.method == "POST":
+        data = json.loads(request.body)
+        user = User.objects.get(id=user_id)
+        print request.user.is_superuser
+        if request.user.is_superuser:
+            if data["new_password"] == data["repeat_new_password"]:
+                user.set_password(data["new_password"])
+                user.save()
+                response = HttpResponse(json.dumps({'status': 'success'}),
+                                        mimetype="application/json")
+                response.status_code = 200
+                #return data via http
+                return response
+            else:
+                return HttpResponseBadRequest("New passwords do not match")
+        else:
+            if data["new_password"] == data["repeat_new_password"]:
+                if authenticate(user.username, data["old_password"]):
+                    user.set_password(data["new_password"])
+                    user.save()
+                    response = HttpResponse(json.dumps({'status': 'success'}),
+                                    mimetype="application/json")
+                    response.status_code = 200
+                    #return data via http
+                    return response
+                else:
+                    return HttpResponseBadRequest("Old password is incorrect")
+            else:
+                return HttpResponseBadRequest("New passwords do not match")
+    else:
+        return HttpResponseBadRequest()

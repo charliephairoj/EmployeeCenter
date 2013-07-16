@@ -157,6 +157,7 @@ urlpatterns += patterns('administrator.views',
     url(r'^group/(?P<group_id>\d+)$', 'group'),
     url(r'^user$', 'user'),
     url(r'^user/(?P<user_id>\d+)$', 'user'),
+    url(r'^user/(?P<user_id>\d+)/change_password$', 'password'),
 )
 
 

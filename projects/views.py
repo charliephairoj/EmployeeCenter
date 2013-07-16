@@ -10,7 +10,6 @@ def project(request, project_id=0):
 
 
 def room(request, room_id=0):
-    print room_id
     return process_api(request, Room, room_id)
 
 

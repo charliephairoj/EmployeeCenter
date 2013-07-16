@@ -449,7 +449,6 @@ class Item(models.Model):
     def to_dict(self):
         """Retrieves data about the item"""
         data = {'id': self.id,
-                'acknowledgement': {'id': self.acknowledgement.id},
                 'is_custom_size': self.is_custom_size,
                 'width': self.width,
                 'height': self.height,
@@ -459,6 +458,11 @@ class Item(models.Model):
                 'quantity': self.quantity,
                 'pillows': [pillow.to_dict() for pillow in self.pillow_set.all()],
                 'status': self.status}
+        try:
+            data["acknowledgement"] = {'id': self.acknowledgement.id}
+        except AttributeError:
+            pass
+
         try:
                 data['image'] = {'url': self.image.generate_url()}
         except AttributeError:
@@ -477,11 +481,15 @@ class Item(models.Model):
         from the product referenced by the item
         """
         self.description = self.product.description
-        if self.acknowledgement.customer.type == "Retail":
-            self.unit_price = self.product.retail_price
-        elif self.acknowledgement.customer.type == "Dealer":
-            self.unit_price = self.product.wholesale_price
-        else:
+        
+        try:
+            if self.acknowledgement.customer.type == "Retail":
+                self.unit_price = self.product.retail_price
+            elif self.acknowledgement.customer.type == "Dealer":
+                self.unit_price = self.product.wholesale_price
+            else:
+                self.unit_price = self.product.retail_price
+        except AttributeError:
             self.unit_price = self.product.retail_price
 
         self.total = self.unit_price * Decimal(self.quantity)
@@ -500,6 +508,8 @@ class Item(models.Model):
 
         Requires a User to authenticate what can and
         cannot be applied"""
+        if "status" in kwargs:
+            self.status = kwargs["status"]
         if "comments" in kwargs:
             self.comments = kwargs["comments"]
 

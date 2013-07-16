@@ -94,7 +94,7 @@ class AcknowledgementTest(TestCase):
         -Address
         -product
         -2 fabrics
-        
+
         After Creating all the needed objects for the Acknowledgement, 
         test that all the objects have been made.
         """

@@ -122,10 +122,9 @@ def process_api(request, cls, obj_id):
     """
     The API interface for the upholstery model.
     """
-    print obj_id
     if request.method == "GET":
         if obj_id == 0:
-            data = [obj.to_dict(request.user) for obj in cls.objects.all()]
+            data = [obj.to_dict(user=request.user) for obj in cls.objects.all()]
             return HttpResponse(json.dumps(data), content_type='application/json')
         else:
             obj = get_object_or_404(cls, pk=obj_id)
