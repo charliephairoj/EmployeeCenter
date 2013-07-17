@@ -17,7 +17,7 @@ class Log(models.Model):
 class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField()
-    last_modified = models.DateTimeField()
+    last_modified = models.DateTimeField(null=True)
 
     @classmethod
     def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False):
