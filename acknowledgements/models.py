@@ -407,10 +407,10 @@ class Item(models.Model):
 
         return item
 
-    def update(self, data, employee):
+    def update(self, employee, **kwargs):
         """Updates an item"""
-        if "fabric" in data:
-            fabric = Fabric.objects.get(id=data["fabric"]["id"])
+        if "fabric" in kwargs:
+            fabric = Fabric.objects.get(id=kwargs["fabric"]["id"])
             if fabric != self.fabric:
                 if self.fabric:
                     message = "Change fabric from {0} to {1}".format(self.fabric.description, fabric.description)
@@ -418,20 +418,20 @@ class Item(models.Model):
                     message = "Change fabric to {0}".format(fabric.description)
                 self.fabric = fabric
                 AcknowledgementLog.create(message, self.acknowledgement, employee)
-        if "pillows" in data:
-            for pillow_data in data["pillows"]:
+        if "pillows" in kwargs:
+            for pillow_data in kwargs["pillows"]:
                 pillow = Pillow.objects.get(id=pillow_data["id"])
                 fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
                 pillow.fabric = fabric
                 pillow.save()
-        if "status" in data:
-            if data["status"] != self.status:
-                self.status = data["status"]
+        if "status" in kwargs:
+            if kwargs["status"] != self.status:
+                self.status = kwargs["status"]
                 try:
                     message = "Item# {0} from Acknowledgement #{1} has been {2} due to:{3}".format(self.id, 
                                                                                                     self.acknowledgement.id, 
                                                                                                     self.status,
-                                                                                                    data['status_message'])
+                                                                                                    kwargs['status_message'])
                 except:
                     message = "Item# {0} from Acknowledgement #{1} has been {2}".format(self.id, 
                                                                                          self.acknowledgement.id, 
@@ -443,7 +443,7 @@ class Item(models.Model):
     def save(self):
         """
         Saves the object
-        
+
         This method first saves the object, and then saves any unsaved pillows
         via the pillow attribute
         """

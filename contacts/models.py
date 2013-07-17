@@ -11,6 +11,7 @@ class Contact(models.Model):
     is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
     deleted = models.BooleanField(default=False)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     class Meta:
         ordering = ['name']
