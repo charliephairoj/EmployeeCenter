@@ -150,7 +150,6 @@ class Room(models.Model):
                 room.schematic = S3Object.objects.get(pk=kwargs["schematic"]["id"])
             except KeyError:
                 raise ValueError("Missing schematic ID.")
-        print 'got here ok'
         room.save()
         return room
 
@@ -167,7 +166,6 @@ class Room(models.Model):
         """
         Returns the rooms attributes as a dictionary
         """
-        print 'start to dict'
         data = {"id": self.id,
                 "project": {'id': self.project.id,
                             'type': self.project.type,
@@ -178,7 +176,6 @@ class Room(models.Model):
                 "description": self.description,
                 "status": self.status,
                 'items': [item.to_dict() for item in self.item_set.all()]}
-        print 'done dict'
         """
         if self.image:
             data["image"] = {"id": self.image.id,

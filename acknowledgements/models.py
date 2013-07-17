@@ -222,9 +222,12 @@ class Acknowledgement(models.Model):
 
     def save(self):
         super(Acknowledgement, self).save()
-        for item in self.items:
-            item.acknowledgement = self
-            item.save()
+        try:
+            for item in self.items:
+                item.acknowledgement = self
+                item.save()
+        except AttributeError:
+            pass
 
     def _create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
