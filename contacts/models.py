@@ -10,6 +10,7 @@ class Contact(models.Model):
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['name']

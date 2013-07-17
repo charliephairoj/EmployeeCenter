@@ -18,6 +18,7 @@ class Project(models.Model):
     codename = models.TextField()
     _due_date = models.DateField(db_column="due_date")
     status = models.TextField(default="Planning")
+    deleted = models.BooleanField(default=False)
 
     @property
     def due_date(self):
@@ -84,6 +85,7 @@ class Project(models.Model):
                 "due_date": self.due_date.isoformat(),
                 "status": self.status,
                 "type": self.type,
+                "deleted": self.deleted,
                 "rooms": [room.to_dict() for room in self.room_set.all()]}
 
     def _update_reference(self, new_reference):
@@ -116,6 +118,7 @@ class Room(models.Model):
     image = models.ForeignKey(S3Object, null=True, related_name="+")
     schematic = models.ForeignKey(S3Object, null=True, related_name="+")
     status = models.TextField(default="Planning")
+    deleted = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, **kwargs):
@@ -175,6 +178,7 @@ class Room(models.Model):
                 "reference": self.reference,
                 "description": self.description,
                 "status": self.status,
+                "deleted": self.deleted,
                 'items': [item.to_dict() for item in self.item_set.all()]}
         """
         if self.image:

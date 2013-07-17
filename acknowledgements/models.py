@@ -37,6 +37,7 @@ class Acknowledgement(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,
                                             null=True,
                                             related_name='+',
@@ -192,7 +193,7 @@ class Acknowledgement(models.Model):
 
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def to_dict(self):
+    def to_dict(self, user=None):
         """Retrieves authorized information from the object.
 
         Requires User object to gain full access to the data.
@@ -209,7 +210,8 @@ class Acknowledgement(models.Model):
                 'shipping': self.shipping_method,
                 'customer': self.customer.to_dict(),
                 'employee': u'{0} {1}'.format(self.employee.first_name, self.employee.last_name),
-                'products': [item.to_dict() for item in self.item_set.all().order_by('id')]}
+                'products': [item.to_dict() for item in self.item_set.all().order_by('id')],
+                'deleted': self.deleted}
 
         return data
 
@@ -369,6 +371,12 @@ class Item(models.Model):
     comments = models.TextField(null=True)
     location = models.TextField(null=True)
     image = models.ForeignKey(S3Object, null=True)
+    deleted = models.BooleanField(default=False)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+
+    class Meta:
+        permissions = (('delete_acknowledgement_item', 'Can delete acknowledgement item'),
+                       ('edit_item_price', 'Can edit acknowledgement price'))
 
     @classmethod
     def create(cls, acknowledgement=None, commit=True, **kwargs):
@@ -378,8 +386,11 @@ class Item(models.Model):
 
         try:
             item.product = Product.objects.get(id=kwargs["id"])
-        except:
-            item.product = Product.objects.get(id=10436)
+        except KeyError:
+            try:
+                item.product = Product.objects.get(id=kwargs["product"]["id"])
+            except KeyError:
+                item.product = Product.objects.get(id=10436)
         item.status = "ACKNOWLEDGED"
 
         try:
@@ -449,7 +460,7 @@ class Item(models.Model):
         message = "Ack Item# {0}({1}) shipped on {2}".format(self.id, self.description, delivery_date.strftime(''))
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def to_dict(self):
+    def to_dict(self, user=None):
         """Retrieves data about the item"""
         data = {'id': self.id,
                 'is_custom_size': self.is_custom_size,
@@ -460,7 +471,8 @@ class Item(models.Model):
                 'comments': self.comments,
                 'quantity': self.quantity,
                 'pillows': [pillow.to_dict() for pillow in self.pillow_set.all()],
-                'status': self.status}
+                'status': self.status,
+                'deleted': self.deleted}
         try:
             data["acknowledgement"] = {'id': self.acknowledgement.id}
         except AttributeError:

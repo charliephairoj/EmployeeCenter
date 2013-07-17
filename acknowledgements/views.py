@@ -4,26 +4,14 @@ import os
 import time
 import dateutil.parser
 
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
 from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
 from acknowledgements.models import Acknowledgement, Item, Delivery
 from auth.models import S3Object
+from utilities.http import save_upload, process_api
 
-
-def save_upload(request, filename=None):
-    if filename is None:
-        filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
-    #Save File to disk
-    image = request.FILES['image']
-    filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
-    with open(filename, 'wb+' ) as destination:
-        for chunk in image.chunks():
-            destination.write(chunk)
-    return filename
 
 @login_required
 def acknowledgement(request, ack_id=0):
@@ -91,32 +79,22 @@ def acknowledgement(request, ack_id=0):
 @login_required
 def item(request, ack_item_id=0):
     #Get Request
-    if request.method == "GET":
-        if ack_item_id == 0:
-            params = request.GET
-            items = Item.objects.all()
-            if "status" in params:
-                if params["status"].lower() == 'inventory':
-                    items = items.exclude(status='SHIPPED')
-                    items = items.exclude(status='ACKNOWLEDGED')
-            data = [item.to_dict() for item in items]
-        else:
-            data = Item.objects.get(id=ack_item_id).to_dict()
-        response = HttpResponse(json.dumps(data), mimetype="application/json")
+    if request.method == "GET" and ack_item_id == 0:
+        params = request.GET
+        items = Item.objects.all()
+        if "status" in params:
+            if params["status"].lower() == 'inventory':
+                items = items.exclude(status='SHIPPED')
+                items = items.exclude(status='ACKNOWLEDGED')
+        if "last_modified" in params:
+            timestamp = dateutil.parser.parse(params["last_modified"])
+            items = items.filter(last_modified__gte=timestamp)
+
+        response = HttpResponse(json.dumps([item.to_dict() for item in items]), mimetype="application/json")
         return response
 
-    if request.method == "POST":
-        data = json.loads(request.body)
-        if ack_item_id == 0:
-            item = Item.create(**data) 
-            return HttpResponse(json.dumps(item.to_dict()), mimetype="application/json")
-
-        else:
-            item = Item.objects.get(id=ack_item_id)
-            item.update(data, request.user)
-            acknowledgement = item.acknowledgement
-            acknowledgement.update()
-            return HttpResponse(json.dumps(item.to_dict()), mimetype="application/json")
+    else:
+        return process_api(request, Item, ack_item_id)
 
 
 @login_required

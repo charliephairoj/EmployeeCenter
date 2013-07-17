@@ -1,11 +1,13 @@
 """Utilities to help process views/REST Calls"""
 import json
 import dateutil.parser
+import time
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from django.utils.datastructures import MultiValueDictKeyError
 
 
 #primary function to process requests for supplies
@@ -123,8 +125,12 @@ def process_api(request, cls, obj_id):
     The API interface for the upholstery model.
     """
     if request.method == "GET":
+        params = request.GET
         if obj_id == 0:
-            data = [obj.to_dict(user=request.user) for obj in cls.objects.all()]
+            try:
+                data = [obj.to_dict(user=request.user) for obj in cls.objects.filter(last_modified__gte=params["last_modified"])]
+            except KeyError as e:
+                data = [obj.to_dict(user=request.user) for obj in cls.objects.all()]
             return HttpResponse(json.dumps(data), content_type='application/json')
         else:
             obj = get_object_or_404(cls, pk=obj_id)
@@ -151,9 +157,11 @@ def process_api(request, cls, obj_id):
             return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
 
     elif request.method == "DELETE":
-            obj = get_object_or_404(cls, pk=id)
-            obj.delete()
+            obj = get_object_or_404(cls, pk=obj_id)
+            obj.deleted = True
+            obj.save()
             return HttpResponse("Upholstery deleted.", status=200)
+
 
 def save_upload(request, filename=None):
     """
@@ -162,7 +170,10 @@ def save_upload(request, filename=None):
     if filename is None:
         filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
     #Save File to disk
-    image = request.FILES['image']
+    try:
+        image = request.FILES['image']
+    except MultiValueDictKeyError:
+        image = request.FILES['file']
     filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
     with open(filename, 'wb+' ) as destination:
         for chunk in image.chunks():

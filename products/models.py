@@ -33,8 +33,9 @@ class Product(models.Model):
     image_key = models.TextField(null=True)
     image_url = models.TextField(null=True)
     schematic_key = models.TextField(null=True)
-    last_modified = models.DateTimeField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     collection = models.TextField(default="Dellarobbia Thailand")
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
@@ -161,7 +162,8 @@ class Product(models.Model):
                 'units': self.units,
                 'type': self.type,
                 'description': self.description,
-                'url': self.image_url}
+                'url': self.image_url,
+                'deleted': self.deleted}
         if self.image:
                 data['image'] = {'url': self.image.generate_url()}
         if self.wholesale_price:

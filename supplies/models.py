@@ -7,8 +7,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django_hstore import hstore
 from django.shortcuts import get_object_or_404
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
 
 from contacts.models import Contact, Supplier
 from auth.models import Log, S3Object
@@ -38,13 +36,14 @@ class Supply(models.Model):
     quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     image = models.ForeignKey(S3Object, null=True)
+    deleted = models.BooleanField(default=False)
     #data = hstore.DictionaryField()
     #objects = hstore.HStoreManager()
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
                        ('view_props', 'Can view props'))
-    
+
     @classmethod
     def create(cls, user=None, commit=True, **kwargs):
         """
@@ -155,8 +154,7 @@ class Supply(models.Model):
         """
         Returns the supply's attributes as a dictionary
         """
-        data = {
-                'quantity': str(self.quantity),
+        data = {'quantity': str(self.quantity),
                 'reference': self.reference,
                 'type': self.type,
                 'supplier': self.supplier.to_dict(),
@@ -170,7 +168,7 @@ class Supply(models.Model):
                 'id': self.id,
                 'cost': '%s' % self.cost,
                 'currency': self.currency,
-        }
+                'deleted': self.deleted}
 
         if self.image:
             data['image'] = {'url': self.image.generate_url()}
@@ -245,28 +243,6 @@ class Supply(models.Model):
             SupplyLog.create(event=message, employee=employee, quantity=self.quantity, supply=self)
         else:
             raise ValueError("An employee is required to reset.")
-
-    def upload_image(self, image, key="supplies/images/{0}.jpg".format(time.time())):
-        #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
-        #get the bucket
-        bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
-        #Create a key and assign it
-        k = Key(bucket)
-        #Set file name
-        k.key = "supplies/images/{0}.jpg".format(time.time())
-        #upload file
-        k.set_contents_from_filename(image)
-        #set the Acl
-        k.set_canned_acl('public-read')
-        k.make_public()
-        #set Url, key and bucket
-        data = {
-                'url': 'http://media.dellarobbiathailand.com.s3.amazonaws.com/'+k.key,
-                'key': k.key,
-                'bucket': 'media.dellarobbiathailand.com'
-        }
-        return data
 
 
 class Location(models.Model):

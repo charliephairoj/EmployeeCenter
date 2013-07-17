@@ -10,66 +10,10 @@ from boto.s3.key import Key
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
 
 from products.models import Model, Configuration, Upholstery, Table, Rug
-from utilities.http import processRequest
+from utilities.http import process_api, save_upload
 from auth.models import S3Object
-
-
-def save_upload(request, filename=None):
-    if filename is None:
-        filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
-    #Save File to disk
-    image = request.FILES['image']
-    filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
-    with open(filename, 'wb+' ) as destination:
-        for chunk in image.chunks():
-            destination.write(chunk)
-    return filename
-
-
-def process_api(request, cls, obj_id):
-    """
-    The API interface for the upholstery model.
-    """
-    print obj_id
-    if request.method == "GET":
-        if obj_id == 0:
-            data = [obj.to_dict(request.user) for obj in cls.objects.all()]
-            return HttpResponse(json.dumps(data), content_type='application/json')
-        else:
-            try:
-                obj = cls.objects.get(id=obj_id)
-            except:
-                return HttpResponseNotFound()
-
-            return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json')
-
-    elif request.method == "POST":
-        try:
-            data = json.loads(request.body)
-        except:
-            return HttpResponseBadRequest("No data sent")
-
-        if obj_id == 0:
-            try:
-                obj = cls.create(user=request.user, **data)
-            except AttributeError as e:
-                return HttpResponseBadRequest(e.message)
-            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
-        else:
-            obj = get_object_or_404(Upholstery, pk=obj_id)
-            try:
-                obj.update(user=request.user, **data)
-            except AttributeError as e:
-                return HttpResponseBadRequest(e.message)
-            return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
-
-    elif request.method == "DELETE":
-            obj = get_object_or_404(cls, pk=id)
-            obj.delete()
-            return HttpResponse("Upholstery deleted.", status=200)
 
 
 @login_required
@@ -89,6 +33,7 @@ def model_image(request):
                                 content_type="application/json")
         response.status_code = 201
         return response
+
 
 @login_required
 def configuration(request, configuration_id=0):
