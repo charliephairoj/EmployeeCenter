@@ -515,9 +515,9 @@ class Item(models.Model):
 
         self.total = self.unit_price * Decimal(self.quantity)
 
-        self.width = self.product.width
-        self.depth = self.product.depth
-        self.height = self.product.height
+        self.width = self.product.width if self.product.width else 0
+        self.depth = self.product.depth if self.product.depth else 0
+        self.height = self.product.height if self.product.height else 0
 
         try:
             self.image = self.product.image
