@@ -145,6 +145,7 @@ class Room(models.Model):
         
         if "image" in kwargs:
             try:
+                print kwargs
                 room.image = S3Object.objects.get(pk=kwargs["image"]["id"])
             except KeyError:
                 raise ValueError("Missing image ID.")

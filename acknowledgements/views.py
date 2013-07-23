@@ -7,7 +7,7 @@ import dateutil.parser
 from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Q
 from acknowledgements.models import Acknowledgement, Item, Delivery
 from auth.models import S3Object
 from utilities.http import save_upload, process_api
@@ -83,9 +83,8 @@ def item(request, ack_item_id=0):
         params = request.GET
         items = Item.objects.all()
         if "status" in params:
-            if params["status"].lower() == 'inventory':
-                items = items.exclude(status='SHIPPED')
-                items = items.exclude(status='ACKNOWLEDGED')
+            if params["status"].lower() == 'inventory' :
+                items = items.exclude(Q(status='SHIPPED'), Q(status='ACKNOWLEDGED'))
         if "last_modified" in params:
             timestamp = dateutil.parser.parse(params["last_modified"])
             items = items.filter(last_modified__gte=timestamp)

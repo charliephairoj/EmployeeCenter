@@ -133,31 +133,37 @@ def process_api(request, cls, obj_id):
                 data = [obj.to_dict(user=request.user) for obj in cls.objects.all()]
             return HttpResponse(json.dumps(data), content_type='application/json')
         else:
-            obj = get_object_or_404(cls, pk=obj_id)
+            try:
+                obj = cls.objects.get(pk=obj_id)
+            except cls.DoesNotExist:
+                return HttpResponse(content_type='aplication/json', status=404)
             return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json')
 
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
         except:
-            return HttpResponseBadRequest("No data sent")
+            return HttpResponse(status=500)
 
         if obj_id == 0:
             try:
                 obj = cls.create(user=request.user, **data)
-            except AttributeError as e:
-                return HttpResponseBadRequest(e.message)
+            except (AttributeError, ValueError) as e:
+                return HttpResponse(status=500)
             return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
         else:
             obj = get_object_or_404(cls, pk=obj_id)
             try:
                 obj.update(user=request.user, **data)
             except AttributeError as e:
-                return HttpResponseBadRequest(e.message)
+                return HttpResponse(status=500)
             return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
 
     elif request.method == "DELETE":
-            obj = get_object_or_404(cls, pk=obj_id)
+            try:
+                obj = cls.objects.get(pk=obj_id)
+            except cls.DoesNotExist:
+                return HttpResponse(content_type='aplication/json', status=404)
             obj.deleted = True
             obj.save()
             return HttpResponse("Upholstery deleted.", status=200)

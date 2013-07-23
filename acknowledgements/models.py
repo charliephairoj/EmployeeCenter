@@ -372,6 +372,7 @@ class Item(models.Model):
     location = models.TextField(null=True)
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
+    inventory = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     class Meta:
@@ -427,15 +428,19 @@ class Item(models.Model):
         if "status" in kwargs:
             if kwargs["status"] != self.status:
                 self.status = kwargs["status"]
+                if self.status.lower() in ('rejected', 'cancelled', 'inventory'):
+                    self.inventory = True
                 try:
-                    message = "Item# {0} from Acknowledgement #{1} has been {2} due to:{3}".format(self.id, 
-                                                                                                    self.acknowledgement.id, 
-                                                                                                    self.status,
-                                                                                                    kwargs['status_message'])
+                    message = "Item# {0} from Acknowledgement #{1} has been {2} due to:{3}"
+                    message.format(self.id,
+                                   self.acknowledgement.id,
+                                   self.status,
+                                   kwargs['status_message'])
                 except:
-                    message = "Item# {0} from Acknowledgement #{1} has been {2}".format(self.id, 
-                                                                                         self.acknowledgement.id, 
-                                                                                         self.status)
+                    message = "Item# {0} from Acknowledgement #{1} has been {2}"
+                    message.format(self.id,
+                                   self.acknowledgement.id,
+                                   self.status)
                 AcknowledgementLog.create(message, self.acknowledgement, employee)
 
         self.save()
@@ -456,8 +461,9 @@ class Item(models.Model):
             pass
 
     def ship(self, delivery_date, employee):
-        status = 'SHIPPED'
-        message = "Ack Item# {0}({1}) shipped on {2}".format(self.id, self.description, delivery_date.strftime(''))
+        self.status = 'SHIPPED'
+        message = "Ack Item# {0}({1}) shipped on {2}"
+        message.format(self.id, self.description, delivery_date.strftime(''))
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
     def to_dict(self, user=None):
@@ -525,6 +531,8 @@ class Item(models.Model):
         cannot be applied"""
         if "status" in kwargs:
             self.status = kwargs["status"]
+            if self.status.lower() == "inventory":
+                self.inventory = True
         if "comments" in kwargs:
             self.comments = kwargs["comments"]
 
@@ -544,10 +552,10 @@ class Item(models.Model):
             self.unit_price = Decimal(kwargs["custom_price"])
             self.total = self.unit_price * Decimal(self.quantity)
         else:
-            try:
-                self._calculate_custom_price()
-            except TypeError as e:
-                print e 
+            #try:
+            self._calculate_custom_price()
+            #except TypeError as e:
+                #print e 
 
         #Create a Item from a custom product
         if "is_custom" in kwargs:
@@ -567,8 +575,6 @@ class Item(models.Model):
             self.pillows = [self._create_pillow(keys[0],
                                                 pillows[keys],
                                                 keys[1]) for keys in pillows]
-
-            print pillows
 
     def _calculate_custom_price(self):
         """Caluates the custom price based on dimensions."""

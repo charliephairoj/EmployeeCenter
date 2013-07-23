@@ -144,6 +144,7 @@ urlpatterns += patterns("projects.views",
     url(r'^project/(?P<project_id>\d+)$', "project"),
 
     url(r'^project/room$', 'room'),
+    url(r'^project/room/image$', 'room_image'),
     url(r'^project/room/(?P<room_id>\d+)$', "room"),
 
     url(r'^project/item$', 'item'),

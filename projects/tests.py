@@ -183,7 +183,7 @@ class ItemTest(TestCase):
         """
         Tests that an update fails with data
         """
-        product_data = {"product": {"id":1}}
+        product_data = {"product": {"id": 1}}
         self.custom_item.update(product=product_data)
         self.assertEqual(self.custom_item.product.id, 2)
         self.assertNotEqual(self.custom_item, self.product)
@@ -209,7 +209,7 @@ class ItemTest(TestCase):
 
     def _create_custom_item(self):
         """
-        Tests Creates a custom item and the accompanying 
+        Tests Creates a custom item and the accompanying
         """
         #Test item
         self.assertIsInstance(self.custom_item, Item)
@@ -220,7 +220,7 @@ class ItemTest(TestCase):
         #Test item product
         self.assertIsInstance(self.custom_item.product, Product)
         self.assertEqual(self.custom_item.product.id, 2)
-        self.assertEqual(self.custom_item.product.type, "upholstery")
+        self.assertEqual(self.custom_item.product.type.lower(), "upholstery")
         self.assertEqual(self.custom_item.product.width, 100)
         self.assertEqual(self.custom_item.product.depth, 200)
         self.assertEqual(self.custom_item.product.height, 300)
