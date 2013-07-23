@@ -540,11 +540,11 @@ class Item(models.Model):
         if "is_custom_size" in kwargs:
             if kwargs["is_custom_size"] == True:
                 self.is_custom_size = True
-                if "width" in kwargs and kwargs['width'] > 0 and kwargs["width"]:
+                if "width" in kwargs:
                     self.width = int(kwargs['width'])
-                if "depth" in kwargs and kwargs['depth'] > 0 and kwargs["depth"]:
+                if "depth" in kwargs:
                     self.depth = int(kwargs['depth'])
-                if "height" in kwargs and kwargs['height'] > 0 and kwargs["height"]:
+                if "height" in kwargs:
                     self.height = int(kwargs['height'])
 
         #Calculate the price of the item
@@ -578,9 +578,20 @@ class Item(models.Model):
 
     def _calculate_custom_price(self):
         """Caluates the custom price based on dimensions."""
-        dimensions = {'width_difference': self.width - self.product.width,
-                      'depth_difference': self.depth - self.product.depth,
-                      'height_difference': self.height - self.product.height}
+        dimensions = {}
+        try:
+            dimensions['width_difference'] = self.width - self.product.width
+        except:
+            dimensions['width_difference'] = 0
+        try:
+            dimensions['depth_difference'] = self.depth - self.product.depth
+        except:
+            dimensions['depth_difference'] = 0
+        try:
+            dimensions['height_difference'] = self.height - self.product.height
+        except:
+            dimensions['height_difference'] = 0
+
         if self.product.collection == "Dellarobbia Thailand":
             upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 10, 1) for key in dimensions)
         elif self.product.collection == "Dwell Living":
