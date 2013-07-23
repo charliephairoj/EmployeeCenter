@@ -540,12 +540,18 @@ class Item(models.Model):
         if "is_custom_size" in kwargs:
             if kwargs["is_custom_size"] == True:
                 self.is_custom_size = True
-                if "width" in kwargs:
+                try:
                     self.width = int(kwargs['width'])
-                if "depth" in kwargs:
+                except (ValueError, KeyError):
+                    pass
+                try:
                     self.depth = int(kwargs['depth'])
-                if "height" in kwargs:
+                except (ValueError, KeyError):
+                    pass
+                try:
                     self.height = int(kwargs['height'])
+                except (ValueError, KeyError):
+                    pass
 
         #Calculate the price of the item
         if "custom_price" in kwargs:
