@@ -186,12 +186,12 @@ class AcknowledgementTest(TestCase):
         self.assertIsInstance(acknowledgement.production_pdf, S3Object)
         self.assertIsInstance(acknowledgement.original_acknowledgement_pdf, S3Object)
 
+
 class ItemTest(TestCase):
     def setUp(self):
         """
         Sets up for the item test
         """
-        self.skipTest('test ack')
         self.user = create_user()
         self.customer = Customer(first_name="John", last_name="Smith", currency="USD", type="Dealer")
         self.customer.save()
@@ -220,13 +220,37 @@ class ItemTest(TestCase):
         self.assertEqual(self.item.depth, 760)
         self.assertEqual(self.item.height, 320)
 
+    def test_create_incomplete_dimension_item(self):
+        """
+        Tests that a item is correctly created
+        if it is missing a dimensions, or a dimensions 
+        is None.
+        """
+        item_d = {'id': 1,
+                  'quantity': 1,
+                  'is_custom_size': True,
+                  'width': 1750,
+                  'height': None}
+
+        item = Item.create(self.acknowledgement, **item_d)
+        self.assertIsInstance(item, Item)
+        self.assertEqual(item.width, 1750)
+        self.assertEqual(item.depth, 760)
+        self.assertEqual(item.height, 320)
+        self.assertTrue(item.is_custom_size)
+
     def test_calculate_upcharge(self):
+        """
+        Tests that the item can correctly
+        calculate a custom sized item
+        """
         self.assertEqual(self.item._calculate_upcharge(90, 150, 10, 1), 10)
         self.assertEqual(self.item._calculate_upcharge(150, 150, 10, 1), 10)
         self.assertEqual(self.item._calculate_upcharge(160, 150, 10, 1), 11)
         self.assertEqual(self.item._calculate_upcharge(300, 150, 10, 1), 13)
 
     def test_custom_price(self):
+        
         self.assertEqual(self.item.unit_price, 29250)
         item_data = {'id': 1, 'quantity': 2, 'is_custom_size':True, 'width': 1500,
                                  'height': 400, 'depth': 760, 'custom_price': 1}
@@ -241,7 +265,7 @@ class ItemTest(TestCase):
         for pillow in pillows:
             self.assertNotNone(pillow.type)
             self.assertNotNone(pillow.quantity)
-            
+
             if pillow.fabric == None:
                 self.assertEqual(pillow.quantity, 1)
             elif pillow.fabric.id == 1 and pillow.type == "back":

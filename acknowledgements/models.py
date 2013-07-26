@@ -557,7 +557,7 @@ class Item(models.Model):
             #try:
             self._calculate_custom_price()
             #except TypeError as e:
-                #print e 
+                #print e
 
         #Create a Item from a custom product
         if "is_custom" in kwargs:
@@ -635,11 +635,11 @@ class Item(models.Model):
                     except KeyError:
                         pillows[(pillow["type"], None)] = 1
         return pillows
-    
+
     def _create_pillow(self, type, quantity, fabric_id=None):
         """
         Creates and returns a pillow
-        
+
         This method will create a pillow. If there is a corresponding fabric
         it is added to the pillow, if not then the pillow is returned without one
         """

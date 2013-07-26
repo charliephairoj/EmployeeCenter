@@ -35,7 +35,14 @@ class Project(models.Model):
 
     @classmethod
     def create(cls, **kwargs):
+        """
+        Creates a project and assigns
+        the relevant attributes passed into the function.
+        Raises an error if required data is missing
+        """
         project = cls()
+
+        #Required Attributes
         try:
             project.customer = Customer.objects.get(pk=kwargs["customer"]["id"])
         except KeyError:
@@ -46,17 +53,16 @@ class Project(models.Model):
             project.type = kwargs["type"]
         except KeyError:
             raise ValueError("Missing project type")
-        if "reference" in kwargs:
-            project.reference = kwargs["reference"]
-        
-        if "codename" in kwargs:
-            project.codename = kwargs["codename"]
-        except KeyError:
-            raise ValueError("Missing project codename.")
         try:
             project.due_date = kwargs["due_date"]
         except KeyError:
             raise ValueError("Missing due date.")
+
+        #Optional attributes
+        if "reference" in kwargs:
+            project.reference = kwargs["reference"]
+        if "codename" in kwargs:
+            project.codename = kwargs["codename"]
 
         project.save()
         return project
