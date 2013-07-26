@@ -118,16 +118,18 @@ class ItemTest(TestCase):
         self.customer = Customer.create(**base_customer)
         self.project = Project.create(**base_project)
         self.room = Room.create(**base_room)
-        self.model = Model.create(model="AC-2010", name="Gloria", collection="Dellarobbia Thailand")
+        self.model = Model.create(model="AC-2010",
+                                  name="Gloria",
+                                  collection="Dellarobbia Thailand")
         self.configuration = Configuration.create(configuration="Sofa")
         uphol_data = product_data.copy()
         uphol_data["configuration"] = {"id": 1}
         uphol_data["model"] = {"id": 1}
         self.product = Upholstery.create(**uphol_data)
-        
+
         #Regular item
         self.item = Item.create(**base_item)
-        
+
         #Creates custom item
         custom_item_data = base_item.copy()
         custom_item_data["type"] = "Custom"
@@ -148,7 +150,7 @@ class ItemTest(TestCase):
         product_item_data["product"] = {"id": 1}
         product_item_data["reference"] = "F-01"
         self.product_item = Item.create(**product_item_data)
-        
+
         #Creates build-in item
         item_data = base_item.copy()
         item_data["type"] = "Build-In"
@@ -224,7 +226,8 @@ class ItemTest(TestCase):
         self.assertEqual(self.custom_item.product.width, 100)
         self.assertEqual(self.custom_item.product.depth, 200)
         self.assertEqual(self.custom_item.product.height, 300)
-        self.assertEqual(len(self.custom_item.product.pillow_set.filter(type="back")), 1)
+        pillows = self.custom_item.product.pillow_set.filter(type="back")
+        self.assertEqual(len(pillows), 1)
 
     def _update_custom_item(self):
         """

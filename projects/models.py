@@ -112,7 +112,8 @@ class Project(models.Model):
         items = [room.item_set.all() for room in self.room_set.all()]
         for item in items:
             if item.type.lower() == "upholstery":
-                description = "{0} {1}".format(item.model.model, item.configuration.configuration)
+                description = "{0} {1}".format(item.model.model,
+                                               item.configuration.configuration)
                 item.update(description=description)
 
 
@@ -131,23 +132,23 @@ class Room(models.Model):
         Creates and returns a new room
         """
         room = cls()
+        #Required attributes
         try:
             room.project = Project.objects.get(pk=kwargs["project"]["id"])
         except KeyError:
             raise ValueError("Missing project ID.")
         except Project.DoesNotExist:
             raise ValueError("Project not found.")
-
         try:
             room.description = kwargs["description"]
         except KeyError:
             raise ValueError("Missing room description.")
-        
         try:
             room.reference = kwargs["reference"]
         except KeyError:
             raise ValueError("Missing room reference")
-        
+
+        #Optional attributes
         if "image" in kwargs:
             try:
                 print kwargs
@@ -195,6 +196,7 @@ class Room(models.Model):
                                  "url": self.image.generate_url()}
         """
         return data
+
 
 class Item(models.Model):
     _due_date = models.DateField(db_column='due_date')
@@ -275,7 +277,7 @@ class Item(models.Model):
         #Build custom product
         if item.type.lower() == "custom":
             if kwargs["product"]["type"].lower() == "upholstery":
-                item.product = item._create_custom_upholstery(kwargs["product"])
+                item.product = item._create_new_upholstery(kwargs["product"])
                 item.description = item.product.description
 
         #Add regular product
@@ -356,7 +358,7 @@ class Item(models.Model):
                 "description": self.description,
                 "type": self.type,
                 "last_modified": self.last_modified.isoformat()}
-        
+
         if self.image:
             data["image"] = {"id": self.image.id,
                              "url": self.image.generate_url()}
@@ -365,10 +367,10 @@ class Item(models.Model):
                                  "url": self.schematic.generate_url()}
         if self.product:
             data["product"] = self.product.to_dict()
-            
+
         return data
-    
-    def _create_custom_upholstery(self, product_data):
+
+    def _create_new_upholstery(self, product_data):
         """
         Creates a corresponding custom upholstery item
         """
