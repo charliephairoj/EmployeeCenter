@@ -71,7 +71,9 @@ def create_user(block_permissions=[]):
     """
     Creates a user
     """
-    user = User.objects.create_user('test{0}'.format(random.randint(1, 100000)), 'test', 'test')
+    user = User.objects.create_user('test{0}'.format(random.randint(1, 99999)),
+                                    'test',
+                                    'test')
     user.is_staff = True
     user.save()
 
@@ -137,8 +139,10 @@ class AcknowledgementTest(TestCase):
         self.assertEqual(len(acknowledgement.item_set.all()), 2)
         self.assertEqual(acknowledgement.item_set.all()[0].quantity, 2)
         self.assertEqual(acknowledgement.item_set.all()[1].quantity, 1)
-        self.assertEqual(acknowledgement.item_set.all()[0].description, "test1")
-        self.assertEqual(acknowledgement.item_set.all()[1].description, "test1")
+        self.assertEqual(acknowledgement.item_set.all()[0].description,
+                         "test1")
+        self.assertEqual(acknowledgement.item_set.all()[1].description,
+                         "test1")
 
         #Totals
         self.assertEqual(acknowledgement.subtotal, 79250)
@@ -290,6 +294,7 @@ class ItemTest(TestCase):
         for pillow in pillows:
             self.assertNotNone(pillow.type)
             self.assertNotNone(pillow.quantity)
+            self.assertIsInstance(pillow, Pillow)
 
             if pillow.fabric == None:
                 self.assertEqual(pillow.quantity, 1)
