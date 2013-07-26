@@ -538,15 +538,15 @@ class Item(models.Model):
                 self.is_custom_size = True
                 try:
                     self.width = int(kwargs['width'])
-                except (ValueError, KeyError):
+                except (ValueError, KeyError, TypeError):
                     pass
                 try:
                     self.depth = int(kwargs['depth'])
-                except (ValueError, KeyError):
+                except (ValueError, KeyError, TypeError):
                     pass
                 try:
                     self.height = int(kwargs['height'])
-                except (ValueError, KeyError):
+                except (ValueError, KeyError, TypeError):
                     pass
 
         #Calculate the price of the item

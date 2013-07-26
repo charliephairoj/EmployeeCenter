@@ -142,13 +142,15 @@ def process_api(request, cls, obj_id):
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
-        except:
+        except Except as e:
+            print e
             return HttpResponse(status=500)
 
         if obj_id == 0:
             try:
                 obj = cls.create(user=request.user, **data)
             except (AttributeError, ValueError) as e:
+                print e
                 return HttpResponse(status=500)
             return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
         else:
@@ -156,6 +158,7 @@ def process_api(request, cls, obj_id):
             try:
                 obj.update(user=request.user, **data)
             except AttributeError as e:
+                print e
                 return HttpResponse(status=500)
             return HttpResponse(json.dumps(obj.to_dict(user=request.user)), content_type="application/json", status=201)
 

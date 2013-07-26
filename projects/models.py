@@ -46,11 +46,10 @@ class Project(models.Model):
             project.type = kwargs["type"]
         except KeyError:
             raise ValueError("Missing project type")
-        try:
+        if "reference" in kwargs:
             project.reference = kwargs["reference"]
-        except KeyError:
-            raise ValueError("Missing project reference.")
-        try:
+        
+        if "codename" in kwargs:
             project.codename = kwargs["codename"]
         except KeyError:
             raise ValueError("Missing project codename.")
