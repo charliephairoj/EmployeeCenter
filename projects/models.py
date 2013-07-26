@@ -294,8 +294,20 @@ class Item(models.Model):
                 item.description = kwargs["description"]
             except KeyError:
                 raise ValueError("Missing build-in description")
+            if "schematic" in kwargs:
+                try:
+                    obj_id = kwargs["schematic"]["id"]
+                    item.schematic = S3Object.objects.get(pk=obj_id)
+                except KeyError:
+                    raise ValueError("Expecting id for the schematic object")
+            if "image" in kwargs:
+                try:
+                    obj_id = kwargs["image"]["id"]
+                    item.schematic = S3Object.objects.get(pk=obj_id)
+                except KeyError:
+                    raise ValueError("Expecting an id for the image object")
         else:
-            raise ValueError("Type must be 'Custom', 'Product', or 'Build-In'.")
+            raise ValueError("Type must be 'Custom, Product, or Build-In")
 
         item.save()
         return item
@@ -364,7 +376,8 @@ class Item(models.Model):
                              "url": self.image.generate_url()}
         if self.schematic:
             data["schematic"] = {"id": self.schematic.id,
-                                 "url": self.schematic.generate_url()}
+                                 "url": self.schematic.generate_url(),
+                                 'last_modified': self.schematic.las_modified.isoformat()}
         if self.product:
             data["product"] = self.product.to_dict()
 

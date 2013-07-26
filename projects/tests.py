@@ -155,15 +155,17 @@ class ItemTest(TestCase):
         filename = "{0}test.jpg".format(settings.MEDIA_ROOT)
         self.schematic = S3Object.create(filename,
                                          "test_schematic.jpg",
-                                         "media.dellarobbiathailand.com")
+                                         "media.dellarobbiathailand.com",
+                                         False)
         self.schematic2 = S3Object.create(filename,
                                           'test_schematic2.jpg',
-                                          'media.dellarobbiathailand.com')
+                                          'media.dellarobbiathailand.com',
+                                          False)
         item_data = base_item.copy()
         item_data["type"] = "Build-In"
         item_data["description"] = "TV Console"
         item_data["reference"] = "B-10"
-        item_data["schematic"] = {id: 1}
+        item_data["schematic"] = {'id': 1}
 
         self.build_in_item = Item.create(**item_data)
 
@@ -188,7 +190,6 @@ class ItemTest(TestCase):
         new_dd = base_due_date + datetime.timedelta(days=10)
         self.item.update(delivery_date=new_dd)
         self.assertEqual(self.item.delivery_date, new_dd.date())
-
 
     def test_invalid_update_custom_item(self):
         """

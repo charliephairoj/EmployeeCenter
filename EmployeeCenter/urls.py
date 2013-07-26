@@ -149,6 +149,8 @@ urlpatterns += patterns("projects.views",
 
     url(r'^project/item$', 'item'),
     url(r'^project/item/(?P<item_id>\d+)$', "item"),
+    url(r'^project/item/schematic(?P<schematic_id>\d+)$', "item_schematic"),
+    url(r'^project/item/schematic$', "item_schematic"),
 )
 #this section deals with the administration routing area
 

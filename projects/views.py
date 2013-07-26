@@ -40,3 +40,29 @@ def room_image(request):
 
 def item(request, item_id=0):
     return process_api(request, Item, item_id)
+
+
+def item_schematic(request, schematic_id=0):
+    """
+    Handles uploading item_schematic
+    """
+    filename = save_upload(request)
+    try:
+        schematic = S3Object.objects.get(pk=schematic_id)
+    except S3Object.DoesNotExist:
+        try:
+            obj_id = request.POST.get('id')
+            schematic = S3Object.objects.get(pk=obj_id)
+        except:
+            key = 'project/item/schematic/{0}.jpg'.format(time.time())
+
+            schematic = S3Object.create(filename,
+                                        key,
+                                        'media.dellarobbiathailand.com',
+                                         encrypt_key=True)
+    return HttpResponse(json.dumps(schematic.dict()),
+                        mimetype='application/json',
+                        status=201)
+    
+    
+    

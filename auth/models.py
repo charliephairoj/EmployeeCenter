@@ -1,4 +1,6 @@
 import os
+import datetime
+import dateutil.parser
 
 from django.db import models
 from django.contrib import admin
@@ -17,7 +19,9 @@ class Log(models.Model):
 class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField()
-    last_modified = models.DateTimeField(null=True)
+    last_modified = models.DateTimeField(auto_now_add=True, auto_now=True)
+    version_id = models.IntegerField()
+   
 
     @classmethod
     def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False):
@@ -37,15 +41,41 @@ class S3Object(models.Model):
         obj.save()
         return obj
 
-    def upload(self, filename):
-        key = self._get_key()
-        key.set_contens_from_filename(filename)
+    def upload(self, filename, delete_original=True, encrypt_key=True):
+        """
+        Uploads a file for this key
+        """
+        self._upload(filename, delete_original, encrypt_key)
+        self.save()
 
     def generate_url(self, time=1800):
-        """generate a url for the object"""
+        """
+        Generates a url for the object
+        """
         conn = self._get_connection()
-        url = conn.generate_url(time, 'GET', bucket=self.bucket, key=self.key, force_http=True)
-        return url
+        return conn.generate_url(time,
+                                 'GET',
+                                 bucket=self.bucket,
+                                 key=self.key,
+                                 force_http=True)
+
+    def dict(self):
+        """
+        Return the objects attributes
+        as a dictionary
+        """
+
+        return {'id': self.id,
+                'url': self.generate_url(),
+                'last_modified': self.last_modified.isoformat()}
+
+    def to_dict(self):
+        """
+        Wrapper for dict
+
+        Deprecate in future
+        """
+        return self.dict()
 
     def delete(self, **kwargs):
         bucket = self._get_bucket()
@@ -89,6 +119,8 @@ class S3Object(models.Model):
         k.key = self.key
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
+        self.last_modified = dateutil.parser.parse(k.last_modified)
+        self.version_id = k.version_id
         if delete_original:
             os.remove(filename)
 
