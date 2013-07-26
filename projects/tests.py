@@ -152,10 +152,18 @@ class ItemTest(TestCase):
         self.product_item = Item.create(**product_item_data)
 
         #Creates build-in item
+        filename = "{0}test.jpg".format(settings.MEDIA_ROOT)
+        self.schematic = S3Object.create(filename,
+                                         "test_schematic.jpg",
+                                         "media.dellarobbiathailand.com")
+        self.schematic2 = S3Object.create(filename,
+                                          'test_schematic2.jpg',
+                                          'media.dellarobbiathailand.com')
         item_data = base_item.copy()
         item_data["type"] = "Build-In"
         item_data["description"] = "TV Console"
         item_data["reference"] = "B-10"
+        item_data["schematic"] = {id: 1}
 
         self.build_in_item = Item.create(**item_data)
 
@@ -181,6 +189,7 @@ class ItemTest(TestCase):
         self.item.update(delivery_date=new_dd)
         self.assertEqual(self.item.delivery_date, new_dd.date())
 
+
     def test_invalid_update_custom_item(self):
         """
         Tests that an update fails with data
@@ -198,6 +207,7 @@ class ItemTest(TestCase):
         self.assertEqual(self.build_in_item.type, "Build-In")
         self.assertEqual(self.build_in_item.description, "TV Console")
         self.assertEqual(self.build_in_item.reference, "B-10")
+        self.assertIsNotNone(self.build_in_item.schematic)
 
     def _create_product_item(self):
         """
@@ -240,4 +250,11 @@ class ItemTest(TestCase):
         self.assertEqual(self.custom_item.width, 1100)
         self.assertEqual(self.custom_item.depth, 1200)
         self.assertEqual(self.custom_item.height, 1300)
+
+    def tearDown(self):
+        """
+        Clean up after tests
+        """
+        self.schematic.delete()
+        self.schematic2.delete()
 
