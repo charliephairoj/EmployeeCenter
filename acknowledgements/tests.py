@@ -86,7 +86,7 @@ class AcknowledgementTest(TestCase):
     def setUp(self):
         """
         Set up for the Acknowledgement Test
-        
+
         Objects created:
         -User
         -Customer
@@ -147,7 +147,7 @@ class AcknowledgementTest(TestCase):
     def test_create_custom_price_acknowledgemet(self):
         """
         Tests creating a new acknowledgement with a custom priced item
-        
+
         We expect that the total should be the same as the stamdard acknowledgement
         test except the price will increase by 100
         """
@@ -159,7 +159,7 @@ class AcknowledgementTest(TestCase):
                                 "depth": 0,
                                 "height": 600,
                                 "custom_price": 100})
-        
+
         acknowledgement = Acknowledgement.create(self.user, **ack)
         self._test_basic_order_details(acknowledgement)
         self._test_pdf_details(acknowledgement)
@@ -193,7 +193,10 @@ class ItemTest(TestCase):
         Sets up for the item test
         """
         self.user = create_user()
-        self.customer = Customer(first_name="John", last_name="Smith", currency="USD", type="Dealer")
+        self.customer = Customer(first_name="John",
+                                 last_name="Smith",
+                                 currency="USD",
+                                 type="Dealer")
         self.customer.save()
         self.address = Address(address1="Jiggle", contact=self.customer)
         self.address.save()
@@ -208,11 +211,19 @@ class ItemTest(TestCase):
         ack["products"] = []
 
         self.acknowledgement = Acknowledgement.create(self.user, **ack)
-        item_d = {'id': 1, 'quantity': 2, 'is_custom_size':True, 'width': 1500,
-                                 'height': 320, 'depth': 760}
+        item_d = {'id': 1,
+                  'quantity': 2,
+                  'is_custom_size': True,
+                  'width': 1500,
+                  'height': 320,
+                  'depth': 760}
         self.item = Item.create(self.acknowledgement, **item_d)
 
     def test_create_item(self):
+        """
+        Tests that an item is correctly
+        created
+        """
         self.assertIsNotNone(self.item.quantity)
         self.assertIsNotNone(self.item.id)
         self.assertEqual(self.item.quantity, 2)
@@ -223,7 +234,7 @@ class ItemTest(TestCase):
     def test_create_incomplete_dimension_item(self):
         """
         Tests that a item is correctly created
-        if it is missing a dimensions, or a dimensions 
+        if it is missing a dimensions, or a dimensions
         is None.
         """
         item_d = {'id': 1,
@@ -242,7 +253,8 @@ class ItemTest(TestCase):
     def test_calculate_upcharge(self):
         """
         Tests that the item can correctly
-        calculate a custom sized item
+        calculate the upcharge percentage
+        for a custom sized item
         """
         self.assertEqual(self.item._calculate_upcharge(90, 150, 10, 1), 10)
         self.assertEqual(self.item._calculate_upcharge(150, 150, 10, 1), 10)
@@ -250,14 +262,27 @@ class ItemTest(TestCase):
         self.assertEqual(self.item._calculate_upcharge(300, 150, 10, 1), 13)
 
     def test_custom_price(self):
-        
+        """
+        Tsts that an item can correctly calculate
+        the price of a custom size item
+        """
         self.assertEqual(self.item.unit_price, 29250)
-        item_data = {'id': 1, 'quantity': 2, 'is_custom_size':True, 'width': 1500,
-                                 'height': 400, 'depth': 760, 'custom_price': 1}
+        item_data = {'id': 1,
+                     'quantity': 2,
+                     'is_custom_size': True,
+                     'width': 1500,
+                     'height': 400,
+                     'depth': 760,
+                     'custom_price': 1}
         self.item = Item.create(self.acknowledgement, **item_data)
         self.assertEqual(self.item.unit_price, 1)
 
     def test_pillows(self):
+        """
+        Tests the the pillows are correctly
+        created, with the correct fabric
+        when an item is created
+        """
         pillow_item_data = base_ack["products"][0].copy()
         self.item_pillow = Item.create(self.acknowledgement, **pillow_item_data)
         self.assertEqual(len(self.item_pillow.pillow_set.all()), 4)
@@ -277,3 +302,11 @@ class ItemTest(TestCase):
             else:
                 raise ValueError("Unexpected pillow")
 
+    def test_missing_quantity(self):
+        """
+        Tests that an error is raised if
+        an item with a missing quantity
+        is created
+        """
+        item_data = {id: 1}
+        self.assertRaises(ValueError, lambda: Item.create(item_data))
