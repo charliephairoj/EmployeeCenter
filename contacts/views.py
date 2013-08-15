@@ -19,7 +19,7 @@ def customer(request, customer_id=0):
 
 
 @login_required
-def supplier(request, supplier_id='0'):
+def supplier(request, supplier_id=0):
     return process_api(request, Supplier, supplier_id)
 
 

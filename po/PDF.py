@@ -23,7 +23,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.graphics.barcode import code39
+from reportlab.graphics.barcode import code128
 
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
@@ -75,11 +75,11 @@ class PODocTemplate(BaseDocTemplate):
 
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        barcode = code39.Extended39('*PO-{0}*'.format(self.id),
-                                    barWidth=1, barHeight=30)
+        code = 'PO-{0}'.format(self.id)
+        barcode = code128.Code128(code, barHeight=20)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
-        barcode.drawOn(canvas, x_position, 740)
+        barcode.drawOn(canvas, x_position, 750)
 
 
 class PurchaseOrderPDF():
@@ -169,8 +169,8 @@ class PurchaseOrderPDF():
         #Create data array
         data = []
         #Add Employee Name
-        ship_str = "{0} {1}".format(self.employee.first_name,
-                                  self.employee.last_name)
+        print self.employee
+        ship_str = "{0}"#.format(self.employee.name)
         data.append(['Ship To:', ship_str])
         #Add Company Data
         data.append(['', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
@@ -207,8 +207,8 @@ class PurchaseOrderPDF():
         #Add Data
         data.append(['Payment Terms:', self._get_payment_terms()])
         data.append(['Currency:', self._get_currency()])
-        data.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
-        data.append(['Delivery Date:', self.po.delivery_date.strftime('%B %d, %Y')])
+        #sdata.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
+        #data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
         #Create table
         table = Table(data, colWidths=(80, 200))
         #Create and set table style
@@ -264,6 +264,7 @@ class PurchaseOrderPDF():
                       ('ALIGNMENT', (3, 0), (-1, 0), 'CENTER'),
                       #align totals to the right
                       ('ALIGNMENT', (-1, 1), (-1, -1), 'RIGHT'),
+                      ('ALIGNMENT', (-1, 0), (-1, 0), 'RIGHT'),
                       ('LEFTPADDING', (2, 0), (2, -1), 10)]
         style_data += totals_style
         #Create and apply table style

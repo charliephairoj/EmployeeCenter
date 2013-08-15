@@ -285,6 +285,8 @@ class Item(models.Model):
             try:
                 item.product = Product.objects.get(pk=kwargs["product"]["id"])
                 item.description = item.product.description
+                if item.product.image:
+                    item.image = item.product.image
             except KeyError:
                 raise ValueError("Missing product ID")
 
@@ -373,7 +375,8 @@ class Item(models.Model):
 
         if self.image:
             data["image"] = {"id": self.image.id,
-                             "url": self.image.generate_url()}
+                             "url": self.image.generate_url(),
+                             'last_modified': self.image.last_modified.isoformat()}
         if self.schematic:
             data["schematic"] = {"id": self.schematic.id,
                                  "url": self.schematic.generate_url(),

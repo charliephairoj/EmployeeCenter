@@ -24,7 +24,7 @@ class S3Object(models.Model):
    
 
     @classmethod
-    def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False):
+    def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False, upload=True):
         """
         Creates S3object for a file
         """
@@ -37,7 +37,8 @@ class S3Object(models.Model):
             obj.bucket = bucket
         else:
             raise AttributeError("Missing object bucket")
-        obj._upload(filename, delete_original, encrypt_key=encrypt_key)
+        if upload:
+            obj._upload(filename, delete_original, encrypt_key=encrypt_key)
         obj.save()
         return obj
 
@@ -119,6 +120,7 @@ class S3Object(models.Model):
         k.key = self.key
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
+        print k.last_modified
         self.last_modified = dateutil.parser.parse(k.last_modified)
         self.version_id = k.version_id
         if delete_original:

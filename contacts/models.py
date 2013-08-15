@@ -24,6 +24,8 @@ class Contact(models.Model):
             contact.name = kwargs["name"]
         except KeyError:
             raise AttributeError("Missing name.")
+        if "telephone" in kwargs:
+            contact.telephone = kwargs["telephone"]
         if "fax" in kwargs:
             contact.fax = kwargs["fax"]
         if "email" in kwargs:
@@ -246,6 +248,13 @@ class Supplier(Contact):
         """
         supplier = super(Supplier, cls).create(commit=False, **kwargs)
         supplier.is_supplier = True
+        
+        if 'terms' in kwargs:
+            supplier.terms = int(kwargs['terms'])
+        
+        if 'discount' in kwargs:
+            supplier.discount = kwargs['discount']
+        
         supplier.save()
         return supplier
 
