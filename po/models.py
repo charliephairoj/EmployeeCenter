@@ -23,6 +23,7 @@ class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier)
     order_date = models.DateTimeField(default=datetime.datetime.today())
     receive_date = models.DateTimeField(null=True)
+    terms = models.IntegerField()
     vat = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
     shipping_type = models.CharField(max_length=10, default="none")
@@ -54,6 +55,7 @@ class PurchaseOrder(models.Model):
         try:
             order.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
             order.currency = order.supplier.currency
+            order.terms = order.supplier.terms
         except KeyError: 
             raise ValueError("Expecting supplier ID")
         try:

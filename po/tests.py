@@ -86,6 +86,7 @@ class PurchaseOrderTest(TestCase):
         
         #Test po vars
         self.assertEqual(self.po.currency, 'THB')
+        self.assertEqual(self.po.terms, 30)
         #Tests order values
         self.assertEqual(self.po.vat, 7)
         self.assertEqual(round(self.po.grand_total, 2), 129.58)
