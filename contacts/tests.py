@@ -25,7 +25,6 @@ base_contact = {"name": "Charlie Brown",
 base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "last_name": "Smith",
                          "email": "test@yahoo.com",
-                         'terms': 30,
                          "telephone": "123456789"}]}
 
 
@@ -161,6 +160,7 @@ class SupplierTest(TestCase):
         """
         supplier_data = base_contact.copy()
         supplier_data["addresses"] = [base_address.copy()]
+        supplier_data['terms'] = 30
         supplier = Supplier.create(**supplier_data)
         self.assertIsInstance(supplier, Supplier)
         self.assertTrue(supplier.is_supplier)
@@ -178,8 +178,9 @@ class SupplierTest(TestCase):
         self.supplier.update(discount=90)
         self.assertEqual(self.supplier.discount, 90)
         #update terms
-        self.supplier.update(terms=30)
-        self.assertEqual(self.supplier.terms, 30)
+        self.assertEqual(self.supplier.terms, 0)
+        self.supplier.update(terms=60)
+        self.assertEqual(self.supplier.terms, 60)
         #Change Name
         self.supplier.update(name="Zipper Land")
         self.assertEqual(self.supplier.name, "Zipper Land")
