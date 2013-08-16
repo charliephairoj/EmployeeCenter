@@ -24,8 +24,8 @@ base_contact = {"name": "Charlie Brown",
                 "telephone": "08348229383"}
 base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "last_name": "Smith",
-                         "email": "test@yahoo.com",\
-                         
+                         "email": "test@yahoo.com",
+                         'terms': 30,
                          "telephone": "123456789"}]}
 
 
@@ -165,6 +165,7 @@ class SupplierTest(TestCase):
         self.assertIsInstance(supplier, Supplier)
         self.assertTrue(supplier.is_supplier)
         self.assertFalse(supplier.is_customer)
+        self.assertEqual(supplier.terms, 30)
 
     def test_create_supplier_without_address(self):
         """
