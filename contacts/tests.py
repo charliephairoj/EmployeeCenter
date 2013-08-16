@@ -16,13 +16,16 @@ base_address = {"address1": "22471 Sunbrook",
                 "country": "USA",
                 "zipcode": 92692}
 base_contact = {"name": "Charlie Brown",
+                'first_name': 'Charlie',
+                'last_name': 'Brown',
                 "currency": "USD",
                 "email": "charliep@dellarobbiathailand.com",
                 "fax": "0224223423",
                 "telephone": "08348229383"}
 base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "last_name": "Smith",
-                         "email": "test@yahoo.com",
+                         "email": "test@yahoo.com",\
+                         
                          "telephone": "123456789"}]}
 
 
@@ -91,6 +94,7 @@ class ContactTest(TestCase):
         contact_data["address"] = base_address
         contact = Contact.create(**contact_data)
         self.assertIsInstance(contact, Contact)
+        self.assertEqual(contact.telephone, '08348229383')
 
     def test_create_contact_without_address(self):
         """
@@ -122,6 +126,21 @@ class CustomerTest(TestCase):
         self.assertIsInstance(customer, Customer)
         self.assertTrue(customer.is_customer)
         self.assertFalse(customer.is_supplier)
+        self.assertEqual(customer.type, "Retail")
+        
+    def test_create_dealer(self):
+        """
+        Tests creating a new customer
+        """
+        customer_data = base_contact.copy()
+        customer_data["address"] = base_address.copy()
+        customer_data["type"] = "Dealer"
+        customer = Customer.create(**customer_data)
+        self.assertIsInstance(customer, Customer)
+        self.assertTrue(customer.is_customer)
+        self.assertFalse(customer.is_supplier)
+        self.assertEqual(customer.type, 'Dealer')
+        
 
     def test_create_customer_without_address(self):
         """

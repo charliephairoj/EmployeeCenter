@@ -198,18 +198,14 @@ class Customer(Contact):
         """
         Creates and returns a new customer
         """
-        #Extract name
-        try:
-            name = kwargs["first_name"]
-        except KeyError:
-            raise ValueError("Missing first_name")
-        if "last_name" in kwargs:
-            name = "{0} {1}".format(name, kwargs["last_name"])
-
-        customer = super(Customer, cls).create(commit=False, name=name, **kwargs)
-
+        customer = super(Customer, cls).create(commit=False, **kwargs)
+        
+        if "type" in kwargs:
+            customer.type = kwargs["type"]
+            
         customer.is_customer = True
         customer.save()
+        
         return customer
 
     def to_dict(self, user=None):
