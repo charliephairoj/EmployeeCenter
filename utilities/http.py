@@ -127,10 +127,15 @@ def process_api(request, cls, obj_id):
     if request.method == "GET":
         params = request.GET
         if obj_id == 0:
+            objs = cls.objects.all()
             try:
-                data = [obj.to_dict(user=request.user) for obj in cls.objects.filter(last_modified__gte=params["last_modified"])]
+                objs = objs.filter(supplier_id=params["supplier_id"])
+            except:
+                pass
+            try:
+                data = [obj.to_dict(user=request.user) for obj in objs.filter(last_modified__gte=params["last_modified"])]
             except KeyError as e:
-                data = [obj.to_dict(user=request.user) for obj in cls.objects.all()]
+                data = [obj.to_dict(user=request.user) for obj in objs]
             return HttpResponse(json.dumps(data), content_type='application/json')
         else:
             try:
