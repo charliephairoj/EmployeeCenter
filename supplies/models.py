@@ -170,8 +170,10 @@ class Supply(models.Model):
                 'currency': self.currency,
                 'deleted': self.deleted}
 
-        if self.image:
+        try:
             data['image'] = {'url': self.image.generate_url()}
+        except:
+            pass
         try:
             user = kwargs["user"]
             if user.has_perm('supplies.view_supplier'):
