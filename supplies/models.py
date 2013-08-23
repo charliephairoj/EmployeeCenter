@@ -172,6 +172,7 @@ class Supply(models.Model):
 
         try:
             data['image'] = {'url': self.image.generate_url()}
+            data['image_url'] = self.image.generate_url()
         except:
             pass
         try:
