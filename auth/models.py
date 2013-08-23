@@ -121,7 +121,10 @@ class S3Object(models.Model):
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
         print k.last_modified
-        self.last_modified = dateutil.parser.parse(k.last_modified)
+        try:
+            self.last_modified = dateutil.parser.parse(k.last_modified)
+        except:
+            self.last_modified = k.last_modified
         self.version_id = k.version_id
         if delete_original:
             os.remove(filename)
