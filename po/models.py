@@ -67,7 +67,7 @@ class PurchaseOrder(models.Model):
             order.discount = int(kwargs['discount'])
         try:
             order.temporary_supplies = []
-            for supply_data in kwargs["supplies"]:
+            for supply_data in kwargs["items"]:
                 supply = Item.create(commit=False, **supply_data)
                 order.temporary_supplies.append(supply)
                 
@@ -92,6 +92,10 @@ class PurchaseOrder(models.Model):
         pdf = PurchaseOrderPDF(po=order, supplies=order.item_set.all(),
                                supplier=order.supplier)
         filename = pdf.create()
+        key = "purchase_order/PO-{0}.pdf".format(order.id)
+        order.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
+        order.save()
+        print order.pdf
         
         return order
 
@@ -104,25 +108,33 @@ class PurchaseOrder(models.Model):
             
         self.save()
         
-    def to_dict(self):
+    def to_dict(self, user=None):
         """
         wrapper for dict()
         """
-        return self.dict()
+        return self.dict(user)
         
-    def dict(self):
+    def dict(self, user=None):
         """
         Returns the object's attributes as a 
         dictionary
         """
         data = {'id': self.id,
                 'order_date': self.order_date.isoformat(),
+                'supplier': self.supplier.to_dict(),
+                'total': str(self.grand_total),
                 'employee': '{0} {1}'.format(self.employee.first_name,
                                              self.employee.last_name)}
         
+        try:
+            data['pdf'] = {'url': self.pdf.generate_url()}
+        except AttributeError:
+            pass#print "PO #{0} has no pdf".format(self.id)
+        
         if self.receive_date:
             data['receive_date'] = self.receive_date.isoformat()
-
+            
+        return data
     
 
 class Item(models.Model):
@@ -152,12 +164,12 @@ class Item(models.Model):
                 item.unit_cost = round(item.supply.cost - discount_amount, 2)
 
         if "quantity" in kwargs:
-            item.quantity = kwargs["quantity"]
+            item.quantity = int(Decimal(kwargs["quantity"]))
             #if there is a discount apply the discount
             item.total = Decimal(item.unit_cost * Decimal(item.quantity))
         return item
     
-    def dict(self):
+    def dict(self, user=None):
         """
         Returns the Item's attributes as a dictionary
         """

@@ -4,6 +4,7 @@ from django.db import models
 
 class Contact(models.Model):
     name = models.CharField(max_length=200)
+    name_th = models.TextField()
     telephone = models.TextField()
     fax = models.TextField()
     email = models.CharField(max_length=200, null=True)
@@ -20,10 +21,16 @@ class Contact(models.Model):
     def create(cls, commit=True, **kwargs):
         """Creates a new Contact"""
         contact = cls()
+        print kwargs
         try:
-            contact.name = kwargs["name"]
+            contact.name = kwargs["name"]["en"]
+            if "th" in kwargs["name"]:
+                contact.name_th = kwargs["name"]["th"]
         except KeyError:
-            raise AttributeError("Missing name.")
+            contact.name = kwargs["name"]
+        else:
+            pass
+        
         if "telephone" in kwargs:
             contact.telephone = kwargs["telephone"]
         if "fax" in kwargs:

@@ -20,7 +20,7 @@ class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField()
     last_modified = models.DateTimeField(auto_now_add=True, auto_now=True)
-    version_id = models.IntegerField()
+    version_id = models.TextField()
    
 
     @classmethod
@@ -120,11 +120,11 @@ class S3Object(models.Model):
         k.key = self.key
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
-        print k.last_modified
         try:
             self.last_modified = dateutil.parser.parse(k.last_modified)
         except:
             self.last_modified = k.last_modified
+        
         self.version_id = k.version_id
         if delete_original:
             os.remove(filename)

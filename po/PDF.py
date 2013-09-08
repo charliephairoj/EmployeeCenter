@@ -169,8 +169,7 @@ class PurchaseOrderPDF():
         #Create data array
         data = []
         #Add Employee Name
-        print self.employee
-        ship_str = "{0}"#.format(self.employee.name)
+        ship_str = "{0} {1}".format(self.employee.first_name, self.employee.last_name)
         data.append(['Ship To:', ship_str])
         #Add Company Data
         data.append(['', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])

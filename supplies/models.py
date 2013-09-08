@@ -16,6 +16,7 @@ from auth.models import Log, S3Object
 class Supply(models.Model):
     supplier = models.ForeignKey(Supplier)
     description = models.TextField(null=True)
+    description_th = models.TextField(null=True)
     type = models.CharField(max_length=20, null=True)
     cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     width = models.DecimalField(db_column='width', decimal_places=2, max_digits=12, default=0)
@@ -57,15 +58,13 @@ class Supply(models.Model):
         if "height" in kwargs:
             supply.height = kwargs["height"]
 
-        try:
+        if "reference" in kwargs:
             supply.reference = kwargs["reference"]
-        except KeyError:
-            raise AttributeError("Missing supplier reference number.")
-
+      
         try:
             supply.quantity = Decimal(str(kwargs["quantity"]))
         except KeyError:
-            raise AttributeError("Missing quantity.")
+            supply.quantity = 0
 
         try:
             supply.cost = kwargs["cost"]
@@ -83,7 +82,12 @@ class Supply(models.Model):
             raise AttributeError("Supplier not found.")
 
         if "description" in kwargs:
-            supply.description = kwargs["description"]
+            try:
+                supply.description = kwargs["description"]["en"]
+                if "th" in kwargs["description"]:
+                    supply.description_th = kwargs["description"]["th"]
+            except KeyError:
+                supply.description = kwargs["description"]
 
         if "image" in kwargs:
                 try:
