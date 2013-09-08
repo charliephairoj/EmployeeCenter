@@ -85,6 +85,8 @@ def app_login(request):
                 #returns unauthenticated users
                 #back to the login page
                 return HttpResponseRedirect('/login')
+        else:
+            return HttpResponseRedirect('/login')
 
 
 #Logs user out
