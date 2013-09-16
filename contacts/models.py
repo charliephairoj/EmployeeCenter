@@ -11,6 +11,7 @@ class Contact(models.Model):
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     currency = models.CharField(max_length=10, null=True)
+    notes = models.TextField(null=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
@@ -21,12 +22,11 @@ class Contact(models.Model):
     def create(cls, commit=True, **kwargs):
         """Creates a new Contact"""
         contact = cls()
-        print kwargs
         try:
             contact.name = kwargs["name"]["en"]
             if "th" in kwargs["name"]:
                 contact.name_th = kwargs["name"]["th"]
-        except KeyError:
+        except (KeyError, TypeError):
             contact.name = kwargs["name"]
         else:
             pass
@@ -44,6 +44,9 @@ class Contact(models.Model):
             contact.currency = kwargs["currency"]
         except KeyError:
             raise AttributeError("Missing currency.")
+        
+        if "notes" in kwargs:
+            contact.notes = kwargs["notes"]
 
         contact.save()
 

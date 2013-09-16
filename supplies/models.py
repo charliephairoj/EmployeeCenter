@@ -30,16 +30,12 @@ class Supply(models.Model):
     discount = models.IntegerField(default=0)
     reference = models.TextField()
     currency = models.CharField(max_length=10, default="THB")
-    image_url = models.TextField(null=True)
-    image_bucket = models.TextField(null=True)
-    image_key = models.TextField(null=True)
+    notes = models.TextField(null=True)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
-    #data = hstore.DictionaryField()
-    #objects = hstore.HStoreManager()
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
@@ -86,7 +82,7 @@ class Supply(models.Model):
                 supply.description = kwargs["description"]["en"]
                 if "th" in kwargs["description"]:
                     supply.description_th = kwargs["description"]["th"]
-            except KeyError:
+            except (KeyError, TypeError):
                 supply.description = kwargs["description"]
 
         if "image" in kwargs:
@@ -105,8 +101,13 @@ class Supply(models.Model):
             supply.height_units = kwargs["height_units"]
         if "quantity_units" in kwargs:
             supply.quantity_units = kwargs["quantity_units"]
-        if "purchasing_units" in kwargs:
+        if "units" in kwargs:
+            supply.purchasing_units = kwargs["units"]
+        elif "purchasing_units" in kwargs:
             supply.purchasing_units = kwargs["purchasing_units"]
+            
+        if "notes" in kwargs:
+            supply.notes = kwargs["notes"]
 
         if commit:
             supply.save()
@@ -154,7 +155,7 @@ class Supply(models.Model):
                 except S3Object.DoesNotExist:
                     raise TypeError("Image does not exist")
 
-    def to_dict(self, **kwargs):
+    def to_dict(self, user=None, **kwargs):
         """
         Returns the supply's attributes as a dictionary
         """
@@ -172,19 +173,24 @@ class Supply(models.Model):
                 'id': self.id,
                 'cost': '%s' % self.cost,
                 'currency': self.currency,
-                'deleted': self.deleted}
+                'deleted': self.deleted,
+                'notes': self.notes}
 
         try:
             data['image'] = {'url': self.image.generate_url()}
             data['image_url'] = self.image.generate_url()
         except:
             pass
-        try:
+
+        if "user" in kwargs and not user:
             user = kwargs["user"]
+        
+        try:
             if user.has_perm('supplies.view_supplier'):
                 data.update({'supplier': self.supplier.get_date()})
-        except:
+        except AttributeError:
             pass
+        
         return data
 
     def reserve(self, quantity, employee, remarks=None, acknowledgement_id=None):

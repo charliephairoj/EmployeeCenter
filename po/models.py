@@ -136,6 +136,15 @@ class PurchaseOrder(models.Model):
             
         return data
     
+    def _increase_stock(self, item):
+        """
+        Increases the quantity of stock in the inventory 
+        """
+        supply = item.supply
+        if supply.purchasing_units.lower() != "packs":
+            supply.quantity += item.quantity
+            supply.save()
+    
 
 class Item(models.Model):
     purchase_order = models.ForeignKey(PurchaseOrder)

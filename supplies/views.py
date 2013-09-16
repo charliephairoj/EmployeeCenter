@@ -18,6 +18,7 @@ logger = logging.getLogger('EmployeeCenter')
 #Supplies
 @login_required
 def supply(request, supply_id=0):
+    print request
     return process_api(request, Supply, supply_id)
 
 

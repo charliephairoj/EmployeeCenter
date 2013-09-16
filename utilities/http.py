@@ -1,6 +1,6 @@
 """Utilities to help process views/REST Calls"""
 import json
-import dateutil.parser
+from dateutil import parser
 import time
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
+from django.core.paginator import Paginator
 
 
 #primary function to process requests for supplies
@@ -34,7 +35,7 @@ def httpGETProcessor(request, Class, class_id):
         objs = Class.objects.all()
         if "last_modified" in GET_data:
             try:
-                timestamp = dateutil.parser.parse(GET_data["last_modified"])
+                timestamp = parser.parse(GET_data["last_modified"])
                 objs = objs.filter(last_modified__gte=timestamp)
             except:
                 pass
@@ -132,22 +133,32 @@ def process_api(request, cls, obj_id):
                 objs = objs.filter(supplier_id=params["supplier_id"])
             except:
                 pass
-            try:
-                data = [obj.to_dict(user=request.user) for obj in objs.filter(last_modified__gte=params["last_modified"])]
-            except KeyError as e:
+            if "last_modified" in params:
+                try:
+                    request_date = parser.parse(params["last_modified"])
+                    data = [obj.to_dict(user=request.user) for obj in objs.filter(last_modified__gte=request_date)]
+                except KeyError as e:
+                    data = [obj.to_dict(user=request.user) for obj in objs]
+            elif "page" in params:
+                p = Paginator(objs, 50)
+                page = p.page(params["page"])
+                data = [obj.to_dict(user=request.user) for obj in page.object_list]
+                print len(page.object_list)
+
+            else:
                 data = [obj.to_dict(user=request.user) for obj in objs]
-            return HttpResponse(json.dumps(data), content_type='application/json')
+            return HttpResponse(json.dumps(data), content_type='application/json', status=200)
         else:
             try:
                 obj = cls.objects.get(pk=obj_id)
             except cls.DoesNotExist:
                 return HttpResponse(content_type='aplication/json', status=404)
-            return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json')
+            return HttpResponse(json.dumps(obj.to_dict(request.user)), content_type='application/json', status=200)
 
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
-        except Except as e:
+        except Exception as e:
             print e
             return HttpResponse(status=500)
 

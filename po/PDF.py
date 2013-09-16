@@ -250,7 +250,7 @@ class PurchaseOrderPDF():
         #merge data
         data += totals_data
         #Create Table
-        table = Table(data, colWidths=(40, 84, 210, 35, 50, 40, 65))
+        table = Table(data, colWidths=(40, 84, 210, 50, 50, 40, 65))
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                       ('LINEABOVE', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
