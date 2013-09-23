@@ -27,9 +27,11 @@ class Contact(models.Model):
             if "th" in kwargs["name"]:
                 contact.name_th = kwargs["name"]["th"]
         except (KeyError, TypeError):
-            contact.name = kwargs["name"]
-        else:
-            pass
+            try:
+                contact.name = kwargs["name"]
+            except KeyError:
+                contact.name = "{0} {1}".format(kwargs["first_name"], kwargs["last_name"])
+       
         
         if "telephone" in kwargs:
             contact.telephone = kwargs["telephone"]
