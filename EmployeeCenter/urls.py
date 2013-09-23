@@ -1,9 +1,34 @@
 from django.conf.urls import patterns, url
+from django.conf.urls.defaults import *
 from django.conf import settings
+from tastypie.api import Api
 
+from contacts.api import SupplierResource, CustomerResource
+from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource 
+from supplies.api import SupplyResource, FabricResource
 
+"""
+API Section
+
+This area deals with the registration of the 
+resources with the api 
+"""
+v1_api = Api(api_name='v1')
+v1_api.register(SupplierResource())
+v1_api.register(CustomerResource())
+v1_api.register(AcknowledgementResource())
+v1_api.register(AckItemResource())
+v1_api.register(SupplyResource())
+v1_api.register(FabricResource())
+
+urlpatterns = patterns('', 
+    
+    (r'^api/', include(v1_api.urls))
+)
+
+"""
 #Public views
-urlpatterns = patterns('products.views',
+urlpatterns += patterns('products.views',
     url(r'^public/upholstery', 'upholstery')
 )
 
@@ -168,3 +193,4 @@ urlpatterns += patterns('',
     url(r'^(?P<path>.*)$', 'django.views.static.serve',
         {'document_root': settings.STATIC_ROOT})
 )
+"""
