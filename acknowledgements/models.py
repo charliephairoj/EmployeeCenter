@@ -687,8 +687,9 @@ class Pillow(models.Model):
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
                                     'image': {'url': self.fabric.image.generate_url()}}})
-        except:
-            pass
+        except AttributeError:
+            data.update({'fabric': {'id': self.fabric.id,
+                                    'description': self.fabric.description}})
         return data
 
 
