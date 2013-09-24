@@ -488,7 +488,7 @@ class Item(models.Model):
         if self.fabric:
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image_url}}})
+                                    'image': {'url': self.fabric.image.generate_url()}}})
         return data
 
     def _apply_product_data(self):
@@ -686,7 +686,7 @@ class Pillow(models.Model):
         try:
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image_url}}})
+                                    'image': {'url': self.fabric.image.generate_url()}}})
         except:
             pass
         return data
