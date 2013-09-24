@@ -486,9 +486,13 @@ class Item(models.Model):
             pass
 
         if self.fabric:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image.generate_url()}}})
+            try:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description,
+                                        'image': {'url': self.fabric.image.generate_url()}}})
+            except AttributeError:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description}})
         return data
 
     def _apply_product_data(self):
@@ -686,10 +690,9 @@ class Pillow(models.Model):
         try:
             data.update({'fabric': {'id': self.fabric.id,
                                     'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image.generate_url()}}})
-        except AttributeError:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description}})
+                                    'image': {'url': self.fabric.image_url}}})
+        except:
+            pass
         return data
 
 
