@@ -114,6 +114,17 @@ class Item(models.Model):
         self.description = item.description
         self.quantity = item.quantity
 
+    def to_dict(self):
+        data = {'id': self.id,
+                'description': self.description,
+                'quantity': self.quantity,
+                'comments': self.comments}
+        try:
+            data.update(self.item.to_dict())
+        except:
+            data.update(self.item.get_data())
+        return data
+    
     def get_data(self):
         data = {'id': self.id,
                 'description': self.description,
