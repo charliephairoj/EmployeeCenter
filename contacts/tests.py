@@ -29,7 +29,7 @@ base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "email": "test@yahoo.com",
                          "telephone": "123456789"}]}
 
-class ContactResourceTest(ResourceTestCase):
+class CustomerResourceTest(ResourceTestCase):
     
     def setUp(self):
         super(ContactResourceTest, self).setUp()
@@ -38,6 +38,8 @@ class ContactResourceTest(ResourceTestCase):
         self.username = 'tester'
         self.password = 'pass'
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        
+        #Create a contact
         
         self.post_data = base_contact
         

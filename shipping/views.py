@@ -49,8 +49,7 @@ def shipping(request, shipping_id=0):
 @login_required
 def pdf(request, shipping_id):
     shipping = Shipping.objects.get(id=shipping_id)
-    print shipping.shipping_key
-    data = {'url': shipping.get_url(shipping.shipping_key)}
+    data = {'url': shipping.pdf.generate_url()}
     return HttpResponse(json.dumps(data),
                             mimetype="application/json")
 
