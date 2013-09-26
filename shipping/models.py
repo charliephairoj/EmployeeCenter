@@ -121,7 +121,8 @@ class Item(models.Model):
                 'comments': self.comments}
         try:
             data.update(self.item.to_dict())
-        except:
+        except AttributeError as e:
+            print e
             data.update(self.item.get_data())
         return data
     
