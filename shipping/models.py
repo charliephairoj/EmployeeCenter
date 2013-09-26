@@ -81,7 +81,7 @@ class Shipping(models.Model):
         return urls
 
     def set_product(self, data):
-        acknowledgement_item = acknowledgements.models.Item.objects.get(id=data['id'])
+        acknowledgement_item = Item.objects.get(id=data['id'])
         item = Item()
         item.shipping = self
         item.set_data_from_acknowledgement_item(acknowledgement_item)
@@ -121,8 +121,9 @@ class Item(models.Model):
                 'comments': self.comments}
         try:
             data.update(self.item.to_dict())
-        except:
-            data.update(self.item.get_data())
+
+        except AttributeError as e:
+            pass
         return data
     
     def get_data(self):
@@ -130,9 +131,11 @@ class Item(models.Model):
                 'description': self.description,
                 'quantity': self.quantity,
                 'comments': self.comments}
+        
         try:
             data.update(self.item.to_dict())
         except:
-            data.update(self.item.get_data())
+            pass
+        
         return data
 

@@ -47,6 +47,7 @@ class Acknowledgement(models.Model):
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
 
+
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement
@@ -443,9 +444,13 @@ class Item(models.Model):
             pass
 
         if self.fabric:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image_url}}})
+            try:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description,
+                                        'image': {'url': self.fabric.image.generate_url()}}})
+            except AttributeError:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description}})
         return data
 
     def _apply_product_data(self):
@@ -640,12 +645,15 @@ class Pillow(models.Model):
         data = {'id': self.id,
                 'type': self.type,
                 'quantity': self.quantity}
-        try:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image_url}}})
-        except:
-            pass
+        
+        if self.fabric:
+            try:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description,
+                                        'image': {'url': self.fabric.image.generate_url()}}})
+            except AttributeError:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description}})
         return data
 
 

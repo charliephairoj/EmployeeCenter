@@ -3,7 +3,7 @@ from django.db import models
 
 
 class Contact(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.TextField()
     name_th = models.TextField()
     telephone = models.TextField()
     fax = models.TextField()
@@ -21,15 +21,18 @@ class Contact(models.Model):
     @classmethod
     def create(cls, commit=True, **kwargs):
         """Creates a new Contact"""
+        print 'ya'
         contact = cls()
         try:
             contact.name = kwargs["name"]["en"]
             if "th" in kwargs["name"]:
                 contact.name_th = kwargs["name"]["th"]
         except (KeyError, TypeError):
-            contact.name = kwargs["name"]
-        else:
-            pass
+            try:
+                contact.name = kwargs["name"]
+            except KeyError:
+                contact.name = u"{0} {1}".format(kwargs["first_name"], kwargs["last_name"])
+        print kwargs
         
         if "telephone" in kwargs:
             contact.telephone = kwargs["telephone"]
