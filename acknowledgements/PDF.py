@@ -314,7 +314,6 @@ class AcknowledgementPDF(object):
                 if pillow.fabric:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
                 else:
-                    print e
                     data.append(['', '       - Fabric: unspecified', '', '', ''])
         #Add comments if they exists
         if product.comments:
