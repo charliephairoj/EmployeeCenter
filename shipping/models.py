@@ -122,8 +122,7 @@ class Item(models.Model):
         try:
             data.update(self.item.to_dict())
         except AttributeError as e:
-            print e
-            data.update(self.item.get_data())
+            pass
         return data
     
     def get_data(self):
@@ -131,9 +130,11 @@ class Item(models.Model):
                 'description': self.description,
                 'quantity': self.quantity,
                 'comments': self.comments}
+        
         try:
             data.update(self.item.to_dict())
         except:
-            data.update(self.item.get_data())
+            pass
+        
         return data
 

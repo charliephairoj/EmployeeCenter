@@ -24,7 +24,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    _delivery_date = models.DateTimeField(db_column='delivery_date')
+    delivery_date = models.DateTimeField(db_column='delivery_date')
     status = models.TextField()
     remarks = models.TextField()
     fob = models.TextField(null=True)
@@ -47,49 +47,7 @@ class Acknowledgement(models.Model):
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
 
-    @property
-    def delivery_date(self):
-        return self._delivery_date
-
-    @delivery_date.setter
-    def delivery_date(self, new_date):
-        """
-        Sets the delivery date and logs it.
-
-        The setter will change the current delivery date,
-        log the change, and change the delivery item if
-        the new date is now the same as the current delivery
-        date
-        """
-        bkk_tz = timezone('Asia/Bangkok')
-        try:
-            delivery_date = new_date.astimezone(bkk_tz)
-        except:
-            delivery_date = dateutil.parser.parse(new_date).astimezone(bkk_tz)
-
-        if self._delivery_date == None:
-            self._delivery_date = delivery_date
-        elif delivery_date != self._delivery_date.astimezone(bkk_tz):
-            old_delivery_date = self._delivery_date
-            self._delivery_date = delivery_date
-
-        try:
-            employee = self.current_employee
-        except:
-            employee = self.employee
-        #Log the information as a change or set
-        if self.id:
-            try:
-                message = "Delivery Date for Acknowledgement# {0} set to {1}"
-                message.format(self.id, delivery_date.strftime('%B %d, %Y'))
-            except:
-                message = """Delivery Date for Acknowledgement# {0}
-                             changed from {1} to {2}"""
-                message.format(self.id,
-                               old_delivery_date.strftime('%B %d, %Y'),
-                               delivery_date.strftime('%B %d, %Y'))
-            AcknowledgementLog.create(message, self, employee)
-
+    
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement
@@ -687,13 +645,15 @@ class Pillow(models.Model):
         data = {'id': self.id,
                 'type': self.type,
                 'quantity': self.quantity}
-        try:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description,
-                                    'image': {'url': self.fabric.image.generate_url()}}})
-        except AttributeError:
-            data.update({'fabric': {'id': self.fabric.id,
-                                    'description': self.fabric.description}})
+        
+        if self.fabric:
+            try:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description,
+                                        'image': {'url': self.fabric.image.generate_url()}}})
+            except AttributeError:
+                data.update({'fabric': {'id': self.fabric.id,
+                                        'description': self.fabric.description}})
         return data
 
 
