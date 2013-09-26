@@ -311,9 +311,9 @@ class AcknowledgementPDF(object):
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
-                try:
+                if pillow.fabric:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
-                except Exception as e:
+                else:
                     print e
                     data.append(['', '       - Fabric: unspecified', '', '', ''])
         #Add comments if they exists
@@ -362,7 +362,10 @@ class AcknowledgementPDF(object):
 
     def _get_fabric_table(self, fabric, string="   Fabric:"):
         fabric_str = string + ' {0}'
-        fabric_image = self.get_image(fabric.image.generate_url(), height=30)
+        try:
+            fabric_image = self.get_image(fabric.image.generate_url(), height=30)
+        except AttributeError:
+            fabric_image = None
         fabric_table = Table([[fabric_str.format(fabric.description),fabric_image]],
                              colWidths=(200, 50))
         fabric_table.setStyle(TableStyle([('FONT', (0, 0), (-1, -1), 'Garuda'),
