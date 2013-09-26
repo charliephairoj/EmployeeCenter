@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from acknowledgements.models import Acknowledgement, AcknowledgementLog
+from acknowledgements.models import Acknowledgement, AcknowledgementLog, Item as AckItem
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
@@ -81,7 +81,8 @@ class Shipping(models.Model):
         return urls
 
     def set_product(self, data):
-        acknowledgement_item = Item.objects.get(id=data['id'])
+
+        acknowledgement_item = AckItem.objects.get(id=data['id'])
         item = Item()
         item.shipping = self
         item.set_data_from_acknowledgement_item(acknowledgement_item)
