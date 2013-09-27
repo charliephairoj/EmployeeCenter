@@ -362,8 +362,9 @@ class Item(models.Model):
 
         return item
 
-    def update(self, employee, **kwargs):
+    def update(self, user=None, **kwargs):
         """Updates an item"""
+        employee = user
         if "fabric" in kwargs:
             fabric = Fabric.objects.get(id=kwargs["fabric"]["id"])
             if fabric != self.fabric:
