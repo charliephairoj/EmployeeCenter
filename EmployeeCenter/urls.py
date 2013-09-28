@@ -6,7 +6,7 @@ from tastypie.api import Api
 from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource 
 from supplies.api import SupplyResource, FabricResource
-
+from products.api import ModelResource, ProductResource, ConfigurationResource
 """
 API Section
 
@@ -21,6 +21,10 @@ v1_api.register(AckItemResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())
 
+#Products Category
+v1_api.register(ModelResource())
+v1_api.register(ConfigurationResource())
+v1_api.register(ProductResource())
 urlpatterns = patterns('', 
     
     (r'^api/', include(v1_api.urls))
