@@ -28,10 +28,13 @@ base_product = {"width": 1000,
                 "corner_pillow": 4}
 base_model = {"model": "AC-1",
               "name": "Susie",
-              "collection": "Dellarobbia Thailand"}
+              "collection": "Dellarobbia Thailand",
+              'images': [{'key':'image/1.jpg',
+                          'bucket': 'media.dellarobbiathailand.com'}]}
 base_configuration = {"configuration": "Sofa"}
 base_upholstery = {"model": {"id": 1},
-                   "configuration": {"id": 1}}
+                   "configuration": {"id": 1},
+                   'category': 'Chair'}
 base_upholstery.update(base_product)
 base_table = {"model": {"id": 1},
               "configuration": {"id": 1}}
@@ -50,7 +53,9 @@ class ModelResourceTest(ResourceTestCase):
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         
         #Create a model to be used for testing
-        self.model = Model(**base_model)
+        model_data = base_model.copy()
+        del model_data['images']
+        self.model = Model(**model_data)
         self.model.save()
                 
     def get_credentials(self):
@@ -129,11 +134,19 @@ class ModelResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/model/1', 
+        resp = self.api_client.put('/api/v1/model/1/', 
                                    format='json',
                                    data=updated_model,
                                    authorization=self.get_credentials())
         self.assertEqual(Model.objects.count(), 1)
+        
+        #Validate resp
+        self.assertHttpOK(resp)
+        
+        #Validate resource
+        model = self.deserialize(resp)
+        self.assertEqual(model['name'], 'Patsy')
+
         
     def test_delete(self):
         """
@@ -196,9 +209,9 @@ class ConfigurationResourceTest(ResourceTestCase):
         self.assertHttpOK(resp)
         
         #Validate the resource
-        model = self.deserialize(resp)
-        self.assertEqual(model['id'], 1)
-        self.assertEqual(model['configuration'], 'Sofa')
+        configuration = self.deserialize(resp)
+        self.assertEqual(configuration['id'], 1)
+        self.assertEqual(configuration['configuration'], 'Sofa')
         
     def test_post(self):
         """
@@ -216,9 +229,9 @@ class ConfigurationResourceTest(ResourceTestCase):
         self.assertHttpCreated(resp)
        
         #Validate the resource
-        model = self.deserialize(resp)
-        self.assertEqual(model['id'], 2)
-        self.assertEqual(model['configuration'], 'Sofa')
+        configuration = self.deserialize(resp)
+        self.assertEqual(configuration['id'], 2)
+        self.assertEqual(configuration['configuration'], 'Sofa')
         
     def test_put(self):
         """
@@ -233,7 +246,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/configuration/1', 
+        resp = self.api_client.put('/api/v1/configuration/1/', 
                                    format='json',
                                    data=updated_config,
                                    authorization=self.get_credentials())
@@ -254,6 +267,341 @@ class ConfigurationResourceTest(ResourceTestCase):
         self.assertHttpAccepted(resp)
         
         
+class UpholsteryResourceTest(ResourceTestCase):
+    def setUp(self):
+        super(UpholsteryResourceTest, self).setUp()
         
+        #Create the user
+        self.username = 'tester'
+        self.password = 'pass'
+        self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        
+        #Create a model to be used for testing
+        model_data = base_model.copy()
+        del model_data['images']
+        self.model = Model(**model_data)
+        self.model.save()
+        
+        #Create configuration for testing
+        self.configuration = Configuration(**base_configuration)
+        self.configuration.save()
+        
+        #Strip pillows and make pillows separately
+        uphol_data = base_product.copy()
+        del uphol_data['corner_pillow']
+        del uphol_data['accent_pillow']
+        del uphol_data['back_pillow']
+        del uphol_data['lumbar_pillow']
+        self.product = Upholstery(**uphol_data)
+        self.product.description = 'AC-1 Sofa'
+        self.product.model = self.model
+        self.product.configuration = self.configuration
+        self.product.save()
+                
+    def get_credentials(self):
+        return self.create_basic(username=self.username, password=self.password)
+    
+    def test_get_list(self):
+        """
+        Test getting a list of models via GET
+        """
+        resp = self.api_client.get('/api/v1/upholstery/', format='json')
+        
+        #Validate resp
+        self.assertValidJSONResponse(resp)
+        self.assertHttpOK(resp)
+        
+        #Validate data
+        resp_obj = self.deserialize(resp)
+        self.assertEqual(len(resp_obj['objects']), 1)
+        
+        #Validate the first resource
+        upholstery = resp_obj['objects'][0]
+        self.assertEqual(upholstery['id'], 1)
+        self.assertEqual(upholstery['type'], 'upholstery')
+        self.assertEqual(upholstery['description'], 'AC-1 Sofa')
+        self.assertEqual(upholstery['model']['id'], 1)
+        self.assertEqual(upholstery['configuration']['id'], 1)
+        self.assertEqual(upholstery['width'], 1000)
+        self.assertEqual(upholstery['depth'], 500)
+        self.assertEqual(upholstery['height'], 400)
+        self.assertEqual(int(upholstery['manufacture_price']), 50000)
+        self.assertEqual(int(upholstery['export_price']), 100000)
+        self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        #self.assertEqual(upholstery['configuration']['id'], 1)
+        
+        
+    def test_get(self):
+        """
+        Test retrieving a resource via GET
+        """
+        resp = self.api_client.get('/api/v1/upholstery/1/', format='json')
+        
+        #Validate resp
+        self.assertValidJSONResponse(resp)
+        self.assertHttpOK(resp)
+        
+        #Validate the resource
+        configuration = self.deserialize(resp)
+        self.assertEqual(configuration['id'], 1)
+        
+        #Validate the first resource
+        upholstery = self.deserialize(resp)
+        self.assertEqual(upholstery['id'], 1)
+        self.assertEqual(upholstery['type'], 'upholstery')
+        self.assertEqual(upholstery['description'], 'AC-1 Sofa')
+        self.assertEqual(upholstery['model']['id'], 1)
+        self.assertEqual(upholstery['configuration']['id'], 1)
+        self.assertEqual(upholstery['width'], 1000)
+        self.assertEqual(upholstery['depth'], 500)
+        self.assertEqual(upholstery['height'], 400)
+        self.assertEqual(int(upholstery['manufacture_price']), 50000)
+        self.assertEqual(int(upholstery['export_price']), 100000)
+        self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        
+    def test_post(self):
+        """
+        Test creating a resource via POST
+        """
+        #Validate object creation
+        self.assertEqual(Upholstery.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/upholstery/', 
+                                    format='json',
+                                    data=base_upholstery,
+                                    authorization=self.get_credentials())
+        self.assertEqual(Upholstery.objects.count(), 2)
+        
+        #Validate response
+        self.assertHttpCreated(resp)
+       
+        #Validate the first resource
+        upholstery = self.deserialize(resp)
+        self.assertEqual(upholstery['id'], 2)
+        self.assertEqual(upholstery['type'], 'upholstery')
+        self.assertEqual(upholstery['description'], 'AC-1 Sofa')
+        self.assertEqual(upholstery['model']['id'], 1)
+        self.assertEqual(upholstery['configuration']['id'], 1)
+        self.assertEqual(upholstery['width'], 1000)
+        self.assertEqual(upholstery['depth'], 500)
+        self.assertEqual(upholstery['height'], 400)
+        self.assertEqual(int(upholstery['manufacture_price']), 50000)
+        self.assertEqual(int(upholstery['export_price']), 100000)
+        self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        
+    def test_put(self):
+        """
+        Test updating a resource via POST
+        
+        The first part of the test will validate that an object
+        is neither created or deleted
+        """
+        #Update data
+        updated_uphol = base_upholstery.copy()
+        updated_uphol['wholesale_price'] = 120000
+        
+        #Validate object update
+        self.assertEqual(Upholstery.objects.count(), 1)
+        resp = self.api_client.put('/api/v1/upholstery/1/', 
+                                   format='json',
+                                   data=updated_uphol,
+                                   authorization=self.get_credentials())
+        self.assertEqual(Upholstery.objects.count(), 1)
+        
+        #Validate the first resource
+        upholstery = self.deserialize(resp)
+        self.assertEqual(upholstery['id'], 1)
+        self.assertEqual(upholstery['type'], 'upholstery')
+        self.assertEqual(upholstery['description'], 'AC-1 Sofa')
+        self.assertEqual(upholstery['model']['id'], 1)
+        self.assertEqual(upholstery['configuration']['id'], 1)
+        self.assertEqual(upholstery['width'], 1000)
+        self.assertEqual(upholstery['depth'], 500)
+        self.assertEqual(upholstery['height'], 400)
+        self.assertEqual(int(upholstery['manufacture_price']), 50000)
+        self.assertEqual(int(upholstery['export_price']), 100000)
+        self.assertEqual(int(upholstery['wholesale_price']), 120000)
+        
+    def test_delete(self):
+        """
+        Test deleting a resource via DELETE
+        """
+        #Validate resource deleted
+        self.assertEqual(Upholstery.objects.count(), 1)
+        resp = self.api_client.delete('/api/v1/upholstery/1/', 
+                                      format='json', 
+                                      authentication=self.get_credentials())
+        self.assertEqual(Upholstery.objects.count(), 0)
+        
+        #Validate the response
+        self.assertHttpAccepted(resp)
+        
+    
+class TableResourceTest(ResourceTestCase):
+    def setUp(self):
+        super(TableResourceTest, self).setUp()
+        
+        #Create the user
+        self.username = 'tester'
+        self.password = 'pass'
+        self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        
+        #Create a model to be used for testing
+        model_data = base_model.copy()
+        del model_data['images']
+        self.model = Model(**model_data)
+        self.model.save()
+        
+        #Create configuration for testing
+        self.configuration = Configuration(configuration='Coffee Table')
+        self.configuration.save()
+        
+        #Strip pillows and make pillows separately
+        table_data = base_product.copy()
+        del table_data['corner_pillow']
+        del table_data['accent_pillow']
+        del table_data['back_pillow']
+        del table_data['lumbar_pillow']
+        self.product = Table(**table_data)
+        self.product.description = 'AC-1 Coffee Table'
+        self.product.type = 'table'
+        self.product.model = self.model
+        self.product.configuration = self.configuration
+        self.product.save()
+                
+    def get_credentials(self):
+        return self.create_basic(username=self.username, password=self.password)
+    
+    def test_get_list(self):
+        """
+        Test getting a list of models via GET
+        """
+        resp = self.api_client.get('/api/v1/table/', format='json')
+        
+        #Validate resp
+        self.assertValidJSONResponse(resp)
+        self.assertHttpOK(resp)
+        
+        #Validate data
+        resp_obj = self.deserialize(resp)
+        self.assertEqual(len(resp_obj['objects']), 1)
+        
+        #Validate the first resource
+        table = resp_obj['objects'][0]
+        self.assertEqual(table['id'], 1)
+        self.assertEqual(table['type'], 'table')
+        self.assertEqual(table['description'], 'AC-1 Coffee Table')
+        self.assertEqual(table['model']['id'], 1)
+        self.assertEqual(table['configuration']['id'], 1)
+        self.assertEqual(table['width'], 1000)
+        self.assertEqual(table['depth'], 500)
+        self.assertEqual(table['height'], 400)
+        self.assertEqual(int(table['manufacture_price']), 50000)
+        self.assertEqual(int(table['export_price']), 100000)
+        self.assertEqual(int(table['wholesale_price']), 100000)
+        
+        
+    def test_get(self):
+        """
+        Test retrieving a resource via GET
+        """
+        resp = self.api_client.get('/api/v1/table/1/', format='json')
+        
+        #Validate resp
+        self.assertValidJSONResponse(resp)
+        self.assertHttpOK(resp)
+        
+        #Validate the resource
+        configuration = self.deserialize(resp)
+        self.assertEqual(configuration['id'], 1)
+        
+        #Validate the first resource
+        table = self.deserialize(resp)
+        self.assertEqual(table['id'], 1)
+        self.assertEqual(table['type'], 'table')
+        self.assertEqual(table['description'], 'AC-1 Coffee Table')
+        self.assertEqual(table['model']['id'], 1)
+        self.assertEqual(table['configuration']['id'], 1)
+        self.assertEqual(table['width'], 1000)
+        self.assertEqual(table['depth'], 500)
+        self.assertEqual(table['height'], 400)
+        self.assertEqual(int(table['manufacture_price']), 50000)
+        self.assertEqual(int(table['export_price']), 100000)
+        self.assertEqual(int(table['wholesale_price']), 100000)
+        
+    def test_post(self):
+        """
+        Test creating a resource via POST
+        """
+        #Validate object creation
+        self.assertEqual(Table.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/table/', 
+                                    format='json',
+                                    data=base_upholstery,
+                                    authorization=self.get_credentials())
+        self.assertEqual(Table.objects.count(), 2)
+        
+        #Validate response
+        self.assertHttpCreated(resp)
+       
+        #Validate the first resource
+        table = self.deserialize(resp)
+        self.assertEqual(table['id'], 2)
+        self.assertEqual(table['type'], 'table')
+        self.assertEqual(table['description'], 'AC-1 Coffee Table')
+        self.assertEqual(table['model']['id'], 1)
+        self.assertEqual(table['configuration']['id'], 1)
+        self.assertEqual(table['width'], 1000)
+        self.assertEqual(table['depth'], 500)
+        self.assertEqual(table['height'], 400)
+        self.assertEqual(int(table['manufacture_price']), 50000)
+        self.assertEqual(int(table['export_price']), 100000)
+        self.assertEqual(int(table['wholesale_price']), 100000)
+        
+    def test_put(self):
+        """
+        Test updating a resource via POST
+        
+        The first part of the test will validate that an object
+        is neither created or deleted
+        """
+        #Update data
+        updated_table = base_upholstery.copy()
+        updated_table['wholesale_price'] = 120000
+        
+        #Validate object update
+        self.assertEqual(Table.objects.count(), 1)
+        resp = self.api_client.put('/api/v1/table/1/', 
+                                   format='json',
+                                   data=updated_table,
+                                   authorization=self.get_credentials())
+        self.assertEqual(Table.objects.count(), 1)
+        
+        #Validate the first resource
+        table = self.deserialize(resp)
+        self.assertEqual(table['id'], 1)
+        self.assertEqual(table['type'], 'table')
+        self.assertEqual(table['description'], 'AC-1 Coffee Table')
+        self.assertEqual(table['model']['id'], 1)
+        self.assertEqual(table['configuration']['id'], 1)
+        self.assertEqual(table['width'], 1000)
+        self.assertEqual(table['depth'], 500)
+        self.assertEqual(table['height'], 400)
+        self.assertEqual(int(table['manufacture_price']), 50000)
+        self.assertEqual(int(table['export_price']), 100000)
+        self.assertEqual(int(table['wholesale_price']), 120000)
+        
+    def test_delete(self):
+        """
+        Test deleting a resource via DELETE
+        """
+        #Validate resource deleted
+        self.assertEqual(Table.objects.count(), 1)
+        resp = self.api_client.delete('/api/v1/table/1/', 
+                                      format='json', 
+                                      authentication=self.get_credentials())
+        self.assertEqual(Table.objects.count(), 0)
+        
+        #Validate the response
+        self.assertHttpAccepted(resp)
     
     

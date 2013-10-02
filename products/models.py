@@ -269,9 +269,9 @@ class Model(models.Model):
 class ModelImage(models.Model):
     model = models.ForeignKey(Model)
     image = models.ForeignKey(S3Object)
-    url = models.TextField()
-    bucket = models.TextField()
-    key = models.TextField()
+    url = models.TextField(null=True)
+    bucket = models.TextField(null=True)
+    key = models.TextField(null=True)
 
 
 class Configuration(models.Model):
@@ -309,8 +309,14 @@ class Configuration(models.Model):
 class Upholstery(Product):
     model = models.ForeignKey(Model, on_delete=models.PROTECT)
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
-    category = models.CharField(max_length=50)
+    category = models.CharField(max_length=50, null=True)
 
+    def __init__(self, *args, **kwargs):
+        
+        super(Upholstery, self).__init__(*args, **kwargs)
+        
+        self.type = 'upholstery'
+        
     @classmethod
     def create(cls, user=None, **kwargs):
         try:
@@ -406,6 +412,15 @@ class Table(Product):
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
     finish = models.TextField()
     color = models.TextField()
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Implements custom __init__ and calls  the
+        parent method as well
+        """
+        self.type = 'table'
+        
+        super(Table, self).__init__(*args, **kwargs)
 
     @classmethod
     def create(cls, user=None, **kwargs):
