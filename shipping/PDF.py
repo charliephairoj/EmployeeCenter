@@ -247,7 +247,9 @@ class ShippingPDF(object):
         except:
             pass
         if product.item.is_custom_size:
-            data.append(['', '   Width: %imm Depth: %imm Height: %imm' %(product.item.width, product.item.depth, product.item.height)])
+            dimension_str = '   Width: {0}mm Depth: {1}mm Height: {2}mm'
+            dimension_str = dimension_str.format(product.item.width, product.item.depth, product.item.height)
+            data.append(['', dimension_str])
         #increase the item number
         pillows = product.item.pillow_set.all()
         if len(pillows) > 0:
