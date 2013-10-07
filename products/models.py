@@ -61,19 +61,15 @@ class Product(models.Model):
         if "description" in kwargs:
             obj.description = kwargs["description"]
 
-        if user:
-            if user.has_perm('products.edit_manufacture_price'):
-                if "manufacture_price" in kwargs:
-                    obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
-            if user.has_perm('products.edit_retail_price'):
-                if "retail_price" in kwargs:
-                    obj.retail_price = Decimal(str(kwargs["retail_price"]))
-            if user.has_perm('products.edit_wholesale_price'):
-                if "wholesale_price" in kwargs:
-                    obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
-            if user.has_perm('products.edit_export_price'):
-                if "export_price" in kwargs:
-                    obj.export_price = Decimal(str(kwargs["export_price"]))
+       
+        if "manufacture_price" in kwargs:
+            obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+        if "retail_price" in kwargs:
+            obj.retail_price = Decimal(str(kwargs["retail_price"]))
+        if "wholesale_price" in kwargs:
+            obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+        if "export_price" in kwargs:
+            obj.export_price = Decimal(str(kwargs["export_price"]))
 
         obj.save()
         #Post save stuff

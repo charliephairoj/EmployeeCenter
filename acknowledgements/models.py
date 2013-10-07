@@ -1,6 +1,7 @@
 import os
 import dateutil.parser
 import math
+import logging
 from decimal import Decimal
 
 from pytz import timezone
@@ -18,15 +19,18 @@ from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
 from auth.models import Log, S3Object
 
 
+logger = logging.getLogger(__name__)
+
+
 class Acknowledgement(models.Model):
     po_id = models.TextField(default=None, null=True)
     discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField(db_column='delivery_date')
+    delivery_date = models.DateTimeField()
     status = models.TextField()
-    remarks = models.TextField()
+    remarks = models.TextField(null=True, default=None)
     fob = models.TextField(null=True)
     shipping_method = models.TextField(null=True)
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -107,6 +111,15 @@ class Acknowledgement(models.Model):
         if "decoroom" in acknowledgement.customer.name.lower():
             acknowledgement.email_decoroom()
         return acknowledgement
+    
+    def delete(self):
+        """
+        Overrides the standard delete method.
+        
+        This method will simply make the acknowledgement as deleted in
+        the database rather an actually delete the record
+        """
+        self.deleted = True
 
     def update(self, data=None, employee=None):
         """"Updates the acknowledgement
@@ -147,44 +160,6 @@ class Acknowledgement(models.Model):
 
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def to_dict(self, user=None):
-        """Retrieves authorized information from the object.
-
-        Requires User object to gain full access to the data.
-        The method will then check if certain permissions are
-        met before adding them to the outgoing data.
-        """
-        data = {'id': self.id,
-                'delivery_date': self.delivery_date.isoformat(),
-                'time_created': self.time_created.isoformat(),
-                'status': self.status,
-                'remarks': self.remarks,
-                'fob': self.fob,
-                'vat': self.vat,
-                'shipping': self.shipping_method,
-                'customer': self.customer.to_dict(),
-                'employee': u'{0} {1}'.format(self.employee.first_name, self.employee.last_name),
-                'products': [item.to_dict() for item in self.item_set.all().order_by('id')],
-                'deleted': self.deleted}
-
-        return data
-
-    def generate_url(self, file_type, expires=1800):
-        """Generates an url for the file type"""
-        if file_type.lower() == "acknowledgement":
-            return self.acknowledgement_pdf.generate_url()
-        elif file_type.lower() == "production":
-            return self.production_pdf.generate_url()
-
-    def save(self):
-        super(Acknowledgement, self).save()
-        try:
-            for item in self.items:
-                item.acknowledgement = self
-                item.save()
-        except AttributeError:
-            pass
-
     def _create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
 
@@ -192,7 +167,7 @@ class Acknowledgement(models.Model):
         create the pdfs from the object itself. It requires
         no arguments
         """
-        products = self.item_set.all().order_by('id')
+        products = self.items.all().order_by('id')
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
         ack_filename = ack_pdf.create()
@@ -213,7 +188,7 @@ class Acknowledgement(models.Model):
 
         #Define items if not already defined
         if not items:
-            items = self.item_set.all()
+            items = self.items.all()
         for product in items:
             running_total += product.total
         self.subtotal = running_total
@@ -305,7 +280,7 @@ class Acknowledgement(models.Model):
 
 
 class Item(models.Model):
-    acknowledgement = models.ForeignKey(Acknowledgement, null=True)
+    acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)
     type = models.CharField(max_length=20)
     quantity = models.IntegerField(null=False)
@@ -320,8 +295,6 @@ class Item(models.Model):
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
     status = models.CharField(max_length=50)
-    bucket = models.TextField(null=True)
-    image_key = models.TextField(null=True)
     comments = models.TextField(null=True)
     location = models.TextField(null=True)
     image = models.ForeignKey(S3Object, null=True)
@@ -338,14 +311,17 @@ class Item(models.Model):
         """Creates an Item"""
         item = cls()
         item.acknowledgement = acknowledgement
-
         try:
             item.product = Product.objects.get(id=kwargs["id"])
+            logger.info("Item set to {0}...".format(item.product.description))
         except KeyError:
             try:
                 item.product = Product.objects.get(id=kwargs["product"]["id"])
             except KeyError:
                 item.product = Product.objects.get(id=10436)
+        except Product.DoesNotExist:
+            item.product = Product.objects.get(id=10436)
+            
         item.status = "ACKNOWLEDGED"
 
         try:
@@ -362,51 +338,17 @@ class Item(models.Model):
 
         return item
 
-    def update(self, employee, **kwargs):
-        """Updates an item"""
-        if "fabric" in kwargs:
-            fabric = Fabric.objects.get(id=kwargs["fabric"]["id"])
-            if fabric != self.fabric:
-                if self.fabric:
-                    message = "Change fabric from {0} to {1}".format(self.fabric.description, fabric.description)
-                else:
-                    message = "Change fabric to {0}".format(fabric.description)
-                self.fabric = fabric
-                AcknowledgementLog.create(message, self.acknowledgement, employee)
-        if "pillows" in kwargs:
-            for pillow_data in kwargs["pillows"]:
-                pillow = Pillow.objects.get(id=pillow_data["id"])
-                fabric = Fabric.objects.get(id=pillow_data["fabric"]["id"])
-                pillow.fabric = fabric
-                pillow.save()
-        if "status" in kwargs:
-            if kwargs["status"] != self.status:
-                self.status = kwargs["status"]
-                if self.status.lower() in ('rejected', 'cancelled', 'inventory'):
-                    self.inventory = True
-                try:
-                    message = "Item# {0} from Acknowledgement #{1} has been {2} due to:{3}"
-                    message.format(self.id,
-                                   self.acknowledgement.id,
-                                   self.status,
-                                   kwargs['status_message'])
-                except:
-                    message = "Item# {0} from Acknowledgement #{1} has been {2}"
-                    message.format(self.id,
-                                   self.acknowledgement.id,
-                                   self.status)
-                AcknowledgementLog.create(message, self.acknowledgement, employee)
-
-        self.save()
-
     def save(self):
         """
-        Saves the object
-
-        This method first saves the object, and then saves any unsaved pillows
-        via the pillow attribute
+        Saves the item to the database.
+        
+        This method will save them item to the database
+        first, and then save the pillows that are created
+        after
         """
         super(Item, self).save()
+        
+        #Save pillows
         try:
             for pillow in self.pillows:
                 pillow.item = self
@@ -414,73 +356,40 @@ class Item(models.Model):
         except AttributeError:
             pass
 
-    def ship(self, delivery_date, employee):
-        self.status = 'SHIPPED'
-        message = "Ack Item# {0}({1}) shipped on {2}"
-        message.format(self.id, self.description, delivery_date.strftime(''))
-        AcknowledgementLog.create(message, self.acknowledgement, employee)
-
-    def to_dict(self, user=None):
-        """Retrieves data about the item"""
-        data = {'id': self.id,
-                'is_custom_size': self.is_custom_size,
-                'width': self.width,
-                'height': self.height,
-                'depth': self.depth,
-                'description': self.description,
-                'comments': self.comments,
-                'quantity': self.quantity,
-                'pillows': [pillow.to_dict() for pillow in self.pillow_set.all()],
-                'status': self.status,
-                'deleted': self.deleted}
-        try:
-            data["acknowledgement"] = {'id': self.acknowledgement.id}
-        except AttributeError:
-            pass
-
-        try:
-                data['image'] = {'url': self.image.generate_url()}
-        except AttributeError:
-            pass
-
-        if self.fabric:
-            try:
-                data.update({'fabric': {'id': self.fabric.id,
-                                        'description': self.fabric.description,
-                                        'image': {'url': self.fabric.image.generate_url()}}})
-            except AttributeError:
-                data.update({'fabric': {'id': self.fabric.id,
-                                        'description': self.fabric.description}})
-        return data
-
     def _apply_product_data(self):
         """Applies data from the set product
 
         Requires no arguments. The data is extracted
         from the product referenced by the item
         """
+        
         self.description = self.product.description
         
-        try:
-            if self.acknowledgement.customer.type == "Retail":
-                self.unit_price = self.product.retail_price
-            elif self.acknowledgement.customer.type == "Dealer":
-                self.unit_price = self.product.wholesale_price
-            else:
-                self.unit_price = self.product.retail_price
-        except AttributeError:
+        #Determines the unit price of the
+        #the item based on the type of 
+        #customer. And then calculates the
+        #total price based on quantity
+        if self.acknowledgement.customer.type == "Retail":
             self.unit_price = self.product.retail_price
+        elif self.acknowledgement.customer.type == "Dealer":
+            self.unit_price = self.product.wholesale_price
+        else:
+            self.unit_price = self.product.retail_price
+        logger.info("Item unit price set to {0}...".format(self.unit_price))
 
+        #Calculate the total cost of the the item
         self.total = self.unit_price * Decimal(self.quantity)
+        logger.info("Item total price set to {0}...".format(self.total))
 
+        #Set the appropriate dimensions or to 0
+        #if no dimensions are available from the model
+        logger.info("Setting standard dimensions from standard product...")
         self.width = self.product.width if self.product.width else 0
         self.depth = self.product.depth if self.product.depth else 0
         self.height = self.product.height if self.product.height else 0
 
-        try:
-            self.image = self.product.image
-        except:
-            pass
+        self.image = self.product.image
+        
 
     def _apply_data(self, **kwargs):
         """Applies data to the attributes
@@ -516,10 +425,7 @@ class Item(models.Model):
             self.unit_price = Decimal(kwargs["custom_price"])
             self.total = self.unit_price * Decimal(self.quantity)
         else:
-            #try:
             self._calculate_custom_price()
-            #except TypeError as e:
-                #print e
 
         #Create a Item from a custom product
         if "is_custom" in kwargs:
@@ -528,12 +434,18 @@ class Item(models.Model):
                 self.description = kwargs["description"]
                 if "image" in kwargs:
                     self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
+        
+        #Sets the fabric for the item
         if "fabric" in kwargs:
             try:
                 self.fabric = Fabric.objects.get(pk=kwargs["fabric"]["id"])
+                logger.info("{0} fabric set to {1}".format(self.description,
+                                                           self.fabric.description))
             except Fabric.DoesNotExist as e:
                 print "Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
 
+        #Sets all the pillows and the fabrics
+        #for the item
         if "pillows" in kwargs:
             pillows = self._condense_pillows(kwargs["pillows"])
             self.pillows = [self._create_pillow(keys[0],
@@ -542,6 +454,7 @@ class Item(models.Model):
 
     def _calculate_custom_price(self):
         """Caluates the custom price based on dimensions."""
+        logger.info("Calculating custom price for {0}...".format(self.description))
         dimensions = {}
         try:
             dimensions['width_difference'] = self.width - self.product.width
@@ -562,8 +475,14 @@ class Item(models.Model):
             upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 5, 1) for key in dimensions)
         else:
             upcharge_percentage = 0
+
         self.unit_price = self.unit_price + (self.unit_price * (Decimal(upcharge_percentage) / 100))
+        logger.info("Setting unit price of {0} to {1}".format(self.description, 
+                                                              self.unit_price))
+        
         self.total = self.unit_price * self.quantity
+        logger.info("Setting total of {0} to {1}...".format(self.description,
+                                                            self.total))
 
     def _calculate_upcharge(self, difference, boundary, initial, increment):
         """Returns the correct upcharge percentage as a whole number
@@ -639,22 +558,6 @@ class Pillow(models.Model):
         pillow = cls(**kwargs)
         pillow.save()
         return pillow
-
-    def to_dict(self):
-        """Gets all the pillow's data"""
-        data = {'id': self.id,
-                'type': self.type,
-                'quantity': self.quantity}
-        
-        if self.fabric:
-            try:
-                data.update({'fabric': {'id': self.fabric.id,
-                                        'description': self.fabric.description,
-                                        'image': {'url': self.fabric.image.generate_url()}}})
-            except AttributeError:
-                data.update({'fabric': {'id': self.fabric.id,
-                                        'description': self.fabric.description}})
-        return data
 
 
 class AcknowledgementLog(Log):
