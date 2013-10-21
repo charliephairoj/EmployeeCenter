@@ -50,21 +50,23 @@ base_ack = {'customer': {'id': 1},
             'delivery_date': base_delivery_date.isoformat(),
             'employee': {'id': 1},
             'items': [{'id': 1,
-                          'quantity': 2,
-                          'fabric': {"id": 1},
-                          'pillows':[{"type": "back",
-                                      "fabric": {"id": 1}},
-                                      {"type": "back",
-                                       "fabric": {"id": 2}},
-                                     {"type": "back",
-                                      "fabric": {"id": 1}},
-                                     {"type": "accent",
-                                      "fabric": {"id": 2}},
-                                     {"type": "accent"}]},
+                       'quantity': 2,
+                       'fabric': {"id": 1},
+                       'pillows':[{"type": "back",
+                                   "fabric": {"id": 1}},
+                                  {"type": "back",
+                                   "fabric": {"id": 2}},
+                                  {"type": "back",
+                                   "fabric": {"id": 1}},
+                                  {"type": "accent",
+                                   "fabric": {"id": 2}},
+                                  {"type": "accent"}]},
                          {'id': 1,
                           'quantity': 1,
                           'is_custom_size': True,
                           'width': 1500,
+                          'depth': 320,
+                          'height': 760,
                           "fabric": {"id":1}}]}
 
 
@@ -161,7 +163,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         Tests getting the list of acknowledgements
         """
         #Get and verify the resp
-        resp = self.api_client.get('/api/v1/acknowledgement/', format='json',
+        resp = self.api_client.get('/api/v1/acknowledgement', format='json',
                                    authentication=self.get_credentials())
         self.assertHttpOK(resp)
 
@@ -176,7 +178,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         Tests getting the acknowledgement
         """
         #Get and verify the resp
-        resp = self.api_client.get('/api/v1/acknowledgement/1/', format='json',
+        resp = self.api_client.get('/api/v1/acknowledgement/1', format='json',
                                    authentication=self.get_credentials())
         self.assertHttpOK(resp)
        
@@ -197,7 +199,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.skipTest("Takes a while")
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/acknowledgement/', format='json',
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
                                     data=base_ack,
                                     authentication=self.get_credentials())
         self.assertHttpCreated(resp)
@@ -246,13 +248,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         Testing POSTing data to the api if there
         is vat
         """
-        self.skipTest("Takes a while")
+        self.skipTest("takes a while")
         #POST and verify the response
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/acknowledgement/', format='json',
-                                    data=base_ack,
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=ack_data,
                                     authentication=self.get_credentials())
         self.assertHttpCreated(resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -264,7 +266,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['id'], 2)
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
-        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(ack['vat'], 7)
+        self.assertEqual(Decimal(ack['total']), Decimal(84797.5))
         self.assertEqual(len(ack['items']), 2)
         #Test standard sized item 
         item1 = ack['items'][0]
@@ -294,6 +297,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Tests links to document
         self.assertIsNotNone(ack['acknowledgement_pdf']['url'])
         self.assertIsNotNone(ack['production_pdf']['url'])
+        
     def test_put(self):
         """
         Test making a PUT call
@@ -301,10 +305,11 @@ class AcknowledgementResourceTest(ResourceTestCase):
         ack_data = base_ack.copy()
         ack_data['delivery_date'] = datetime.now()
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/acknowledgement/1/', 
+        resp = self.api_client.put('/api/v1/acknowledgement/1', 
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
+        print resp
         self.assertHttpOK(resp)
         self.assertEqual(Acknowledgement.objects.count(), 1)
         
@@ -317,12 +322,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         Test making a DELETE call
         """
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/acknowledgement/1/',
+        resp = self.api_client.delete('/api/v1/acknowledgement/1',
                                       format='json',
                                       authentication=self.get_credentials())
         self.assertEqual(Acknowledgement.objects.count(), 1)
+        self.assertHttpMethodNotAllowed(resp)
         
-        self.assert
+        
         
         
         

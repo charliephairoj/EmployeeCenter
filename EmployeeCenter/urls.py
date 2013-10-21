@@ -4,9 +4,11 @@ from django.conf import settings
 from tastypie.api import Api
 
 from contacts.api import SupplierResource, CustomerResource
-from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource 
+from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
+from shipping.api import ShippingResource
 from supplies.api import SupplyResource, FabricResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
+from administrator.api import UserResource
 """
 API Section
 
@@ -18,8 +20,10 @@ v1_api.register(SupplierResource())
 v1_api.register(CustomerResource())
 v1_api.register(AcknowledgementResource())
 v1_api.register(AckItemResource())
+v1_api.register(ShippingResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())
+v1_api.register(UserResource())
 
 #Products Category
 v1_api.register(ModelResource())
@@ -27,8 +31,22 @@ v1_api.register(ConfigurationResource())
 v1_api.register(UpholsteryResource())
 v1_api.register(TableResource())
 
+
+
+#primary login and url routing
 urlpatterns = patterns('',
+    url(r'^$', 'login.views.app_login'),
+    url(r'^login$', 'login.views.app_login'),
+    url(r'^logout$', 'login.views.logout')
+)
+
+urlpatterns += patterns('',
     (r'^api/', include(v1_api.urls))
+)
+
+urlpatterns += patterns('',
+    url(r'^(?P<path>.*)$', 'django.views.static.serve',
+        {'document_root': settings.STATIC_ROOT})
 )
 
 """

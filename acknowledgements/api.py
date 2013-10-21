@@ -8,8 +8,10 @@ from tastypie import fields
 from tastypie.resources import ModelResource
 from tastypie.authorization import Authorization
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
+from acknowledgements.validation import AcknowledgementValidation
 from contacts.models import Customer
 from auth.models import S3Object
 
@@ -24,11 +26,14 @@ class AcknowledgementResource(ModelResource):
                                  readonly=True, full=True)
     
     class Meta:
-        queryset = Acknowledgement.objects.filter(deleted=False)
+        queryset = Acknowledgement.objects.filter(deleted=False).order_by('-id')
         resource_name = 'acknowledgement'
+        allowed_methods = ['get', 'post', 'put', 'patch']
         fields = ['time_created', 'deleted', 'last_modified', 'po_id', 'subtotal', 'vat', 'total', 
                   'remarks', 'status', 'delivery_date', 'id']
         always_return_data = True
+        validation = AcknowledgementValidation()
+        authorization = Authorization()
     
     def dehydrate(self, bundle):
         """
@@ -40,15 +45,26 @@ class AcknowledgementResource(ModelResource):
         #Add URLS for the acknowledgement
         #and the production pdf to the data
         #bundle
-        try:
-            ack = bundle.obj.acknowledgement_pdf
-            production = bundle.obj.production_pdf
-            bundle.data['acknowledgement_pdf'] = {'url': ack.generate_url()}
-            bundle.data['production_pdf'] = {'url': production.generate_url()}
-        except AttributeError: 
-            logger.warn('Missing acknowledgement or production pdf')
+        if bundle.request.GET.get('pdf') == 'include':
+            try:
+                ack = bundle.obj.acknowledgement_pdf
+                production = bundle.obj.production_pdf
+                bundle.data['acknowledgement_pdf'] = {'url': ack.generate_url()}
+                bundle.data['production_pdf'] = {'url': production.generate_url()}
+            except AttributeError: 
+                logger.warn('Missing acknowledgement or production pdf')
             
         return bundle
+    
+    def apply_filters(self, request, applicable_filters):
+        obj_list = super(AcknowledgementResource, self).apply_filters(request, applicable_filters)
+        
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(customer__name__icontains=query) | 
+                                       Q(pk__icontains=query))
+        return obj_list
     
     def obj_create(self, bundle, **kwargs):
         """
@@ -57,10 +73,10 @@ class AcknowledgementResource(ModelResource):
         logger.info("Creating a new acknowledgement...")
         #Create the object
         bundle.obj = Acknowledgement()
-        
+        logger.debug(bundle.data)
         #hydrate
         bundle = self.full_hydrate(bundle)
-        
+        logger.debug(bundle.obj.vat)
         #Set the customer
         try:
             logger.info("Setting customer...")
@@ -104,7 +120,7 @@ class AcknowledgementResource(ModelResource):
         #S3 system. The save the pdfs as
         #Attributes of the acknowledgement
         logger.info("Creating PDF documents...")
-        ack, production = bundle.obj._create_pdfs()
+        ack, production = bundle.obj.create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(bundle.obj.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(bundle.obj.id)
         bucket = "document.dellarobbiathailand.com"
@@ -136,22 +152,21 @@ class AcknowledgementResource(ModelResource):
         """
         logger.info("Updating acknowledgement...")
         
-        #Attempt to get the obj from the kwargs
-        try:
-            bundle.obj = Acknowledgement.objects.get(pk=kwargs['pk'])
-        except Acknowledgement.DoesNotExist:
-            logger.error("Acknowledgement #{0} could not be found.".format(kwargs['pk']))
-        
-        if "delivery_date" in bundle.data:
-            bundle.obj.delivery_date = dateutil.parser.parse(bundle.data['delivery_date'])
-        
-        return bundle
+        return super(AcknowledgementResource, self).obj_update(bundle, **kwargs)
+    
+    def obj_delete(self, bundle, **kwargs):
+        """
+        Implements the obj_delete method
+        """
+        logger.info("Deleting acknowledgement...")
+        logger.debug(kwargs)
+        super(AcknowledgementResource, self).obj_delete(bundle, **kwargs)
         
 
 class ItemResource(ModelResource):    
     class Meta:
         queryset = Item.objects.all()
-        resource_name = 'item'
+        resource_name = 'acknowledgement/item'
         always_return_data = True
         authorization = Authorization()
         

@@ -27,7 +27,7 @@ class Shipping(models.Model):
     bucket = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
     shipping_key = models.TextField()
-    pdf = models.ForeignKey(S3Object, related_name='+')
+    pdf = models.ForeignKey(S3Object, related_name='+', null=True)
     comments = models.TextField()
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     connection = S3Connection(settings.AWS_ACCESS_KEY_ID,
@@ -48,37 +48,47 @@ class Shipping(models.Model):
        
         return data
 
-    def create(self, data, user):
+    @classmethod
+    def create(cls, user=None, **kwargs):
+        data = kwargs
+        shipping = cls()
         #Set the data from the shippping
-        self.customer = Customer.objects.get(id=data['customer']['id'])
-        self.acknowledgement = Acknowledgement.objects.get(id=data["acknowledgement"]['id'])
-        self.employee = user
-        self.delivery_date = dateutil.parser.parse(data["delivery_date"])
+        shipping.customer = Customer.objects.get(id=data['customer']['id'])
+        shipping.acknowledgement = Acknowledgement.objects.get(id=data["acknowledgement"]['id'])
+        shipping.employee = user
+        shipping.delivery_date = data["delivery_date"]
         if "comments" in data:
-            self.comments = data["comments"]
-        self.save()
+            shipping.comments = data["comments"]
+        shipping.save()
 
-        #Set products information
-        for product_data in data['products']:
-            self.set_product(product_data)
+        shipping.process_items(kwargs['items'])
 
-        self.update_acknowledgement_data()
+        #shipping.update_acknowledgement_data()
         #Initialize and create pdf
-        pdf = ShippingPDF(customer=self.customer, shipping=self,
-                          products=self.item_set.all().order_by('id'),
-                          connection=self.connection)
+        pdf = ShippingPDF(customer=shipping.customer, shipping=shipping,
+                          products=shipping.item_set.all().order_by('id'),
+                          connection=shipping.connection)
         shipping_filename = pdf.create()
         #Upload and return the url
-        self.pdf = S3Object.create(shipping_filename,
-                                   "shipping/Shipping-{0}.pdf".format(self.id),
+        shipping.pdf = S3Object.create(shipping_filename,
+                                   "shipping/Shipping-{0}.pdf".format(shipping.id),
                                    'document.dellarobbiathailand.com')
-        self.save()
+        shipping.save()
 
-        message = "Acknowledgement {0} Has Shipped: Shipping#{1}".format(self.acknowledgement.id, self.id)
-        AcknowledgementLog.create(message, self.acknowledgement, self.employee)
-
-        urls = {'url': self.pdf.generate_url()}
-        return urls
+        return shipping
+    
+    def process_items(self, items):
+        """
+        Creates all the items in the array
+        """
+        id_list = [item['id'] for item in items]
+        for item in self.acknowledgement.items.all():
+            if item.id in id_list:
+                shipped_item = Item()
+                shipped_item.shipping = self
+                shipped_item.set_data_from_acknowledgement_item(item)
+                shipped_item.save()
+                print item.description
 
     def set_product(self, data):
 
@@ -101,7 +111,30 @@ class Shipping(models.Model):
         else:
             self.acknowledgement.status = 'PARTIALLY SHIPPED'
         self.acknowledgement.save()
-
+        
+    def create_pdf(self):
+        #shipping.update_acknowledgement_data()
+        #Initialize and create pdf
+        pdf = ShippingPDF(customer=self.customer, shipping=self,
+                          products=self.item_set.all().order_by('id'),
+                          connection=self.connection)
+        filename = pdf.create()
+        
+        return filename
+        
+    def create_and_upload_pdf(self):
+        """
+        Creates a pdf of the shipping manifest and uploads
+        it to the S3 service
+        """
+        filename = self.create_pdf()
+       
+        #Upload and return the url
+        self.pdf = S3Object.create(filename,
+                                   "shipping/Shipping-{0}.pdf".format(self.id),
+                                   'document.dellarobbiathailand.com')
+        self.save()
+        return self.pdf
 
 class Item(models.Model):
     shipping = models.ForeignKey(Shipping)

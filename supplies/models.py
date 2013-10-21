@@ -29,7 +29,6 @@ class Supply(models.Model):
     purchasing_units = models.CharField(max_length=10, default="pc")
     discount = models.IntegerField(default=0)
     reference = models.TextField()
-    currency = models.CharField(max_length=10, default="THB")
     notes = models.TextField(null=True)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     quantity_units = models.TextField(default="mm")

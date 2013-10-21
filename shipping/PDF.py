@@ -270,8 +270,8 @@ class ShippingPDF(object):
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
             data.append(['', comments, ''])
         #Get Image url and add image
-        if product.item.image_key is not None:
-            image_url = self.connection.generate_url(100, 'GET', bucket=product.item.bucket, key=product.item.image_key, force_http=True)
+        if product.item.image is not None:
+            image_url = product.item.image.generate_url()
             data.append(['', self.get_image(image_url, height=100)])
         #Create table
         table = Table(data, colWidths=(65, 425, 40))

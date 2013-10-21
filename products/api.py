@@ -3,13 +3,13 @@ API for products
 """
 import logging
 
+from django.db.models import Q
 from tastypie import fields
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource as Resource
 
-from media.api import S3ObjectResource
 from products.models import Model, Configuration, Upholstery, Pillow, ModelImage, Table
-from auth.models import S3Object
+from products.validation import *
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,24 @@ class ModelResource(Resource):
         resource_name = 'model'
         authorization = Authorization()
         always_return_data = True 
+        validation = ModelValidation()
+        
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
+        
+        The parent method is called and then we search the
+        name of the model if the query exists
+        """
+        obj_list = super(ModelResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(name__icontains=query) |
+                                       Q(model__icontains=query) |
+                                       Q(collection__icontains=query))
+            
+        return obj_list
         
     def obj_create(self, bundle, **kwargs):
         """
@@ -79,7 +97,23 @@ class ConfigurationResource(Resource):
         resource_name = 'configuration'
         authorization = Authorization()
         always_return_data = True
+        validation = ConfigurationValidation()
+    
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
         
+        The parent method is called and then we search the
+        name of the configuration if the query exists
+        """
+        obj_list = super(ConfigurationResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(configuration__icontains=query))
+            
+        return obj_list
+    
     def obj_create(self, bundle, **kwargs):
         """
         Overrides the object create method
@@ -117,6 +151,7 @@ class UpholsteryResource(Resource):
         resource_name = 'upholstery'
         authorization = Authorization()
         always_return_data = True
+        validation = UpholsteryValidation()
         
     def hydrate(self, bundle):
         """
@@ -143,6 +178,23 @@ class UpholsteryResource(Resource):
                 
         return bundle
     
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
+        
+        The parent method is called and then we search the
+        name of the upholstery if the query exists
+        """
+        obj_list = super(UpholsteryResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(description__icontains=query) |
+                                       Q(model__model__icontains=query) |
+                                       Q(model__name__icontains=query) |
+                                       Q(configuration__configuration__icontains=query))
+            
+        return obj_list
         
     def obj_create(self, bundle, **kwargs):
         """
@@ -242,6 +294,7 @@ class TableResource(Resource):
         resource_name = 'table'
         authorization = Authorization()
         always_return_data = True
+        validation = TableValidation()
         
     def hydrate(self, bundle):
         """
@@ -264,6 +317,24 @@ class TableResource(Resource):
         
         return bundle
         
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
+        
+        The parent method is called and then we search the
+        name of the upholstery if the query exists
+        """
+        obj_list = super(TableResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(description__icontains=query) |
+                                       Q(model__model__icontains=query) |
+                                       Q(model__name__icontains=query) |
+                                       Q(configuration__configuration__icontains=query))
+            
+        return obj_list
+    
     def obj_create(self, bundle, **kwargs):
         """
         Implements the obj_create method

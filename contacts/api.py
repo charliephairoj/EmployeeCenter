@@ -4,17 +4,37 @@ API file for contacts
 import uuid
 import logging
 
-from tastypie import fields
+from django.db.models import Q
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource
 
 from contacts.models import Customer, Supplier, Address
+from contacts.validation import CustomerValidation, SupplierValidation
 
 
 logger = logging.getLogger(__name__)
 
 
 class ContactResource(ModelResource):
+    
+    def hydrate(self, bundle):
+        """
+        Implements the hydrate method to manipulate data 
+        before it is put into the model
+        """
+        #Change the currency to lowercase
+        bundle.data['currency'] = bundle.data['currency'].lower()
+        
+        return bundle
+    
+    def dehydrate(self, bundle):
+        """
+        Implements the dehydrate method to manipulate data
+        before it is serialized to be return to the client
+        """
+        bundle.data['currency'] = bundle.obj.currency.upper()
+        
+        return bundle
     
     def _set_address(self, bundle):
         """
@@ -50,6 +70,25 @@ class CustomerResource(ContactResource):
         resource_name = 'customer'
         always_return_data = True
         authorization = Authorization()
+        validation = CustomerValidation()
+    
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
+        
+        The parent method is called and then we search the
+        name of the customer if the query exists
+        """
+        obj_list = super(CustomerResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(name__icontains=query) |
+                                       Q(email__icontains=query) |
+                                       Q(telephone__icontains=query) |
+                                       Q(notes__icontains=query))
+            
+        return obj_list
     
     def obj_create(self, bundle, **kwargs):
         """
@@ -73,8 +112,8 @@ class CustomerResource(ContactResource):
         Update a customer resource
         """
         #Update the resource
+        logger.info("Updating customer...")
         bundle =  super(CustomerResource, self).obj_update(bundle, **kwargs)
-        logger.info("Updating customer: {0}...".format(bundle.obj.name))
         return bundle
     
     def obj_delete(self, bundle, **kwargs):
@@ -89,6 +128,10 @@ class CustomerResource(ContactResource):
         """
         Set other attributes
         """
+        
+        #perform the parent hydrate
+        bundle = super(CustomerResource, self).hydrate(bundle)
+        
         #Write the name
         if "first_name" in bundle.data and "last_name" in bundle.data:
             logger.info("Setting name from first and last name...") 
@@ -110,7 +153,27 @@ class SupplierResource(ContactResource):
         resource_name = 'supplier'
         always_return_data = True
         authorization = Authorization()
+        validation = SupplierValidation()
         
+    def apply_filters(self, request, applicable_filters):
+        """
+        Applys filters to the query set.
+        
+        The parent method is called and then we search the
+        name, email, telephone or notes
+        of the supplier if the query exists
+        """
+        obj_list = super(SupplierResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(name__icontains=query) |
+                                       Q(email__icontains=query) |
+                                       Q(telephone__icontains=query) |
+                                       Q(notes__icontains=query))
+        
+        return obj_list
+    
     def obj_create(self, bundle, **kwargs):
         """
         Create a supplier resource

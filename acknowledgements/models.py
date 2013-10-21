@@ -160,7 +160,7 @@ class Acknowledgement(models.Model):
 
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def _create_pdfs(self):
+    def create_pdf(self):
         """Creates Production and Acknowledgement PDFs
 
         This method will extract the necessary data to 
@@ -173,6 +173,8 @@ class Acknowledgement(models.Model):
         ack_filename = ack_pdf.create()
         production_filename = production_pdf.create()
         return ack_filename, production_filename
+    
+    
 
     def calculate_totals(self, items=None):
         """Calculates the total of the order
@@ -282,7 +284,7 @@ class Acknowledgement(models.Model):
 class Item(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)
-    type = models.CharField(max_length=20)
+    type = models.CharField(max_length=20, null=True)
     quantity = models.IntegerField(null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)

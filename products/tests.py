@@ -37,7 +37,8 @@ base_upholstery = {"model": {"id": 1},
                    'category': 'Chair'}
 base_upholstery.update(base_product)
 base_table = {"model": {"id": 1},
-              "configuration": {"id": 1}}
+              "configuration": {"id": 1},
+              'finish': 'high gloss'}
 base_table.update(base_product)
 
 
@@ -65,7 +66,7 @@ class ModelResourceTest(ResourceTestCase):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/model/', format='json')
+        resp = self.api_client.get('/api/v1/model', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -86,7 +87,7 @@ class ModelResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/model/1/', format='json')
+        resp = self.api_client.get('/api/v1/model/1', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -105,7 +106,7 @@ class ModelResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/model/', 
+        resp = self.api_client.post('/api/v1/model', 
                                     format='json',
                                     data=base_model,
                                     authorization=self.get_credentials())
@@ -134,7 +135,7 @@ class ModelResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/model/1/', 
+        resp = self.api_client.put('/api/v1/model/1', 
                                    format='json',
                                    data=updated_model,
                                    authorization=self.get_credentials())
@@ -154,7 +155,7 @@ class ModelResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/model/1/', 
+        resp = self.api_client.delete('/api/v1/model/1', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Model.objects.count(), 0)
@@ -183,7 +184,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/configuration/', format='json')
+        resp = self.api_client.get('/api/v1/configuration', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -202,7 +203,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/configuration/1/', format='json')
+        resp = self.api_client.get('/api/v1/configuration/1', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -219,7 +220,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/configuration/', 
+        resp = self.api_client.post('/api/v1/configuration', 
                                     format='json',
                                     data=base_configuration,
                                     authorization=self.get_credentials())
@@ -246,7 +247,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/configuration/1/', 
+        resp = self.api_client.put('/api/v1/configuration/1', 
                                    format='json',
                                    data=updated_config,
                                    authorization=self.get_credentials())
@@ -258,7 +259,7 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/configuration/1/', 
+        resp = self.api_client.delete('/api/v1/configuration/1', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Configuration.objects.count(), 0)
@@ -305,7 +306,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/upholstery/', format='json')
+        resp = self.api_client.get('/api/v1/upholstery', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -335,7 +336,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/upholstery/1/', format='json')
+        resp = self.api_client.get('/api/v1/upholstery/1', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -365,7 +366,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/upholstery/', 
+        resp = self.api_client.post('/api/v1/upholstery', 
                                     format='json',
                                     data=base_upholstery,
                                     authorization=self.get_credentials())
@@ -401,7 +402,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/upholstery/1/', 
+        resp = self.api_client.put('/api/v1/upholstery/1', 
                                    format='json',
                                    data=updated_uphol,
                                    authorization=self.get_credentials())
@@ -427,7 +428,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/upholstery/1/', 
+        resp = self.api_client.delete('/api/v1/upholstery/1', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Upholstery.objects.count(), 0)
@@ -475,7 +476,7 @@ class TableResourceTest(ResourceTestCase):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/table/', format='json')
+        resp = self.api_client.get('/api/v1/table', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -504,7 +505,7 @@ class TableResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/table/1/', format='json')
+        resp = self.api_client.get('/api/v1/table/1', format='json')
         
         #Validate resp
         self.assertValidJSONResponse(resp)
@@ -534,12 +535,11 @@ class TableResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/table/', 
+        resp = self.api_client.post('/api/v1/table', 
                                     format='json',
-                                    data=base_upholstery,
+                                    data=base_table,
                                     authorization=self.get_credentials())
         self.assertEqual(Table.objects.count(), 2)
-        
         #Validate response
         self.assertHttpCreated(resp)
        
@@ -565,12 +565,12 @@ class TableResourceTest(ResourceTestCase):
         is neither created or deleted
         """
         #Update data
-        updated_table = base_upholstery.copy()
+        updated_table = base_table.copy()
         updated_table['wholesale_price'] = 120000
         
         #Validate object update
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/table/1/', 
+        resp = self.api_client.put('/api/v1/table/1', 
                                    format='json',
                                    data=updated_table,
                                    authorization=self.get_credentials())
@@ -596,7 +596,7 @@ class TableResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/table/1/', 
+        resp = self.api_client.delete('/api/v1/table/1', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Table.objects.count(), 0)
