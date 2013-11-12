@@ -6,11 +6,9 @@ Replace this with more appropriate tests for your application.
 """
 from decimal import Decimal
 import random
-import json
 
-from django.conf import settings
-from django.test import TestCase
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, ContentType
+from tastypie.test import ResourceTestCase
 
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Foam, SupplyLog
@@ -38,6 +36,9 @@ base_supply = {"description": "test",
 base_fabric = base_supply.copy()
 base_fabric.update({"pattern": "Max",
                     "color": "Hot Pink"})
+base_fabric['purchasing_units'] = 'm'
+del base_fabric['depth']
+
 
 
 def create_user(block_permissions=[]):
@@ -56,45 +57,377 @@ def create_user(block_permissions=[]):
     return user
      
             
-class SupplyViewTest(TestCase):
+class SupplyResourceTestCase(ResourceTestCase):
     def setUp(self):
         """
         Set up the view 
         
         -login the user
         """
+        super(SupplyResourceTestCase, self).setUp()
         
-        User.objects.create_user('test', 'test', 'test')
+        self.create_user()
+        self.api_client.client.login(username='test', password='test')
+        
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()
         self.supply = Supply.create(**base_supply)
+        self.assertIsNotNone(self.supply.pk)
         self.supply2 = Supply.create(**base_supply)
-        self.client.login(username='test', password='test')
-
-    def test_get(self):
+        self.assertIsNotNone(self.supply.pk)
+        
+    def create_user(self):
+        self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
+        self.ct = ContentType(app_label='supplies')
+        self.ct.save()
+        self._create_and_add_permission('view_cost', self.user)
+        self._create_and_add_permission('change_supply', self.user)
+        self._create_and_add_permission('add_supply', self.user)
+        self._create_and_add_permission('add_quantity', self.user)
+        self._create_and_add_permission('subtract_quantity', self.user)
+       
+        
+    def _create_and_add_permission(self, codename, user):
+        p = Permission(content_type=self.ct, codename=codename)
+        p.save()
+        user.user_permissions.add(p)
+        
+    def test_get_list(self):
         """
-        Tests that a standard get call works
+        Tests that a standard get call works.
         """
         
         #Testing standard GET
-        response = self.client.get('/supply')
-        content = json.loads(response.content)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(content), 2)
-        self.assertIsNotNone(response.content)
+        resp = self.api_client.get('/api/v1/supply')
+        self.assertHttpOK(resp)
         
-        #Testing get with pk
-        response = self.client.get('/supply/2')
-        content = json.loads(response.content)
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.content)
+        #Tests the returned data
+        resp_obj = self.deserialize(resp)
+        self.assertIn('objects', resp_obj)
+        self.assertEqual(len(resp_obj['objects']), 2)
+    
+    def test_get(self):
+        """
+        Tests getting a supply that doesn't have the price 
+        where the user is not authorized to view the price
+        """
+        resp = self.api_client.get('/api/v1/supply/1')
+        self.assertHttpOK(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertEqual(Decimal(obj['cost']), Decimal('100'))
+        
+    def test_get_without_price(self):
+        """
+        Tests getting a supply that doesn't have the price 
+        where the user is not authorized to view the price
+        """
+        #Delete the view cost permission from the user
+        self.user.user_permissions.remove(Permission.objects.get(codename='view_cost', content_type=self.ct))
+        
+        #tests the response
+        resp = self.api_client.get('/api/v1/supply/1')
+        self.assertHttpOK(resp)
+        
+        #Tests the data returned
+        obj = self.deserialize(resp)
+        self.assertNotIn("cost", obj)
         
     def test_post(self):
         """
         Tests posting to the server
         """
-        response = self.client.post('/supply', base_supply)
-        content = response.content
-        self.assertEqual(response.status_code, 201)
+        #Test creating an objects. 
+        self.assertEqual(Supply.objects.count(), 2)
+        resp = self.api_client.post('/api/v1/supply', format='json',
+                                    data=base_supply)
+        self.assertHttpCreated(resp)
+       
+        #Tests the dat aturned
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 3)
+        self.assertEqual(int(obj['width']), 100)
+        self.assertEqual(int(obj['depth']), 200)
+        self.assertEqual(int(obj['height']), 300)
+        self.assertEqual(obj['reference'], 'A2234')
+        self.assertEqual(obj['description'], 'test')
+        self.assertEqual(int(obj['cost']), 100)
+        
+    def test_put(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['description'] = 'new'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        resp = self.api_client.put('/api/v1/supply/1', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        self.description = ''
 
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        
+    def test_add(self):
+        """
+        Tests adding a quantity
+        to the specific url
+        """
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.post('/api/v1/supply/1/add?quantity=5', format='json')
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('15.8'))
+        
+    def test_subract(self):
+        """
+        Tests adding a quantity
+        to the specific url
+        """
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.post('/api/v1/supply/1/subtract?quantity=5', format='json')
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('5.8'))
+        
+    def test_put_add_quantity(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['quantity'] = '14'
+        modified_data['description'] = 'new'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.put('/api/v1/supply/1', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('14'))
+        self.assertEqual(Supply.objects.get(pk=1).description, 'new')
 
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('14'))
+        
+    def test_put_subtract_quantity(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['quantity'] = '8'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.put('/api/v1/supply/1', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('8'))
+
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('8'))
+        
+
+class FabricResourceTestCase(ResourceTestCase):
+    
+    def setUp(self):
+        """
+        Set up the view 
+        
+        -login the user
+        """
+        super(FabricResourceTestCase, self).setUp()
+        
+        self.create_user()
+        self.api_client.client.login(username='test', password='test')
+        
+        self.supplier = Supplier(**base_supplier)
+        self.supplier.save()
+        self.supply = Fabric.create(**base_fabric)
+        self.assertIsNotNone(self.supply.pk)
+        self.supply2 = Fabric.create(**base_fabric)
+        self.assertIsNotNone(self.supply.pk)
+    
+    def create_user(self):
+        self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
+        self.ct = ContentType(app_label='supplies')
+        self.ct.save()
+        self._create_and_add_permission('view_cost', self.user)
+        self._create_and_add_permission('change_fabric', self.user)
+        self._create_and_add_permission('add_fabric', self.user)
+        self._create_and_add_permission('add_quantity', self.user)
+        self._create_and_add_permission('subtract_quantity', self.user)
+        
+    def _create_and_add_permission(self, codename, user):
+        p = Permission(content_type=self.ct, codename=codename)
+        p.save()
+        user.user_permissions.add(p)
+        
+    def _remove_permission(self, codename):
+        self.user.user_permissions.remove(Permission.objects.get(codename=codename, content_type=self.ct))
+        
+    def test_get_list(self):
+        """
+        Tests that a standard get call works.
+        """
+        
+        #Testing standard GET
+        resp = self.api_client.get('/api/v1/fabric')
+        self.assertHttpOK(resp)
+        
+        #Tests the returned data
+        resp_obj = self.deserialize(resp)
+        self.assertIn('objects', resp_obj)
+        self.assertEqual(len(resp_obj['objects']), 2)
+    
+    def test_get(self):
+        """
+        Tests getting a supply that doesn't have the price 
+        where the user is not authorized to view the price
+        """
+        resp = self.api_client.get('/api/v1/fabric/1')
+        self.assertHttpOK(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['cost']), float('100'))
+        
+    def test_get_without_price(self):
+        """
+        Tests getting a supply that doesn't have the price 
+        where the user is not authorized to view the price
+        """
+        #Delete the view cost permission from the user
+        self.user.user_permissions.remove(Permission.objects.get(codename='view_cost', content_type=self.ct))
+        
+        #tests the response
+        resp = self.api_client.get('/api/v1/fabric/1')
+        self.assertHttpOK(resp)
+        
+        #Tests the data returned
+        obj = self.deserialize(resp)
+        self.assertNotIn("cost", obj)
+        
+    def test_post(self):
+        """
+        Tests posting to the server
+        """
+        #Test creating an objects. 
+        self.assertEqual(Supply.objects.count(), 2)
+        resp = self.api_client.post('/api/v1/fabric', format='json',
+                                    data=base_fabric)
+        self.assertHttpCreated(resp)
+       
+        #Tests the dat aturned
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 3)
+        self.assertEqual(int(obj['width']), 100)
+        self.assertEqual(int(obj['depth']), 0   )
+        self.assertEqual(int(obj['height']), 300)
+        self.assertEqual(obj['reference'], 'A2234')
+        self.assertEqual(obj['description'], 'test')
+        self.assertEqual(int(obj['cost']), 100)
+        
+    def test_put(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['cost'] = '111'
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        resp = self.api_client.put('/api/v1/fabric/1', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['cost']), float('111'))
+        
+    def test_put_add_quantity(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['quantity'] = '14'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.put('/api/v1/fabric/1', format='json',
+                                   data=modified_data)
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('14'))
+
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('14'))
+        
+    def test_put_subtract_quantity(self):
+        """
+        Tests adding quantity to the item
+        """
+        modified_data = base_supply.copy()
+        modified_data['quantity'] = '8'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
+        resp = self.api_client.put('/api/v1/fabric/1', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.get(pk=1).quantity, float('8'))
+
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('8'))
+        
+    def test_put_add_quantity_fail(self):
+        """
+        Tests an unauthorized addition of quantity
+        """
+        #Delete permissions
+        self._remove_permission("add_quantity")
+        
+        #Create new data
+        modified_data = base_fabric.copy()
+        modified_data['quantity'] = '20'
+        
+        #Tests the api and response
+        resp = self.api_client.put('/api/v1/fabric/1', format='json',
+                                   data=modified_data)
+        self.assertEqual(Fabric.objects.get(pk=1).quantity, float('10.8'))
+        #Tests the data retured
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('10.8'))
+        
+    def test_put_subtract_quantity_fail(self):
+        """
+        Tests an unauthorized addition of quantity
+        """
+        #Delete permissions
+        self._remove_permission("subtract_quantity")
+        
+        #Create new data
+        modified_data = base_fabric.copy()
+        modified_data['quantity'] = '6'
+        
+        #Tests the api and response
+        resp = self.api_client.put('/api/v1/fabric/1', format='json',
+                                   data=modified_data)
+        self.assertEqual(Fabric.objects.get(pk=1).quantity, float('10.8'))
+        #Tests the data retured
+        obj = self.deserialize(resp)
+        self.assertEqual(float(obj['quantity']), float('10.8'))
+        

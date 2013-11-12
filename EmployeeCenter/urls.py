@@ -8,7 +8,7 @@ from acknowledgements.api import AcknowledgementResource, ItemResource as AckIte
 from shipping.api import ShippingResource
 from supplies.api import SupplyResource, FabricResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
-from administrator.api import UserResource
+from administrator.api import UserResource, GroupResource, PermissionResource
 """
 API Section
 
@@ -18,12 +18,14 @@ resources with the api
 v1_api = Api(api_name='v1')
 v1_api.register(SupplierResource())
 v1_api.register(CustomerResource())
-v1_api.register(AcknowledgementResource())
 v1_api.register(AckItemResource())
+v1_api.register(AcknowledgementResource())
 v1_api.register(ShippingResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())
 v1_api.register(UserResource())
+v1_api.register(GroupResource())
+v1_api.register(PermissionResource())
 
 #Products Category
 v1_api.register(ModelResource())
@@ -40,6 +42,44 @@ urlpatterns = patterns('',
     url(r'^logout$', 'login.views.logout')
 )
 
+
+
+#URLS for Acknowledgement
+
+urlpatterns += patterns('acknowledgements.views',
+    #url(r'^acknowledgement$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
+    url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
+    url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image')
+    #url(r'^acknowledgement/item$', 'item'),
+    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
+)
+
+#URL settings for supplies
+urlpatterns += patterns('supplies.views',
+    #url(r'^supply$', 'supply'),
+    #url(r'^supply/(?P<supply_id>\d+)$', 'supply'),
+    #url(r'^supply/(?P<supply_id>\d+)$', 'fabric'),
+    #url(r'^supply/(?P<supply_id>\d+)/reserve$', 'reserve'),
+    #url(r'^supply/(?P<supply_id>\d+)/add$', 'add'),
+    #url(r'^supply/(?P<supply_id>\d+)/subtract$', 'subtract'),
+    #url(r'^supply/(?P<supply_id>\d+)/reset$', 'reset'),
+    #url(r'^supply/(?P<supply_id>\d+)/log$', 'supply_log'),
+    url(r'^/api/v1/supply/(?P<supply_id>\d+)/image$', 'supply_image'),
+    url(r'^/api/v1/supply/image$', 'supply_image'),
+)
+
+urlpatterns += patterns('products.views',
+    url(r'^/api/v1/model/image$', 'model_image'),
+    
+    url(r'^/api/v1/upholstery/image$', 'upholstery_image'),
+    
+    url(r'^/api/v1/table/image$', 'upholstery_image'),
+  
+)
+
 urlpatterns += patterns('',
     (r'^api/', include(v1_api.urls))
 )
@@ -48,6 +88,7 @@ urlpatterns += patterns('',
     url(r'^(?P<path>.*)$', 'django.views.static.serve',
         {'document_root': settings.STATIC_ROOT})
 )
+
 
 """
 #Public views

@@ -6,13 +6,14 @@ import dateutil
 
 from tastypie import fields
 from tastypie.resources import ModelResource
-from tastypie.authorization import Authorization
+from tastypie.authorization import Authorization, DjangoAuthorization
 from django.contrib.auth.models import User
 from django.db.models import Q
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.validation import AcknowledgementValidation
 from contacts.models import Customer
+from supplies.models import Fabric
 from auth.models import S3Object
 
 
@@ -33,8 +34,9 @@ class AcknowledgementResource(ModelResource):
                   'remarks', 'status', 'delivery_date', 'id']
         always_return_data = True
         validation = AcknowledgementValidation()
-        authorization = Authorization()
-    
+        authorization = DjangoAuthorization()
+        format = 'json'
+        
     def dehydrate(self, bundle):
         """
         Implements the dehydrate method
@@ -45,12 +47,12 @@ class AcknowledgementResource(ModelResource):
         #Add URLS for the acknowledgement
         #and the production pdf to the data
         #bundle
-        if bundle.request.GET.get('pdf') == 'include':
+        if bundle.request.GET.get('pdf'):
             try:
                 ack = bundle.obj.acknowledgement_pdf
                 production = bundle.obj.production_pdf
-                bundle.data['acknowledgement_pdf'] = {'url': ack.generate_url()}
-                bundle.data['production_pdf'] = {'url': production.generate_url()}
+                bundle.data['pdf'] = {'acknowledgement': ack.generate_url(),
+                                      'production': production.generate_url()}
             except AttributeError: 
                 logger.warn('Missing acknowledgement or production pdf')
             
@@ -73,7 +75,6 @@ class AcknowledgementResource(ModelResource):
         logger.info("Creating a new acknowledgement...")
         #Create the object
         bundle.obj = Acknowledgement()
-        logger.debug(bundle.data)
         #hydrate
         bundle = self.full_hydrate(bundle)
         logger.debug(bundle.obj.vat)
@@ -133,6 +134,16 @@ class AcknowledgementResource(ModelResource):
         bundle.obj.original_acknowledgement_pdf = ack_pdf
         bundle.obj.save()
         
+        #Add the url of the pdf to the outgoing data
+        #only for when an acknowledgement is create
+        try:
+            ack = bundle.obj.acknowledgement_pdf
+            production = bundle.obj.production_pdf
+            bundle.data['pdf'] = {'acknowledgement': ack.generate_url(),
+                                  'production': production.generate_url()}
+        except AttributeError: 
+            logger.warn('Missing acknowledgement or production pdf')
+        
         #Conditionally email ack to Decoroom
         if "decoroom" in bundle.obj.customer.name.lower():
             try:
@@ -166,14 +177,48 @@ class AcknowledgementResource(ModelResource):
 class ItemResource(ModelResource):    
     class Meta:
         queryset = Item.objects.all()
-        resource_name = 'acknowledgement/item'
+        resource_name = 'acknowledgement-item'
+        allowed_methods = ['get', 'put', 'patch']
         always_return_data = True
-        authorization = Authorization()
+        authorization = DjangoAuthorization()
         
+    def hydrate(self, bundle):
+        """
+        Implements the hydrate method to modify the data before apply it to the
+        the object
+        """
+        
+        #Update the fabric
+        if "fabric" in bundle.data and bundle.request.user.has_perm('acknowledgements.change_fabric'):
+            try:
+                fabric = Fabric.objects.get(pk=bundle.data["fabric"]["id"])
+                bundle.obj.fabric = fabric
+                logger.info("{0} changed fabric to {1}".format(bundle.obj.description,
+                                                                fabric.description))
+            except KeyError:
+                raise ValueError("Missing fabric ID.")
+            except Fabric.DoesNotExist:
+                raise
+        
+        #Update the unit price
+        if "unit_price" in bundle.data:
+            if bundle.data["unit_price"] != bundle.obj.unit_price:
+                if bundle.request.user.has_perm('acknowledgements.change_item_price'):
+                    bundle.obj.unit_price = bundle.data['unit_price']
+                    bundle.obj.total = bundle.obj.unit_price * bundle.obj.quantity
+                else:
+                    bundle.data['unit_price'] = bundle.obj.unit_price
+                    
+        return bundle
+
     def dehydrate(self, bundle):
         """
         Implment dehydration
         """
+        
+        #Add the acknowledgement ID
+        bundle.data['acknowledgement'] = {'id': bundle.obj.acknowledgement.id}
+        
         #Adds the fabric information if 
         #a fabric exists for this item
         if bundle.obj.fabric:
@@ -192,6 +237,13 @@ class ItemResource(ModelResource):
                                    'quantity': pillow.quantity,
                                    'type': pillow.type} for pillow
                                   in bundle.obj.pillow_set.all()]
+        
+        #Adds the image url to the outgoing data if it
+        #exists
+        if bundle.obj.image:
+            bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
+        else: 
+            logger.debug(bundle.obj.image)
             
         return bundle
         

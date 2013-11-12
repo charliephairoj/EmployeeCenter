@@ -136,7 +136,7 @@ class Acknowledgement(models.Model):
 
         self.calculate_totals()
 
-        ack_filename, production_filename = self._create_pdfs()
+        ack_filename, production_filename = self.create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
         production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
@@ -160,7 +160,7 @@ class Acknowledgement(models.Model):
 
         AcknowledgementLog.create(message, self.acknowledgement, employee)
 
-    def create_pdf(self):
+    def create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
 
         This method will extract the necessary data to 
@@ -305,8 +305,8 @@ class Item(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     class Meta:
-        permissions = (('delete_acknowledgement_item', 'Can delete acknowledgement item'),
-                       ('edit_item_price', 'Can edit acknowledgement price'))
+        permissions = (('change_item_price', 'Can edit item price'),
+                       ('change_fabric', "Can change fabric"))
 
     @classmethod
     def create(cls, acknowledgement=None, commit=True, **kwargs):

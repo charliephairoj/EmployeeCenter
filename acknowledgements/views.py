@@ -119,8 +119,9 @@ def pdf(request, ack_id):
         return HttpResponse(json.dumps(data), mimetype="application/json")
 
 
-@login_required
+#@login_required
 def acknowledgement_item_image(request):
+    print 'ok'
     if request.method == "POST":
         filename = save_upload(request)
         obj = S3Object.create(filename,

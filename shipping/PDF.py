@@ -88,10 +88,8 @@ class ShippingPDF(object):
     document_type = "Acknowledgement"
     
     #def methods
-    def __init__(self, customer=None, products=None, shipping=None, connection=None):
+    def __init__(self, customer=None, products=None, shipping=None):
         
-        #set connection
-        self.connection = connection if connection != None else S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_SECRET_ACCESS_KEY)
         #Set Defaults
         self.width, self.height = A4
         stylesheet = getSampleStyleSheet()

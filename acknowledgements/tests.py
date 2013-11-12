@@ -7,10 +7,9 @@ Replace this with more appropriate tests for your application.
 from datetime import datetime
 from decimal import Decimal
 import dateutil
-import copy
-import random
+import json
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, Group, ContentType
 from tastypie.test import ResourceTestCase
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
@@ -196,11 +195,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         Testing POSTing data to the api
         """
-        self.skipTest("Takes a while")
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
-                                    data=base_ack,
+        resp = self.api_client.post('/api/v1/acknowledgement', format='text/plain',
+                                    data=json.dumps(base_ack),
                                     authentication=self.get_credentials())
         self.assertHttpCreated(resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -302,6 +300,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         Test making a PUT call
         """
+        self.skipTest("testing item")
         ack_data = base_ack.copy()
         ack_data['delivery_date'] = datetime.now()
         self.assertEqual(Acknowledgement.objects.count(), 1)
@@ -321,6 +320,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         Test making a DELETE call
         """
+        self.skipTest("testing item")
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.api_client.delete('/api/v1/acknowledgement/1',
                                       format='json',
@@ -329,6 +329,114 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertHttpMethodNotAllowed(resp)
         
         
+class TestItemResource(ResourceTestCase):
+    def setUp(self):
+        """
+        Sets up environment for tests
+        """
+        super(TestItemResource, self).setUp()
         
+        self.create_user()
         
+        self.api_client.client.login(username='test', password='test')
         
+        #Create supplier, customer and addrss
+        self.customer = Customer(**base_customer)
+        self.customer.save()
+        self.supplier = Supplier(**base_supplier)
+        self.supplier.save()
+        self.address = Address(address1="Jiggle", contact=self.customer)
+        self.address.save()
+        
+        #Create a product to add
+        self.product = Product.create(self.user, **base_product)
+        self.product.save()
+        self.fabric = Fabric.create(**base_fabric)
+        f_data = base_fabric.copy()
+        f_data["pattern"] = "Stripe"
+        self.fabric2 = Fabric.create(**f_data)
+        
+        #Create acknowledgement
+        ack_data = base_ack.copy()
+        del ack_data['customer']
+        del ack_data['items']
+        del ack_data['employee']
+        self.ack = Acknowledgement(**ack_data)
+        self.ack.customer = self.customer
+        self.ack.employee = self.user
+        self.ack.save()
+        
+        #Create an item
+        self.item_data = {'id': 1,
+                     'quantity': 1,
+                     'is_custom_size': True,
+                     'width': 1500,
+                     "fabric": {"id":1}}
+        self.item = Item.create(acknowledgement=self.ack, **self.item_data)
+        
+    def create_user(self):
+        self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
+        self.ct = ContentType(app_label='acknowledgements')
+        self.ct.save()
+        perm = Permission(content_type=self.ct, codename='change_item')
+        perm.save()
+        self.user.user_permissions.add(perm)
+        perm = Permission(content_type=self.ct, codename='change_fabric')
+        perm.save()
+        self.user.user_permissions.add(perm)
+        self.assertTrue(self.user.has_perm('acknowledgements.change_item'))
+        return self.user
+        
+    def test_get_list(self):
+        """
+        Tests getting a list of items via GET
+        """
+        #Tests the get
+        resp = self.api_client.get('/api/v1/acknowledgement-item')
+        self.assertHttpOK(resp)
+        
+        #Tests the resp
+        resp_obj = self.deserialize(resp)
+        self.assertIn("objects", resp_obj)
+        self.assertEqual(len(resp_obj['objects']), 1)
+        
+    def test_get(self):
+        """
+        Tests getting an item via GET
+        """
+        #Tests the resp
+        resp = self.api_client.get('/api/v1/acknowledgement-item/1')
+        self.assertHttpOK(resp)
+        
+    def test_failed_create(self):
+        """
+        Tests that when attempting to create via POST
+        it is returned as unauthorized
+        """
+        resp = self.api_client.post('/api/v1/acknowledgement-item/', format='json',
+                                    data=self.item_data)
+        self.assertHttpMethodNotAllowed(resp)
+        
+    def test_update(self):
+        """
+        Tests updating the item via PUT
+        """
+        modified_item_data = self.item_data.copy()
+        modified_item_data['fabric'] = {'id': 2}
+        modified_item_data['width'] = 888
+        
+        #Sets current fabric
+        self.assertEqual(Item.objects.all()[0].fabric.id, 1)
+        
+        #Tests the response
+        resp = self.api_client.put('/api/v1/acknowledgement-item/1', format='json',
+                                   data=modified_item_data)
+        self.assertHttpOK(resp)
+        self.assertEqual(Item.objects.all()[0].fabric.id, 2)
+        
+        #Tests the data returned
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['fabric']['id'], 2)
+        self.assertEqual(obj['width'], 888)
+        self.assertEqual(obj['quantity'], 1)

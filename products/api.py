@@ -178,6 +178,17 @@ class UpholsteryResource(Resource):
                 
         return bundle
     
+    def dehydrate(self, bundle):
+        """
+        Imteplements the dehydrate method to modify data being returned to
+        the client
+        """
+        #Adds an image url if there is an image
+        if bundle.obj.image:
+            bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
+            
+        return bundle
+    
     def apply_filters(self, request, applicable_filters):
         """
         Applys filters to the query set.
@@ -315,6 +326,17 @@ class TableResource(Resource):
         bundle.obj.description = "{0} {1}".format(model.model, configuration.configuration)
         bundle.obj.type = 'table'
         
+        return bundle
+    
+    def dehydrate(self, bundle):
+        """
+        Imteplements the dehydrate method to modify data being returned to
+        the client
+        """
+        #Adds an image url if there is an image
+        if bundle.obj.image:
+            bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
+            
         return bundle
         
     def apply_filters(self, request, applicable_filters):

@@ -24,14 +24,10 @@ class Shipping(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement,
                                         on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
-    bucket = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
-    shipping_key = models.TextField()
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
     comments = models.TextField()
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
-    connection = S3Connection(settings.AWS_ACCESS_KEY_ID,
-                              settings.AWS_SECRET_ACCESS_KEY)
 
     def get_data(self):
 
@@ -116,8 +112,7 @@ class Shipping(models.Model):
         #shipping.update_acknowledgement_data()
         #Initialize and create pdf
         pdf = ShippingPDF(customer=self.customer, shipping=self,
-                          products=self.item_set.all().order_by('id'),
-                          connection=self.connection)
+                          products=self.item_set.all().order_by('id'))
         filename = pdf.create()
         
         return filename
