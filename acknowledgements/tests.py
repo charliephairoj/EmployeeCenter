@@ -7,11 +7,10 @@ Replace this with more appropriate tests for your application.
 from datetime import datetime
 from decimal import Decimal
 import dateutil
-import copy
-import random
+import json
 
-from django.test import TestCase
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, Group, ContentType
+from tastypie.test import ResourceTestCase
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from supplies.models import Fabric
@@ -48,43 +47,56 @@ base_ack = {'customer': {'id': 1},
             'po_id': '123-213-231',
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
-            'products': [{'id': 1,
-                          'quantity': 2,
-                          'fabric': {"id": 1},
-                          'pillows':[{"type": "back",
-                                      "fabric": {"id": 1}},
-                                      {"type": "back",
-                                       "fabric": {"id": 2}},
-                                     {"type": "back",
-                                      "fabric": {"id": 1}},
-                                     {"type": "accent",
-                                      "fabric": {"id": 2}},
-                                     {"type": "accent"}]},
+            'employee': {'id': 1},
+            'items': [{'id': 1,
+                       'quantity': 2,
+                       'fabric': {"id": 1},
+                       'pillows':[{"type": "back",
+                                   "fabric": {"id": 1}},
+                                  {"type": "back",
+                                   "fabric": {"id": 2}},
+                                  {"type": "back",
+                                   "fabric": {"id": 1}},
+                                  {"type": "accent",
+                                   "fabric": {"id": 2}},
+                                  {"type": "accent"}]},
                          {'id': 1,
                           'quantity': 1,
                           'is_custom_size': True,
                           'width': 1500,
+                          'depth': 760,
+                          'height': 320,
                           "fabric": {"id":1}}]}
 
 
-def create_user(block_permissions=[]):
+
+        
+                
+    
+
+class AcknowledgementResourceTest(ResourceTestCase):
+    """"
+    This tests the api acknowledgements:
+    
+    GET list:
+    -get a list of objects
+    -objects have items and items have pillows
+    
+    GET:
+    -the acknowledgement has delivery date, order date
+    customer, status, total, vat, employee, discount
+    -the acknowledgement has a list of items.
+    -The items have pillows and fabrics
+    -pillows have fabrics
+    -the items has dimensions, pillows, fabric, comments
+    price per item
+    
+    POST:
+    -create an acknowledgement that has delivery date, order date
+    customer, status, total, vat, employee, discount, items
+    -the items should have fabrics and pillows where appropriate
     """
-    Creates a user
-    """
-    user = User.objects.create_user('test{0}'.format(random.randint(1, 99999)),
-                                    'test',
-                                    'test')
-    user.is_staff = True
-    user.save()
-
-    #Add permissions
-    for p in Permission.objects.all():
-        if p.codename not in block_permissions:
-            user.user_permissions.add(p)
-    return user
-
-
-class AcknowledgementTest(TestCase):
+    
     def setUp(self):
         """
         Set up for the Acknowledgement Test
@@ -100,218 +112,336 @@ class AcknowledgementTest(TestCase):
         After Creating all the needed objects for the Acknowledgement, 
         test that all the objects have been made.
         """
-        self.user = create_user()
+        super(AcknowledgementResourceTest, self).setUp()
+        
+        self.ct = ContentType(app_label="acknowledgements")
+        self.ct.save()
+        #Create the user
+        self.username = 'tester'
+        self.password = 'pass'
+        self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        p = Permission(content_type=self.ct, codename="change_acknowledgement")
+        p.save()
+        self.user.user_permissions.add(p)
+        
+        self.user.save()
+        
+        #Create supplier, customer and addrss
         self.customer = Customer(**base_customer)
         self.customer.save()
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()
         self.address = Address(address1="Jiggle", contact=self.customer)
         self.address.save()
+        
+        #Create a product to add
         self.product = Product.create(self.user, **base_product)
         self.product.save()
         self.fabric = Fabric.create(**base_fabric)
         f_data = base_fabric.copy()
         f_data["pattern"] = "Stripe"
         self.fabric2 = Fabric.create(**f_data)
-
-        self.assertIsNotNone(self.customer.id)
-        self.assertIsNotNone(self.supplier.id)
-        self.assertIsNotNone(self.address.id)
-        self.assertIsNotNone(self.product.id)
-        self.assertIsNotNone(self.fabric)
-        self.assertIsNotNone(self.fabric2.id)
-
-    def test_create_standard_acknowledgement(self):
-        """
-        Tests creating a standard acknowledgemnt with standard prices
-
-        Creates using the base ack data.
-
-        We test when the basic order details, then pdf details,
-        the products, then the totals.
-        """
-        acknowledgement = Acknowledgement.create(self.user, **base_ack)
-        self._test_basic_order_details(acknowledgement)
-        self._test_pdf_details(acknowledgement)
-
-        #products
-        self.assertGreater(len(acknowledgement.item_set.all()), 0)
-        self.assertEqual(len(acknowledgement.item_set.all()), 2)
-        self.assertEqual(acknowledgement.item_set.all()[0].quantity, 2)
-        self.assertEqual(acknowledgement.item_set.all()[1].quantity, 1)
-        self.assertEqual(acknowledgement.item_set.all()[0].description,
-                         "test1")
-        self.assertEqual(acknowledgement.item_set.all()[1].description,
-                         "test1")
-
-        #Totals
-        self.assertEqual(acknowledgement.subtotal, 79250)
-        self.assertEqual(acknowledgement.total, 79250)
-
-    def test_create_custom_price_acknowledgemet(self):
-        """
-        Tests creating a new acknowledgement with a custom priced item
-
-        We expect that the total should be the same as the stamdard acknowledgement
-        test except the price will increase by 100
-        """
-        ack = copy.deepcopy(base_ack)
-        ack["products"].append({"id": 1,
-                                "quantity": 1,
-                                "is_custom_size": True,
-                                "width": 1500,
-                                "depth": 0,
-                                "height": 600,
-                                "custom_price": 100})
-
-        acknowledgement = Acknowledgement.create(self.user, **ack)
-        self._test_basic_order_details(acknowledgement)
-        self._test_pdf_details(acknowledgement)
-
-        #Totals
-        self.assertEqual(acknowledgement.subtotal, 79350)
-        self.assertEqual(acknowledgement.total, 79350)
-
-    def _test_basic_order_details(self, acknowledgement):
-        self.assertIsInstance(acknowledgement.employee, User)
-        self.assertIsInstance(acknowledgement.customer, Customer)
-        self.assertIsInstance(acknowledgement.delivery_date, datetime)
-        self.assertEqual(acknowledgement.status, "ACKNOWLEDGED")
-        self.assertIsInstance(acknowledgement.time_created, datetime)
-
-    def _test_pdf_details(self, acknowledgement):
-        """
-        Tests the PDF details
-        """
-        self.assertIsNotNone(acknowledgement.acknowledgement_pdf)
-        self.assertIsNotNone(acknowledgement.production_pdf)
-        self.assertIsNotNone(acknowledgement.original_acknowledgement_pdf)
-        self.assertIsInstance(acknowledgement.acknowledgement_pdf, S3Object)
-        self.assertIsInstance(acknowledgement.production_pdf, S3Object)
-        self.assertIsInstance(acknowledgement.original_acknowledgement_pdf, S3Object)
-
-
-class ItemTest(TestCase):
-    def setUp(self):
-        """
-        Sets up for the item test
-        """
-        self.user = create_user()
-        self.customer = Customer(first_name="John",
-                                 last_name="Smith",
-                                 currency="USD",
-                                 type="Dealer")
-        self.customer.save()
-        self.address = Address(address1="Jiggle", contact=self.customer)
-        self.address.save()
-        self.product = Product.create(self.user, **base_product)
-        self.product.save()
-        self.delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
-        self.supplier = Supplier(**base_supplier)
-        self.supplier.save()
-        self.fabric1 = Fabric.create(**base_fabric)
-        self.fabric2 = Fabric.create(**base_fabric)
-        ack = base_ack.copy()
-        ack["products"] = []
-
-        self.acknowledgement = Acknowledgement.create(self.user, **ack)
-        item_d = {'id': 1,
-                  'quantity': 2,
-                  'is_custom_size': True,
-                  'width': 1500,
-                  'height': 320,
-                  'depth': 760}
-        self.item = Item.create(self.acknowledgement, **item_d)
-
-    def test_create_item(self):
-        """
-        Tests that an item is correctly
-        created
-        """
-        self.assertIsNotNone(self.item.quantity)
-        self.assertIsNotNone(self.item.id)
-        self.assertEqual(self.item.quantity, 2)
-        self.assertEqual(self.item.width, 1500)
-        self.assertEqual(self.item.depth, 760)
-        self.assertEqual(self.item.height, 320)
-
-    def test_create_incomplete_dimension_item(self):
-        """
-        Tests that a item is correctly created
-        if it is missing a dimensions, or a dimensions
-        is None.
-        """
-        item_d = {'id': 1,
-                  'quantity': 1,
-                  'is_custom_size': True,
-                  'width': 1750,
-                  'height': None}
-
-        item = Item.create(self.acknowledgement, **item_d)
-        self.assertIsInstance(item, Item)
-        self.assertEqual(item.width, 1750)
-        self.assertEqual(item.depth, 760)
-        self.assertEqual(item.height, 320)
-        self.assertTrue(item.is_custom_size)
-
-    def test_calculate_upcharge(self):
-        """
-        Tests that the item can correctly
-        calculate the upcharge percentage
-        for a custom sized item
-        """
-        self.assertEqual(self.item._calculate_upcharge(90, 150, 10, 1), 10)
-        self.assertEqual(self.item._calculate_upcharge(150, 150, 10, 1), 10)
-        self.assertEqual(self.item._calculate_upcharge(160, 150, 10, 1), 11)
-        self.assertEqual(self.item._calculate_upcharge(300, 150, 10, 1), 13)
-
-    def test_custom_price(self):
-        """
-        Tsts that an item can correctly calculate
-        the price of a custom size item
-        """
-        self.assertEqual(self.item.unit_price, 29250)
+        
+        #Create acknowledgement
+        ack_data = base_ack.copy()
+        del ack_data['customer']
+        del ack_data['items']
+        del ack_data['employee']
+        self.ack = Acknowledgement(**ack_data)
+        self.ack.customer = self.customer
+        self.ack.employee = self.user
+        self.ack.save()
+        
+        #Create an item
         item_data = {'id': 1,
-                     'quantity': 2,
+                     'quantity': 1,
                      'is_custom_size': True,
                      'width': 1500,
-                     'height': 400,
-                     'depth': 760,
-                     'custom_price': 1}
-        self.item = Item.create(self.acknowledgement, **item_data)
-        self.assertEqual(self.item.unit_price, 1)
+                     "fabric": {"id":1}}
+        self.item = Item.create(acknowledgement=self.ack, **item_data)
+        
+        self.api_client.client.login(username="tester", password="pass")
 
-    def test_pillows(self):
-        """
-        Tests the the pillows are correctly
-        created, with the correct fabric
-        when an item is created
-        """
-        pillow_item_data = base_ack["products"][0].copy()
-        self.item_pillow = Item.create(self.acknowledgement, **pillow_item_data)
-        self.assertEqual(len(self.item_pillow.pillow_set.all()), 4)
-        pillows = self.item.pillow_set.all()
-        for pillow in pillows:
-            self.assertNotNone(pillow.type)
-            self.assertNotNone(pillow.quantity)
-            self.assertIsInstance(pillow, Pillow)
+    def get_credentials(self):
+        return self.create_basic(username=self.username, password=self.password)
 
-            if pillow.fabric == None:
-                self.assertEqual(pillow.quantity, 1)
-            elif pillow.fabric.id == 1 and pillow.type == "back":
-                self.assertEqual(pillow.quantity, 2)
-            elif pillow.fabric.id == 2 and pillow.type == "back":
-                self.assertEqual(pillow.quantiy, 1)
-            elif pillow.fabric.id == 2 and pillow.type == "accent":
-                self.assertEqual(pillow.quantity, 1)
-            else:
-                raise ValueError("Unexpected pillow")
+    def test_get_list(self):
+        """
+        Tests getting the list of acknowledgements
+        """
+        #Get and verify the resp
+        resp = self.api_client.get('/api/v1/acknowledgement', format='json',
+                                   authentication=self.get_credentials())
+        self.assertHttpOK(resp)
 
-    def test_missing_quantity(self):
+        #Verify the data sent
+        resp_obj = self.deserialize(resp)
+        self.assertIsNotNone(resp_obj['objects'])
+        self.assertEqual(len(resp_obj['objects']), 1)
+        self.assertEqual(len(resp_obj['objects'][0]['items']), 1)
+        
+    def test_get(self):
         """
-        Tests that an error is raised if
-        an item with a missing quantity
-        is created
+        Tests getting the acknowledgement
         """
-        item_data = {id: 1}
-        self.assertRaises(ValueError, lambda: Item.create(item_data))
+        #Get and verify the resp
+        resp = self.api_client.get('/api/v1/acknowledgement/1', format='json',
+                                   authentication=self.get_credentials())
+        self.assertHttpOK(resp)
+       
+        #Verify the data sent
+        ack = self.deserialize(resp)
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 1)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['po_id'], '123-213-231')
+        self.assertIsInstance(dateutil.parser.parse(ack['delivery_date']), datetime)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal(0))
+        
+    def test_post_without_vat(self):
+        """
+        Testing POSTing data to the api
+        """
+        #POST and verify the response
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=base_ack,
+                                    authentication=self.get_credentials())
+        self.assertHttpCreated(resp)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = self.deserialize(resp)
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(len(ack['items']), 2)
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(25000))
+        self.assertEqual(Decimal(item1['total']), Decimal(50000))
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
+        self.assertEqual(Decimal(item2['total']), Decimal(29250))
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
+    def test_post_with_vat(self):
+        """
+        Testing POSTing data to the api if there
+        is vat
+        """
+        #POST and verify the response
+        ack_data = base_ack.copy()
+        ack_data['vat'] = 7
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=ack_data,
+                                    authentication=self.get_credentials())
+        self.assertHttpCreated(resp)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = self.deserialize(resp)
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 7)
+        self.assertEqual(Decimal(ack['total']), Decimal(84797.5))
+        self.assertEqual(len(ack['items']), 2)
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(25000))
+        self.assertEqual(Decimal(item1['total']), Decimal(50000))
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
+        self.assertEqual(Decimal(item2['total']), Decimal(29250))
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
+    def test_put(self):
+        """
+        Test making a PUT call
+        """
+        ack_data = base_ack.copy()
+        ack_data['delivery_date'] = datetime.now()
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.put('/api/v1/acknowledgement/1', 
+                                   format='json',
+                                   data=ack_data,
+                                   authentication=self.get_credentials())
+        self.assertHttpOK(resp)
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        
+        #Validate the change
+        ack = self.deserialize(resp)
+        self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
+
+    def test_delete(self):
+        """
+        Test making a DELETE call
+        """
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.delete('/api/v1/acknowledgement/1',
+                                      format='json',
+                                      authentication=self.get_credentials())
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        self.assertHttpMethodNotAllowed(resp)
+        
+        
+class TestItemResource(ResourceTestCase):
+    def setUp(self):
+        """
+        Sets up environment for tests
+        """
+        super(TestItemResource, self).setUp()
+        
+        self.create_user()
+        
+        self.api_client.client.login(username='test', password='test')
+        
+        #Create supplier, customer and addrss
+        self.customer = Customer(**base_customer)
+        self.customer.save()
+        self.supplier = Supplier(**base_supplier)
+        self.supplier.save()
+        self.address = Address(address1="Jiggle", contact=self.customer)
+        self.address.save()
+        
+        #Create a product to add
+        self.product = Product.create(self.user, **base_product)
+        self.product.save()
+        self.fabric = Fabric.create(**base_fabric)
+        f_data = base_fabric.copy()
+        f_data["pattern"] = "Stripe"
+        self.fabric2 = Fabric.create(**f_data)
+        
+        #Create acknowledgement
+        ack_data = base_ack.copy()
+        del ack_data['customer']
+        del ack_data['items']
+        del ack_data['employee']
+        self.ack = Acknowledgement(**ack_data)
+        self.ack.customer = self.customer
+        self.ack.employee = self.user
+        self.ack.save()
+        
+        #Create an item
+        self.item_data = {'id': 1,
+                     'quantity': 1,
+                     'is_custom_size': True,
+                     'width': 1500,
+                     "fabric": {"id":1}}
+        self.item = Item.create(acknowledgement=self.ack, **self.item_data)
+        
+    def create_user(self):
+        self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
+        self.ct = ContentType(app_label='acknowledgements')
+        self.ct.save()
+        perm = Permission(content_type=self.ct, codename='change_item')
+        perm.save()
+        self.user.user_permissions.add(perm)
+        perm = Permission(content_type=self.ct, codename='change_fabric')
+        perm.save()
+        self.user.user_permissions.add(perm)
+        self.assertTrue(self.user.has_perm('acknowledgements.change_item'))
+        return self.user
+        
+    def test_get_list(self):
+        """
+        Tests getting a list of items via GET
+        """
+        #Tests the get
+        resp = self.api_client.get('/api/v1/acknowledgement-item')
+        self.assertHttpOK(resp)
+        
+        #Tests the resp
+        resp_obj = self.deserialize(resp)
+        self.assertIn("objects", resp_obj)
+        self.assertEqual(len(resp_obj['objects']), 1)
+        
+    def test_get(self):
+        """
+        Tests getting an item via GET
+        """
+        #Tests the resp
+        resp = self.api_client.get('/api/v1/acknowledgement-item/1')
+        self.assertHttpOK(resp)
+        
+    def test_failed_create(self):
+        """
+        Tests that when attempting to create via POST
+        it is returned as unauthorized
+        """
+        resp = self.api_client.post('/api/v1/acknowledgement-item/', format='json',
+                                    data=self.item_data)
+        self.assertHttpMethodNotAllowed(resp)
+        
+    def test_update(self):
+        """
+        Tests updating the item via PUT
+        """
+        modified_item_data = self.item_data.copy()
+        modified_item_data['fabric'] = {'id': 2}
+        modified_item_data['width'] = 888
+        
+        #Sets current fabric
+        self.assertEqual(Item.objects.all()[0].fabric.id, 1)
+        
+        #Tests the response
+        resp = self.api_client.put('/api/v1/acknowledgement-item/1', format='json',
+                                   data=modified_item_data)
+        self.assertHttpOK(resp)
+        self.assertEqual(Item.objects.all()[0].fabric.id, 2)
+        
+        #Tests the data returned
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['fabric']['id'], 2)
+        self.assertEqual(obj['width'], 888)
+        self.assertEqual(obj['quantity'], 1)

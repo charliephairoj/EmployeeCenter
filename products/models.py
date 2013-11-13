@@ -61,19 +61,15 @@ class Product(models.Model):
         if "description" in kwargs:
             obj.description = kwargs["description"]
 
-        if user:
-            if user.has_perm('products.edit_manufacture_price'):
-                if "manufacture_price" in kwargs:
-                    obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
-            if user.has_perm('products.edit_retail_price'):
-                if "retail_price" in kwargs:
-                    obj.retail_price = Decimal(str(kwargs["retail_price"]))
-            if user.has_perm('products.edit_wholesale_price'):
-                if "wholesale_price" in kwargs:
-                    obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
-            if user.has_perm('products.edit_export_price'):
-                if "export_price" in kwargs:
-                    obj.export_price = Decimal(str(kwargs["export_price"]))
+       
+        if "manufacture_price" in kwargs:
+            obj.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
+        if "retail_price" in kwargs:
+            obj.retail_price = Decimal(str(kwargs["retail_price"]))
+        if "wholesale_price" in kwargs:
+            obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
+        if "export_price" in kwargs:
+            obj.export_price = Decimal(str(kwargs["export_price"]))
 
         obj.save()
         #Post save stuff
@@ -269,9 +265,9 @@ class Model(models.Model):
 class ModelImage(models.Model):
     model = models.ForeignKey(Model)
     image = models.ForeignKey(S3Object)
-    url = models.TextField()
-    bucket = models.TextField()
-    key = models.TextField()
+    url = models.TextField(null=True)
+    bucket = models.TextField(null=True)
+    key = models.TextField(null=True)
 
 
 class Configuration(models.Model):
@@ -309,8 +305,14 @@ class Configuration(models.Model):
 class Upholstery(Product):
     model = models.ForeignKey(Model, on_delete=models.PROTECT)
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
-    category = models.CharField(max_length=50)
+    category = models.CharField(max_length=50, null=True)
 
+    def __init__(self, *args, **kwargs):
+        
+        super(Upholstery, self).__init__(*args, **kwargs)
+        
+        self.type = 'upholstery'
+        
     @classmethod
     def create(cls, user=None, **kwargs):
         try:
@@ -406,6 +408,15 @@ class Table(Product):
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
     finish = models.TextField()
     color = models.TextField()
+    
+    def __init__(self, *args, **kwargs):
+        """
+        Implements custom __init__ and calls  the
+        parent method as well
+        """
+        self.type = 'table'
+        
+        super(Table, self).__init__(*args, **kwargs)
 
     @classmethod
     def create(cls, user=None, **kwargs):
