@@ -62,8 +62,7 @@ class Shipping(models.Model):
         #shipping.update_acknowledgement_data()
         #Initialize and create pdf
         pdf = ShippingPDF(customer=shipping.customer, shipping=shipping,
-                          products=shipping.item_set.all().order_by('id'),
-                          connection=shipping.connection)
+                          products=shipping.item_set.all().order_by('id'))
         shipping_filename = pdf.create()
         #Upload and return the url
         shipping.pdf = S3Object.create(shipping_filename,

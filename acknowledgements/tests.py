@@ -64,8 +64,8 @@ base_ack = {'customer': {'id': 1},
                           'quantity': 1,
                           'is_custom_size': True,
                           'width': 1500,
-                          'depth': 320,
-                          'height': 760,
+                          'depth': 760,
+                          'height': 320,
                           "fabric": {"id":1}}]}
 
 
@@ -114,10 +114,16 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         super(AcknowledgementResourceTest, self).setUp()
         
+        self.ct = ContentType(app_label="acknowledgements")
+        self.ct.save()
         #Create the user
         self.username = 'tester'
         self.password = 'pass'
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        p = Permission(content_type=self.ct, codename="change_acknowledgement")
+        p.save()
+        self.user.user_permissions.add(p)
+        
         self.user.save()
         
         #Create supplier, customer and addrss
@@ -153,6 +159,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
                      'width': 1500,
                      "fabric": {"id":1}}
         self.item = Item.create(acknowledgement=self.ack, **item_data)
+        
+        self.api_client.client.login(username="tester", password="pass")
 
     def get_credentials(self):
         return self.create_basic(username=self.username, password=self.password)
@@ -197,8 +205,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/acknowledgement', format='text/plain',
-                                    data=json.dumps(base_ack),
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=base_ack,
                                     authentication=self.get_credentials())
         self.assertHttpCreated(resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -238,15 +246,15 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
         self.assertEqual(Decimal(item2['total']), Decimal(29250))
         #Tests links to document
-        self.assertIsNotNone(ack['acknowledgement_pdf']['url'])
-        self.assertIsNotNone(ack['production_pdf']['url'])
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
         
     def test_post_with_vat(self):
         """
         Testing POSTing data to the api if there
         is vat
         """
-        self.skipTest("takes a while")
         #POST and verify the response
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
@@ -293,14 +301,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
         self.assertEqual(Decimal(item2['total']), Decimal(29250))
         #Tests links to document
-        self.assertIsNotNone(ack['acknowledgement_pdf']['url'])
-        self.assertIsNotNone(ack['production_pdf']['url'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
         
     def test_put(self):
         """
         Test making a PUT call
         """
-        self.skipTest("testing item")
         ack_data = base_ack.copy()
         ack_data['delivery_date'] = datetime.now()
         self.assertEqual(Acknowledgement.objects.count(), 1)
@@ -308,7 +315,6 @@ class AcknowledgementResourceTest(ResourceTestCase):
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
-        print resp
         self.assertHttpOK(resp)
         self.assertEqual(Acknowledgement.objects.count(), 1)
         
@@ -320,7 +326,6 @@ class AcknowledgementResourceTest(ResourceTestCase):
         """
         Test making a DELETE call
         """
-        self.skipTest("testing item")
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.api_client.delete('/api/v1/acknowledgement/1',
                                       format='json',

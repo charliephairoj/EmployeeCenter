@@ -68,7 +68,7 @@ class SupplyResource(ModelResource):
         This method checks that the request method is post, and that
         there is both a quantity and an acknowledgement ID
         """
-       
+        
         if not request.method == "POST":
             pass#return self.create
         obj = self._meta.queryset.get(pk=kwargs['pk'])

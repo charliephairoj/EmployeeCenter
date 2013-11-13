@@ -141,7 +141,6 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests getting a list of objects via GET
         """
-        self.skipTest("intensive")
         #Create a shipping to retrieve
         self.create_shipping()
         
@@ -156,7 +155,6 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests getting an object via GET
         """
-        self.skipTest("intensive")
         self.create_shipping()
         
         #Test the resp

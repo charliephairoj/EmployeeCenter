@@ -106,13 +106,14 @@ class AcknowledgementValidation(Validation):
     def _validate_pillow(self, pillow):
         
         #Checks that each pillow as a quantity that is an integer
+        """
         try:
             int(pillow['quantity'])
         except KeyError:
             raise ValueError("Expecting a quantity for this pillow.")
         except ValueError:
             raise TypeError("Expecting an integer for the quantity of this pillow.")
-        
+        """
         try:
             types = ['back', 'accent', 'lumbar', 'corner']
             if pillow['type'].lower() not in types:

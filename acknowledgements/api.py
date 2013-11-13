@@ -162,7 +162,7 @@ class AcknowledgementResource(ModelResource):
         Implements the obj_update method
         """
         logger.info("Updating acknowledgement...")
-        
+        logger.debug('SUCK IT')
         return super(AcknowledgementResource, self).obj_update(bundle, **kwargs)
     
     def obj_delete(self, bundle, **kwargs):
@@ -242,8 +242,6 @@ class ItemResource(ModelResource):
         #exists
         if bundle.obj.image:
             bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
-        else: 
-            logger.debug(bundle.obj.image)
             
         return bundle
         
