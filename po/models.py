@@ -38,7 +38,7 @@ class PurchaseOrder(models.Model):
     employee = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     pdf = models.ForeignKey(S3Object, null=True)
-
+    
     @classmethod
     def create(cls, user=None, **kwargs):
         """
@@ -89,7 +89,7 @@ class PurchaseOrder(models.Model):
             supply.save()
            
         #Create and upload pdf 
-        pdf = PurchaseOrderPDF(po=order, supplies=order.item_set.all(),
+        pdf = PurchaseOrderPDF(po=order, items=order.item_set.all(),
                                supplier=order.supplier)
         filename = pdf.create()
         key = "purchase_order/PO-{0}.pdf".format(order.id)
@@ -98,63 +98,51 @@ class PurchaseOrder(models.Model):
         print order.pdf
         
         return order
-
-    def update(self, **kwargs):
-        """
-        Updates the Purchase Order
-        """
-        if "receive_date" in kwargs:
-            self.receive_date = kwargs["receive_date"]
-            
-        self.save()
-        
-    def to_dict(self, user=None):
-        """
-        wrapper for dict()
-        """
-        return self.dict(user)
-        
-    def dict(self, user=None):
-        """
-        Returns the object's attributes as a 
-        dictionary
-        """
-        data = {'id': self.id,
-                'order_date': self.order_date.isoformat(),
-                'supplier': self.supplier.to_dict(),
-                'total': str(self.grand_total),
-                'employee': '{0} {1}'.format(self.employee.first_name,
-                                             self.employee.last_name)}
-        
-        try:
-            data['pdf'] = {'url': self.pdf.generate_url()}
-        except AttributeError:
-            pass#print "PO #{0} has no pdf".format(self.id)
-        
-        if self.receive_date:
-            data['receive_date'] = self.receive_date.isoformat()
-            
-        return data
     
-    def _increase_stock(self, item):
+    def create_pdf(self):
         """
-        Increases the quantity of stock in the inventory 
+        Creates a pdf and returns the filename
         """
-        supply = item.supply
-        if supply.purchasing_units.lower() != "packs":
-            supply.quantity += item.quantity
-            supply.save()
+        #Create and upload pdf 
+        print self.item_set.all()
+        pdf = PurchaseOrderPDF(po=self, items=self.item_set.all(),
+                               supplier=self.supplier)
+        filename = pdf.create()
+        return filename
+        
+    def create_and_upload_pdf(self):
+        """
+        Creates a pdf and uploads it to the S3 service
+        """
+        filename = self.create_pdf()
+        key = "purchase_order/PO-{0}.pdf".format(self.id)
+        self.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
+        self.save()
     
 
 class Item(models.Model):
-    purchase_order = models.ForeignKey(PurchaseOrder)
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name="items")
     supply = models.ForeignKey(Supply, db_column="supply_id", related_name="+")
     description = models.TextField()
     quantity = models.IntegerField()
-    discount = models.IntegerField()
+    discount = models.IntegerField(default=0)
     unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     
+    def __init__(self, **kwargs):
+        super(Item, self).__init__(**kwargs)
+        
+        try:
+            self.supply = Supply.objects.get(pk=kwargs['supply']['id'])
+        except Supply.DoesNotExist:
+            raise 
+        except KeyError:
+            self.supply = Supply.objects.all()[0]#self.supply = Supply.objects.get(pk=kwargs['id'])
+            
+        self.purchase_order = PurchaseOrder.objects.all()[0]
+        self.quantity = 1
+        self.description = 'test'
+        
     @classmethod
     def create(cls, **kwargs):
         item = cls()

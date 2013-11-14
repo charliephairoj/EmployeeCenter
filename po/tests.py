@@ -7,9 +7,10 @@ import datetime
 from decimal import Decimal
 
 from django.test import TestCase
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, ContentType
+from tastypie.test import ResourceTestCase
 
-from contacts.models import Supplier
+from contacts.models import Supplier, Address
 from po.models import PurchaseOrder, Item
 from supplies.models import Supply, Fabric
 
@@ -22,7 +23,7 @@ base_address = {'address1': '22471 Sunbrook',
 base_supplier = {'name': 'Zipper World',
                  'id': 1,
                  'currency': 'THB',
-                 'address': base_address,
+                 #'address': base_address,
                  'terms': 30}
 
 base_fabric = {'pattern': 'Maxx',
@@ -33,7 +34,7 @@ base_fabric = {'pattern': 'Maxx',
                'unit_cost': 12.11}
 
 base_purchase_order = {'supplier': {'id':1},
-                       'supplies': [{'id': 1, 'quantity':10}],
+                       'items': [{'id': 1, 'quantity':10}],
                        'vat': '7'}
 
 date = datetime.datetime.now()
@@ -55,7 +56,7 @@ def create_user(block_permissions=[]):
     return user
 
 
-class PurchaseOrderTest(TestCase):
+class PurchaseOrderTest(ResourceTestCase):
     """
     Tests the Purchase Order
     """
@@ -63,78 +64,92 @@ class PurchaseOrderTest(TestCase):
         """
         Set up dependent objects
         """
-        self.supplier = Supplier.create(**base_supplier)
+        super(PurchaseOrderTest, self).setUp()
+        
+        self.ct = ContentType(app_label="po")
+        self.ct.save()
+        self.p = Permission(codename="add_purchaseorder", content_type=self.ct)
+        self.p.save()
+        #Create the user
+        self.username = 'tester'
+        self.password = 'pass'
+        self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        self.user.save()
+        self.user.user_permissions.add(self.p)
+        self.api_client.client.login(username=self.username, password=self.password)
+        
+        
+        self.supplier = Supplier(**base_supplier)
+        self.supplier.save()
+        self.address = Address(**base_address)
+        self.address.contact = self.supplier
+        self.address.save()
         self.supply = Fabric.create(**base_fabric)
-        self.user = create_user()
+        self.supply.save()
         
-        #Tests dependencies are created
-        self.assertIsNotNone(self.supplier)
-        self.assertIsInstance(self.supplier, Supplier)
-        self.assertIsNotNone(self.supply)
-        self.assertIsInstance(self.supply, Supply)
-        self.assertIsNotNone(self.user)
-        self.assertIsInstance(self.user, User)
+        self.po = PurchaseOrder()
+        self.po.employee = self.user
+        self.po.supplier = self.supplier
+        self.po.terms = self.supplier.terms
+        self.po.save()
+        
+        
+    def test_get_list(self):
+        """
+        Tests getting a list of po's via GET
+        """
+        #Validate the response
+        resp = self.api_client.get('/api/v1/purchase-order', format='json')
+        self.assertHttpOK(resp)
+        self.assertValidJSONResponse(resp)
+        
+        #Validate the returned data
+        resp = self.deserialize(resp)
+        self.assertIsInstance(resp, dict)
+        self.assertIsInstance(resp['objects'], list)
+        self.assertEqual(len(resp['objects']), 1)
+        
+    def test_get(self):
+        """
+        Tests getting a single resource via GET
+        """
+        #Validate the response
+        resp = self.api_client.get('/api/v1/purchase-order/1')
+        self.assertHttpOK(resp)
+        self.assertValidJSONResponse(resp)
+        
+        #Validate the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['terms'], 30)
+        
+    def test_post(self):
+        """
+        Tests creating a new resource via POST
+        """
+        #validate the response
+        resp = self.api_client.post('/api/v1/purchase-order',
+                                    data=base_purchase_order)
+        self.assertHttpCreated(resp)
+        
+        #Validate the data returned
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 2)
+        self.assertIsNotNone(obj['items'])
+        self.assertIsInstance(obj['items'], list)
+        print obj['pdf']['url']
+        
     
-    def test_create_po(self):
-        """
-        Tests creating the po
-        """
-        self.po = PurchaseOrder.create(user=self.user,
-                                       **base_purchase_order)
-        self.assertIsNotNone(self.po)
-        self.assertIsInstance(self.po, PurchaseOrder)
-        
-        #Test po vars
-        self.assertEqual(self.po.currency, 'THB')
-        self.assertEqual(self.po.terms, 30)
-        #Tests order values
-        self.assertEqual(self.po.vat, 7)
-        self.assertEqual(round(self.po.grand_total, 2), 129.58)
-        self.assertEqual(len(self.po.item_set.all()), 1)
-        
-    def test_create_po_with_discount(self):
-        """
-        Tests creating a po with a discount
-        """
-        order = base_purchase_order.copy()
-        order['discount'] = 30
-        self.po = PurchaseOrder.create(user=self.user,
-                                       **order)
-        
-        self.assertIsNotNone(self.po)
-        self.assertIsInstance(self.po, PurchaseOrder)
-        
-        #Tests values
-        self.assertEqual(self.po.discount, 30)
-        self.assertEqual(self.po.vat, 7)
-        self.assertEqual(round(self.po.subtotal, 2), 121.10)
-        self.assertEqual(round(self.po.total, 2), 84.77)
-        self.assertEqual(round(self.po.grand_total, 2), 90.70)
-        
-    def test_update_receive_date(self):
-        """
-        Tests updating the recieve date of the po
-        """
-        self.po = PurchaseOrder.create(user=self.user,
-                                       **base_purchase_order)
-        self.po.update(receive_date=date)
-        
-        self.assertIsNotNone(self.po.receive_date)
-        self.assertIsInstance(self.po.receive_date, datetime.datetime)
-        self.assertEqual(self.po.receive_date, date)
-        
+    
+    
 
 class ItemTest(TestCase):
     """
     Tests the PO Item
     """
     def setUp(self):
-        self.supplier = Supplier.create(**base_supplier)
+        self.supplier = Supplier(**base_supplier)
+        self.supply.save()
         self.supply = Fabric.create(**base_fabric)
     
-    def test_create_item(self):
-        self.item = Item.create(id=1, quantity=2)
-        self.assertIsNotNone(self.item)
-        self.assertIsInstance(self.item, Item)
-        self.assertEqual(round(self.item.unit_cost, 2), 12.11)
-        self.assertEqual(round(self.item.total, 2), 24.22)
+   

@@ -122,7 +122,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         p = Permission(content_type=self.ct, codename="change_acknowledgement")
         p.save()
+        p2 = Permission(content_type=self.ct, codename="add_acknowledgement")
+        p2.save()
         self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
         
         self.user.save()
         

@@ -23,7 +23,7 @@ class UserResource(ModelResource):
         authorization = DjangoAuthorization()
         always_return_data = True
         validation = UserValidation()
-        fields = ['username', 'email', 'first_name', 'last_name', 'id']
+        fields = ['username', 'email', 'first_name', 'last_name', 'id', 'last_login']
         
     def hydrate(self, bundle):
         """
@@ -57,12 +57,13 @@ class UserResource(ModelResource):
         Implements a dehydrate method
         """
         #List all permissions from groups
+        """
         permissions = [{'id': p.id,
                         'description': p.name,
                         'name': p.name} for p 
                         in Permission.objects.filter(group__user__id=bundle.data['id'])]
         bundle.data['permissions'] = permissions
-        
+        """
         #List all groups
         groups = [{'id': g.id,
                    'description': g.name,

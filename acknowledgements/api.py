@@ -109,7 +109,7 @@ class AcknowledgementResource(ModelResource):
         #Calculate the total price
         logger.info("Calculating balance of the order...")
         bundle.obj.calculate_totals(self.items)
-        bundle.obj.save()
+        bundle = self.save(bundle)
         
         #Save the items
         logger.info("Saving the items to the database...")

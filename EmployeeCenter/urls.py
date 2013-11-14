@@ -4,6 +4,7 @@ from tastypie.api import Api
 
 from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
+from po.api import PurchaseOrderResource, ItemResource as POItemResource
 from shipping.api import ShippingResource
 from supplies.api import SupplyResource, FabricResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
@@ -19,6 +20,8 @@ v1_api.register(SupplierResource())
 v1_api.register(CustomerResource())
 v1_api.register(AckItemResource())
 v1_api.register(AcknowledgementResource())
+v1_api.register(PurchaseOrderResource())
+v1_api.register(POItemResource())
 v1_api.register(ShippingResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())

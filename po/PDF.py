@@ -87,7 +87,7 @@ class PurchaseOrderPDF():
     document_type = "Purchase_Order"
 
     #def methods
-    def __init__(self, supplier=None, supplies=None, po=None, attention=None,
+    def __init__(self, supplier=None, items=None, po=None, attention=None,
                  misc=None, connection=None):
         #set connection
         self.connection = connection if connection != None else S3Connection(settings.AWS_ACCESS_KEY_ID, 
@@ -98,7 +98,7 @@ class PurchaseOrderPDF():
         normalStyle = stylesheet['Normal']
 
         self.supplier = supplier
-        self.supplies = supplies
+        self.supplies = items
         self.po = po
         self.employee = self.po.employee
         self.attention = attention
