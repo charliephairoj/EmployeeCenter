@@ -27,10 +27,10 @@ class SupplyValidation(Validation):
             errors['description'] = "Expecting a description for this supply"
             
         #Validates that the dimensions are present and an integer
-        dimensions = ['width', 'height', 'depth']
+        dimensions = ['width']#, 'height', 'depth']
         for dimension in dimensions:
             try: 
-                int(bundle.data[dimension])
+                Decimal(bundle.data[dimension])
             except KeyError:
                 errors[dimension] = "Expecting a {0} for the supply".format(dimension)
             except ValueError:
@@ -38,7 +38,7 @@ class SupplyValidation(Validation):
                 
         #Validates that the quantity is present and that it is an integer
         try:
-            Decimal(bundle.data['quantity'])
+            pass#Decimal(bundle.data['quantity'])
         except KeyError:
             errors['quantity'] = "Expecting a current quantity for this item"
         except ValueError:

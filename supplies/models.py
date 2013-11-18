@@ -171,6 +171,8 @@ class Fabric(Supply):
             raise AttributeError("Missing fabric color")
         
         obj.description = "Pattern: {0}, Col: {1}".format(obj.pattern, obj.color)
+        obj.units = 'm'
+        obj.purchasing_units = 'm'
 
         obj.save()
         return obj

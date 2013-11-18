@@ -18,12 +18,16 @@ from auth.models import S3Object
 from po.PDF import PurchaseOrderPDF
 
 
+logger = logging.getLogger(__name__)
+
+
 # Create your models here.
 class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier)
     order_date = models.DateTimeField(default=datetime.datetime.today())
+    created = models.DateTimeField(auto_now_add=True)
     receive_date = models.DateTimeField(null=True)
-    terms = models.IntegerField()
+    terms = models.IntegerField(default=0)
     vat = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
     shipping_type = models.CharField(max_length=10, default="none")
@@ -37,6 +41,7 @@ class PurchaseOrder(models.Model):
     grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     employee = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    status = models.TextField(default="Ordered")
     pdf = models.ForeignKey(S3Object, null=True)
     
     @classmethod
@@ -89,7 +94,7 @@ class PurchaseOrder(models.Model):
             supply.save()
            
         #Create and upload pdf 
-        pdf = PurchaseOrderPDF(po=order, items=order.item_set.all(),
+        pdf = PurchaseOrderPDF(po=order, items=order.items.all(),
                                supplier=order.supplier)
         filename = pdf.create()
         key = "purchase_order/PO-{0}.pdf".format(order.id)
@@ -99,13 +104,18 @@ class PurchaseOrder(models.Model):
         
         return order
     
+    def calculate_total(self):
+        """
+        Calculate the subtotal, total, and grand total
+        """
+        return self._calculate_grand_total()
+        
     def create_pdf(self):
         """
         Creates a pdf and returns the filename
         """
         #Create and upload pdf 
-        print self.item_set.all()
-        pdf = PurchaseOrderPDF(po=self, items=self.item_set.all(),
+        pdf = PurchaseOrderPDF(po=self, items=self.items.all(),
                                supplier=self.supplier)
         filename = pdf.create()
         return filename
@@ -119,35 +129,64 @@ class PurchaseOrder(models.Model):
         self.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
         self.save()
     
+    def _calculate_subtotal(self):
+        """
+        Calculate the subtotal
+        """
+        if self.items.count() > 0:
+            self.subtotal = sum([item.total for item in self.items.all()])
+        else:
+            raise ValueError('Missing items')
+        
+        logging.debug("The subtotal is {0:.2f}".format(self.subtotal))
+        return self.subtotal
+    
+    def _calculate_total(self):
+        """
+        Calculate the total
+        """
+        subtotal = self._calculate_subtotal()
+        if self.discount > 0:
+            self.total = subtotal - ((Decimal(self.discount) / Decimal('100')) * subtotal)
+        else:
+            self.total = subtotal
 
+        logging.debug("The total is {0:.2f}".format(self.total))
+        return self.total
+    
+    def _calculate_grand_total(self):
+        """
+        Calcualte the grand total
+        """
+        total = self._calculate_total()
+        if self.vat > 0:
+            self.grand_total = total + (total * (Decimal(self.vat) / Decimal('100')))
+        else:
+            self.grand_total = total
+        
+        logging.debug("The grand total is {0:.2f}".format(self.grand_total))
+        return self.grand_total
+        
 class Item(models.Model):
-    purchase_order = models.ForeignKey(PurchaseOrder, related_name="items")
+    
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name='items')
     supply = models.ForeignKey(Supply, db_column="supply_id", related_name="+")
     description = models.TextField()
     quantity = models.IntegerField()
+    status = models.TextField(default="Ordered")
     discount = models.IntegerField(default=0)
     unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    
-    def __init__(self, **kwargs):
-        super(Item, self).__init__(**kwargs)
-        
-        try:
-            self.supply = Supply.objects.get(pk=kwargs['supply']['id'])
-        except Supply.DoesNotExist:
-            raise 
-        except KeyError:
-            self.supply = Supply.objects.all()[0]#self.supply = Supply.objects.get(pk=kwargs['id'])
-            
-        self.purchase_order = PurchaseOrder.objects.all()[0]
-        self.quantity = 1
-        self.description = 'test'
         
     @classmethod
     def create(cls, **kwargs):
+        print kwargs
         item = cls()
-        if "id" in kwargs:
-            item.supply = Supply.objects.get(id=kwargs["id"])
+        try:
+            item.supply = Supply.objects.get(id=kwargs['supply']["id"])
+        except KeyError:
+            item.supply = Supply.objects.get(id=kwargs['id'])
+            
             item.description = item.supply.description
             item.unit_cost = item.supply.cost
             item.discount = item.supply.discount
@@ -166,21 +205,4 @@ class Item(models.Model):
             item.total = Decimal(item.unit_cost * Decimal(item.quantity))
         return item
     
-    def dict(self, user=None):
-        """
-        Returns the Item's attributes as a dictionary
-        """
-        data = {'supply': {'id': self.supply.id},
-                'quantity': self.quantity,
-                'unit_cost': round(self.unit_cost, 2),
-                'total': round(self.total, 2)}
-            
-    def save(self, commit=True):
-        """
-        Saves the item to the database
-        
-        Method saves the item to the database
-        if commit is True
-        """
-        if commit:
-            super(Item, self).save()
+    

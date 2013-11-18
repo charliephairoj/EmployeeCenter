@@ -93,6 +93,10 @@ class PurchaseOrderTest(ResourceTestCase):
         self.po.terms = self.supplier.terms
         self.po.save()
         
+        self.item = Item.create(**base_purchase_order['items'][0])
+        self.item.purchase_order = self.po
+        self.item.save()
+        
         
     def test_get_list(self):
         """
@@ -137,10 +141,11 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['id'], 2)
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
-        print obj['pdf']['url']
+        self.assertEqual(len(obj['items']), 1)
+        #self.assertIsNotNone(obj['pdf'])
+        #self.assertIsNotNone(obj['pdf']['url'])
         
-    
-    
+        #print Supply.objects.order_by('-id').all()[0].item_set.all()
     
 
 class ItemTest(TestCase):

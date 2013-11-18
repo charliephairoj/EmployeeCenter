@@ -40,6 +40,9 @@ class ContactResource(ModelResource):
         """
         Sets the address for the contact
         """
+        if not bundle.obj.pk:
+            bundle.obj.save()
+            
         if "address" in bundle.data:
             addr = self._get_or_create_address(bundle.data["address"])
             addr.contact = bundle.obj
@@ -105,7 +108,7 @@ class CustomerResource(ContactResource):
         #Set status as a customer
         bundle.obj.is_customer = True
         
-        return bundle
+        return self.save(bundle)
     
     def obj_update(self, bundle, **kwargs):
         """
@@ -174,15 +177,29 @@ class SupplierResource(ContactResource):
         
         return obj_list
     
+    def hydrate(self, bundle):
+        """
+        Set other attributes
+        """  
+        #Set the address
+        bundle = self._set_address(bundle)
+        
+        bundle.obj.is_supplier = True
+                
+        return bundle
+    
     def obj_create(self, bundle, **kwargs):
         """
         Create a supplier resource
         """
         logger.info("Creating supplier: {0}...".format(bundle.data['name']))
-        bundle = super(SupplierResource, self).obj_create(bundle, **kwargs)
-        
+        bundle.obj = Supplier()
+        bundle = self.full_hydrate(bundle)
+        logger.debug(bundle.data)
         #Set status as supplier
         bundle.obj.is_supplier = True
+        bundle = self.save(bundle)
+        
         return bundle
     
     def obj_update(self, bundle, **kwargs):
@@ -201,15 +218,6 @@ class SupplierResource(ContactResource):
         logger.info("Deleting supplier: {0}...".format(obj.name))
         return super(SupplierResource, self).obj_delete(bundle, **kwargs)
     
-    def hydrate(self, bundle):
-        """
-        Set other attributes
-        """  
-        #Set the address
-        bundle = self._set_address(bundle)
-        
-        bundle.obj.is_supplier = True
-                
-        return bundle
+    
     
         

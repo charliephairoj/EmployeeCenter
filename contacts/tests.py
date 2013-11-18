@@ -26,7 +26,8 @@ base_contact = {"name": "Charlie Brown",
                 "currency": "USD",
                 "email": "charliep@dellarobbiathailand.com",
                 "fax": "0224223423",
-                "telephone": "08348229383"}
+                "telephone": "08348229383",
+                'notes': 'woohoo'}
 base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "last_name": "Smith",
                          "email": "test@yahoo.com",
@@ -220,6 +221,13 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(supplier["telephone"], "08348229383")
         self.assertEqual(supplier["fax"], "0224223423")
+        self.assertEqual(supplier['notes'], "woohoo")
+        
+        #Validate the created supplier instance
+        supp = Supplier.objects.order_by('-id').all()[0]
+        self.assertEqual(supp.notes, 'woohoo')
+        self.assertEqual(supp.telephone, "08348229383")
+        self.assertEqual(supp.fax, "0224223423")
 
     def test_put(self):
         """

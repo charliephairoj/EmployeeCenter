@@ -64,8 +64,9 @@ class PODocTemplate(BaseDocTemplate):
         canvas.drawString(42, 760,
                           "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
         canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
-        canvas.drawString(42, 740, "+66 2 998 7490")
-        canvas.drawString(42, 730, "www.dellarobbiathailand.com")
+        canvas.drawString(42, 740, "T: +66 2 998 7490")
+        canvas.drawString(42, 730, "F: +66 2-997-3361")
+        canvas.drawString(42, 720, "www.dellarobbiathailand.com")
 
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
@@ -144,8 +145,15 @@ class PurchaseOrderPDF():
         data.append(['Supplier:', self.supplier.name])
         #add supplier address data
         data.append(['', address.address1])
-        data.append(['', address.city + ', ' + address.territory])
-        data.append(['', "%s %s" % (address.country, address.zipcode)])
+        data.append(['', "{0}, {1}".format(address.city, address.territory)])
+        data.append(['', "{0} {1}".format(address.country, address.zipcode)])
+        if self.supplier.telephone:
+            data.append(['', "T: {0}".format(self.supplier.telephone)])
+        if self.supplier.fax: 
+            data.append(['', "F: {0}".format(self.supplier.fax)])
+        if self.supplier.email:
+            data.append(['', "E: {0}".format(self.supplier.email)])
+            
         #Determines if we can add attention section
         if self.attention != None:
             att = '{0} {1}'.format(self.attention.first_name,
@@ -232,7 +240,7 @@ class PurchaseOrderPDF():
             #add the data
             data.append([i, supply.supply.reference,
                          self.__get_description(supply),
-                         supply.supply.purchasing_units,
+                         supply.supply.units,
                          "%.2f" % float(supply.unit_cost),
                          supply.quantity,
                          "%.2f" % float(supply.total)])
@@ -335,22 +343,22 @@ class PurchaseOrderPDF():
         if self.po.vat != 0 or self.supplier.discount != 0:
             #get subtotal and add to pdf
             subtotal = float(self.po.subtotal)
-            data.append(['', '', '', '', '', 'Subtotal', "%.2f" % subtotal])
+            data.append(['', '', '', '', '', 'Subtotal', "{0:.2f}".format(subtotal)])
             #add discount area if discount greater than 0
             if self.supplier.discount != 0:
                 discount = subtotal * (float(self.supplier.discount) / float(100))
                 dis_title = 'Discount {0}%'.format(self.supplier.discount)
-                dis_str = "%.2f" % discount
+                dis_str = "{0:.2f}".format(discount)
                 data.append(['', '', '', '', '', dis_title, dis_str])
             #add vat if vat is greater than 0
             if self.po.vat != 0:
                 if self.supplier.discount != 0:
                     #append total to pdf
-                    data.append(['', '', '', '', '', 'Total', "%.2f" % self.po.total])
+                    data.append(['', '', '', '', '', 'Total', "{0:.2f}".format(self.po.total)])
                 #calculate vat and add to pdf
-                vat = float(self.po.total) * (float(self.po.vat) / float(100))
-                data.append(['', '', '', '', '', 'Vat %s%%' % self.po.vat, "%.2f" % vat])
-        data.append(['', '', '', '', '', 'Grand Total', "%.2f" % self.po.grand_total]) 
+                vat = Decimal(self.po.total) * (Decimal(self.po.vat) / Decimal('100'))
+                data.append(['', '', '', '', '', 'Vat {0}%'.format(self.po.vat), "{0:.2f}".format(vat)])
+        data.append(['', '', '', '', '', 'Grand Total', "{0:.2f}".format(self.po.grand_total)]) 
         #adjust the style based on vat and discount
         #if there is either vat or discount
         if self.po.vat != 0 or self.supplier.discount != 0:

@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class SupplyResource(ModelResource):
+    supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier',
+                                 readonly=True, full=True)
     
     class Meta:
         queryset = Supply.objects.all()
@@ -28,6 +30,7 @@ class SupplyResource(ModelResource):
         always_return_data = True
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
+        #fields = ['purchasing_units', 'description', 'cost', 'id', 'pk']
     
     def apply_filters(self, request, applicable_filters):
         obj_list = super(SupplyResource, self).apply_filters(request, applicable_filters)
@@ -37,6 +40,11 @@ class SupplyResource(ModelResource):
             query = request.GET.get('q')
             obj_list = obj_list.filter(Q(supplier__name__icontains=query) | 
                                        Q(description__icontains=query))
+        
+        if request.GET.has_key('supplier_id'):
+            s_id = request.GET.get('supplier_id')
+            obj_list = obj_list.filter(supplier_id=s_id)
+        
         return obj_list
     
     def prepend_urls(self):
@@ -44,7 +52,14 @@ class SupplyResource(ModelResource):
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract'))
                 ]
+    
+    def obj_create(self, bundle, **kwargs):
         
+        bundle.obj = Supply()
+        bundle = self.full_hydrate(bundle)
+        bundle = self.save(bundle)
+        return bundle
+    
     def add(self, request, **kwargs):
         """
         Adds a quantity to the supply
@@ -56,7 +71,7 @@ class SupplyResource(ModelResource):
             pass#return self.create
         obj = self._meta.queryset.get(pk=kwargs['pk'])
        
-        obj.quantity = round(obj.quantity + float(request.REQUEST.get('quantity')), 2)
+        obj.quantity = round(float(obj.quantity) + float(request.REQUEST.get('quantity')), 2)
         obj.save()
         
         return self.create_response(request, obj.__dict__)
@@ -73,7 +88,7 @@ class SupplyResource(ModelResource):
             pass#return self.create
         obj = self._meta.queryset.get(pk=kwargs['pk'])
        
-        obj.quantity = round(obj.quantity - float(request.REQUEST.get('quantity')), 2)
+        obj.quantity = round(float(obj.quantity) - float(request.REQUEST.get('quantity')), 2)
         obj.save()
         
         return self.create_response(request, obj.__dict__)
@@ -87,6 +102,12 @@ class SupplyResource(ModelResource):
         except KeyError:
             pass
         
+        if "unit_cost" in bundle.data:
+            bundle.obj.cost = bundle.data['unit_cost']
+        else:
+            bundle.obj.cost = bundle.data['cost']
+        
+        """
         #Change the quantity
         if "quantity" in bundle.data and bundle.obj.pk:
             #Equalize the 2 quantities so that
@@ -127,7 +148,8 @@ class SupplyResource(ModelResource):
                                                                                                          bundle.obj.description)
                     logger.warn(warning)
                     #raise Unauthorized("User does not have authorization to subtract from inventory.")
-            
+        """
+        
         return bundle
     
     def dehydrate(self, bundle):

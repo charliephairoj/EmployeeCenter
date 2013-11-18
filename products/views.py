@@ -23,6 +23,7 @@ def model(request, model_id=0):
 
 @login_required
 def model_image(request):
+    print 'ok'
     if request.method == "POST":
         filename = save_upload(request)
         obj = S3Object.create(filename,

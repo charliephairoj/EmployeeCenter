@@ -175,6 +175,7 @@ class AcknowledgementResource(ModelResource):
         
 
 class ItemResource(ModelResource):    
+    
     class Meta:
         queryset = Item.objects.all()
         resource_name = 'acknowledgement-item'

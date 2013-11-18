@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class PurchaseOrderResource(ModelResource):
-    items = fields.ToManyField('acknowledgements.api.ItemResource', 'items', 
+    items = fields.ToManyField('po.api.ItemResource', 'items', related_name="purchase_order",
                                readonly=True, null=True, full=True)
-    
+    supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier',
+                                 readonly=True, full=True)
     class Meta:
         resource_name = "purchase-order"
-        queryset = PurchaseOrder.objects.all()
-        order_by = '-id'
+        queryset = PurchaseOrder.objects.all().order_by('-id')
         always_return_data = True
         authorization = DjangoAuthorization() 
         
@@ -43,6 +43,8 @@ class PurchaseOrderResource(ModelResource):
         try:
             bundle.obj.supplier = Supplier.objects.get(pk=bundle.data['supplier']['id'])
             bundle.obj.terms = bundle.obj.supplier.terms
+            bundle.obj.currency = bundle.obj.supplier.currency
+            bundle.obj.discount = bundle.obj.supplier.discount
         except KeyError:
             logger.error("Missing supplier's ID")
             raise ValueError("Expecting the supplier's ID.")
@@ -50,19 +52,18 @@ class PurchaseOrderResource(ModelResource):
             logger.error("The supplier ID#{0} no longer exists.".format(bundle.data["supplier"]["id"]))
             raise 
         #Create the items 
-        try:
-            self.items = [Item(**item_data) for item_data in bundle.data['items']]
-            
-        except Exception as e:
-            logger.error(e)
-            
+        self.items = [Item.create(**item_data) for item_data in bundle.data['items']]
+       
         bundle = self.save(bundle)
-        logger.debug(bundle.obj.pk)
+        
         for item in self.items:
             item.purchase_order = bundle.obj
             item.save()
-            logger.debug(item.pk)
-            logger.debug(item.purchase_order.items.all())
+            
+        logger.debug("Calculating totals...")
+        bundle.obj.calculate_total()
+        bundle.obj.save()
+        
         #Create a pdf to be uploaded 
         #to the S3 service. Then generate 
         #a url for the data that will be returned to the customer
@@ -80,3 +81,4 @@ class ItemResource(ModelResource):
         always_return_data = True
         authorization = DjangoAuthorization()
         allowed_methods = ['get', 'put', 'patch']
+        
