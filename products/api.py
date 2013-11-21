@@ -144,7 +144,7 @@ class UpholsteryResource(Resource):
     model = fields.ToOneField('products.api.ModelResource', 'model', full=True, readonly=True)
     configuration = fields.ToOneField('products.api.ConfigurationResource', 'configuration', full=True,
                                       readonly=True)
-    #pillows = fields.ToManyField('products.api.PillowResource', 'pillows', full=True, readonly=True)
+    pillows = fields.ToManyField('products.api.PillowResource', 'pillows', full=True, readonly=True, null=True)
     
     class Meta:
         queryset = Upholstery.objects.all()

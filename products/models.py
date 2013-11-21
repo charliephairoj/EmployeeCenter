@@ -394,7 +394,7 @@ class Upholstery(Product):
 
 
 class Pillow(models.Model):
-    product = models.ForeignKey(Product)
+    product = models.ForeignKey(Product, related_name="pillows")
     type = models.CharField(max_length=50)
     quantity = models.IntegerField()
 
