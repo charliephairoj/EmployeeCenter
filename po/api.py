@@ -68,8 +68,8 @@ class PurchaseOrderResource(ModelResource):
         #to the S3 service. Then generate 
         #a url for the data that will be returned to the customer
         logger.info("Creating pdf for purchase order #{0}".format(bundle.obj.id))
-        #bundle.obj.create_and_upload_pdf()
-        #bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
+        bundle.obj.create_and_upload_pdf()
+        bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
         
         return bundle
     
