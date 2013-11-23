@@ -117,8 +117,10 @@ def supply_image(request):
                         "supply/image/{0}.jpg".format(time.time()),
                         "media.dellarobbiathailand.com")
         #set Url, key and bucket
-        data = {'url': image.generate_url,
-                "id": image.id}
+        data = {'url': image.generate_url(),
+                "id": image.id,
+                'key': image.key,
+                'bucket': image.bucket}
         #self.save()
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201

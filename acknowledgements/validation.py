@@ -65,8 +65,8 @@ class AcknowledgementValidation(Validation):
         """
         #Checks that there is an id to find the 
         #corresponding product
-        if "id" not in item:
-            raise ValueError("Expecting an id for the this item")
+        #if "id" not in item:
+        #    raise ValueError("Expecting an id for the this item")
         
         
         #Checks that each item has a quantity that is an integer
