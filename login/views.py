@@ -1,21 +1,22 @@
+
+
+
+import json
+
 from django.shortcuts import render
+from django.contrib.staticfiles.views import serve
 from django.http import HttpResponseRedirect, HttpResponse
 from oauth2client.client import OAuth2WebServerFlow
-
-from login.models import LoginForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-import json
-from django.utils.log import getLogger
 from django.utils.safestring import mark_safe
 
 from auth.views import current_user
-
+from login.models import LoginForm
 
 @login_required
 def main(request):
-    from django.contrib.staticfiles.views import serve
     serve(request, 'templates/auth/login.html')
 
 
@@ -33,7 +34,7 @@ def app_login(request):
             #Gets user profile to do checks
 
             #Get User data
-            user_data = current_user(request)
+            user_data = {}
             jsonStr = mark_safe(json.dumps(user_data))
             #checks if authenticated for google
             """
@@ -43,9 +44,11 @@ def app_login(request):
                 #return serve(request, 'index.html', settings.STATIC_ROOT)
                 return render(request, 'home.html', {'user_data': jsonStr})
             else:
-                #return serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
                 return render(request, 'home.html', {'user_data': jsonStr})
             """
+            #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
+            #serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
+
             return render(request, 'home.html', {'user_data': jsonStr})
 
         else:

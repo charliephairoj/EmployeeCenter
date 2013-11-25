@@ -42,8 +42,7 @@ def current_user(request):
         modules.append('administrator')
     user_data['modules'] = modules
     #return data via http
-    #return HttpResponse(json.dumps(user_data), mimetype="application/json")
-    return user_data
+    return HttpResponse(json.dumps(user_data), mimetype="application/json")
 
 
 @login_required

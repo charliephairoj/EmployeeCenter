@@ -195,6 +195,7 @@ def save_upload(request, filename=None):
     if filename is None:
         filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
     #Save File to disk
+    print request.FILES
     try:
         image = request.FILES['image']
     except MultiValueDictKeyError:

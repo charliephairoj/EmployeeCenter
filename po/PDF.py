@@ -203,7 +203,8 @@ class PurchaseOrderPDF():
         contact = Table([[t1, t2]])
         #Create Style and apply
         style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
-                            ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT')])
+                            ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                            ('VALIGN', (0, 0), (-1, -1), 'TOP')])
         contact.setStyle(style)
         #Return table
         return contact

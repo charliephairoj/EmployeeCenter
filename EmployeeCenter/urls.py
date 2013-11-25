@@ -41,7 +41,9 @@ v1_api.register(TableResource())
 urlpatterns = patterns('',
     url(r'^$', 'login.views.app_login'),
     url(r'^login$', 'login.views.app_login'),
-    url(r'^logout$', 'login.views.logout')
+    url(r'^logout$', 'login.views.logout'),
+    url(r'^api/v1/current_user$', 'auth.views.current_user'),
+    url(r'^/api/v1/current_user$', 'auth.views.current_user')
 )
 
 
@@ -60,6 +62,7 @@ urlpatterns += patterns('acknowledgements.views',
 )
 
 #URL settings for supplies
+"""
 urlpatterns += patterns('supplies.views',
     #url(r'^supply$', 'supply'),
     #url(r'^supply/(?P<supply_id>\d+)$', 'supply'),
@@ -71,7 +74,8 @@ urlpatterns += patterns('supplies.views',
     #url(r'^supply/(?P<supply_id>\d+)/log$', 'supply_log'),
     url(r'^/api/v1/supply/(?P<supply_id>\d+)/image$', 'supply_image'),
     url(r'^/api/v1/supply/image$', 'supply_image'),
-)
+    url(r'^api/v1/supply/image$', 'supply_image'),
+)"""
 
 urlpatterns += patterns('products.views',
     url(r'^api/v1/model/image$', 'model_image'),

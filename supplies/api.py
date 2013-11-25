@@ -2,6 +2,7 @@
 API file for supplies
 """
 from decimal import Decimal
+import time
 import logging
 import json
 
@@ -15,6 +16,8 @@ from tastypie.exceptions import Unauthorized
 from supplies.models import Supply, Fabric
 from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
+from utilities.http import save_upload
+from auth.models import S3Object
 
 
 logger = logging.getLogger(__name__)
@@ -49,8 +52,9 @@ class SupplyResource(ModelResource):
     
     def prepend_urls(self):
         return [
+                url(r"^{0}/image$".format(self._meta.resource_name), self.wrap_view('process_image')),
+                url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
-                url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract'))
                 ]
     
     def obj_create(self, bundle, **kwargs):
@@ -59,6 +63,24 @@ class SupplyResource(ModelResource):
         bundle = self.full_hydrate(bundle)
         bundle = self.save(bundle)
         return bundle
+    
+    def process_image(self, request, **kwargs):
+        """
+        Receives an image and processes it
+        """
+        filename = save_upload(request)
+        
+        image = S3Object.create(filename,
+                        "supply/image/{0}.jpg".format(time.time()),
+                        "media.dellarobbiathailand.com")
+        #set Url, key and bucket
+        data = {'url': image.generate_url(),
+                "id": image.id,
+                'key': image.key,
+                'bucket': image.bucket}
+        
+        return self.create_response(request, data)
+
     
     def add(self, request, **kwargs):
         """
@@ -106,6 +128,21 @@ class SupplyResource(ModelResource):
             bundle.obj.cost = bundle.data['unit_cost']
         else:
             bundle.obj.cost = bundle.data['cost']
+            
+        #Adds the image
+        if "image" in bundle.data:
+            try:
+                bundle.obj.image = S3Object.objects.get(pk=bundle.data['image']['id'])
+            except KeyError:
+                #Create a new S3object for the image
+                s3_obj = S3Object()
+                s3_obj.key = bundle.data['image']['key']
+                s3_obj.bucket = bundle.data['image']['bucket']
+                s3_obj.save()
+                
+                bundle.obj.image = s3_obj
+            except S3Object.DoesNotExist:
+                raise
         
         """
         #Change the quantity
@@ -165,8 +202,9 @@ class SupplyResource(ModelResource):
         
         #Attack the image if it exists
         if bundle.obj.image:
-            bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
-            
+            bundle.data['image'] = {'id': bundle.obj.image.id,
+                                    'url': bundle.obj.image.generate_url()}
+
         return bundle
     
     

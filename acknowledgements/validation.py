@@ -115,7 +115,7 @@ class AcknowledgementValidation(Validation):
             raise TypeError("Expecting an integer for the quantity of this pillow.")
         """
         try:
-            types = ['back', 'accent', 'lumbar', 'corner']
+            types = [u'back', u'accent', u'lumbar', u'corner']
             if pillow['type'].lower() not in types:
                 raise ValueError("Expecting type to be either 'back', 'accent', 'lumbar', or 'corner'.")
         except KeyError:

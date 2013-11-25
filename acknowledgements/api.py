@@ -89,7 +89,7 @@ class AcknowledgementResource(ModelResource):
         #Set the employee
         try:
             logger.info("Setting employee...")
-            bundle.obj.employee = User.objects.get(pk=bundle.data['employee']['id'])
+            bundle.obj.employee = bundle.request.user
         except User.DoesNotExist:
             logger.error("User with ID {0} could not be found".format(bundle.data['employee']['id']))
             raise
@@ -153,7 +153,7 @@ class AcknowledgementResource(ModelResource):
                 logger.error("Unable to mail decoroom.")
                 logger.error(e)
                
-        logger.info("Acknowledgement #{0} created for {1}".format(bundle.obj.id, 
+        logger.info(u"Acknowledgement #{0} created for {1}".format(bundle.obj.id, 
                                                                   bundle.obj.customer.name)) 
         return bundle
     

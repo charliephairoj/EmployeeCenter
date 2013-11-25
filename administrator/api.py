@@ -32,24 +32,24 @@ class UserResource(ModelResource):
         try:
             client_groups = set([group['id'] for group in bundle.data['groups']]) if "groups" in bundle.data else set()
             server_groups = set([group.id for group in bundle.obj.groups.all()])
-            
-            
+          
             #Adds new groups to the user
             for group_id in client_groups.difference(server_groups):
                 group = Group.objects.get(pk=group_id)
-                bundle.request.user.groups.add(group)
+                bundle.obj.groups.add(group)
                 logger.info("User '{0}' added to '{1}' group.".format(bundle.obj.username, 
                                                                       group.name))
                 
             #Removes groups from the user
             for group_id in server_groups.difference(client_groups):
                 group = Group.objects.get(pk=group_id)
-                bundle.request.user.groups.remove(group)
+                bundle.obj.groups.remove(group)
                 logger.info("User '{0}' removed from '{1}' group.".format(bundle.obj.username, 
                                                                           group.name))
         except ValueError:
             pass
             
+        
         return bundle
     
     def dehydrate(self, bundle):
