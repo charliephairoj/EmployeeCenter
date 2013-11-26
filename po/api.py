@@ -27,6 +27,19 @@ class PurchaseOrderResource(ModelResource):
         always_return_data = True
         authorization = DjangoAuthorization() 
         
+    def hydrate(self, bundle):
+        """
+        Prepares the data before it is applied to the models
+        """
+        
+        #Updates the status of the items in the order
+        for item in bundle.data['items']:
+            po_item = Item.objects.get(pk=item['id'])
+            po_item.status = item['status']
+            po_item.save()
+            
+        return bundle
+    
     def obj_create(self, bundle, **kwargs):
         """
         Creates a new purchase order
@@ -72,6 +85,7 @@ class PurchaseOrderResource(ModelResource):
         bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
         
         return bundle
+    
     
         
 class ItemResource(ModelResource):
