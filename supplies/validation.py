@@ -27,7 +27,7 @@ class SupplyValidation(Validation):
             errors['description'] = "Expecting a description for this supply"
             
         #Validates that the dimensions are present and an integer
-        dimensions = ['width']#, 'height', 'depth']
+        dimensions = []#'width']#, 'height', 'depth']
         for dimension in dimensions:
             try: 
                 Decimal(bundle.data[dimension])

@@ -71,6 +71,16 @@ class ShippingResource(ModelResource):
         
         bundle.obj.process_items(bundle.data['items'])
         
+        #Sets the status of the acknowledgement 
+        if len(bundle.data['items']) == bundle.obj.acknowledgement.items.count():
+            bundle.obj.acknowledgement.status = 'SHIPPED'
+        else:
+            if bundle.obj.acknowledgement.items.filter(status='SHIPPED').count() == len(bundle.data['items']):
+                bundle.obj.acknowledgement.status = 'SHIPPED'
+            else:
+                bundle.obj.acknowledgement.status = 'PARTIALLY SHIPPED'
+        bundle.obj.acknowledgement.save()
+        
         #Creates a pdf and then uploads it
         logger.info("Creating pdf...")
         bundle.obj.create_and_upload_pdf()

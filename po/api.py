@@ -32,14 +32,33 @@ class PurchaseOrderResource(ModelResource):
         Prepares the data before it is applied to the models
         """
         
-        #Updates the status of the items in the order
-        for item in bundle.data['items']:
-            po_item = Item.objects.get(pk=item['id'])
-            po_item.status = item['status']
-            po_item.save()
+        if bundle.obj.pk:
+            try:
+                #Updates the status of the items in the order
+                for item in bundle.data['items']:
+                    po_item = Item.objects.get(pk=item['id'])
+                    po_item.status = item['status']
+                    po_item.save()
+            except:
+                pass
             
         return bundle
     
+    def dehydrate(self, bundle):
+        """
+        Get a single obj
+        """
+        #Add URLS for the acknowledgement
+        #and the production pdf to the data
+        #bundle
+        if bundle.request.GET.get('pdf'):
+            try:
+                bundle.data['pdf'] = {'url': bundle.obj.pdf.generate_url()}
+            except AttributeError: 
+                logger.warn('Missing pdf')
+            
+        return bundle
+        
     def obj_create(self, bundle, **kwargs):
         """
         Creates a new purchase order
@@ -95,4 +114,12 @@ class ItemResource(ModelResource):
         always_return_data = True
         authorization = DjangoAuthorization()
         allowed_methods = ['get', 'put', 'patch']
+        
+    def dehydrate(self, bundle):
+        """
+        Prepare data before it is returned to the client
+        """
+        bundle.data['units'] = bundle.obj.supply.units
+        
+        return bundle
         

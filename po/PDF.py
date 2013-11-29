@@ -145,6 +145,10 @@ class PurchaseOrderPDF():
         data.append(['Supplier:', self.supplier.name])
         #add supplier address data
         data.append(['', address.address1])
+        if address.address2:
+            if address.address2.strip() != "":
+                data.append(['', address.address2])
+
         data.append(['', "{0}, {1}".format(address.city, address.territory)])
         data.append(['', "{0} {1}".format(address.country, address.zipcode)])
         if self.supplier.telephone:
@@ -162,7 +166,7 @@ class PurchaseOrderPDF():
             data.append(['', self.attention.email])
             data.append(['', self.attention.telephone])
         #Create Table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(60, 200))
         #Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -200,7 +204,7 @@ class PurchaseOrderPDF():
         t1 = self.__create_supplier_section()
         t2 = self.__create_recipient_section()
         #create table for supplier and recipient data
-        contact = Table([[t1, t2]])
+        contact = Table([[t1, t2]], colWidths=(280, 200))
         #Create Style and apply
         style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
@@ -213,12 +217,12 @@ class PurchaseOrderPDF():
         #Create data array
         data = []
         #Add Data
-        data.append(['Payment Terms:', self._get_payment_terms()])
+        data.append(['Terms:', self._get_payment_terms()])
         data.append(['Currency:', self._get_currency()])
-        #sdata.append(['Date of Order:', self.po.order_date.strftime('%B %d, %Y')])
+        data.append(['Order Date:', self.po.order_date.strftime('%B %d, %Y')])
         #data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
         #Create table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(60, 200))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -259,13 +263,13 @@ class PurchaseOrderPDF():
         #merge data
         data += totals_data
         #Create Table
-        table = Table(data, colWidths=(40, 84, 210, 50, 50, 40, 65))
+        table = Table(data, colWidths=(40, 84, 230, 50, 50, 40, 65))
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                       ('LINEABOVE', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
                       #line under heading
                       ('LINEBELOW', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
-                      ('ALIGNMENT', (0, 0), (1, -1), 'CENTER'),
+                      ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                       ('ALIGNMENT', (4, 0), (4, -1), 'RIGHT'),
                       ('ALIGNMENT', (5, 0), (5, -1), 'CENTER'),
                       #align headers from description to total
@@ -273,7 +277,10 @@ class PurchaseOrderPDF():
                       #align totals to the right
                       ('ALIGNMENT', (-1, 1), (-1, -1), 'RIGHT'),
                       ('ALIGNMENT', (-1, 0), (-1, 0), 'RIGHT'),
-                      ('LEFTPADDING', (2, 0), (2, -1), 10)]
+                      ('FONT', (0, 0), (-1, -1), 'Garuda'),
+                      ('LEFTPADDING', (2, 0), (2, -1), 10),
+                      ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                      ('VALIGN', (0, 1), (-1, -1), 'TOP')]
         style_data += totals_style
         #Create and apply table style
         style = TableStyle(style_data)
@@ -319,10 +326,14 @@ class PurchaseOrderPDF():
         description = supply.description
         #If there is a discount then append
         # original price string
+        style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   fontSize=10,
+                                   textColor=colors.CMYKColor(black=60))
         if supply.discount > 0:
             description += " (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
         #return description
-        return description
+        return Paragraph(description, style)
 
     def _get_shipping(self):
         #set the description
@@ -368,16 +379,20 @@ class PurchaseOrderPDF():
                 style.append(('LINEABOVE', (0, -5), (-1, -5), 1,
                               colors.CMYKColor(black=60)))
                 style.append(('ALIGNMENT', (-2, -5), (-1, -1), 'RIGHT'))
+                style.append(('BOTTOMPADDING', (-2, -5), (-1, -1), 1))
             #if there is both vat and discount
             else:
                 style.append(('LINEABOVE', (0, -3), (-1, -3), 1,
                               colors.CMYKColor(black=60)))
                 style.append(('ALIGNMENT', (-2, -3), (-1, -1), 'RIGHT'))
+                style.append(('BOTTOMPADDING', (-2, -3), (-1, -1), 1))
+                
         #if there is no vat or discount
         else:
             style.append(('LINEABOVE', (0, -1), (-1, -1), 1,
                           colors.CMYKColor(black=60)))
             style.append(('ALIGNMENT', (-2, -1), (-1, -1), 'RIGHT'))
+            style.append(('BOTTOMPADDING', (-2, -1), (-1, -1), 1))
         style.append(('ALIGNMENT', (-2, -3), (-1, -1), 'RIGHT'))
         #Return data and style
         return data, style

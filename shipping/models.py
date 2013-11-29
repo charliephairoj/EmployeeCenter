@@ -83,7 +83,10 @@ class Shipping(models.Model):
                 shipped_item.shipping = self
                 shipped_item.set_data_from_acknowledgement_item(item)
                 shipped_item.save()
-                print item.description
+                
+                #Set the status of the item
+                item.status = 'SHIPPED'
+                item.save()
 
     def set_product(self, data):
 
