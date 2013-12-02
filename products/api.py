@@ -144,7 +144,7 @@ class UpholsteryResource(Resource):
     model = fields.ToOneField('products.api.ModelResource', 'model', full=True, readonly=True)
     configuration = fields.ToOneField('products.api.ConfigurationResource', 'configuration', full=True,
                                       readonly=True)
-    pillows = fields.ToManyField('products.api.PillowResource', 'pillows', full=True, readonly=True, null=True)
+    #pillows = fields.ToManyField('products.api.PillowResource', 'pillows', full=True, readonly=True, null=True)
     
     class Meta:
         queryset = Upholstery.objects.all()
@@ -183,6 +183,22 @@ class UpholsteryResource(Resource):
         Imteplements the dehydrate method to modify data being returned to
         the client
         """
+        
+        #Add pillows
+        bundle.data['pillows'] = []
+        pillow_types = ['back', 'corner', 'accent', 'lumbar']
+        for pillow in bundle.obj.pillows.all():
+            del pillow_types[pillow_types.index(pillow.type.lower())]
+            key = "{0}_pillow".format(pillow.type.lower())
+            bundle.data[key] = pillow.quantity
+            
+            for p in range(pillow.quantity):
+                bundle.data['pillows'].append({'type':pillow.type.lower()})
+        
+        for pillow_type in pillow_types:
+            key = "{0}_pillow".format(pillow_type.lower())
+            bundle.data[key] = 0
+            
         #Adds an image url if there is an image
         if bundle.obj.image:
             bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
@@ -250,22 +266,26 @@ class UpholsteryResource(Resource):
         If 'pillows' is not in bundle.data then the method will
         check all {type}_pillow keys for sub dictionaries
         """
+        print bundle.data
         #Check for 'pillows' in the data container
         if "pillows" in bundle.data:
             
-            #Loops through all the pillows and
-            #either updates or creates a pillow
-            for pillow in bundle.data['pillows']:
-                self._create_or_update_pillow(product=bundle.obj, 
-                                              pillow_type=pillow['type'], 
-                                              quantity=pillow['quantity'])
+            if bundle.data['pillows']:
+                #Loops through all the pillows and
+                #either updates or creates a pillow
+                for pillow in bundle.data['pillows']:
+                    self._create_or_update_pillow(product=bundle.obj, 
+                                                  pillow_type=pillow['type'], 
+                                                  quantity=pillow['quantity'])
                 
         
         #Check for pillows individually by type
-        else:
-            for pillow_type in ["back", "accent", "corner", "lumbar"]:
-                key = "{0}_pillow".format(pillow_type)
-                if key in bundle.data:
+        
+        for pillow_type in ["back", "accent", "corner", "lumbar"]:
+            key = "{0}_pillow".format(pillow_type)
+            if key in bundle.data:
+                if int(bundle.data[key]) > 0:
+                    
                     self._create_or_update_pillow(product=bundle.obj, 
                                                   pillow_type=pillow_type,
                                                   quantity=bundle.data[key])

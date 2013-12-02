@@ -42,7 +42,7 @@ class ShippingResource(ModelResource):
         """
         Implements the creation method for shipping
         """
-        logger.info("Creating the shipping manifest...")
+        logger.debug("Creating the shipping manifest...")
         bundle.obj = Shipping()
         
         #hydration
@@ -82,7 +82,7 @@ class ShippingResource(ModelResource):
         bundle.obj.acknowledgement.save()
         
         #Creates a pdf and then uploads it
-        logger.info("Creating pdf...")
+        logger.debug("Creating pdf...")
         bundle.obj.create_and_upload_pdf()
         bundle.data['pdf'] = {'url': bundle.obj.pdf.generate_url()}
         return bundle
@@ -93,7 +93,7 @@ class ShippingResource(ModelResource):
         
         We only allow certain fields to be modified.
         """
-        logger.info("Updating the shipping manifest...")
+        logger.debug("Updating the shipping manifest...")
         #Retrieve the shipping manifest of send out an error
         try:
             bundle.obj = Shipping.objects.get(pk=kwargs['pk'])
@@ -105,7 +105,7 @@ class ShippingResource(ModelResource):
         
         bundle = self.save(bundle)
         
-        logger.info("Creating an updated pdf of the shipping manifest...")
+        logger.debug("Creating an updated pdf of the shipping manifest...")
         bundle.obj.create_and_upload_pdf()
         
         return bundle
