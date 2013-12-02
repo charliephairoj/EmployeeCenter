@@ -425,8 +425,14 @@ class Item(models.Model):
 
         #Calculate the price of the item
         if "custom_price" in kwargs:
-            self.unit_price = Decimal(kwargs["custom_price"])
-            self.total = self.unit_price * Decimal(self.quantity)
+            try:
+                if float(kwargs['custom_price']) > 0:
+                    self.unit_price = Decimal(kwargs["custom_price"])
+                    self.total = self.unit_price * Decimal(self.quantity)
+                else:
+                    self._calculate_custom_price()
+            except: 
+                self._calculate_custom_price()
         else:
             self._calculate_custom_price()
 

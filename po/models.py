@@ -100,7 +100,6 @@ class PurchaseOrder(models.Model):
         key = "purchase_order/PO-{0}.pdf".format(order.id)
         order.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
         order.save()
-        print order.pdf
         
         return order
     
@@ -180,7 +179,6 @@ class Item(models.Model):
         
     @classmethod
     def create(cls, **kwargs):
-        print kwargs
         item = cls()
         try:
             item.supply = Supply.objects.get(id=kwargs['supply']["id"])
