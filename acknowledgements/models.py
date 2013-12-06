@@ -515,15 +515,15 @@ class Item(models.Model):
         pillows = {}
         for pillow in pillows_data:
             try:
-                pillows[(pillow["type"], pillow["fabric"]["id"])] += 1
+                pillows[(pillow["type"], pillow["fabric"]["id"])] += int(1)
             except KeyError:
                 try:
-                    pillows[(pillow["type"], pillow["fabric"]["id"])] = 1
+                    pillows[(pillow["type"], pillow["fabric"]["id"])] = int(1)
                 except KeyError:
                     try:
-                        pillows[(pillow["type"], None)] += 1
+                        pillows[(pillow["type"], None)] += int(1)
                     except KeyError:
-                        pillows[(pillow["type"], None)] = 1
+                        pillows[(pillow["type"], None)] = int(1)
         return pillows
 
     def _create_pillow(self, type, quantity, fabric_id=None):

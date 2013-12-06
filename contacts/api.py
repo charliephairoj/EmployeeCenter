@@ -40,7 +40,7 @@ class ContactResource(ModelResource):
         """
         Sets the address for the contact
         """
-        if not bundle.obj.pk:
+        if not bundle.obj.pk and "id" not in bundle.data:
             bundle.obj.save()
             
         if "address" in bundle.data:
@@ -60,12 +60,22 @@ class ContactResource(ModelResource):
         """
         if "id" in addr_data:
             try:
-                return Address.objects.get(pk=addr_data["id"])
+                addr = Address.objects.get(pk=addr_data["id"])
+                return self._update_address(addr, addr_data)
             except Address.DoesNotExist:
                 return Address(**addr_data)
         else:
             return Address(**addr_data)
-
+        
+    def _update_address(self, addr_obj, addr_data):
+        for key in addr_data:
+            try:
+                setattr(addr_obj, key, addr_data[key])
+            except Exception as e:
+                logger.error(e)
+        
+        addr_obj.save()
+        return addr_obj
 
 class CustomerResource(ContactResource):
     class Meta:
@@ -102,7 +112,7 @@ class CustomerResource(ContactResource):
                                     bundle.data["last_name"])
         except KeyError:
             name = bundle.data["first_name"]
-        logger.info("Creating customer: {0}...".format(name))
+        logger.debug("Creating customer: {0}...".format(name))
         bundle = super(CustomerResource, self).obj_create(bundle, **kwargs)
         
         #Set status as a customer
@@ -115,7 +125,7 @@ class CustomerResource(ContactResource):
         Update a customer resource
         """
         #Update the resource
-        logger.info("Updating customer...")
+        logger.debug("Updating customer...")
         bundle =  super(CustomerResource, self).obj_update(bundle, **kwargs)
         return bundle
     
@@ -124,7 +134,7 @@ class CustomerResource(ContactResource):
         Deletes a customer resource
         """
         obj = Customer.objects.get(pk=kwargs["pk"])
-        logger.info("Deleting customer: {0}".format(obj.name))
+        logger.debug("Deleting customer: {0}".format(obj.name))
         super(CustomerResource, self).obj_delete(bundle, **kwargs)
         
     def hydrate(self, bundle):
@@ -137,7 +147,7 @@ class CustomerResource(ContactResource):
         
         #Write the name
         if "first_name" in bundle.data and "last_name" in bundle.data:
-            logger.info("Setting name from first and last name...") 
+            logger.debug("Setting name from first and last name...") 
             bundle.obj.name = u"{0} {1}".format(bundle.data["first_name"],
                                                     bundle.data["last_name"])
         
@@ -177,6 +187,19 @@ class SupplierResource(ContactResource):
         
         return obj_list
     
+    def dehydrate(self, bundle):
+        try:
+            bundle.data['address'] = {}
+            for key, value in bundle.obj.address_set.all()[0].__dict__.iteritems():
+                if key[0] != '_':
+                    bundle.data['address'][key] = value
+            
+        except IndexError:
+            logger.warn(u"Supplier #{0}: {1} does not have an address".format(bundle.obj.id, 
+                                                                              bundle.obj.name))
+            
+        return bundle
+    
     def hydrate(self, bundle):
         """
         Set other attributes
@@ -192,7 +215,7 @@ class SupplierResource(ContactResource):
         """
         Create a supplier resource
         """
-        logger.info("Creating supplier: {0}...".format(bundle.data['name']))
+        logger.debug("Creating supplier: {0}...".format(bundle.data['name']))
         bundle.obj = Supplier()
         bundle = self.full_hydrate(bundle)
         logger.debug(bundle.data)
@@ -207,7 +230,7 @@ class SupplierResource(ContactResource):
         Update the supplier resource
         """
         bundle = super(SupplierResource, self).obj_update(bundle, **kwargs)
-        logger.info("Updating supplier: {0}...".format(bundle.obj.name))
+        logger.debug("Updating supplier: {0}...".format(bundle.obj.name))
         return bundle
     
     def obj_delete(self, bundle, **kwargs):
@@ -215,7 +238,7 @@ class SupplierResource(ContactResource):
         Delete the supplier resource
         """
         obj = Supplier.objects.get(pk=kwargs['pk'])
-        logger.info("Deleting supplier: {0}...".format(obj.name))
+        logger.debug("Deleting supplier: {0}...".format(obj.name))
         return super(SupplierResource, self).obj_delete(bundle, **kwargs)
     
     
