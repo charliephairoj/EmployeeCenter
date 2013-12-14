@@ -47,9 +47,9 @@ def app_login(request):
                 return render(request, 'home.html', {'user_data': jsonStr})
             """
             #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
-            #serve(request, 'index.html', settings.STATIC_ROOT)#HttpResponseRedirect('index.html')
+            return HttpResponseRedirect('index.html')
 
-            return render(request, 'home.html', {'user_data': jsonStr})
+            #return render(request, 'home.html', {'user_data': jsonStr})
 
         else:
             #logout the request

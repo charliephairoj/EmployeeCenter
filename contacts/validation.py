@@ -53,7 +53,7 @@ class CustomerValidation(ContactValidation):
         
         #Check and validate the first name
         try:
-            if bundle.data['first_name'].strip() == "":
+            if bundle.data['first_name'].strip() == "" and bundle.data['name'].strip() == "": 
                 errors['first_name'] = "Customer's first name cannot be ''."
         except KeyError:
             errors['first_name'] = "Missing customer's first name."

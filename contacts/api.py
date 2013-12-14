@@ -7,6 +7,7 @@ import logging
 from django.db.models import Q
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource
+from tastypie import fields
 
 from contacts.models import Customer, Supplier, Address
 from contacts.validation import CustomerValidation, SupplierValidation
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContactResource(ModelResource):
+    #address = fields.ToManyField('contacts.api.AddressResource', 'address', full=True, null=True, readonly=True)
     
     def hydrate(self, bundle):
         """
@@ -34,23 +36,43 @@ class ContactResource(ModelResource):
         """
         bundle.data['currency'] = bundle.obj.currency.upper()
         
+        #bundle.data['address'] = {}
+        #print bundle.obj.address.all()
+        
+        """
+        for key in address.__dict__:
+            if key[0] != "_":
+                bundle.data['address'][key] = address.__dict__[key]
+        
+        bundle.data['address'].update({'contact_id': address.contact.id,
+                                       'lat': address.lat,
+                                       'lng': address.lng})
+        print bundle.data
+        """
         return bundle
     
     def _set_address(self, bundle):
         """
         Sets the address for the contact
         """
-        if not bundle.obj.pk and "id" not in bundle.data:
+        if not bundle.obj.pk and "id" not in bundle.data and "pk" not in bundle.data:
             bundle.obj.save()
             
         if "address" in bundle.data:
             addr = self._get_or_create_address(bundle.data["address"])
+            logger.debug(addr)
+            logger.debug(addr.pk)
+            logger.debug(addr.contact)
+            logger.debug(addr.contact.pk)
+            logger.debug(bundle.obj)
+            logger.debug(bundle.obj.pk)
             addr.contact = bundle.obj
             addr.save()
         elif "addresses" in bundle.data:
             for addr in bundle.data["addresses"]:
                 addr = self._get_or_create_address(addr)
-                addr.contact = bundle.obj
+                if not addr.contact:
+                    addr.contact = bundle.obj
                 addr.save()
         return bundle
     
@@ -64,20 +86,38 @@ class ContactResource(ModelResource):
                 return self._update_address(addr, addr_data)
             except Address.DoesNotExist:
                 return Address(**addr_data)
+        elif "contact_id" in addr_data:
+            try:
+                addr = Address.objects.get(pk=addr_data["contact_id"])
+                return self._update_address(addr, addr_data)
+            except Address.DoesNotExist:
+                return Address(**addr_data)
         else:
             return Address(**addr_data)
         
     def _update_address(self, addr_obj, addr_data):
+        """
         for key in addr_data:
-            try:
-                setattr(addr_obj, key, addr_data[key])
-            except Exception as e:
-                logger.error(e)
-        
+            if addr_data[key]:
+                try:
+                    setattr(addr_obj, key, addr_data[key])
+                except Exception as e:
+                    logger.error(e)
+        """
         addr_obj.save()
         return addr_obj
 
+
+class AddressResource(ModelResource):
+    class meta:
+        queryset = Address.objects.all()
+        resource_name = 'address'
+        always_return_data = True
+        
+        
 class CustomerResource(ContactResource):
+    
+    
     class Meta:
         queryset = Customer.objects.all()
         resource_name = 'customer'
@@ -115,6 +155,8 @@ class CustomerResource(ContactResource):
         logger.debug("Creating customer: {0}...".format(name))
         bundle = super(CustomerResource, self).obj_create(bundle, **kwargs)
         
+        #Set customer name 
+        bundle.obj.name = name
         #Set status as a customer
         bundle.obj.is_customer = True
         
@@ -141,10 +183,9 @@ class CustomerResource(ContactResource):
         """
         Set other attributes
         """
-        
         #perform the parent hydrate
         bundle = super(CustomerResource, self).hydrate(bundle)
-        
+
         #Write the name
         if "first_name" in bundle.data and "last_name" in bundle.data:
             logger.debug("Setting name from first and last name...") 
@@ -152,10 +193,11 @@ class CustomerResource(ContactResource):
                                                     bundle.data["last_name"])
         
         #Set the address
+
         bundle = self._set_address(bundle)
         
         bundle.obj.is_customer = True
-                
+ 
         return bundle
     
 

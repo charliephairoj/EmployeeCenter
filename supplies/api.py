@@ -96,7 +96,14 @@ class SupplyResource(ModelResource):
         obj.quantity = round(float(obj.quantity) + float(request.REQUEST.get('quantity')), 2)
         obj.save()
         
-        return self.create_response(request, obj.__dict__)
+        data = {}
+        for key in obj.__dict__:
+            if key[0] != "_":
+                data[key] = obj.__dict__[key]
+                
+        data['supplier'] = {'name': obj.supplier.name,
+                            'currency': obj.supplier.currency}
+        return self.create_response(request, data)
     
     def subtract(self, request, **kwargs):
         """
@@ -113,7 +120,14 @@ class SupplyResource(ModelResource):
         obj.quantity = round(float(obj.quantity) - float(request.REQUEST.get('quantity')), 2)
         obj.save()
         
-        return self.create_response(request, obj.__dict__)
+        data = {}
+        for key in obj.__dict__:
+            if key[0] != "_":
+                data[key] = obj.__dict__[key]
+                
+        data['supplier'] = {'name': obj.supplier.name,
+                            'currency': obj.supplier.currency}
+        return self.create_response(request, data)
     
     def hydrate(self, bundle):
         """

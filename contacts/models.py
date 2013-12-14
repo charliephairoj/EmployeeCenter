@@ -31,7 +31,24 @@ class Address(models.Model):
     contact = models.ForeignKey(Contact)
     latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
-
+    user_defined_latlng = models.BooleanField(default=False)
+    
+    @property
+    def lat(self):
+        return self.latitude
+    
+    @lat.setter
+    def lat(self, latitude):
+        self.latitude = latitude
+        
+    @property
+    def lng(self):
+        return self.longitude
+    
+    @lng.setter
+    def lng(self, longitude):
+        self.longitude = longitude
+    
     @classmethod
     def create(cls, **kwargs):
         address = cls(**kwargs)
