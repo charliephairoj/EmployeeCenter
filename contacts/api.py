@@ -34,7 +34,12 @@ class ContactResource(ModelResource):
         Implements the dehydrate method to manipulate data
         before it is serialized to be return to the client
         """
-        bundle.data['currency'] = bundle.obj.currency.upper()
+        try:
+            bundle.data['currency'] = bundle.obj.currency.upper()
+        except AttributeError as e:
+            logger.error(u"Contact #{0}, {1} has no currency".format(bundle.obj.id, bundle.obj.name))
+            logger.error(e)
+            
         
         #bundle.data['address'] = {}
         #print bundle.obj.address.all()
