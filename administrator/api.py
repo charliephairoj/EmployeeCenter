@@ -29,10 +29,15 @@ class UserResource(ModelResource):
         """
         implements the hydrate for the User
         """
+        logger.debug(bundle.data)
         try:
+            logger.debug([group['id'] for group in bundle.data['groups']])
             client_groups = set([group['id'] for group in bundle.data['groups']]) if "groups" in bundle.data else set()
             server_groups = set([group.id for group in bundle.obj.groups.all()])
-          
+            logger.debug(bundle.obj.id)
+            logger.debug([group.id for group in bundle.obj.groups.all()])
+            logger.debug(client_groups)
+            logger.debug(server_groups)
             #Adds new groups to the user
             for group_id in client_groups.difference(server_groups):
                 group = Group.objects.get(pk=group_id)

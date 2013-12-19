@@ -27,11 +27,11 @@ def current_user(request):
     if user.has_module_perms('products'):
         modules.append('products')
     if user.has_module_perms('po'):
-        modules.append('orders')
+        modules.append('po')
     if user.has_module_perms('acknowledgements'):
-        modules.append('orders')
+        modules.append('acknowledgements')
     if user.has_module_perms('shipping'):
-        modules.append('orders')
+        modules.append('shipping')
     if user.has_module_perms('supplies'):
         modules.append('supplies')
     if user.has_module_perms('accounting'):

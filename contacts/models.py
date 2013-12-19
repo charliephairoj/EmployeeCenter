@@ -15,8 +15,8 @@ class Contact(models.Model):
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
-    class Meta:
-        ordering = ['name']
+    #class Meta:
+        #ordering = ['name']
 
     
 
@@ -100,8 +100,8 @@ class Customer(Contact):
     last_name = models.TextField(null=True)
     type = models.CharField(max_length=10, default="Retail")
 
-    class Meta:
-        ordering = ['name']
+    #class Meta:
+        #ordering = ['name']
 
     
 

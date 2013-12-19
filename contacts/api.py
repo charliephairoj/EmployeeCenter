@@ -5,6 +5,7 @@ import uuid
 import logging
 
 from django.db.models import Q
+from django.utils.translation import activate
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource
 from tastypie import fields
@@ -54,6 +55,7 @@ class ContactResource(ModelResource):
                                        'lng': address.lng})
         print bundle.data
         """
+        
         return bundle
     
     def _set_address(self, bundle):
