@@ -261,12 +261,16 @@ class UpholsteryResource(Resource):
         The method will check if the data in the bundle
         has a key 'pillows'. If it does it will go through
         each dict in the array and update the pillow or create a new one if it 
-        does not exist. 
+        does not exist. Because there is no quantity, but rather an item for each
+        actual pillows, we must first consolidate them.
         
         If 'pillows' is not in bundle.data then the method will
         check all {type}_pillow keys for sub dictionaries
         """
-        print bundle.data
+        pillows = {'back': 0,
+                   'accent': 0,
+                   'corner': 0,
+                   'lumbar': 0}
         #Check for 'pillows' in the data container
         if "pillows" in bundle.data:
             
@@ -274,9 +278,13 @@ class UpholsteryResource(Resource):
                 #Loops through all the pillows and
                 #either updates or creates a pillow
                 for pillow in bundle.data['pillows']:
-                    self._create_or_update_pillow(product=bundle.obj, 
-                                                  pillow_type=pillow['type'], 
-                                                  quantity=pillow['quantity'])
+                    pillows[pillow['type']] += 1
+                
+                for pillow in pillows:
+                    if pillows[pillow] > 0:
+                        self._create_or_update_pillow(product=bundle.obj, 
+                                                      pillow_type=pillow, 
+                                                      quantity=pillows[pillow])
                 
         
         #Check for pillows individually by type
