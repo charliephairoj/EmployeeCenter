@@ -9,6 +9,7 @@ from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource as Resource
 
 from products.models import Model, Configuration, Upholstery, Pillow, ModelImage, Table
+from auth.models import S3Object
 from products.validation import *
 
 
@@ -168,6 +169,12 @@ class UpholsteryResource(Resource):
         logger.info("Setting configuration as: {0}".format(configuration.configuration))
         bundle.obj.configuration = configuration
         
+        #Set Images
+        if "image" in bundle.data:
+            try:
+                bundle.obj.image = S3Object.objects.get(pk=bundle.data['image']['id'])
+            except KeyError as e:
+                logger.warn(e)
         #Set other attribute for this resources that
         #are a shared attribute of the parent resource
         #and that are not set explicit by the user submitted
@@ -201,7 +208,8 @@ class UpholsteryResource(Resource):
             
         #Adds an image url if there is an image
         if bundle.obj.image:
-            bundle.data['image'] = {'url': bundle.obj.image.generate_url()}
+            bundle.data['image'] = {'url': bundle.obj.image.generate_url(),
+                                    'id': bundle.obj.image.id}
             
         return bundle
     
