@@ -81,6 +81,7 @@ urlpatterns += patterns('products.views',
     url(r'^api/v1/model/image$', 'model_image'),
     
     url(r'^api/v1/upholstery/image$', 'upholstery_image'),
+    url(r'^/api/v1/upholstery/image$', 'upholstery_image'),
     
     url(r'^api/v1/table/image$', 'upholstery_image'),
   

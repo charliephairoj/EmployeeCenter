@@ -33,6 +33,7 @@ class SupplyResource(ModelResource):
         always_return_data = True
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
+        ordering = ['image']
         #fields = ['purchasing_units', 'description', 'cost', 'id', 'pk']
     
     def apply_filters(self, request, applicable_filters):
