@@ -362,6 +362,13 @@ class TableResource(Resource):
         bundle.obj.description = "{0} {1}".format(model.model, configuration.configuration)
         bundle.obj.type = 'table'
         
+        #Set Images
+        if "image" in bundle.data:
+            try:
+                bundle.obj.image = S3Object.objects.get(pk=bundle.data['image']['id'])
+            except KeyError as e:
+                logger.warn(e)
+                
         return bundle
     
     def dehydrate(self, bundle):
