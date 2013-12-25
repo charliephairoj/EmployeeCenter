@@ -49,6 +49,12 @@ class SupplyResource(ModelResource):
             s_id = request.GET.get('supplier_id')
             obj_list = obj_list.filter(supplier_id=s_id)
         
+        
+        if "Administrator" in [g.name for g in request.user.groups.all()]:
+            logger.debug('An admin')
+        else:
+            obj_list = obj_list.filter(admin_only=False)
+    
         return obj_list
     
     def prepend_urls(self):

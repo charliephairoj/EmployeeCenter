@@ -228,6 +228,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supp.notes, 'woohoo')
         self.assertEqual(supp.telephone, "08348229383")
         self.assertEqual(supp.fax, "0224223423")
+        self.assertEqual(supp.name, "Zipper World Co., Ltd.")
 
     def test_put(self):
         """

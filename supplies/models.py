@@ -35,6 +35,7 @@ class Supply(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
+    admin_only = models.BooleanField(default=False)
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),

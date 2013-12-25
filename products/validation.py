@@ -138,6 +138,7 @@ class TableValidation(ProductValidation):
         except KeyError:
             errors['configuration'] = "Expecting a configuration id."
             
+        """
         #validates the finish
         approved_finishes = ['high gloss', 'semi-gloss', 'veneer', 'melamine']
         try:
@@ -145,5 +146,5 @@ class TableValidation(ProductValidation):
                 errors['finish'] = "{0} is not an available finish.".format(bundle.data['finish'])
         except KeyError:
             errors['finish'] = "Expecting a finish for this table"
-            
+        """
         return errors

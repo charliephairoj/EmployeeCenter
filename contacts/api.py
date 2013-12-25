@@ -161,7 +161,6 @@ class CustomerResource(ContactResource):
             name = bundle.data["first_name"]
         logger.debug("Creating customer: {0}...".format(name))
         bundle = super(CustomerResource, self).obj_create(bundle, **kwargs)
-        
         #Set customer name 
         bundle.obj.name = name
         #Set status as a customer
@@ -265,9 +264,8 @@ class SupplierResource(ContactResource):
         Create a supplier resource
         """
         logger.debug("Creating supplier: {0}...".format(bundle.data['name']))
-        bundle.obj = Supplier()
-        bundle = self.full_hydrate(bundle)
-        logger.debug(bundle.data)
+        bundle = super(SupplierResource, self).obj_create(bundle, **kwargs)
+       
         #Set status as supplier
         bundle.obj.is_supplier = True
         bundle = self.save(bundle)
