@@ -17,6 +17,10 @@ logger = logging.getLogger('django.request')
 class Product(models.Model):
     description = models.TextField()
     type = models.CharField(max_length=100)
+    
+    #New single price for all orders
+    price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    #Will replace all other prices with just 1 "price"
     wholesale_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     manufacture_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     retail_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
