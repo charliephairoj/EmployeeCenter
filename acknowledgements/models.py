@@ -368,6 +368,10 @@ class Item(models.Model):
         
         self.description = self.product.description
         
+        """
+        This section has been deprecated as we are now moving
+        to a single price system
+        
         #Determines the unit price of the
         #the item based on the type of 
         #customer. And then calculates the
@@ -378,6 +382,8 @@ class Item(models.Model):
             self.unit_price = self.product.wholesale_price
         else:
             self.unit_price = self.product.retail_price
+        """
+        self.unit_price = self.product.price
         logger.info("Item unit price set to {0}...".format(self.unit_price))
 
         #Calculate the total cost of the the item
