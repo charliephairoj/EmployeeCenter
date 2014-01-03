@@ -27,6 +27,7 @@ base_contact = {"name": "Charlie Brown",
                 "email": "charliep@dellarobbiathailand.com",
                 "fax": "0224223423",
                 "telephone": "08348229383",
+                'discount': 20,
                 'notes': 'woohoo'}
 base_supplier_contact = {"contacts": [{"first_name": "Charlie",
                          "last_name": "Smith",
@@ -37,7 +38,6 @@ customer_data['type'] = 'Retail'
 supplier_data = base_contact.copy()
 supplier_data['name'] = 'Zipper World Co., Ltd.'
 supplier_data['terms'] = 30
-supplier_data['discount'] = 0
 del supplier_data['first_name']
 del supplier_data['last_name']
 
@@ -83,6 +83,7 @@ class CustomerResourceTest(ResourceTestCase):
         self.assertEqual(customer["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(customer["telephone"], "08348229383")
         self.assertEqual(customer["fax"], "0224223423")
+        self.assertEqual(customer['discount'], 20)
         
     def test_post(self):
         """
@@ -108,6 +109,7 @@ class CustomerResourceTest(ResourceTestCase):
         self.assertEqual(customer["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(customer["telephone"], "08348229383")
         self.assertEqual(customer["fax"], "0224223423")
+        self.assertEqual(customer['discount'], 20)
 
     def test_put(self):
         """
@@ -117,6 +119,7 @@ class CustomerResourceTest(ResourceTestCase):
         modified_customer = customer_data
         modified_customer['first_name'] = 'Charles'
         modified_customer['type'] = 'Dealer'
+        modified_customer['discount'] = 50
         self.assertEqual(Customer.objects.count(), 1)
         resp = self.api_client.put('/api/v1/customer/1',
                                    format='json',
@@ -127,6 +130,7 @@ class CustomerResourceTest(ResourceTestCase):
         self.assertEqual(obj.id, 1)
         self.assertEqual(obj.first_name, 'Charles')
         self.assertEqual(obj.type, 'Dealer')
+        self.assertEqual(obj.discount, 50)
     
     def test_get(self):
         """
@@ -146,6 +150,7 @@ class CustomerResourceTest(ResourceTestCase):
         self.assertEqual(customer["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(customer["telephone"], "08348229383")
         self.assertEqual(customer["fax"], "0224223423")
+        self.assertEqual(customer['discount'], 20)
         
     def test_delete(self):
         """
@@ -198,6 +203,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(supplier["telephone"], "08348229383")
         self.assertEqual(supplier["fax"], "0224223423")
+        self.assertEqual(supplier['discount'], 20)
         
     def test_post(self):
         """
@@ -222,6 +228,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["telephone"], "08348229383")
         self.assertEqual(supplier["fax"], "0224223423")
         self.assertEqual(supplier['notes'], "woohoo")
+        self.assertEqual(supplier['discount'], 20)
         
         #Validate the created supplier instance
         supp = Supplier.objects.order_by('-id').all()[0]
@@ -229,6 +236,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supp.telephone, "08348229383")
         self.assertEqual(supp.fax, "0224223423")
         self.assertEqual(supp.name, "Zipper World Co., Ltd.")
+        self.assertEqual(supp.discount, 20)
 
     def test_put(self):
         """
@@ -238,6 +246,7 @@ class SupplierResourceTest(ResourceTestCase):
         modified_supplier = self.supplier_data.copy()
         modified_supplier['name'] = 'Zipper Land Ltd.'
         modified_supplier['terms'] = 120
+        modified_supplier['discount'] = 75
         self.assertEqual(Supplier.objects.count(), 1)
         resp = self.api_client.put('/api/v1/supplier/1',
                                    format='json',
@@ -248,6 +257,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(obj.id, 1)
         self.assertEqual(obj.name, 'Zipper Land Ltd.')
         self.assertEqual(obj.terms, 120)
+        self.assertEqual(obj.discount, 75)
     
     def test_get(self):
         """
@@ -265,6 +275,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["email"], "charliep@dellarobbiathailand.com")
         self.assertEqual(supplier["telephone"], "08348229383")
         self.assertEqual(supplier["fax"], "0224223423")
+        self.assertEqual(supplier['discount'], 20)
         
     def test_delete(self):
         """

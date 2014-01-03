@@ -18,6 +18,7 @@ from auth.models import S3Object
 base_product = {"width": 1000, 
                 "depth": 500,
                 "height": 400,
+                "price": 250000,
                 "wholesale_price": 100000,
                 "retail_price": 250000,
                 "manufacture_price": 50000,
@@ -329,6 +330,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         self.assertEqual(int(upholstery['manufacture_price']), 50000)
         self.assertEqual(int(upholstery['export_price']), 100000)
         self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        self.assertEqual(int(upholstery['price']), 250000)
         #self.assertEqual(upholstery['configuration']['id'], 1)
         
         
@@ -359,6 +361,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         self.assertEqual(int(upholstery['manufacture_price']), 50000)
         self.assertEqual(int(upholstery['export_price']), 100000)
         self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        self.assertEqual(int(upholstery['price']), 250000)
         
     def test_post(self):
         """
@@ -388,6 +391,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         self.assertEqual(int(upholstery['manufacture_price']), 50000)
         self.assertEqual(int(upholstery['export_price']), 100000)
         self.assertEqual(int(upholstery['wholesale_price']), 100000)
+        self.assertEqual(int(upholstery['price']), 250000)
         
     def test_put(self):
         """
@@ -398,7 +402,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         #Update data
         updated_uphol = base_upholstery.copy()
-        updated_uphol['wholesale_price'] = 120000
+        updated_uphol['price'] = 350000
         
         #Validate object update
         self.assertEqual(Upholstery.objects.count(), 1)
@@ -420,7 +424,7 @@ class UpholsteryResourceTest(ResourceTestCase):
         self.assertEqual(upholstery['height'], 400)
         self.assertEqual(int(upholstery['manufacture_price']), 50000)
         self.assertEqual(int(upholstery['export_price']), 100000)
-        self.assertEqual(int(upholstery['wholesale_price']), 120000)
+        self.assertEqual(int(upholstery['price']), 350000)
         
     def test_delete(self):
         """
