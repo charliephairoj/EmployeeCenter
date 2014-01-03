@@ -82,6 +82,7 @@ class AcknowledgementResource(ModelResource):
         try:
             logger.info("Setting customer...")
             bundle.obj.customer = Customer.objects.get(pk=bundle.data["customer"]["id"])
+            bundle.obj.discount = bundle.obj.customer.discount
         except:
             logger.error("Customer with ID {0} could not be found.".format(bundle.data['customer']['id']))
             raise
