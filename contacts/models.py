@@ -10,11 +10,12 @@ class Contact(models.Model):
     email = models.CharField(max_length=200, null=True)
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
+    discount = models.IntegerField(default=0)
     currency = models.CharField(max_length=10, null=True)
     notes = models.TextField(null=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
-
+    
     #class Meta:
         #ordering = ['name']
 
@@ -108,7 +109,6 @@ class Customer(Contact):
 
 class Supplier(Contact):
     terms = models.IntegerField(default=0)
-    discount = models.IntegerField(default=0)
 
     
 
