@@ -85,7 +85,7 @@ class ShippingPDF(object):
     """Class to create PO PDF"""
     
     #attributes
-    document_type = "Acknowledgement"
+    document_type = "Shipping"
     
     #def methods
     def __init__(self, customer=None, products=None, shipping=None):
@@ -116,24 +116,33 @@ class ShippingPDF(object):
         
     def _get_stories(self):
         #initialize story array
-        Story = []
+        story = []
         #add heading and spacing
         
         #create table for supplier and recipient data
-        Story.append(self._create_contact_section())
-        Story.append(Spacer(0,20))
+        story.append(self._create_contact_section())
+        story.append(Spacer(0,20))
         #Create table for po data
-        Story.append(self._create_ack_section())
-        Story.append(Spacer(0,40))
+        story.append(self._create_ack_section())
+        story.append(Spacer(0,40))
         #Alignes the header and supplier to the left
-        for a_story in Story:
+        for a_story in story:
             a_story.hAlign = 'LEFT'
         #creates the data to hold the product information
-        Story.append(self._create_products_section())
+        story.append(self._create_products_section())
         #spacer
-        Story.append(Spacer(0, 50))   
-        Story.append(self._create_signature_section())
-        return Story
+        story.append(Spacer(0, 50))   
+        story.append(self._create_signature_section())
+        
+        #New Page
+        story.append(PageBreak())
+        story.append(self._create_authorization_section())
+        return story
+    
+        #New Page
+        story.append(PageBreak())
+        story.append(self._create_packing_labels_section())
+        return story
     
     def _create_customer_section(self):
         #extract supplier address
@@ -299,9 +308,9 @@ class ShippingPDF(object):
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
         return fabric_table
     
-    def _create_signature_section(self):
+    def _create_signature_section(self, sig1='Delivery Agent', sig2='Recipient'):
         #create the signature
-        signature = Table([['x', '', 'x'], ['Delivery Agent', '', 'Recipient']], colWidths=(200,100,200))
+        signature = Table([['x', '', 'x'], [sig1, '', sig2]], colWidths=(200,100,200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                              #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
@@ -311,6 +320,69 @@ class ShippingPDF(object):
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)
         return signature
+    
+    def _create_authorization_section(self):
+        
+        product_data = [['', 'ID', "Description", 'Quantity']]
+        for product in self.products:
+            #Create the barcode
+            code = "SI-{0}".format(product.id)
+            barcode = code128.Code128(code, barHeight=20)
+            #Add the product information to the array
+            product_data.append([barcode, product.id, product.description, product.quantity])
+            
+        product_table = Table(product_data, colWidths=(100, 50, 300, 60))
+        product_style = TableStyle([('FONTSIZE', (0,0), (-1,0), 12),
+                                    ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                                    ('PADDING', (0,1), (-1,-1), 5),
+                                    ('FONT', (0,0), (-1,-1), 'Garuda'),
+                                    ('ALIGNMENT', (-1,0), (-1,-1), 'CENTER'),
+                                    ('VALIGN', (0,1), (-1,-1), 'MIDDLE'),
+                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+        product_table.setStyle(product_style)
+        data = Table([['Authorization'], 
+                      [Spacer(0, 25)],
+                      [u'Customer: {0}'.format(self.customer.name)],
+                      [product_table], 
+                      [Spacer(0, 25)],
+                      [self._create_signature_section('Department Head', 'Manager')]],
+                     colWidths=(520))
+        style = TableStyle([('FONTSIZE', (0,0), (-1, 0), 16),
+                            ('PADDING', (0,0), (-1,-1), 0),
+                            ('ALIGNMENT', (0, 0), (0, 0), 'CENTER'),
+                            ('FONT', (0,0), (0, 0), 'Tahoma'),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))
+                             
+                             ])
+        data.setStyle(style)
+        
+        return data
+    
+    def _create_packing_labels_section(self):
+        print 'yyya'''
+        data = []
+        for product in self.products:
+            #Create the barcode
+            code = "SI-{0}".format(product.id)
+            barcode = code128.Code128(code, barHeight=20)
+            #Add the product information to the array
+            print product.product.image
+            product_data = [[barcode, product.description], [product.id , product.quantity]]
+            
+            product_table = Table(product_data, colWidths=(100, 50, 300, 60))
+            product_style = TableStyle([('FONTSIZE', (0,0), (-1,0), 12),
+                                        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                                        ('PADDING', (0,1), (-1,-1), 5),
+                                        ('FONT', (0,0), (-1,-1), 'Garuda'),
+                                        ('ALIGNMENT', (-1,0), (-1,-1), 'CENTER'),
+                                        ('VALIGN', (0,1), (-1,-1), 'MIDDLE'),
+                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+            product_table.setStyle(product_style)
+        
+            data.append([product_table])
+       
+        
+        return Table(data, colWidths=(570))
         
     #helps change the size and maintain ratio
     def get_image(self, path, width=None, height=None):
