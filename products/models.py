@@ -74,7 +74,11 @@ class Product(models.Model):
             obj.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
         if "export_price" in kwargs:
             obj.export_price = Decimal(str(kwargs["export_price"]))
-
+        if "price" in kwargs:
+            obj.price = Decimal(str(kwargs['price']))
+        else:
+            raise ValueError("Expecting a price for this product")
+        
         obj.save()
         #Post save stuff
 

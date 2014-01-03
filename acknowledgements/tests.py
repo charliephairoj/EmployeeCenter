@@ -203,6 +203,62 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
         
+    def test_post_with_discount(self):
+        """
+        Testing POSTing data to the api
+        """
+        #Apply a discount to the customer
+        self.customer.discount = 50
+        self.customer.save()
+        
+        #POST and verify the response
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=base_ack,
+                                    authentication=self.get_credentials())
+        self.assertHttpCreated(resp)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = self.deserialize(resp)
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal(158500))
+        self.assertEqual(len(ack['items']), 2)
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
     def test_post_without_vat(self):
         """
         Testing POSTing data to the api
@@ -235,8 +291,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item1['depth'], 760)
         self.assertEqual(item1['fabric']['id'], 1)
         self.assertEqual(len(item1['pillows']), 4)
-        self.assertEqual(Decimal(item1['unit_price']), Decimal(25000))
-        self.assertEqual(Decimal(item1['total']), Decimal(50000))
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 3)
@@ -247,8 +303,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item2['height'], 320)
         self.assertEqual(item2['depth'], 760)
         self.assertEqual(item2['fabric']['id'], 1)
-        self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
-        self.assertEqual(Decimal(item2['total']), Decimal(29250))
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
@@ -277,7 +333,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 7)
-        self.assertEqual(Decimal(ack['total']), Decimal(84797.5))
+        self.assertEqual(Decimal(ack['total']), Decimal(339190.00))
         self.assertEqual(len(ack['items']), 2)
         #Test standard sized item 
         item1 = ack['items'][0]
@@ -290,8 +346,8 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item1['depth'], 760)
         self.assertEqual(item1['fabric']['id'], 1)
         self.assertEqual(len(item1['pillows']), 4)
-        self.assertEqual(Decimal(item1['unit_price']), Decimal(25000))
-        self.assertEqual(Decimal(item1['total']), Decimal(50000))
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 3)
@@ -302,8 +358,66 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item2['height'], 320)
         self.assertEqual(item2['depth'], 760)
         self.assertEqual(item2['fabric']['id'], 1)
-        self.assertEqual(Decimal(item2['unit_price']), Decimal(29250))
-        self.assertEqual(Decimal(item2['total']), Decimal(29250))
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
+    def test_post_with_vat_and_discount(self):
+        """
+        Testing POSTing data to the api if there
+        is vat
+        """
+        #Set customer discount
+        self.customer.discount = 50
+        self.customer.save()
+        
+        #POST and verify the response
+        ack_data = base_ack.copy()
+        ack_data['vat'] = 7
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.api_client.post('/api/v1/acknowledgement', format='json',
+                                    data=ack_data,
+                                    authentication=self.get_credentials())
+        self.assertHttpCreated(resp)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = self.deserialize(resp)
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 7)
+        self.assertEqual(Decimal(ack['total']), Decimal(169595))
+        self.assertEqual(len(ack['items']), 2)
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
         #Tests links to document
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
