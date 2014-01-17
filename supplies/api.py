@@ -145,7 +145,7 @@ class SupplyResource(ModelResource):
         except KeyError:
             pass
         
-        if not bundle.request.user.has_perm('supplies.view_cost'):
+        if bundle.request.user.has_perm('supplies.view_cost'):
             if "unit_cost" in bundle.data:
                 bundle.obj.cost = bundle.data['unit_cost']
             else:
