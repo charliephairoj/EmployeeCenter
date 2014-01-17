@@ -343,6 +343,7 @@ class ShippingPDF(object):
         data = Table([['Authorization'], 
                       [Spacer(0, 25)],
                       [u'Customer: {0}'.format(self.customer.name)],
+                      [Spacer(0, 10)], 
                       [product_table], 
                       [Spacer(0, 25)],
                       [self._create_signature_section('Department Head', 'Manager')]],
@@ -351,6 +352,8 @@ class ShippingPDF(object):
                             ('PADDING', (0,0), (-1,-1), 0),
                             ('ALIGNMENT', (0, 0), (0, 0), 'CENTER'),
                             ('FONT', (0,0), (0, 0), 'Tahoma'),
+                            ('FONT', (0,1), (0,2), 'Garuda'),
+                            ('FONTSIZE', (0,2), (0,2), 14),
                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))
                              
                              ])

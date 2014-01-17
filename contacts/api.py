@@ -67,12 +67,6 @@ class ContactResource(ModelResource):
             
         if "address" in bundle.data:
             addr = self._get_or_create_address(bundle.data["address"])
-            logger.debug(addr)
-            logger.debug(addr.pk)
-            logger.debug(addr.contact)
-            logger.debug(addr.contact.pk)
-            logger.debug(bundle.obj)
-            logger.debug(bundle.obj.pk)
             addr.contact = bundle.obj
             addr.save()
         elif "addresses" in bundle.data:

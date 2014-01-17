@@ -50,6 +50,7 @@ base_ack = {'customer': {'id': 1},
             'delivery_date': base_delivery_date.isoformat(),
             'employee': {'id': 1},
             'items': [{'id': 1,
+                       'description': 'Test Sofa Max',
                        'quantity': 2,
                        'fabric': {"id": 1},
                        'pillows':[{"type": "back",
@@ -62,12 +63,16 @@ base_ack = {'customer': {'id': 1},
                                    "fabric": {"id": 2}},
                                   {"type": "accent"}]},
                          {'id': 1,
+                          'description': 'High Gloss Table',
                           'quantity': 1,
                           'is_custom_size': True,
                           'width': 1500,
                           'depth': 760,
                           'height': 320,
-                          "fabric": {"id":1}}]}
+                          "fabric": {"id":1}},
+                         {'is_custom': True,
+                          'quantity': 3,
+                          'description': 'F-01 Table'}]}
 
 
 
@@ -146,6 +151,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         f_data["pattern"] = "Stripe"
         self.fabric2 = Fabric.create(**f_data)
         
+        #Create custom product
+        self.custom_product = Product.create(self.user, description="Custom Custom", id=10436,
+                                             width=0, depth=0, height=0,
+                                             price=0, wholesale_price=0, retail_price=0)
+        self.custom_product.id = 10436
+        self.custom_product.save()
+        
         #Create acknowledgement
         ack_data = base_ack.copy()
         del ack_data['customer']
@@ -163,7 +175,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
                      'width': 1500,
                      "fabric": {"id":1}}
         self.item = Item.create(acknowledgement=self.ack, **item_data)
-        
+        item_data = {'is_custom': True,
+                     'description': 'F-04 Sofa',
+                     'quantity': 3}
+        self.item2 = Item.create(acknowledgement=self.ack, **item_data)
         self.api_client.client.login(username="tester", password="pass")
 
     def get_credentials(self):
@@ -182,7 +197,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         resp_obj = self.deserialize(resp)
         self.assertIsNotNone(resp_obj['objects'])
         self.assertEqual(len(resp_obj['objects']), 1)
-        self.assertEqual(len(resp_obj['objects'][0]['items']), 1)
+        self.assertEqual(len(resp_obj['objects'][0]['items']), 2)
         
     def test_get(self):
         """
@@ -228,10 +243,11 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(158500))
-        self.assertEqual(len(ack['items']), 2)
+        self.assertEqual(len(ack['items']), 3)
         #Test standard sized item 
         item1 = ack['items'][0]
-        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -245,6 +261,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -258,6 +275,18 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        
+        #Tests the acknowledgement in the database
+        root_ack = Acknowledgement.objects.order_by('-id').all()[0]
+        self.assertEqual(root_ack.id, 2)
+        self.assertEqual(root_ack.items.count(), 2)
+        root_ack_items = root_ack.items.all()
+        item1 = root_ack_items[0]
+        item2 = root_ack_items[1]
+        self.assertEqual(item1.acknowledgement.id, 2)
+        self.assertEqual(item2.acknowledgement.id, 2)
+        self.assertEqual(item1.description, 'Test Sofa Max')
+        self.assertEqual(item2.description, 'High Gloss Table')
         
     def test_post_without_vat(self):
         """
@@ -279,10 +308,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
-        self.assertEqual(len(ack['items']), 2)
+        self.assertEqual(len(ack['items']), 3)
         #Test standard sized item 
         item1 = ack['items'][0]
-        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -334,10 +363,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 7)
         self.assertEqual(Decimal(ack['total']), Decimal(339190.00))
-        self.assertEqual(len(ack['items']), 2)
+        self.assertEqual(len(ack['items']), 3)
         #Test standard sized item 
         item1 = ack['items'][0]
-        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -392,10 +421,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 7)
         self.assertEqual(Decimal(ack['total']), Decimal(169595))
-        self.assertEqual(len(ack['items']), 2)
+        self.assertEqual(len(ack['items']), 3)
         #Test standard sized item 
         item1 = ack['items'][0]
-        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -439,6 +468,20 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Validate the change
         ack = self.deserialize(resp)
         self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
+        
+        #Tests ack in database
+        ack = Acknowledgement.objects.order_by('-id').all()[0]
+        items = ack.items.all()
+        for a in ack.items.all():
+            print a.description, a.id
+            
+        item1 = items[0]
+        self.assertEqual(item1.description, 'test1')
+        
+        item2 = items[1]
+        self.assertEqual(item2.description, 'F-02 Sofa')
+        self.assertTrue(item2.is_custom_item)
+        
 
     def test_delete(self):
         """

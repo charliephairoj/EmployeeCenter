@@ -45,19 +45,34 @@ class Shipping(models.Model):
         return data
 
     @classmethod
-    def create(cls, user=None, **kwargs):
+    def create(cls, user=None, override_id=False, **kwargs):
         data = kwargs
         shipping = cls()
+        if override_id and 'id' in kwargs:
+            shipping.id = kwargs['id']
         #Set the data from the shippping
-        shipping.customer = Customer.objects.get(id=data['customer']['id'])
         shipping.acknowledgement = Acknowledgement.objects.get(id=data["acknowledgement"]['id'])
+        try:
+            shipping.customer = Customer.objects.get(id=data['customer']['id'])
+        except KeyError:
+            shipping.customer = shipping.acknowledgement.customer
         shipping.employee = user
-        shipping.delivery_date = data["delivery_date"]
+        try:
+            shipping.delivery_date = data["delivery_date"]
+        except KeyError:
+            shipping.delivery_date = shipping.acknowledgement.delivery_date
+            
         if "comments" in data:
             shipping.comments = data["comments"]
+        else:
+            shipping.comments = shipping.acknowledgement.remarks
+            
         shipping.save()
 
-        shipping.process_items(kwargs['items'])
+        try:
+            shipping.process_items(kwargs['items'])
+        except:
+            shipping.process_items([{'id':item.id} for item in shipping.acknowledgement.items.all()])
 
         #shipping.update_acknowledgement_data()
         #Initialize and create pdf

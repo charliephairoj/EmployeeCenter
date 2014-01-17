@@ -159,7 +159,20 @@ class Acknowledgement(models.Model):
             raise TypeError("Missing Delivery Date")
 
         AcknowledgementLog.create(message, self.acknowledgement, employee)
+    
+    def create_and_upload_pdfs(self):
+        ack_filename, production_filename = self.create_pdfs()
+        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
+        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
+        bucket = "document.dellarobbiathailand.com"
+        ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
+        prod_pdf = S3Object.create(production_filename, production_key, bucket)
 
+        self.acknowledgement_pdf = ack_pdf
+        self.production_pdf = prod_pdf
+
+        self.save()
+        
     def create_pdfs(self):
         """Creates Production and Acknowledgement PDFs
 
@@ -411,7 +424,8 @@ class Item(models.Model):
                 self.inventory = True
         if "comments" in kwargs:
             self.comments = kwargs["comments"]
-
+        if "description" in kwargs:
+            self.description = kwargs['description']
         #Set the size of item if custom
         if "is_custom_size" in kwargs:
             if kwargs["is_custom_size"] == True:
@@ -449,7 +463,9 @@ class Item(models.Model):
                 self.description = kwargs["description"]
                 if "image" in kwargs:
                     self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
-        
+                
+                if self.description.strip() == "Custom Custom":
+                    logger.error("Custom Item Description is still wrong")
         #Sets the fabric for the item
         if "fabric" in kwargs:
             try:

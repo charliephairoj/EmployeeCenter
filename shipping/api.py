@@ -31,8 +31,8 @@ class ShippingResource(ModelResource):
         for the resource before it is returned to the client
         """
         if bundle.request.GET.get('pdf'):
-            print bundle.data
-            print bundle.obj.pdf.generate_url()
+            #print bundle.data
+            #print bundle.obj.pdf.generate_url()
             bundle.data['pdf'] = {'url': bundle.obj.pdf.generate_url()}
            
                 
