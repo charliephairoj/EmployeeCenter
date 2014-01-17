@@ -145,10 +145,11 @@ class SupplyResource(ModelResource):
         except KeyError:
             pass
         
-        if "unit_cost" in bundle.data:
-            bundle.obj.cost = bundle.data['unit_cost']
-        else:
-            bundle.obj.cost = bundle.data['cost']
+        if not bundle.request.user.has_perm('supplies.view_cost'):
+            if "unit_cost" in bundle.data:
+                bundle.obj.cost = bundle.data['unit_cost']
+            else:
+                bundle.obj.cost = bundle.data['cost']
             
         #Adds the image
         if "image" in bundle.data:
@@ -220,6 +221,8 @@ class SupplyResource(ModelResource):
                 del bundle.data['cost']
             except KeyError:
                 pass
+        else:
+            bundle.data['unit_cost'] = bundle.data['cost']
         
         #Attack the image if it exists
         if bundle.obj.image:

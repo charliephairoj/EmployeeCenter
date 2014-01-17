@@ -328,7 +328,7 @@ class Item(models.Model):
         item.acknowledgement = acknowledgement
         try:
             item.product = Product.objects.get(id=kwargs["id"])
-            logger.info("Item set to {0}...".format(item.product.description))
+            logger.info(u"Item set to {0}...".format(item.product.description))
         except KeyError:
             try:
                 item.product = Product.objects.get(id=kwargs["product"]["id"])
@@ -397,15 +397,15 @@ class Item(models.Model):
             self.unit_price = self.product.retail_price
         """
         self.unit_price = self.product.price
-        logger.info("Item unit price set to {0}...".format(self.unit_price))
+        logger.info(u"Item unit price set to {0}...".format(self.unit_price))
 
         #Calculate the total cost of the the item
         self.total = self.unit_price * Decimal(self.quantity)
-        logger.info("Item total price set to {0}...".format(self.total))
+        logger.info(u"Item total price set to {0}...".format(self.total))
 
         #Set the appropriate dimensions or to 0
         #if no dimensions are available from the model
-        logger.info("Setting standard dimensions from standard product...")
+        logger.info(u"Setting standard dimensions from standard product...")
         self.width = self.product.width if self.product.width else 0
         self.depth = self.product.depth if self.product.depth else 0
         self.height = self.product.height if self.product.height else 0
@@ -465,15 +465,15 @@ class Item(models.Model):
                     self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
                 
                 if self.description.strip() == "Custom Custom":
-                    logger.error("Custom Item Description is still wrong")
+                    logger.error(u"Custom Item Description is still wrong")
         #Sets the fabric for the item
         if "fabric" in kwargs:
             try:
                 self.fabric = Fabric.objects.get(pk=kwargs["fabric"]["id"])
-                logger.info("{0} fabric set to {1}".format(self.description,
+                logger.info(u"{0} fabric set to {1}".format(self.description,
                                                            self.fabric.description))
             except Fabric.DoesNotExist as e:
-                print "Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
+                print u"Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
 
         #Sets all the pillows and the fabrics
         #for the item
@@ -485,7 +485,7 @@ class Item(models.Model):
 
     def _calculate_custom_price(self):
         """Caluates the custom price based on dimensions."""
-        logger.info("Calculating custom price for {0}...".format(self.description))
+        logger.info(u"Calculating custom price for {0}...".format(self.description))
         dimensions = {}
         try:
             dimensions['width_difference'] = self.width - self.product.width
@@ -508,11 +508,11 @@ class Item(models.Model):
             upcharge_percentage = 0
 
         self.unit_price = self.unit_price + (self.unit_price * (Decimal(upcharge_percentage) / 100))
-        logger.info("Setting unit price of {0} to {1}".format(self.description, 
+        logger.info(u"Setting unit price of {0} to {1}".format(self.description, 
                                                               self.unit_price))
         
         self.total = self.unit_price * self.quantity
-        logger.info("Setting total of {0} to {1}...".format(self.description,
+        logger.info(u"Setting total of {0} to {1}...".format(self.description,
                                                             self.total))
 
     def _calculate_upcharge(self, difference, boundary, initial, increment):
