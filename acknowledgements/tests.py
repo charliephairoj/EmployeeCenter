@@ -260,7 +260,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
-        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
@@ -279,7 +279,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.order_by('-id').all()[0]
         self.assertEqual(root_ack.id, 2)
-        self.assertEqual(root_ack.items.count(), 2)
+        self.assertEqual(root_ack.items.count(), 3)
         root_ack_items = root_ack.items.all()
         item1 = root_ack_items[0]
         item2 = root_ack_items[1]
@@ -324,7 +324,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
-        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -379,7 +379,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
-        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -437,7 +437,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
         #Test custom sized item
         item2 = ack['items'][1]
-        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -470,7 +470,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
         
         #Tests ack in database
-        ack = Acknowledgement.objects.order_by('-id').all()[0]
+        ack = Acknowledgement.objects.get(pk=1)
         items = ack.items.all()
         for a in ack.items.all():
             print a.description, a.id
@@ -479,7 +479,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item1.description, 'test1')
         
         item2 = items[1]
-        self.assertEqual(item2.description, 'F-02 Sofa')
+        self.assertEqual(item2.description, 'F-04 Sofa')
         self.assertTrue(item2.is_custom_item)
         
 
