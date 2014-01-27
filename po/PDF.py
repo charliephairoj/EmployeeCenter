@@ -231,6 +231,8 @@ class PurchaseOrderPDF():
         data.append(['Terms:', self._get_payment_terms()])
         data.append(['Currency:', self._get_currency()])
         data.append(['Order Date:', self.po.order_date.strftime('%B %d, %Y')])
+        if self.po.project:
+            data.append(['Project:', self.po.project])
         #data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
         #Create table
         table = Table(data, colWidths=(60, 200))
