@@ -43,6 +43,7 @@ class PurchaseOrder(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
+    project = models.TextField(null=True, default=None)
     
     @classmethod
     def create(cls, user=None, **kwargs):
