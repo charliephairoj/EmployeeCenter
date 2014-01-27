@@ -95,4 +95,22 @@ class SupplierValidation(ContactValidation):
         except ValueError:
             errors['discount'] = "Expecting an integer for the discount for this supplier."
             
+        #Validates the supplier contacts
+        primary = []
+        for contact in bundle.data['contacts']:
+            try:
+                if contact['primary']:
+                    primary.append(contact)
+            except KeyError:
+                pass
+                
+        if len(primary) > 1:
+            errors['contacts'] = "There can be only 1 primary contact"
+            
         return errors
+    
+    
+    
+    
+    
+    

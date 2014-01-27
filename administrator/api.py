@@ -29,15 +29,10 @@ class UserResource(ModelResource):
         """
         implements the hydrate for the User
         """
-        logger.debug(bundle.data)
         try:
-            logger.debug([group['id'] for group in bundle.data['groups']])
             client_groups = set([group['id'] for group in bundle.data['groups']]) if "groups" in bundle.data else set()
             server_groups = set([group.id for group in bundle.obj.groups.all()])
-            logger.debug(bundle.obj.id)
-            logger.debug([group.id for group in bundle.obj.groups.all()])
-            logger.debug(client_groups)
-            logger.debug(server_groups)
+           
             #Adds new groups to the user
             for group_id in client_groups.difference(server_groups):
                 group = Group.objects.get(pk=group_id)
@@ -53,7 +48,14 @@ class UserResource(ModelResource):
                                                                           group.name))
         except ValueError:
             pass
-            
+        
+        try:
+            bundle.obj.employee.telephone = bundle.data['telephone']
+            bundle.obj.employee.save()
+        except KeyError as e:
+            logger.warn(e)
+        except AttributeError:
+            logger.critical(e)
         
         return bundle
     
@@ -78,6 +80,11 @@ class UserResource(ModelResource):
         #Remove the password
         if "password" in bundle.data:
             del bundle.data["password"]
+            
+        try:
+            bundle.data['telephone'] = bundle.obj.employee.telephone
+        except Exception as e:
+            logger.warn(e)
         
         return bundle
     

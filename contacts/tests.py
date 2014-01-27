@@ -29,15 +29,16 @@ base_contact = {"name": "Charlie Brown",
                 "telephone": "08348229383",
                 'discount': 20,
                 'notes': 'woohoo'}
-base_supplier_contact = {"contacts": [{"first_name": "Charlie",
-                         "last_name": "Smith",
-                         "email": "test@yahoo.com",
-                         "telephone": "123456789"}]}
+base_supplier_contact = [{"name": "Charlie P",
+                          "email": "test@yahoo.com",
+                          "telephone": "123456789",
+                          "primary": True}]
 customer_data = base_contact.copy()
 customer_data['type'] = 'Retail'
 supplier_data = base_contact.copy()
 supplier_data['name'] = 'Zipper World Co., Ltd.'
 supplier_data['terms'] = 30
+supplier_data['contacts'] = base_supplier_contact
 del supplier_data['first_name']
 del supplier_data['last_name']
 
@@ -174,13 +175,22 @@ class SupplierResourceTest(ResourceTestCase):
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         
         self.supplier_data = supplier_data
-        self.supplier = Supplier(**self.supplier_data)
+        self.mod_supplier_data = self.supplier_data.copy()
+        try:
+            del self.mod_supplier_data['contacts']
+        except KeyError:
+            pass
+        self.supplier = Supplier(**self.mod_supplier_data)
         self.supplier.is_supplier = True
         self.supplier.save()
         
         self.address = Address(**base_address)
         self.address.contact = self.supplier
         self.address.save()
+        
+        self.contact = SupplierContact(**base_supplier_contact[0])
+        self.contact.supplier = self.supplier
+        self.contact.save()
                 
     def get_credentials(self):
         return self.create_basic(username=self.username, password=self.password)
@@ -204,6 +214,15 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["telephone"], "08348229383")
         self.assertEqual(supplier["fax"], "0224223423")
         self.assertEqual(supplier['discount'], 20)
+        #Tests the contacts
+        self.assertIn('contacts', supplier)
+        self.assertEqual(len(supplier['contacts']), 1)
+        contact = supplier['contacts'][0]
+        self.assertIn('id', contact)
+        self.assertEqual(contact['id'], 1)
+        self.assertEqual(contact['name'], 'Charlie P')
+        self.assertEqual(contact['email'], 'test@yahoo.com')
+        self.assertEqual(contact['telephone'], '123456789')
         
     def test_post(self):
         """
@@ -229,6 +248,15 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(supplier["fax"], "0224223423")
         self.assertEqual(supplier['notes'], "woohoo")
         self.assertEqual(supplier['discount'], 20)
+        #Validate the the supplier contact was created
+        self.assertIn("contacts", supplier)
+        self.assertEqual(len(supplier['contacts']), 1)
+        contact = supplier['contacts'][0]
+        self.assertEqual(contact['id'], 2)
+        self.assertEqual(contact['name'], 'Charlie P')
+        self.assertEqual(contact['email'], 'test@yahoo.com')
+        self.assertEqual(contact['telephone'], '123456789')
+        self.assertTrue(contact['primary'])
         
         #Validate the created supplier instance
         supp = Supplier.objects.order_by('-id').all()[0]
@@ -247,17 +275,62 @@ class SupplierResourceTest(ResourceTestCase):
         modified_supplier['name'] = 'Zipper Land Ltd.'
         modified_supplier['terms'] = 120
         modified_supplier['discount'] = 75
+        modified_supplier['contacts'][0]['email'] = 'woohoo@yahoo.com'
+        modified_supplier['contacts'][0]['id'] = 1
+        del modified_supplier['contacts'][0]['primary']
+        modified_supplier['contacts'].append({'name': 'test',
+                                              'email': 'test@gmail.com',
+                                              'telephone': 'ok',
+                                              'primary': True})
         self.assertEqual(Supplier.objects.count(), 1)
+        self.assertEqual(Supplier.objects.all()[0].contacts.count(), 1)
         resp = self.api_client.put('/api/v1/supplier/1',
                                    format='json',
                                    data=modified_supplier, 
                                    authentication=self.get_credentials())
+        #Tests database state
         self.assertEqual(Supplier.objects.count(), 1)
         obj = Supplier.objects.all()[0]
         self.assertEqual(obj.id, 1)
         self.assertEqual(obj.name, 'Zipper Land Ltd.')
         self.assertEqual(obj.terms, 120)
         self.assertEqual(obj.discount, 75)
+        self.assertEqual(obj.contacts.count(), 2)
+        contacts = obj.contacts.order_by('id').all()
+        self.assertEqual(contacts[0].id, 1)
+        self.assertEqual(contacts[0].email, 'woohoo@yahoo.com')
+        self.assertEqual(contacts[0].name, 'Charlie P')
+        self.assertEqual(contacts[0].telephone, '123456789')
+        self.assertEqual(contacts[1].id, 2)
+        self.assertEqual(contacts[1].name, 'test')
+        self.assertEqual(contacts[1].email, 'test@gmail.com')
+        self.assertEqual(contacts[1].telephone, 'ok')
+        
+        #Tests the response
+        self.assertHttpOK(resp)
+        supplier = self.deserialize(resp)
+        self.assertEqual(supplier['id'], 1)
+        self.assertEqual(supplier["name"], 'Zipper Land Ltd.')
+        self.assertEqual(supplier["currency"], 'USD')
+        self.assertTrue(supplier["is_supplier"])
+        self.assertEqual(supplier["email"], "charliep@dellarobbiathailand.com")
+        self.assertEqual(supplier["telephone"], "08348229383")
+        self.assertEqual(supplier["fax"], "0224223423")
+        self.assertEqual(supplier['discount'], 75)
+        self.assertEqual(supplier['terms'], 120)
+        #Tests contacts in response
+        self.assertIn('contacts', supplier)
+        self.assertEqual(len(supplier['contacts']), 2)
+        contacts = supplier['contacts']
+        self.assertEqual(contacts[0]['id'], 1)
+        self.assertEqual(contacts[0]['name'], 'Charlie P')
+        self.assertEqual(contacts[0]['email'], 'woohoo@yahoo.com')
+        self.assertEqual(contacts[0]['telephone'], '123456789')
+        self.assertEqual(contacts[1]['id'], 2)
+        self.assertEqual(contacts[1]['name'], 'test')
+        self.assertEqual(contacts[1]['email'], 'test@gmail.com')
+        self.assertEqual(contacts[1]['telephone'], 'ok')
+        self.assertTrue(contacts[1]['primary'])
     
     def test_get(self):
         """

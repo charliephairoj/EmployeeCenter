@@ -10,6 +10,11 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
 
+class Employee(models.Model):
+    user = models.OneToOneField(User)
+    telephone = models.TextField(null=True)
+    
+    
 class Log(models.Model):
     employee = models.ForeignKey(User)
     event = models.TextField()

@@ -114,11 +114,11 @@ class Supplier(Contact):
 
 
 class SupplierContact(models.Model):
-    first_name = models.TextField()
-    last_name = models.TextField()
+    name = models.TextField()
     email = models.TextField()
     telephone = models.TextField()
-    supplier = models.ForeignKey(Supplier)
+    supplier = models.ForeignKey(Supplier, related_name='contacts')
+    primary = models.BooleanField(db_column='primary_contact', default=False)
 
     
 

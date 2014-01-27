@@ -10,6 +10,7 @@ use by the production team and the office overseeing
 production"""
 
 from decimal import Decimal
+import logging
 
 from django.conf import settings
 from django.db import models
@@ -25,6 +26,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 
+
+logger = logging.getLogger(__name__)
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
@@ -157,14 +160,15 @@ class PurchaseOrderPDF():
             data.append(['', "F: {0}".format(self.supplier.fax)])
         if self.supplier.email:
             data.append(['', "E: {0}".format(self.supplier.email)])
+        try:
+            contact = self.supplier.contacts.get(primary=True)
+            data.append(['Contact:', "{0}".format(contact.name)])
+            data.append(['', "{0}".format(contact.email)])
+            data.append(['', "{0}".format(contact.telephone)])
+        except Exception as e:
+            logger.warn(e)
             
-        #Determines if we can add attention section
-        if self.attention != None:
-            att = '{0} {1}'.format(self.attention.first_name,
-                                   self.attention.last_name)
-            data.append(['Attention:', att])
-            data.append(['', self.attention.email])
-            data.append(['', self.attention.telephone])
+       
         #Create Table
         table = Table(data, colWidths=(60, 200))
         #Create and apply Table Style
@@ -181,12 +185,19 @@ class PurchaseOrderPDF():
         #Create data array
         data = []
         #Add Employee Name
-        ship_str = "{0} {1}".format(self.employee.first_name, self.employee.last_name)
+        ship_str = u"{0} {1}".format(self.employee.first_name, self.employee.last_name)
         data.append(['Ship To:', ship_str])
         #Add Company Data
         data.append(['', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
         data.append(['', 'Lam Luk Ka, Pathum Thani'])
         data.append(['', 'Thailand 12150'])
+        data.append(['',u'E: {0}'.format(self.employee.email)])
+        try:
+            if self.employee.employee.telephone:
+                if self.employee.employee.telephone != '':
+                    data.append(['', u'T: {0}'.format(self.employee.employee.telephone)])
+        except Exception as e:
+            logger.warn(e)
         #Create Table
         table = Table(data, colWidths=(50, 150))
         #Create and apply Table Style

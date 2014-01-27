@@ -10,7 +10,7 @@ from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource
 from tastypie import fields
 
-from contacts.models import Customer, Supplier, Address
+from contacts.models import Customer, Supplier, Address, SupplierContact
 from contacts.validation import CustomerValidation, SupplierValidation
 
 
@@ -202,7 +202,8 @@ class CustomerResource(ContactResource):
     
 
 class SupplierResource(ContactResource):
-    
+    #contacts = fields.ToManyField('contacts.api.SupplierContactResource', 'contacts', full=True,
+    #                                 readonly=True)
     class Meta:
         queryset = Supplier.objects.all()
         resource_name = 'supplier'
@@ -239,7 +240,11 @@ class SupplierResource(ContactResource):
         except IndexError:
             logger.warn(u"Supplier #{0}: {1} does not have an address".format(bundle.obj.id, 
                                                                               bundle.obj.name))
-            
+        bundle.data['contacts'] = [{'id': c.id,
+                                    'name': c.name,
+                                    'email': c.email,
+                                    'telephone': c.telephone,
+                                    'primary': c.primary} for c in bundle.obj.contacts.all()]
         return bundle
     
     def hydrate(self, bundle):
@@ -250,6 +255,27 @@ class SupplierResource(ContactResource):
         bundle = self._set_address(bundle)
         
         bundle.obj.is_supplier = True
+        
+        #Create the supplier contact
+        try:
+            for contact_data in bundle.data['contacts']:
+                try:
+                    contact = SupplierContact.objects.get(pk=contact_data['id'])
+                except KeyError as e:
+                    contact = SupplierContact()
+                #Filter attributes that are not systems related
+                for attr in contact.__dict__:
+                    if not attr.startswith('_') and attr not in ['id', 'pk']:
+                        #Attempt to update the attribute
+                        try:
+                            contact.__setattr__(attr, contact_data[attr])
+                        except KeyError as e:
+                            pass
+                
+                contact.supplier = bundle.obj
+                contact.save()
+        except KeyError as e:
+            pass
                 
         return bundle
     
@@ -281,6 +307,14 @@ class SupplierResource(ContactResource):
         obj = Supplier.objects.get(pk=kwargs['pk'])
         logger.debug("Deleting supplier: {0}...".format(obj.name))
         return super(SupplierResource, self).obj_delete(bundle, **kwargs)
+    
+    
+class SupplierContactResource(ModelResource):
+    class meta:
+        queryset = SupplierContact.objects.all()
+        always_return_data = True
+        authorization = Authorization()
+        #fields = ['id', 'name', 'email', 'telephone']
     
     
     

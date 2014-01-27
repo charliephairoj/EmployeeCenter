@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User, Permission, ContentType
 from tastypie.test import ResourceTestCase
 
-from contacts.models import Supplier, Address
+from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
 from supplies.models import Supply, Fabric
 
@@ -46,6 +46,9 @@ def create_user(block_permissions=[]):
     user = User.objects.create_user('test{0}'.format(random.randint(1, 99999)),
                                     'test',
                                     'test')
+    user.name = 'Charlie P'
+    user.first_name = 'Charlie'
+    user.last_name = 'P'
     user.is_staff = True
     user.save()
 
@@ -84,6 +87,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.address = Address(**base_address)
         self.address.contact = self.supplier
         self.address.save()
+        self.contact = SupplierContact(name='test', email='test@yahoo.com', telephone=1234, primary=True)
+        self.contact.supplier = self.supplier
+        self.contact.save()
         self.supply = Fabric.create(**base_fabric)
         self.supply.save()
         
@@ -142,6 +148,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
         self.assertEqual(len(obj['items']), 1)
+        print obj['pdf']['url']
         #self.assertIsNotNone(obj['pdf'])
         #self.assertIsNotNone(obj['pdf']['url'])
         

@@ -280,7 +280,7 @@ class ShippingPDF(object):
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.item.image is not None:
-            image_url = product.item.image.generate_url()
+            image_url = product.item.image.generate_url(time=3600)
             data.append(['', self.get_image(image_url, height=100)])
         #Create table
         table = Table(data, colWidths=(65, 425, 40))
