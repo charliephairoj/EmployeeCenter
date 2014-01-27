@@ -40,7 +40,7 @@ class UserResourceTest(ResourceTestCase):
         self.assertEqual(user['id'], 1)
         self.assertEqual(user['username'], 'tester')
         self.assertEqual(user['email'], 'testing@yahoo.com')
-        self.assertIn("permissions", user)
+        self.assertIn("groups", user)
 
     def test_get(self):
         """
@@ -55,7 +55,7 @@ class UserResourceTest(ResourceTestCase):
         self.assertEqual(user['id'], 1)
         self.assertEqual(user['username'], 'tester')
         self.assertEqual(user['email'], 'testing@yahoo.com')
-        self.assertIn("permissions", user)
+        self.assertIn("groups", user)
         
     def test_post(self):
         """
@@ -78,7 +78,6 @@ class UserResourceTest(ResourceTestCase):
         self.assertNotIn('password', user)
         self.assertEqual(user['first_name'], 'Charlie')
         self.assertEqual(user['last_name'], 'P')
-        self.assertIn('permissions', user)
         self.assertIn('groups', user)
         
     def test_failed_post(self):
@@ -143,11 +142,6 @@ class UserResourceTest(ResourceTestCase):
         self.assertEqual(len(user['groups']), 1)
         self.assertIn('id', user['groups'][0])
         self.assertIn('description', user['groups'][0])
-        self.assertEqual(len(user['permissions']), 1)
-        self.assertIn('id', user['permissions'][0])
-        self.assertIn('description', user['permissions'][0])
-        self.assertEqual(len(user['permissions']), 1)
-        self.assertEqual(user['permissions'][0]['description'], 'test')
         
 
 class GroupResourceTest(ResourceTestCase):
