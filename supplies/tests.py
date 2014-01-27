@@ -5,6 +5,7 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 from decimal import Decimal
+import logging
 import random
 import unittest
 
@@ -16,6 +17,8 @@ from supplies.models import Supply, Fabric, Foam, SupplyLog
 from auth.models import S3Object
 
 
+logger = logging.getLogger(__name__)
+
 base_supplier = {"name": "Test Supplier",
                  "currency": "USD"}
 base_address = {"address": {"address1": "22471 Sunbroon",
@@ -25,6 +28,7 @@ base_address = {"address": {"address1": "22471 Sunbroon",
                             "zipcode": "92839"}}
 
 base_supply = {"description": "test",
+               'type': 'wood',
                "width": 100,
                "depth": 200,
                "height": 300,
@@ -41,6 +45,7 @@ base_fabric = base_supply.copy()
 base_fabric.update({"pattern": "Max",
                     "color": "Hot Pink"})
 base_fabric['purchasing_units'] = 'm'
+base_fabric['type'] = 'fabric'
 del base_fabric['depth']
 
 
@@ -59,8 +64,7 @@ def create_user(block_permissions=[]):
         if p.codename not in block_permissions:
             user.user_permissions.add(p)
     return user
-     
-            
+                
 class SupplyResourceTestCase(ResourceTestCase):
     def setUp(self):
         """
@@ -120,6 +124,10 @@ class SupplyResourceTestCase(ResourceTestCase):
         
         obj = self.deserialize(resp)
         self.assertEqual(Decimal(obj['cost']), Decimal('100'))
+        self.assertIn('description', obj)
+        self.assertEqual(obj['description'], 'test')
+        self.assertIn('type', obj)
+        self.assertEqual(obj['type'], 'wood')
         
     def test_get_without_price(self):
         """
@@ -136,6 +144,16 @@ class SupplyResourceTestCase(ResourceTestCase):
         #Tests the data returned
         obj = self.deserialize(resp)
         self.assertNotIn("cost", obj)
+    
+    def test_get_types(self):
+        """
+        Tests getting the different types
+        used to describe supplies
+        """
+        resp = self.api_client.get('/api/v1/supply/type')
+        self.assertHttpOK(resp)
+        type_list = self.deserialize(resp)
+        self.assertIn('wood', type_list)
         
     def test_post(self):
         """
@@ -145,7 +163,6 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(Supply.objects.count(), 2)
         resp = self.api_client.post('/api/v1/supply', format='json',
                                     data=base_supply)
-        print resp
         self.assertHttpCreated(resp)
        
         #Tests the dat aturned
@@ -160,6 +177,8 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(obj['height_units'], 'yd')
         self.assertEqual(obj['width_units'], 'm')
         self.assertEqual(obj['notes'], 'This is awesome')
+        self.assertIn('type', obj)
+        self.assertEqual(obj['type'], 'wood')
         
         #TEsts the object created
         supply = Supply.objects.order_by('-id').all()[0]
@@ -173,6 +192,42 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(supply.height_units, 'yd')
         self.assertEqual(supply.width_units, 'm')
         self.assertEqual(supply.notes, 'This is awesome')
+        self.assertIsNotNone(supply.type)
+        self.assertEqual(supply.type, 'wood')
+        
+    def test_posting_with_custom_type(self):
+        """
+        Testing creating a new resource via POST 
+        that has a custom type
+        """
+        #Testing returned types pre POST
+        resp0 = self.api_client.get('/api/v1/supply/type', format='json')
+        self.assertHttpOK(resp0)
+        type_list = self.deserialize(resp0)
+        self.assertNotIn('egg', type_list)
+        self.assertIn('wood', type_list)
+        self.assertEqual(len(type_list), 1)
+        
+        #POST
+        modified_supply = base_supply.copy()
+        modified_supply['type'] = 'Custom'
+        modified_supply['custom-type'] = 'egg'
+        resp = self.api_client.post('/api/v1/supply', format='json',
+                                    data=modified_supply)
+        self.assertHttpCreated(resp)
+        
+        #Tests the response
+        obj = self.deserialize(resp)
+        self.assertIn('type', obj)
+        self.assertNotIn('custom-type', obj)
+        self.assertEqual(obj['type'], 'egg')
+        
+        resp2 = self.api_client.get('/api/v1/supply/type', format='json')
+        self.assertHttpOK(resp2)
+        type_list = self.deserialize(resp2)
+        self.assertIn('egg', type_list)
+        self.assertIn('wood', type_list)
+        self.assertEqual(len(type_list), 2)
         
     def test_put(self):
         """
@@ -180,6 +235,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         """
         modified_data = base_supply.copy()
         modified_data['description'] = 'new'
+        modified_data['type'] = 'Glue'
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
@@ -188,10 +244,14 @@ class SupplyResourceTestCase(ResourceTestCase):
         
         self.assertHttpOK(resp)
         self.assertEqual(Supply.objects.count(), 2)
-        self.description = ''
 
         #Tests the returned data
         obj = self.deserialize(resp)
+        self.assertEqual(obj['type'], 'Glue')
+        
+        #Tests the resource in the database
+        supply = Supply.objects.get(pk=1)
+        self.assertEqual(supply.type, 'Glue')
         
     def test_add(self):
         """
@@ -345,7 +405,6 @@ class FabricResourceTestCase(ResourceTestCase):
         self.assertEqual(Supply.objects.count(), 2)
         resp = self.api_client.post('/api/v1/fabric', format='json',
                                     data=base_fabric)
-        print resp
         self.assertHttpCreated(resp)
        
         #Tests the dat aturned

@@ -93,7 +93,12 @@ class Supply(models.Model):
                     raise IntegrityError("Missing image's ID")
                 except S3Object.DoesNotExist:
                     raise TypeError("Image does not exist")
-
+        
+        if "type" in kwargs:
+            if kwargs['type'].lower() == 'custom':
+                supply.type = kwargs['custom_type']
+            else:
+                supply.type = kwargs['type']
         if "width_units" in kwargs:
             supply.width_units = kwargs["width_units"]
         if "depth_units" in kwargs:

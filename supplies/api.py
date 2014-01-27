@@ -60,6 +60,7 @@ class SupplyResource(ModelResource):
     def prepend_urls(self):
         return [
                 url(r"^{0}/image$".format(self._meta.resource_name), self.wrap_view('process_image')),
+                url(r"^{0}/type".format(self._meta.resource_name), self.wrap_view('type')),
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
                 ]
@@ -135,6 +136,9 @@ class SupplyResource(ModelResource):
         data['supplier'] = {'name': obj.supplier.name,
                             'currency': obj.supplier.currency}
         return self.create_response(request, data)
+    def type(self, request, **kwargs):
+        data = [s for s in Supply.objects.values_list('type', flat=True).distinct()]
+        return self.create_response(request, data)
     
     def hydrate(self, bundle):
         """
@@ -145,6 +149,17 @@ class SupplyResource(ModelResource):
         except KeyError:
             pass
         
+        try:
+            if bundle.data['type'].lower() == 'custom':
+                bundle.obj.type = bundle.data['custom-type']
+                del bundle.data['custom-type']
+            else:
+                bundle.obj.type = bundle.data['type']
+                
+            bundle.data['type'] = bundle.obj.type
+        except KeyError as e:
+            logger.warn(e)
+            
         if bundle.request.user.has_perm('supplies.view_cost'):
             if "unit_cost" in bundle.data:
                 bundle.obj.cost = bundle.data['unit_cost']
@@ -216,6 +231,10 @@ class SupplyResource(ModelResource):
         Implements the dehydrate method to manipulate data
         before it is returned to the client
         """
+        if "custom-type" in bundle.data:
+            bundle.data['type'] = bundle.obj.type
+            del bundle.data['custom-type']
+            
         if not bundle.request.user.has_perm('supplies.view_cost'):
             try:
                 del bundle.data['cost']
