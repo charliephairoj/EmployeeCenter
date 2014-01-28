@@ -2,6 +2,7 @@
 Purchase Order tests
 """
 import random
+import logging
 import dateutil.parser
 import datetime
 from decimal import Decimal
@@ -13,6 +14,9 @@ from tastypie.test import ResourceTestCase
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
 from supplies.models import Supply, Fabric
+
+
+logger = logging.getLogger(__name__)
 
 base_address = {'address1': '22471 Sunbrook',
                 'city': 'Mission Viejo',
@@ -34,6 +38,7 @@ base_fabric = {'pattern': 'Maxx',
                'unit_cost': 12.11}
 
 base_purchase_order = {'supplier': {'id':1},
+                       'project': 'MC House',
                        'items': [{'id': 1, 'quantity':10}],
                        'vat': '7'}
 
@@ -132,6 +137,9 @@ class PurchaseOrderTest(ResourceTestCase):
         obj = self.deserialize(resp)
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
+        self.assertEqual(obj['project'], None)
+        logger.debug(obj)
+
         
     def test_post(self):
         """
@@ -148,7 +156,14 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
         self.assertEqual(len(obj['items']), 1)
-        print obj['pdf']['url']
+        self.assertIn('project', obj)
+        self.assertEqual(obj['project'], 'MC House')
+        logger.debug(obj['pdf']['url'])
+        
+        #validate the resource in the database
+        po = PurchaseOrder.objects.get(pk=2)
+        self.assertIsNotNone(po.project)
+        self.assertEqual(po.project, 'MC House')
         #self.assertIsNotNone(obj['pdf'])
         #self.assertIsNotNone(obj['pdf']['url'])
         

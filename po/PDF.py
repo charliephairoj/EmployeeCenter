@@ -152,8 +152,8 @@ class PurchaseOrderPDF():
             if address.address2.strip() != "":
                 data.append(['', address.address2])
 
-        data.append(['', "{0}, {1}".format(address.city, address.territory)])
-        data.append(['', "{0} {1}".format(address.country, address.zipcode)])
+        data.append(['', u"{0}, {1}".format(address.city, address.territory)])
+        data.append(['', u"{0} {1}".format(address.country, address.zipcode)])
         if self.supplier.telephone:
             data.append(['', "T: {0}".format(self.supplier.telephone)])
         if self.supplier.fax: 
@@ -176,7 +176,7 @@ class PurchaseOrderPDF():
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
                              colors.CMYKColor(black=60)),
-                            ('FONT', (0, 0), (-1, -1), 'Helvetica')])
+                            ('FONT', (0, 0), (-1, -1), 'Garuda')])
         table.setStyle(style)
         #Return the Recipient Table
         return table
