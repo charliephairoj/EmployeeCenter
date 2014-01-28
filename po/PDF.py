@@ -11,6 +11,7 @@ production"""
 
 from decimal import Decimal
 import logging
+import re
 
 from django.conf import settings
 from django.db import models
@@ -19,6 +20,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from reportlab.lib import colors, utils
 from reportlab.lib.units import mm
+from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
@@ -258,7 +260,7 @@ class PurchaseOrderPDF():
             #add the data
             data.append([i, supply.supply.reference,
                          self.__get_description(supply),
-                         supply.supply.units,
+                         self._format_string_to_paragraph(supply.supply.units),
                          "%.2f" % float(supply.unit_cost),
                          supply.quantity,
                          "%.2f" % float(supply.total)])
@@ -410,6 +412,22 @@ class PurchaseOrderPDF():
         #Return data and style
         return data, style
 
+    def _format_string_to_paragraph(self, string):
+        """
+        Changes the string to a paragraph
+        """
+        super_re = re.compile('\^(\d+)')
+        string = super_re.sub('<super>\g<1></super>', string)
+        
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=10,
+                               alignment=TA_CENTER,
+                               textColor=colors.CMYKColor(black=60))
+        
+        #return description
+        return Paragraph(string, style)
+        
     #helps change the size and maintain ratio
     def _get_image(self, path, width=None, height=None):
         img = utils.ImageReader(path)

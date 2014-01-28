@@ -96,7 +96,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.contact.supplier = self.supplier
         self.contact.save()
         self.supply = Fabric.create(**base_fabric)
+        #self.supply.units = "m^2"
         self.supply.save()
+        
         
         self.po = PurchaseOrder()
         self.po.employee = self.user
@@ -166,7 +168,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(po.project, 'MC House')
         #self.assertIsNotNone(obj['pdf'])
         #self.assertIsNotNone(obj['pdf']['url'])
-        
         #print Supply.objects.order_by('-id').all()[0].item_set.all()
     
 
