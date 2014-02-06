@@ -51,10 +51,13 @@ class PurchaseOrderResource(ModelResource):
         #Add URLS for the acknowledgement
         #and the production pdf to the data
         #bundle
+        
         if bundle.request.GET.get('pdf'):
+            logger.debug(bundle.request)
             try:
                 bundle.data['pdf'] = {'url': bundle.obj.pdf.generate_url()}
-            except AttributeError: 
+            except AttributeError as e: 
+                logger.warn(e)
                 logger.warn('Missing pdf')
             
         return bundle

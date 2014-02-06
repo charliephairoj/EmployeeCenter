@@ -105,6 +105,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.po.supplier = self.supplier
         self.po.terms = self.supplier.terms
         self.po.save()
+        #self.po.create_and_upload_pdf()
         
         self.item = Item.create(**base_purchase_order['items'][0])
         self.item.purchase_order = self.po
@@ -140,7 +141,23 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
         self.assertEqual(obj['project'], None)
+        self.assertNotIn('pdf', obj)
         logger.debug(obj)
+        
+    def test_get_with_pdf(self):
+        """
+        Tests getting a resource with the pdf
+        """
+        self.po.create_and_upload_pdf()
+        
+        resp = self.api_client.get('/api/v1/purchase-order/1?pdf=true')
+        self.assertHttpOK(resp)
+        self.assertValidJSONResponse(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertIn('pdf', obj)
+        self.assertIn('url', obj['pdf'])
+        self.assertIsNotNone(obj['pdf']['url'])
 
         
     def test_post(self):
