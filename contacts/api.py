@@ -153,7 +153,7 @@ class CustomerResource(ContactResource):
                                     bundle.data["last_name"])
         except KeyError:
             name = bundle.data["first_name"]
-        logger.debug("Creating customer: {0}...".format(name))
+        logger.debug(u"Creating customer: {0}...".format(name))
         bundle = super(CustomerResource, self).obj_create(bundle, **kwargs)
         #Set customer name 
         bundle.obj.name = name
@@ -176,7 +176,7 @@ class CustomerResource(ContactResource):
         Deletes a customer resource
         """
         obj = Customer.objects.get(pk=kwargs["pk"])
-        logger.debug("Deleting customer: {0}".format(obj.name))
+        logger.debug(u"Deleting customer: {0}".format(obj.name))
         super(CustomerResource, self).obj_delete(bundle, **kwargs)
         
     def hydrate(self, bundle):
@@ -283,7 +283,7 @@ class SupplierResource(ContactResource):
         """
         Create a supplier resource
         """
-        logger.debug("Creating supplier: {0}...".format(bundle.data['name']))
+        logger.debug(u"Creating supplier: {0}...".format(bundle.data['name']))
         bundle = super(SupplierResource, self).obj_create(bundle, **kwargs)
        
         #Set status as supplier
@@ -297,7 +297,7 @@ class SupplierResource(ContactResource):
         Update the supplier resource
         """
         bundle = super(SupplierResource, self).obj_update(bundle, **kwargs)
-        logger.debug("Updating supplier: {0}...".format(bundle.obj.name))
+        logger.debug(u"Updating supplier: {0}...".format(bundle.obj.name))
         return bundle
     
     def obj_delete(self, bundle, **kwargs):
@@ -305,7 +305,7 @@ class SupplierResource(ContactResource):
         Delete the supplier resource
         """
         obj = Supplier.objects.get(pk=kwargs['pk'])
-        logger.debug("Deleting supplier: {0}...".format(obj.name))
+        logger.debug(u"Deleting supplier: {0}...".format(obj.name))
         return super(SupplierResource, self).obj_delete(bundle, **kwargs)
     
     

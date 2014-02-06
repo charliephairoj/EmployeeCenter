@@ -142,20 +142,26 @@ class PurchaseOrderPDF():
         return story
 
     def __create_supplier_section(self):
-        #extract supplier address
-        address = self.supplier.address_set.all()[0]
+       
         #Create data array
         data = []
         #Add supplier name
         data.append(['Supplier:', self.supplier.name])
-        #add supplier address data
-        data.append(['', address.address1])
-        if address.address2:
-            if address.address2.strip() != "":
-                data.append(['', address.address2])
-
-        data.append(['', u"{0}, {1}".format(address.city, address.territory)])
-        data.append(['', u"{0} {1}".format(address.country, address.zipcode)])
+        
+        try: 
+            #extract supplier address
+            address = self.supplier.address_set.all()[0]
+            #add supplier address data
+            data.append(['', address.address1])
+            if address.address2:
+                if address.address2.strip() != "":
+                    data.append(['', address.address2])
+    
+            data.append(['', u"{0}, {1}".format(address.city, address.territory)])
+            data.append(['', u"{0} {1}".format(address.country, address.zipcode)])
+        except Exception as e:
+            logger.error(e)
+            
         if self.supplier.telephone:
             data.append(['', "T: {0}".format(self.supplier.telephone)])
         if self.supplier.fax: 

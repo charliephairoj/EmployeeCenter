@@ -3,7 +3,6 @@ API Resource classes for the
 Purchase Order module
 """
 import logging
-import dateutil
 
 from tastypie.resources import ModelResource
 from tastypie import fields
