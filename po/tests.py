@@ -142,7 +142,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['terms'], 30)
         self.assertEqual(obj['project'], None)
         self.assertNotIn('pdf', obj)
-        logger.debug(obj)
         
     def test_get_with_pdf(self):
         """
