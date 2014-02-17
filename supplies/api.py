@@ -34,6 +34,7 @@ class SupplyResource(ModelResource):
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
         ordering = ['image']
+        filtering = {'upc': 'exact'}
         #fields = ['purchasing_units', 'description', 'cost', 'id', 'pk']
     
     def apply_filters(self, request, applicable_filters):
@@ -49,6 +50,10 @@ class SupplyResource(ModelResource):
             s_id = request.GET.get('supplier_id')
             obj_list = obj_list.filter(supplier_id=s_id)
         
+        if request.GET.has_key('upc'):
+            upc_id = request.GET.get('upc')
+            print upc_id
+            obj_list = obj_list.filter(upc=upc_id)
         
         if "Administrator" in [g.name for g in request.user.groups.all()]:
             logger.debug('An admin')

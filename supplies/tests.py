@@ -155,7 +155,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         type_list = self.deserialize(resp)
         self.assertIn('wood', type_list)
         
-    def test_post(self):
+    def test_post_single_supplier(self):
         """
         Tests posting to the server
         """
@@ -194,6 +194,8 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(supply.notes, 'This is awesome')
         self.assertIsNotNone(supply.type)
         self.assertEqual(supply.type, 'wood')
+        self.assertIsNotNone(supply.suppliers)
+        self.assertEqual(supply.suppliers.count(), 1)
         
     def test_posting_with_custom_type(self):
         """

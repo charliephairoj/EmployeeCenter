@@ -36,6 +36,7 @@ class Supply(models.Model):
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
+    upc = models.TextField(default='')
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
@@ -120,7 +121,13 @@ class Supply(models.Model):
 
         return supply
 
-    
+   
+class Product(models.Model):
+    supplier = models.ForeignKey(Supplier)
+    supply = models.ForeignKey(Supply)
+    upc = models.TextField(null=True)
+    cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+     
 
 
 class Location(models.Model):
