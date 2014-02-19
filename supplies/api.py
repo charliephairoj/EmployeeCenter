@@ -13,7 +13,7 @@ from tastypie.resources import ModelResource
 from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import Unauthorized
 
-from supplies.models import Supply, Fabric
+from supplies.models import Supply, Fabric, Product
 from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
 from utilities.http import save_upload
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class SupplyResource(ModelResource):
-    supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier',
-                                 readonly=True, full=True)
+    #suppliers = fields.ToManyField('contacts.api.SupplierResource', 'suppliers',
+    #                             readonly=True, full=True)
     
     class Meta:
         queryset = Supply.objects.all()
@@ -69,90 +69,10 @@ class SupplyResource(ModelResource):
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
                 ]
-    
-    def obj_create(self, bundle, **kwargs):
-        
-        bundle.obj = Supply()
-        bundle = self.full_hydrate(bundle)
-        bundle = self.save(bundle)
-        return bundle
-    
-    def process_image(self, request, **kwargs):
-        """
-        Receives an image and processes it
-        """
-        filename = save_upload(request)
-        
-        image = S3Object.create(filename,
-                        "supply/image/{0}.jpg".format(time.time()),
-                        "media.dellarobbiathailand.com")
-        #set Url, key and bucket
-        data = {'url': image.generate_url(),
-                "id": image.id,
-                'key': image.key,
-                'bucket': image.bucket}
-        
-        return self.create_response(request, data)
-
-    
-    def add(self, request, **kwargs):
-        """
-        Adds a quantity to the supply
-        
-        This method checks that the request method is post, and that
-        there is both a quantity and an acknowledgement ID
-        """
-        if not request.method == "POST":
-            pass#return self.create
-        obj = self._meta.queryset.get(pk=kwargs['pk'])
-       
-        obj.quantity = round(float(obj.quantity) + float(request.REQUEST.get('quantity')), 2)
-        obj.save()
-        
-        data = {}
-        for key in obj.__dict__:
-            if key[0] != "_":
-                data[key] = obj.__dict__[key]
-                
-        data['supplier'] = {'name': obj.supplier.name,
-                            'currency': obj.supplier.currency}
-        return self.create_response(request, data)
-    
-    def subtract(self, request, **kwargs):
-        """
-        Subtracts a quantity to the supply
-        
-        This method checks that the request method is post, and that
-        there is both a quantity and an acknowledgement ID
-        """
-        
-        if not request.method == "POST":
-            pass#return self.create
-        obj = self._meta.queryset.get(pk=kwargs['pk'])
-       
-        obj.quantity = round(float(obj.quantity) - float(request.REQUEST.get('quantity')), 2)
-        obj.save()
-        
-        data = {}
-        for key in obj.__dict__:
-            if key[0] != "_":
-                data[key] = obj.__dict__[key]
-                
-        data['supplier'] = {'name': obj.supplier.name,
-                            'currency': obj.supplier.currency}
-        return self.create_response(request, data)
-    def type(self, request, **kwargs):
-        data = [s for s in Supply.objects.values_list('type', flat=True).distinct()]
-        return self.create_response(request, data)
-    
     def hydrate(self, bundle):
         """
         Implements the hydrate function 
         """
-        try:
-            bundle.obj.supplier = Supplier.objects.get(pk=bundle.data['supplier']['id'])
-        except KeyError:
-            pass
         
         try:
             if bundle.data['type'].lower() == 'custom':
@@ -165,11 +85,7 @@ class SupplyResource(ModelResource):
         except KeyError as e:
             logger.warn(e)
             
-        if bundle.request.user.has_perm('supplies.view_cost'):
-            if "unit_cost" in bundle.data:
-                bundle.obj.cost = bundle.data['unit_cost']
-            else:
-                bundle.obj.cost = bundle.data['cost']
+        
             
         #Adds the image
         if "image" in bundle.data:
@@ -236,26 +152,195 @@ class SupplyResource(ModelResource):
         Implements the dehydrate method to manipulate data
         before it is returned to the client
         """
+        #Replaces custom-type with type after supply creation
         if "custom-type" in bundle.data:
             bundle.data['type'] = bundle.obj.type
             del bundle.data['custom-type']
             
-        if not bundle.request.user.has_perm('supplies.view_cost'):
-            try:
-                del bundle.data['cost']
-            except KeyError:
-                pass
-        else:
-            bundle.data['unit_cost'] = bundle.data['cost']
-        
-        #Attack the image if it exists
-        if bundle.obj.image:
-            bundle.data['image'] = {'id': bundle.obj.image.id,
-                                    'url': bundle.obj.image.generate_url()}
-
+        bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]            
+           
         return bundle
     
+    def obj_create(self, bundle, **kwargs):
+        """
+        Creates the supply, and then respectively 
+        creates the intermediary product instance for the
+        many to many relationship with suppliers
+        
+        We must separate the suppliers data before calling the parent 
+        obj_create method
+        """
+        
+        suppliers = bundle.data['suppliers']
+        
+        #Initial supply creation
+        bundle = super(SupplyResource, self).obj_create(bundle, **kwargs)
+        
+        #Creates products to establish supplier/supply relationship
+        for supplier in suppliers:
+            product = Product(supply=bundle.obj, supplier=Supplier.objects.get(pk=supplier['id']))
+            product = self.hydrate_product(product=product, bundle=bundle, **supplier)
+            product.save()
+        
+        return bundle
     
+    def obj_update(self, bundle, **kwargs):
+        """
+        Updates the supply, the product relationship witht the supplier
+        
+        Extra suppliers before the parent obj_update method destroys it.
+        """
+        #Get suppliers data before erased by parent method
+        suppliers = bundle.data['suppliers']
+        
+        bundle = super(SupplyResource, self).obj_update(bundle, **kwargs)
+        
+        for supplier_data in suppliers:
+            supplier = Supplier.objects.get(pk=supplier_data['id'])
+            try:
+                product = Product.objects.get(supplier=supplier,
+                                              supply=bundle.obj)
+            except Product.DoesNotExist as e:
+                product = Product(supplier=supplier,
+                                  supply=bundle.obj)
+            product = self.hydrate_product(product, bundle=bundle, **supplier_data)
+            product.save()
+            
+        return bundle
+    
+    def hydrate_product(self, product=None, supply=None, supplier=None, bundle=None, **kwargs):
+        """
+        Takes the products and hydrates it with the appropriate variables
+        """
+        #Get product by supplier and supply if not provided
+        if not product:
+            product = Product.objects.get(supply=supply, supplier=supply)
+            
+        #Update all fields with value
+        for field in product._meta.get_all_field_names():
+            if field in kwargs and field not in ['id', 'supplier', 'supply']:
+                if field.lower() == 'cost':
+                    if bundle.request.user.has_perm('supplies.view_cost'):
+                        product.cost = kwargs[field]
+                else:
+                    setattr(product, field, kwargs[field])
+            
+        return product
+            
+    def create_product(self, supply, supplier, cost, upc=None):
+        """
+        Creates a product
+        """
+        if not isinstance(supply, Supply) and isinstance(supply, dict):
+            supply = Supply.objects.get(pk=supply['id'])
+        
+        if not isinstance(supplier, Supplier) and isinstance(supplier, dict):
+            supplier = Supplier.objects.get(pk=supplier['id'])
+        
+        product = Product(supply=supply, supplier=supplier, cost=cost, upc=upc)
+        product.save()
+        return product
+        
+    def process_image(self, request, **kwargs):
+        """
+        Receives an image and processes it
+        """
+        filename = save_upload(request)
+        
+        image = S3Object.create(filename,
+                        "supply/image/{0}.jpg".format(time.time()),
+                        "media.dellarobbiathailand.com")
+        #set Url, key and bucket
+        data = {'url': image.generate_url(),
+                "id": image.id,
+                'key': image.key,
+                'bucket': image.bucket}
+        
+        return self.create_response(request, data)
+
+    
+    def add(self, request, **kwargs):
+        """
+        Adds a quantity to the supply
+        
+        This method checks that the request method is post, and that
+        there is both a quantity and an acknowledgement ID
+        """
+        if not request.method == "POST":
+            pass#return self.create
+        obj = self._meta.queryset.get(pk=kwargs['pk'])
+       
+        obj.quantity = round(float(obj.quantity) + float(request.REQUEST.get('quantity')), 2)
+        obj.save()
+        
+        data = {}
+        for key in obj.__dict__:
+            if key[0] != "_":
+                data[key] = obj.__dict__[key]
+        
+        """  
+        data['supplier'] = {'name': obj.supplier.name,
+                            'currency': obj.supplier.currency}"""
+        return self.create_response(request, data)
+    
+    def subtract(self, request, **kwargs):
+        """
+        Subtracts a quantity to the supply
+        
+        This method checks that the request method is post, and that
+        there is both a quantity and an acknowledgement ID
+        """
+        
+        if not request.method == "POST":
+            pass#return self.create
+        obj = self._meta.queryset.get(pk=kwargs['pk'])
+       
+        obj.quantity = round(float(obj.quantity) - float(request.REQUEST.get('quantity')), 2)
+        obj.save()
+        
+        data = {}
+        for key in obj.__dict__:
+            if key[0] != "_":
+                data[key] = obj.__dict__[key]
+        """        
+        data['supplier'] = {'name': obj.supplier.name,
+                            'currency': obj.supplier.currency}"""
+        return self.create_response(request, data)
+    
+    def type(self, request, **kwargs):
+        data = [s for s in Supply.objects.values_list('type', flat=True).distinct()]
+        return self.create_response(request, data)
+    
+    def dehydrate_image(self, bundle):
+        """
+        Takes an intance of a S3 Image
+        and changes it to a dictionary of
+        information and returns the bundle
+        """
+        if bundle.obj.image:
+            return {'id': bundle.obj.image.id,
+                    'url': bundle.obj.image.generate_url()}
+        else:
+            return None
+    
+    def dehydrate_supplier(self, bundle, supplier):
+        """
+        Takes the supplier bundle, and retrivies the product. 
+        The cost, upc and reference is then combined with the
+        supplier data bundle
+        """
+        product = Product.objects.get(supplier=supplier,
+                                      supply=bundle.obj)
+        data = {'upc': product.upc,
+                'reference': product.reference,
+                'admin_only': product.admin_only,
+                'id': supplier.id,
+                'name': supplier.name}
+        if bundle.request.user.has_perm('supplies.view_cost'):
+            data['cost'] = product.cost
+            
+        return data
+            
 class FabricResource(SupplyResource):
     #supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier', full=True)
     class Meta:

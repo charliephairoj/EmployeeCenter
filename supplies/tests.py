@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Permission, ContentType
 from tastypie.test import ResourceTestCase
 
 from contacts.models import Supplier
-from supplies.models import Supply, Fabric, Foam, SupplyLog
+from supplies.models import Supply, Fabric, Foam, SupplyLog, Product
 from auth.models import S3Object
 
 
@@ -36,10 +36,22 @@ base_supply = {"description": "test",
                "notes": 'This is awesome',
                'width_units': 'm',
                'height_units': 'yd',
-               "reference": "A2234",
-               "cost": 100,
                "quantity": 10.8,
-               "supplier": {"id": 1}}
+               "suppliers": [{"id": 1,
+                              'cost': 100,
+                              'reference': 'A2234'}]}
+
+base_supply_with_id = {'id': 1, 
+                       'cost': 120,
+                       'upc': '123456',
+                       'type': 'wood',
+                       'width': 100,
+                       'depth': 200,
+                       'height': 300,
+                       'units': 'ml',
+                       'quantity': 10.8,
+                       'notes': 'This is awesome',
+                       'suppliers': [{'id': 2}]}
 
 base_fabric = base_supply.copy()
 base_fabric.update({"pattern": "Max",
@@ -79,8 +91,15 @@ class SupplyResourceTestCase(ResourceTestCase):
         
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()
+        self.supplier2 = Supplier(**base_supplier)
+        self.supplier2.save()
         self.supply = Supply.create(**base_supply)
         self.assertIsNotNone(self.supply.pk)
+        self.product = Product(supplier=self.supplier, 
+                               supply=self.supply,
+                               cost=base_supply['suppliers'][0]['cost'],
+                               reference=base_supply['suppliers'][0]['reference'])
+        self.product.save()
         self.supply2 = Supply.create(**base_supply)
         self.assertIsNotNone(self.supply.pk)
         
@@ -123,11 +142,17 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertHttpOK(resp)
         
         obj = self.deserialize(resp)
-        self.assertEqual(Decimal(obj['cost']), Decimal('100'))
         self.assertIn('description', obj)
         self.assertEqual(obj['description'], 'test')
         self.assertIn('type', obj)
         self.assertEqual(obj['type'], 'wood')
+        self.assertIn('suppliers', obj)
+        self.assertTrue(isinstance(obj['suppliers'], list), 'The suppliers should be a list')
+        supplier = obj['suppliers'][0]
+        self.assertEqual(supplier['id'], 1)
+        self.assertEqual(int(supplier['cost']), 100)
+        self.assertEqual(supplier['reference'], 'A2234')
+        
         
     def test_get_without_price(self):
         """
@@ -143,7 +168,8 @@ class SupplyResourceTestCase(ResourceTestCase):
         
         #Tests the data returned
         obj = self.deserialize(resp)
-        self.assertNotIn("cost", obj)
+        supplier = obj['suppliers'][0]
+        self.assertNotIn("cost", supplier)
     
     def test_get_types(self):
         """
@@ -171,24 +197,26 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(int(obj['width']), 100)
         self.assertEqual(int(obj['depth']), 200)
         self.assertEqual(int(obj['height']), 300)
-        self.assertEqual(obj['reference'], 'A2234')
         self.assertEqual(obj['description'], 'test')
-        self.assertEqual(int(obj['cost']), 100)
         self.assertEqual(obj['height_units'], 'yd')
         self.assertEqual(obj['width_units'], 'm')
         self.assertEqual(obj['notes'], 'This is awesome')
         self.assertIn('type', obj)
         self.assertEqual(obj['type'], 'wood')
-        
+        #Tests supplier data
+        self.assertIn('suppliers', obj)
+        self.assertTrue(isinstance(obj['suppliers'], list))
+        supplier = obj['suppliers'][0]
+        self.assertEqual(supplier['id'], 1)
+        self.assertEqual(supplier['cost'], '100')
+        self.assertEqual(supplier['reference'], 'A2234')
         #TEsts the object created
         supply = Supply.objects.order_by('-id').all()[0]
         self.assertEqual(supply.id, 3)
         self.assertEqual(supply.width, 100)
         self.assertEqual(supply.depth, 200)
         self.assertEqual(supply.height, 300)
-        self.assertEqual(supply.reference, 'A2234')
         self.assertEqual(supply.description, 'test')
-        self.assertEqual(supply.cost, 100)
         self.assertEqual(supply.height_units, 'yd')
         self.assertEqual(supply.width_units, 'm')
         self.assertEqual(supply.notes, 'This is awesome')
@@ -196,6 +224,37 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(supply.type, 'wood')
         self.assertIsNotNone(supply.suppliers)
         self.assertEqual(supply.suppliers.count(), 1)
+        supplier = supply.suppliers.all()[0]
+        self.assertEqual(supplier.id, 1)
+        product = Product.objects.get(supplier=supplier, supply=supply)
+        self.assertEqual(product.cost, 100)
+        self.assertEqual(product.reference, 'A2234')
+        
+    def test_posting_with_supply_id(self):
+        """
+        Tests creating a new resource via POST where
+        the supply is already created and has a new id
+        """
+        resp = self.api_client.post('/api/v1/supply/', data=base_supply_with_id, 
+                                    format='json')
+        self.assertHttpCreated(resp)
+        
+        #Verify response properties
+        supply_obj = self.deserialize(resp)
+        self.assertEqual(supply_obj['id'], 1, "The supply id should equal 1")
+        self.assertIn('suppliers', supply_obj)
+        self.assertTrue(isinstance(supply_obj['suppliers'], list), "Suppliers should be a list")
+        self.assertEqual(supply_obj['type'], 'wood')
+        self.assertEqual(supply_obj['width'], '100')
+        self.assertEqual(supply_obj['depth'], '200')
+        self.assertEqual(supply_obj['height'], '300')
+        self.assertEqual(supply_obj['units'], 'ml')
+        self.assertEqual(supply_obj['notes'], 'This is awesome')
+        self.assertEqual(supply_obj['quantity'], 10.8)
+        s_data = supply_obj['suppliers'][0]
+        self.assertEqual(s_data['id'], 1)
+        self.assertEqual(s_data['cost'], '100')
+        self.assertEqual(s_data['reference'], 'A2234')
         
     def test_posting_with_custom_type(self):
         """
@@ -238,6 +297,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         modified_data = base_supply.copy()
         modified_data['description'] = 'new'
         modified_data['type'] = 'Glue'
+        modified_data['suppliers'].append({'id':2, 'cost':110, 'upc':'1122', 'reference':'AHH'})
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
@@ -250,6 +310,17 @@ class SupplyResourceTestCase(ResourceTestCase):
         #Tests the returned data
         obj = self.deserialize(resp)
         self.assertEqual(obj['type'], 'Glue')
+        self.assertIn('suppliers', obj)
+        self.assertTrue(isinstance(obj['suppliers'], list))
+        self.assertEqual(len(obj['suppliers']), 2)
+        supplier1 = obj['suppliers'][0]
+        self.assertEqual(supplier1['id'], 1)
+        self.assertEqual(supplier1['cost'], '100')
+        supplier2 = obj['suppliers'][1]
+        self.assertEqual(supplier2['id'], 2)
+        self.assertEqual(supplier2['cost'], '110')
+        self.assertEqual(supplier2['upc'], '1122')
+        self.assertEqual(supplier2['reference'], 'AHH')
         
         #Tests the resource in the database
         supply = Supply.objects.get(pk=1)
@@ -415,7 +486,7 @@ class FabricResourceTestCase(ResourceTestCase):
         self.assertEqual(int(obj['width']), 100)
         self.assertEqual(int(obj['depth']), 0   )
         self.assertEqual(int(obj['height']), 300)
-        self.assertEqual(obj['reference'], 'A2234')
+        #self.assertEqual(obj['reference'], 'A2234')
         self.assertEqual(obj['description'], 'test')
         self.assertEqual(int(obj['cost']), 100)
         

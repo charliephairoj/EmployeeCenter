@@ -24,7 +24,8 @@ class SupplyValidation(Validation):
             if bundle.data['description'].strip() == '':
                 errors['description'] = "The description cannot be an empty string"
         except KeyError:
-            errors['description'] = "Expecting a description for this supply"
+            if "id" not in bundle.data:
+                errors['description'] = "Expecting a description for this supply"
             
         #Validates that the dimensions are present and an integer
         dimensions = []#'width']#, 'height', 'depth']

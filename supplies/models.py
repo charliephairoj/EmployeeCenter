@@ -14,11 +14,11 @@ from auth.models import Log, S3Object
 
 #Creates the main supplies class
 class Supply(models.Model):
-    supplier = models.ForeignKey(Supplier)
+    suppliers = models.ManyToManyField(Supplier, through='Product', related_name='supplies')
     description = models.TextField(null=True)
     description_th = models.TextField(null=True)
     type = models.CharField(max_length=20, null=True)
-    cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    #cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     width = models.DecimalField(db_column='width', decimal_places=2, max_digits=12, default=0)
     width_units = models.CharField(max_length=4, default="mm")
     depth = models.DecimalField(db_column='depth', decimal_places=2, max_digits=12, default=0)
@@ -27,8 +27,8 @@ class Supply(models.Model):
     height_units = models.CharField(max_length=4, default="mm")
     units = models.CharField(max_length=20, default='mm')
     purchasing_units = models.CharField(max_length=10, default="pc")
-    discount = models.IntegerField(default=0)
-    reference = models.TextField()
+    #discount = models.IntegerField(default=0)
+    #reference = models.TextField()
     notes = models.TextField(null=True)
     quantity = models.FloatField(default=0)
     quantity_units = models.TextField(default="mm")
@@ -36,7 +36,7 @@ class Supply(models.Model):
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
-    upc = models.TextField(default='')
+    #upc = models.TextField(default='')
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
@@ -65,17 +65,10 @@ class Supply(models.Model):
             supply.quantity = 0
 
         try:
-            supply.cost = kwargs["cost"]
+            supplier_id = kwargs['supplier']['id'] if 'supplier' in kwargs else kwargs['suppliers'][0]['id']
+            supply.supplier = Supplier.objects.get(pk=supplier_id)
         except KeyError:
-            try:
-                supply.cost = kwargs["unit_cost"]
-            except:
-                raise AttributeError("Missing supply's cost.")
-
-        try:
-            supply.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
-        except KeyError:
-            raise AttributeError("Missing supplier")
+            raise AttributeError("Supplier not found.")
         except Supplier.DoesNotExist:
             raise AttributeError("Supplier not found.")
 
@@ -127,7 +120,8 @@ class Product(models.Model):
     supply = models.ForeignKey(Supply)
     upc = models.TextField(null=True)
     cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-     
+    reference = models.TextField(null=True)
+    admin_only = models.BooleanField(default=False)
 
 
 class Location(models.Model):
