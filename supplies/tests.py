@@ -39,7 +39,8 @@ base_supply = {"description": "test",
                "quantity": 10.8,
                "suppliers": [{"id": 1,
                               'cost': 100,
-                              'reference': 'A2234'}]}
+                              'reference': 'A2234',
+                              'purchasing_units': 'yd'}]}
 
 base_supply_with_id = {'id': 1, 
                        'cost': 120,
@@ -51,9 +52,13 @@ base_supply_with_id = {'id': 1,
                        'units': 'ml',
                        'quantity': 10.8,
                        'notes': 'This is awesome',
-                       'suppliers': [{'id': 2}]}
+                       'suppliers': [{'id': 2, 
+                                      'purchasing_units': 'yd',
+                                      'cost': 120}]}
 
 base_fabric = base_supply.copy()
+base_fabric['supplier'] = base_fabric['suppliers'][0]
+del base_fabric['suppliers']
 base_fabric.update({"pattern": "Max",
                     "color": "Hot Pink"})
 base_fabric['purchasing_units'] = 'm'
@@ -98,7 +103,8 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.product = Product(supplier=self.supplier, 
                                supply=self.supply,
                                cost=base_supply['suppliers'][0]['cost'],
-                               reference=base_supply['suppliers'][0]['reference'])
+                               reference=base_supply['suppliers'][0]['reference'],
+                               purchasing_units=base_supply['suppliers'][0]['purchasing_units'])
         self.product.save()
         self.supply2 = Supply.create(**base_supply)
         self.assertIsNotNone(self.supply.pk)
@@ -133,6 +139,13 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertIn('objects', resp_obj)
         self.assertEqual(len(resp_obj['objects']), 2)
     
+    def test_get_list_with_supplier_id(self):
+        """
+        Tests getting a filter list of supplies 
+        """
+        resp = self.api_client.get('/api/v1/supply?supplier_id=1')
+        self.assertHttpOK(resp)
+        
     def test_get(self):
         """
         Tests getting a supply that doesn't have the price 
@@ -146,12 +159,14 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(obj['description'], 'test')
         self.assertIn('type', obj)
         self.assertEqual(obj['type'], 'wood')
+        self.assertEqual(obj['units'], 'ml')
         self.assertIn('suppliers', obj)
         self.assertTrue(isinstance(obj['suppliers'], list), 'The suppliers should be a list')
         supplier = obj['suppliers'][0]
         self.assertEqual(supplier['id'], 1)
         self.assertEqual(int(supplier['cost']), 100)
         self.assertEqual(supplier['reference'], 'A2234')
+        self.assertEqual(supplier['purchasing_units'], 'yd')
         
         
     def test_get_without_price(self):
@@ -255,6 +270,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(s_data['id'], 1)
         self.assertEqual(s_data['cost'], '100')
         self.assertEqual(s_data['reference'], 'A2234')
+        self.assertEqual(s_data['purchasing_units'], 'yd')
         
     def test_posting_with_custom_type(self):
         """
@@ -297,7 +313,11 @@ class SupplyResourceTestCase(ResourceTestCase):
         modified_data = base_supply.copy()
         modified_data['description'] = 'new'
         modified_data['type'] = 'Glue'
-        modified_data['suppliers'].append({'id':2, 'cost':110, 'upc':'1122', 'reference':'AHH'})
+        modified_data['suppliers'].append({'id':2, 
+                                           'cost':110, 
+                                           'upc':'1122', 
+                                           'reference':'AHH',
+                                           'purchasing_units': 'mm'})
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
@@ -316,11 +336,13 @@ class SupplyResourceTestCase(ResourceTestCase):
         supplier1 = obj['suppliers'][0]
         self.assertEqual(supplier1['id'], 1)
         self.assertEqual(supplier1['cost'], '100')
+        self.assertEqual(supplier1['purchasing_units'], 'yd')
         supplier2 = obj['suppliers'][1]
         self.assertEqual(supplier2['id'], 2)
         self.assertEqual(supplier2['cost'], '110')
         self.assertEqual(supplier2['upc'], '1122')
         self.assertEqual(supplier2['reference'], 'AHH')
+        self.assertEqual(supplier2['purchasing_units'], 'mm')
         
         #Tests the resource in the database
         supply = Supply.objects.get(pk=1)
@@ -390,7 +412,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         obj = self.deserialize(resp)
         self.assertEqual(float(obj['quantity']), float('8'))
         
-@unittest.skip("Testing supplies only...")
+#@unittest.skip("Testing supplies only...")
 class FabricResourceTestCase(ResourceTestCase):
     
     def setUp(self):
@@ -410,7 +432,13 @@ class FabricResourceTestCase(ResourceTestCase):
         self.assertIsNotNone(self.supply.pk)
         self.supply2 = Fabric.create(**base_fabric)
         self.assertIsNotNone(self.supply.pk)
-    
+        self.product1 = Product(supply=self.supply, supplier=self.supplier,
+                                cost=100, purchasing_units='m')
+        self.product1.save()
+        self.product2 = Product(supply=self.supply2, supplier=self.supplier,
+                                cost=100, purchasing_units='m')
+        self.product2.save()
+        
     def create_user(self):
         self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
         self.ct = ContentType(app_label='supplies')
@@ -506,7 +534,7 @@ class FabricResourceTestCase(ResourceTestCase):
 
         #Tests the returned data
         obj = self.deserialize(resp)
-        self.assertEqual(float(obj['cost']), float('111'))
+        self.assertEqual(float(obj['cost']), float('100'))
         
     @unittest.skip("no longer using this method to change quantity")
     def test_put_add_quantity(self):

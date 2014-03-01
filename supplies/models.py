@@ -26,7 +26,7 @@ class Supply(models.Model):
     height = models.DecimalField(db_column='height', decimal_places=2, max_digits=12, default=0)
     height_units = models.CharField(max_length=4, default="mm")
     units = models.CharField(max_length=20, default='mm')
-    purchasing_units = models.CharField(max_length=10, default="pc")
+    #purchasing_units = models.CharField(max_length=10, default="pc")
     #discount = models.IntegerField(default=0)
     #reference = models.TextField()
     notes = models.TextField(null=True)
@@ -43,6 +43,36 @@ class Supply(models.Model):
                        ('view_cost', 'Can view the cost per unit'),
                        ('view_props', 'Can view props'))
 
+    @property
+    def cost(self):
+        try:
+            return self._get_product(self.supplier).cost
+        except AttributeError as e:
+            print e
+            raise ValueError("Please set the supplier for this supply in order to get a cost")
+    
+    @property
+    def reference(self):
+        try:
+            return self._get_product(self.supplier).reference
+        except AttributeError as e:
+            print e
+            raise ValueError("Please set the supplier for this supply in order to get a reference")
+        
+    @property
+    def upc(self):
+        try:
+            return self._get_product(self.supplier).upc
+        except AttributeError:
+            raise ValueError("Please set the supplier for this supply in order to get a upc")
+        
+    @property
+    def purchasing_units(self):
+        try:
+            return self._get_product(self.supplier).purchasing_units
+        except AttributeError:
+            raise ValueError("Please set the supplier for this supply in order to get the purchasing units")
+        
     @classmethod
     def create(cls, user=None, commit=True, **kwargs):
         """
@@ -84,7 +114,7 @@ class Supply(models.Model):
                 try:
                     supply.image = S3Object.objects.get(pk=kwargs["image"]["id"])
                 except KeyError:
-                    raise IntegrityError("Missing image's ID")
+                    raise ValueError("Missing image's ID")
                 except S3Object.DoesNotExist:
                     raise TypeError("Image does not exist")
         
@@ -102,10 +132,13 @@ class Supply(models.Model):
         if "quantity_units" in kwargs:
             supply.quantity_units = kwargs["quantity_units"]
         if "units" in kwargs:
-            supply.purchasing_units = kwargs["units"]
+            supply.units = kwargs["units"]
+            
+        """
         elif "purchasing_units" in kwargs:
             supply.purchasing_units = kwargs["purchasing_units"]
-            
+        """
+        
         if "notes" in kwargs:
             supply.notes = kwargs["notes"]
 
@@ -114,7 +147,17 @@ class Supply(models.Model):
 
         return supply
 
-   
+    def _get_product(self, supplier):
+        """
+        Returns the corresponding product
+        based on the supplier
+        """
+        if not hasattr(self, 'product'):
+            self.product = Product.objects.get(supply=self, supplier=supplier)
+
+        return self.product
+    
+     
 class Product(models.Model):
     supplier = models.ForeignKey(Supplier)
     supply = models.ForeignKey(Supply)
@@ -122,6 +165,7 @@ class Product(models.Model):
     cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     reference = models.TextField(null=True)
     admin_only = models.BooleanField(default=False)
+    purchasing_units = models.TextField(default='pc')
 
 
 class Location(models.Model):
@@ -179,7 +223,7 @@ class Fabric(Supply):
         
         obj.description = "Pattern: {0}, Col: {1}".format(obj.pattern, obj.color)
         obj.units = 'm'
-        obj.purchasing_units = 'm'
+        #obj.purchasing_units = 'm'
 
         obj.save()
         return obj

@@ -40,20 +40,22 @@ class SupplyResource(ModelResource):
     def apply_filters(self, request, applicable_filters):
         obj_list = super(SupplyResource, self).apply_filters(request, applicable_filters)
         
+        obj_list = obj_list.exclude(type='prop')
+        obj_list = obj_list.exclude(type='Prop')
         
         if request.GET.has_key('q'):
             query = request.GET.get('q')
-            obj_list = obj_list.filter(Q(supplier__name__icontains=query) | 
+            obj_list = obj_list.filter(Q(product__supplier__name__icontains=query) | 
                                        Q(description__icontains=query))
         
         if request.GET.has_key('supplier_id'):
             s_id = request.GET.get('supplier_id')
-            obj_list = obj_list.filter(supplier_id=s_id)
+            obj_list = obj_list.filter(product__supplier_id=s_id)
         
         if request.GET.has_key('upc'):
             upc_id = request.GET.get('upc')
             print upc_id
-            obj_list = obj_list.filter(upc=upc_id)
+            obj_list = obj_list.filter(product__upc=upc_id).distinct('product__upc')
         
         if "Administrator" in [g.name for g in request.user.groups.all()]:
             logger.debug('An admin')
@@ -74,6 +76,19 @@ class SupplyResource(ModelResource):
         Implements the hydrate function 
         """
         
+        #Takes supplier and add to supplier list in data
+        if "supplier" in bundle.data:
+            try:
+                suppliers = bundle.data['suppliers']
+            except KeyError:
+                bundle.data['suppliers'] = []
+                suppliers = []
+            
+            if bundle.data['supplier']['id'] not in [s['id'] for s in suppliers]:
+                bundle.data['suppliers'].append(bundle.data['supplier'])
+                del bundle.data['supplier']
+        
+        #Adds new types
         try:
             if bundle.data['type'].lower() == 'custom':
                 bundle.obj.type = bundle.data['custom-type']
@@ -156,9 +171,24 @@ class SupplyResource(ModelResource):
         if "custom-type" in bundle.data:
             bundle.data['type'] = bundle.obj.type
             del bundle.data['custom-type']
+        
+        #Dehydrates the suppliers information if 
+        #requesting a single resource, if creating a new resource
+        #or updating a single resource
+        if ("id" in bundle.data and bundle.request.method == 'GET') or bundle.request.method == 'POST' or bundle.request.method == 'PUT':
+            bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]            
+        
+        #Merging product data from a supplier with the resource
+        #if gettings supplies for a single supplier
+        if bundle.request.GET.has_key('supplier_id'):
             
-        bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]            
-           
+            #Set the supply's supplier to using 
+            #objects internals to get info
+            bundle.obj.supplier = Supplier.objects.get(pk=bundle.request.GET.get('supplier_id'))
+            bundle.data.update({'purchasing_units': bundle.obj.purchasing_units,
+                                'cost': bundle.obj.cost,
+                                'reference': bundle.obj.reference,
+                                'upc': bundle.obj.upc})
         return bundle
     
     def obj_create(self, bundle, **kwargs):
@@ -171,14 +201,22 @@ class SupplyResource(ModelResource):
         obj_create method
         """
         
-        suppliers = bundle.data['suppliers']
+        try:
+            suppliers = bundle.data['suppliers']
+        except KeyError:
+            suppliers = [bundle.data['supplier']]
         
         #Initial supply creation
         bundle = super(SupplyResource, self).obj_create(bundle, **kwargs)
         
         #Creates products to establish supplier/supply relationship
         for supplier in suppliers:
-            product = Product(supply=bundle.obj, supplier=Supplier.objects.get(pk=supplier['id']))
+            #Gets or creates a new product
+            try:
+                product = Product(supply=bundle.obj, supplier=Supplier.objects.get(pk=supplier['id']))
+            except Product.DoesNotExist as e:
+                product = Product(supplier=Supplier.objects.get(pk=supplier['id']),
+                                  supply=bundle.obj)
             product = self.hydrate_product(product=product, bundle=bundle, **supplier)
             product.save()
         
@@ -335,6 +373,7 @@ class SupplyResource(ModelResource):
                 'reference': product.reference,
                 'admin_only': product.admin_only,
                 'id': supplier.id,
+                'purchasing_units': product.purchasing_units,
                 'name': supplier.name}
         if bundle.request.user.has_perm('supplies.view_cost'):
             data['cost'] = product.cost
@@ -356,12 +395,28 @@ class FabricResource(SupplyResource):
         
         if request.GET.has_key('q'):
             query = request.GET.get('q')
-            obj_list = obj_list.filter(Q(supplier__name__icontains=query) | 
+            obj_list = obj_list.filter(Q(product__supplier__name__icontains=query) | 
                                        Q(description__icontains=query) |
                                        Q(pattern__icontains=query) |
                                        Q(color__icontains=query))
         return obj_list
     
+    def dehydrate(self, bundle):
+        """
+        Prepare the bundle for return to the client
+        """
+        bundle = super(FabricResource, self).dehydrate(bundle)
+        bundle.data['supplier'] = bundle.data['suppliers'][0]
+
+        try:
+            bundle.data.update({'cost': bundle.data['supplier']['cost']})
+        except KeyError:
+            pass
+        
+            bundle.data.update({'purchasing_units': bundle.data['supplier']['purchasing_units']})
+        del bundle.data['suppliers']
+        
+        return bundle
 
     
     

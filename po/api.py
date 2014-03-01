@@ -90,6 +90,9 @@ class PurchaseOrderResource(ModelResource):
             raise 
         #Create the items 
         self.items = [Item.create(**item_data) for item_data in bundle.data['items']]
+        
+        for item in self.items:
+            item.supplier = bundle.obj.supplier
        
         bundle = self.save(bundle)
         
