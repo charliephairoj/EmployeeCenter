@@ -189,6 +189,13 @@ class SupplyResource(ModelResource):
                                 'cost': bundle.obj.cost,
                                 'reference': bundle.obj.reference,
                                 'upc': bundle.obj.upc})
+        if bundle.obj.image:
+            try:
+                bundle.data['image'] = {'id': bundle.obj.image.id,
+                                        'url': bundle.obj.image.generate_url(3600)}
+            except (AttributeError, KeyError) as e:
+                logger.warn(e)
+                
         return bundle
     
     def obj_create(self, bundle, **kwargs):

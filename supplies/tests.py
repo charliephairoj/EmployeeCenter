@@ -318,6 +318,7 @@ class SupplyResourceTestCase(ResourceTestCase):
                                            'upc':'1122', 
                                            'reference':'AHH',
                                            'purchasing_units': 'mm'})
+        modified_data['suppliers'][0]['upc'] = 'testUPC'
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
@@ -337,6 +338,7 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(supplier1['id'], 1)
         self.assertEqual(supplier1['cost'], '100')
         self.assertEqual(supplier1['purchasing_units'], 'yd')
+        self.assertEqual(supplier1['upc'], 'testUPC')
         supplier2 = obj['suppliers'][1]
         self.assertEqual(supplier2['id'], 2)
         self.assertEqual(supplier2['cost'], '110')
