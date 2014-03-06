@@ -13,7 +13,7 @@ from tastypie.test import ResourceTestCase
 
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
-from supplies.models import Supply, Fabric
+from supplies.models import Supply, Fabric, Product
 
 
 logger = logging.getLogger(__name__)
@@ -98,6 +98,8 @@ class PurchaseOrderTest(ResourceTestCase):
         self.supply = Fabric.create(**base_fabric)
         #self.supply.units = "m^2"
         self.supply.save()
+        self.product = Product(supply=self.supply, supplier=self.supplier)
+        self.product.save()
         
         
         self.po = PurchaseOrder()
@@ -107,7 +109,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.po.save()
         #self.po.create_and_upload_pdf()
         
-        self.item = Item.create(**base_purchase_order['items'][0])
+        self.item = Item.create(supplier=self.supplier, **base_purchase_order['items'][0])
         self.item.purchase_order = self.po
         self.item.save()
         

@@ -114,8 +114,11 @@ class PurchaseOrder(models.Model):
         """
         Creates a pdf and returns the filename
         """
+        items = self.items.all()
+        for item in items:
+            item.supply.supplier = item.purchase_order.supplier
         #Create and upload pdf 
-        pdf = PurchaseOrderPDF(po=self, items=self.items.all(),
+        pdf = PurchaseOrderPDF(po=self, items=items,
                                supplier=self.supplier)
         filename = pdf.create()
         return filename
@@ -179,13 +182,14 @@ class Item(models.Model):
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
         
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, supplier=None, **kwargs):
         item = cls()
+        logger.debug(supplier)
         try:
             item.supply = Supply.objects.get(id=kwargs['supply']["id"])
         except KeyError:
             item.supply = Supply.objects.get(id=kwargs['id'])
-            
+            item.supply.supplier = supplier
             item.description = item.supply.description
             item.unit_cost = item.supply.cost
             item.discount = item.supply.discount

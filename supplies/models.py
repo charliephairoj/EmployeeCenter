@@ -27,7 +27,7 @@ class Supply(models.Model):
     height_units = models.CharField(max_length=4, default="mm")
     units = models.CharField(max_length=20, default='mm')
     #purchasing_units = models.CharField(max_length=10, default="pc")
-    #discount = models.IntegerField(default=0)
+    discount = models.IntegerField(default=0)
     #reference = models.TextField()
     notes = models.TextField(null=True)
     quantity = models.FloatField(default=0)
@@ -86,8 +86,10 @@ class Supply(models.Model):
         if "height" in kwargs:
             supply.height = kwargs["height"]
 
-        if "reference" in kwargs:
+        try:
             supply.reference = kwargs["reference"]
+        except Exception as e:
+            pass
       
         try:
             supply.quantity = Decimal(str(kwargs["quantity"]))
@@ -152,6 +154,7 @@ class Supply(models.Model):
         Returns the corresponding product
         based on the supplier
         """
+        print self.id, supplier.id
         if not hasattr(self, 'product'):
             self.product = Product.objects.get(supply=self, supplier=supplier)
 

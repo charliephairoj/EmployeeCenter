@@ -89,7 +89,7 @@ class PurchaseOrderResource(ModelResource):
             logger.error("The supplier ID#{0} no longer exists.".format(bundle.data["supplier"]["id"]))
             raise 
         #Create the items 
-        self.items = [Item.create(**item_data) for item_data in bundle.data['items']]
+        self.items = [Item.create(supplier=bundle.obj.supplier, **item_data) for item_data in bundle.data['items']]
         
         for item in self.items:
             item.supplier = bundle.obj.supplier
