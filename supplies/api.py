@@ -5,6 +5,7 @@ from decimal import Decimal
 import time
 import logging
 import json
+import re
 
 from django.db.models import Q
 from django.conf.urls import url
@@ -59,7 +60,7 @@ class SupplyResource(ModelResource):
             obj_list = obj_list.filter(product__upc=upc_id).distinct('product__upc')
         
         if "Administrator" in [g.name for g in request.user.groups.all()]:
-            logger.debug('An admin')
+            pass#logger.debug('An admin')
         else:
             obj_list = obj_list.filter(admin_only=False)
     
@@ -176,7 +177,7 @@ class SupplyResource(ModelResource):
         #Dehydrates the suppliers information if 
         #requesting a single resource, if creating a new resource
         #or updating a single resource
-        if ("id" in bundle.data and bundle.request.method == 'GET') or bundle.request.method == 'POST' or bundle.request.method == 'PUT':
+        if re.search("api/v1/supply/(w+\-)?\d+", bundle.request.path) or bundle.request.method == 'POST' or bundle.request.method == 'PUT':
             bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]
 
             if not bundle.obj.sticker:
@@ -187,6 +188,7 @@ class SupplyResource(ModelResource):
                                            'document.dellarobbiathailand.com', 
                                            encrypt_key=True)
                 bundle.obj.sticker = stickers
+                bundle.obj.save()
                 
             bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
 
