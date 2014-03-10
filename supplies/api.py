@@ -18,6 +18,7 @@ from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
 from utilities.http import save_upload
 from auth.models import S3Object
+from media.stickers import StickerPage
 
 
 logger = logging.getLogger(__name__)
@@ -176,7 +177,19 @@ class SupplyResource(ModelResource):
         #requesting a single resource, if creating a new resource
         #or updating a single resource
         if ("id" in bundle.data and bundle.request.method == 'GET') or bundle.request.method == 'POST' or bundle.request.method == 'PUT':
-            bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]            
+            bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]
+
+            if not bundle.obj.sticker:
+                sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id))
+                filename = sticker_page.create("DRS-{0}.pdf".format(bundle.obj.id))    
+                stickers = S3Object.create(filename, 
+                                           "supplies/stickers/{0}".format(filename), 
+                                           'document.dellarobbiathailand.com', 
+                                           encrypt_key=True)
+                bundle.obj.sticker = stickers
+                
+            bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
+
         
         #Merging product data from a supplier with the resource
         #if gettings supplies for a single supplier

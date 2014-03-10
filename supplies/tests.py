@@ -167,6 +167,10 @@ class SupplyResourceTestCase(ResourceTestCase):
         self.assertEqual(int(supplier['cost']), 100)
         self.assertEqual(supplier['reference'], 'A2234')
         self.assertEqual(supplier['purchasing_units'], 'yd')
+        #Tests that the sticker is in the data returned
+        self.assertIn('sticker', obj, "There should be a sticker key in the data returned")
+        self.assertIn('url', obj['sticker'], "There should be a url key in the data['sticker']")
+        self.assertIsNotNone(obj['sticker']['url'], "The sticker's url should not be none")
         
         
     def test_get_without_price(self):

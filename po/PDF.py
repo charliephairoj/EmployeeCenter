@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
-"""Collection of the classes that create pdf files
+"""
+Collection of the classes that create pdf files
 for an Acnowledgement. The Acknowledgement creates
 an order confirmation to be used for the office and
 for customers. The production pdf is created to be
 use by the production team and the office overseeing
-production"""
+production
+"""
 
 from decimal import Decimal
 import logging

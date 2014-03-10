@@ -34,6 +34,7 @@ class Supply(models.Model):
     quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     image = models.ForeignKey(S3Object, null=True)
+    sticker = models.ForeignKey(S3Object, null=True, related_name="supply_sticker")
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
     #upc = models.TextField(default='')
