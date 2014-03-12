@@ -182,7 +182,7 @@ class SupplyResource(ModelResource):
 
             if not bundle.obj.sticker:
                 sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id))
-                filename = sticker_page.create("DRS-{0}.pdf".format(bundle.obj.id))    
+                filename = sticker_page.create("DRS-{0}".format(bundle.obj.id))    
                 stickers = S3Object.create(filename, 
                                            "supplies/stickers/{0}".format(filename), 
                                            'document.dellarobbiathailand.com', 
@@ -191,7 +191,10 @@ class SupplyResource(ModelResource):
                 bundle.obj.save()
                 
             bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
-
+        #If getting a list
+        else:
+            bundle.data['suppliers'] = [{'name': supplier.name,
+                                         'id': supplier.id} for supplier in bundle.obj.suppliers.all()]
         
         #Merging product data from a supplier with the resource
         #if gettings supplies for a single supplier
@@ -428,14 +431,19 @@ class FabricResource(SupplyResource):
         Prepare the bundle for return to the client
         """
         bundle = super(FabricResource, self).dehydrate(bundle)
-        bundle.data['supplier'] = bundle.data['suppliers'][0]
+        if "suppliers" in bundle.data:
+            bundle.data['supplier'] = bundle.data['suppliers'][0]
 
         try:
             bundle.data.update({'cost': bundle.data['supplier']['cost']})
         except KeyError:
             pass
         
+        try:
             bundle.data.update({'purchasing_units': bundle.data['supplier']['purchasing_units']})
+        except KeyError:
+            pass
+        
         del bundle.data['suppliers']
         
         return bundle
