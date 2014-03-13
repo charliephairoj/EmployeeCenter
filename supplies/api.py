@@ -181,7 +181,8 @@ class SupplyResource(ModelResource):
             bundle.data['suppliers'] = [self.dehydrate_supplier(bundle, supplier) for supplier in bundle.obj.suppliers.all()]
 
             if not bundle.obj.sticker:
-                sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id))
+                sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id), 
+                                           description=bundle.obj.description)
                 filename = sticker_page.create("DRS-{0}".format(bundle.obj.id))    
                 stickers = S3Object.create(filename, 
                                            "supplies/stickers/{0}".format(filename), 

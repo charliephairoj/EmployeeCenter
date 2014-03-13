@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 """
 PDF pages for stickers
 """
@@ -22,6 +24,10 @@ from reportlab.graphics.barcode import code128
 
 
 logger = logging.getLogger(__name__)
+
+pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
+pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
+
 
 class StickerDocTemplate(BaseDocTemplate):
     def __init__(self, filename, page_size=(157 * mm, 212 * mm), **kwargs):
@@ -59,16 +65,17 @@ class StickerPage(object):
     
     sticker_width = 50 * mm
     sticker_height = 19 * mm
-    barcode_height = 14 * mm
+    barcode_height = 10 * mm
     
-    def __init__(self, code=None, codes=None, *args, **kwargs):
+    def __init__(self, code=None, description=None, codes=None, *args, **kwargs):
         """
         Constructor
         """
-        super(StickerPage, self).__init__(*args, **kwargs)
+        super(StickerPage, self).__init__()
         
         #Set attribute
         self.code = code
+        self.description = description
         self.codes = codes
         
     def create(self, filename):
@@ -118,31 +125,58 @@ class StickerPage(object):
         """
         Creates the contents for a single cell
         """
+        if isinstance(code, tuple):
+            code, description = code
+        else:
+            code, description = code, code
         barcode = code128.Code128(code, barHeight=self.barcode_height)
         data = [[barcode],
-                [code]]
+                [self._format_description(description)]]
         
-        table = Table(data, colWidths=(50 * mm), rowHeights=(15*mm, 4 * mm))
+        table = Table(data, colWidths=(50 * mm), rowHeights=(self.barcode_height - 1, 8 * mm))
         style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 3 * mm),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                             ('TOPPADDING', (0, 0), (-1, 0), 1 * mm),
                             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                            ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('VALIGN', (0, -1), (-1, -1), 'MIDDLE')])
         table.setStyle(style)
         return table
         
     def _get_codes(self):
+        """
+        Retrieves the codes based on if a single
+        value is provided of if an array of values 
+        is provide. 
+        
+        If a single value is provided, it also checks if a description is provide
+        """
         #Sets the codes use
-        logger.debug(self.codes)
-        logger.debug(self.code)
         if self.codes and isinstance(self.codes, list):
             codes = self.codes
         elif self.code and isinstance(self.code, str):
-            codes = [self.code for i in range(30)]
+            codes = [(self.code, self.description) if self.description else
+                     self.code for i in range(30)]
         else:
             raise ValueError('Expecting some codes here')
         
         return codes
+    
+    def _format_description(self, description):
+        """
+        Formats the description into a paragraph
+        with the paragraph style
+        """
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               leading=12,
+                               wordWrap='CJK',
+                               allowWidows=1,
+                               alignment=1,
+                               allowOrphans=1,
+                               fontSize=10,
+                               textColor=colors.CMYKColor(black=60))
         
+        return Paragraph(description, style)
         
