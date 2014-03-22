@@ -14,7 +14,7 @@ from tastypie.resources import ModelResource
 from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import Unauthorized
 
-from supplies.models import Supply, Fabric, Product
+from supplies.models import Supply, Fabric, Product, Log
 from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
 from utilities.http import save_upload
@@ -333,10 +333,18 @@ class SupplyResource(ModelResource):
         if not request.method == "POST":
             pass#return self.create
         obj = self._meta.queryset.get(pk=kwargs['pk'])
-       
-        obj.quantity = round(float(obj.quantity) + float(request.REQUEST.get('quantity')), 2)
+        quantity = request.REQUEST.get('quantity')
+        obj.quantity = round(float(obj.quantity) + float(quantity), 2)
         obj.save()
         
+        #log the event
+        log = Log(supply=obj,
+                  message="Added {0}{1} of {2}".format(quantity, obj.units, obj.description),
+                  action="ADD",
+                  quantity=quantity)
+        log.save()
+        
+        #Prepare a dictionary of the resource
         data = {}
         for key in obj.__dict__:
             if key[0] != "_":
@@ -358,9 +366,16 @@ class SupplyResource(ModelResource):
         if not request.method == "POST":
             pass#return self.create
         obj = self._meta.queryset.get(pk=kwargs['pk'])
-       
-        obj.quantity = round(float(obj.quantity) - float(request.REQUEST.get('quantity')), 2)
+        quantity = request.REQUEST.get('quantity')
+        obj.quantity = round(float(obj.quantity) - float(quantity), 2)
         obj.save()
+        
+        #log the event
+        log = Log(supply=obj,
+                  message="Subtracted {0}{1} of {2}".format(quantity, obj.units, obj.description),
+                  action="SUBTRACT",
+                  quantity=quantity)
+        log.save()
         
         data = {}
         for key in obj.__dict__:

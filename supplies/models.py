@@ -9,7 +9,7 @@ from django_hstore import hstore
 from django.shortcuts import get_object_or_404
 
 from contacts.models import Contact, Supplier
-from auth.models import Log, S3Object
+from auth.models import S3Object
 
 
 #Creates the main supplies class
@@ -181,7 +181,7 @@ class Location(models.Model):
     shelf = models.CharField(max_length=10)
 
 
-class SupplyLog(Log):
+class Log(models.Model):
     """The general log class for supplies will keep track of actions,
     such as adding, subtracting, resetting items from the inventory
     count.
@@ -189,10 +189,14 @@ class SupplyLog(Log):
     quantity = the quantity associate with the action
     current_quantity = the quantity remaining after the action
     """
+    
     supply = models.ForeignKey(Supply)
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    acknowledgement_id = models.TextField(null=True)
-    remarks = models.TextField(null=True)
+    supplier = models.ForeignKey(Supplier, null=True)
+    message = models.TextField()
+    action = models.TextField(default=None)
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
 
     @classmethod
     def create(cls, supply, event, quantity, employee, acknowledgement_id=None):
