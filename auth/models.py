@@ -60,7 +60,7 @@ class S3Object(models.Model):
                                  'GET',
                                  bucket=self.bucket,
                                  key=self.key,
-                                 force_http=True)
+                                 force_http=False)
 
     def dict(self):
         """
