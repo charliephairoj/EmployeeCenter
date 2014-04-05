@@ -73,6 +73,7 @@ class SupplyResource(ModelResource):
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
                 ]
+        
     def hydrate(self, bundle):
         """
         Implements the hydrate function 

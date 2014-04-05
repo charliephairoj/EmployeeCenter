@@ -2,14 +2,19 @@
 API Classes for all Administrator models
 """
 import logging
+import json
+import time
 
 from tastypie.resources import ModelResource
 from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import Unauthorized
+from django.conf.urls import url
 from django.contrib.auth.models import User, Group, Permission
 from django.db.models import Q
 
 from administrator.validation import UserValidation
+from auth.models import S3Object, Employee
+from utilities.http import save_upload
 
 
 logger = logging.getLogger(__name__)
@@ -18,12 +23,21 @@ logger = logging.getLogger(__name__)
 class UserResource(ModelResource):
     
     class Meta:
+        object_class = User
         queryset = User.objects.all()
         resource_name = 'user'
         authorization = DjangoAuthorization()
         always_return_data = True
         validation = UserValidation()
+        #allowed_methods = ['post', 'get', 'put']
         fields = ['username', 'email', 'first_name', 'last_name', 'id', 'last_login']
+        
+    def prepend_urls(self):
+        """
+        Add additional API points
+        """
+        return [url(r"^{0}/image$".format(self._meta.resource_name), self.wrap_view('process_image')),
+                url(r"^{0}/(?P<pk>\d+)/change_password$".format(self._meta.resource_name), self.wrap_view('change_password'))]
         
     def hydrate(self, bundle):
         """
@@ -51,11 +65,22 @@ class UserResource(ModelResource):
         
         try:
             bundle.obj.employee.telephone = bundle.data['telephone']
-            bundle.obj.employee.save()
         except KeyError as e:
             logger.warn(e)
         except AttributeError:
             logger.critical(e)
+        
+        #Updates the image
+        try:
+            bundle.obj.employee.image = S3Object.objects.get(pk=bundle.data['image']['id'])
+        except KeyError as e:
+            pass
+        
+        #Save all employee profile updates
+        try:
+            bundle.obj.employee.save()
+        except Employee.DoesNotExist as e:
+            pass
         
         return bundle
     
@@ -85,6 +110,13 @@ class UserResource(ModelResource):
             bundle.data['telephone'] = bundle.obj.employee.telephone
         except Exception as e:
             logger.warn(e)
+            
+        try:
+            image = bundle.obj.employee.image
+            bundle.data['image'] = {'id': image.id,
+                                    'url': image.generate_url()}
+        except Exception as e:
+            logger.warn(e)
         
         return bundle
     
@@ -93,11 +125,28 @@ class UserResource(ModelResource):
         Implements the obj_create method
         """
         logger.info("Creating a new user...")
-        bundle = super(UserResource, self).obj_create(bundle, **kwargs)
-        bundle.obj.set_password(bundle.data['password'])
+        try:
+            bundle.obj = User.objects.create_user(bundle.data['username'],
+                                                  bundle.data['email'],
+                                                  bundle.data['password'])
+            bundle.obj.first_name = bundle.data['first_name']
+            bundle.obj.last_name = bundle.data['last_name']
+            bundle.obj.save()
+            logger.info("User '{0}' created.".format(bundle.obj.username))
+        except Exception as e:
+            logger.debug(e)
+            
+        #Create the user employee profile
+        employee_profile = Employee()
+        employee_profile.user = bundle.obj
         
-        bundle = self.save(bundle)
-        logger.info("User '{0}' created.".format(bundle.obj.username))
+        #try adding image
+        try:
+            employee_profile.image = S3Object.objects.get(pk=bundle.data['image']['id'])
+        except KeyError:
+            pass
+        
+        employee_profile.save()
         
         #Add user groups
         if "groups" in bundle.data:
@@ -111,6 +160,45 @@ class UserResource(ModelResource):
                     pass
             
         return bundle
+    
+    def process_image(self, request, **kwargs):
+        """
+        Receives an image and processes it
+        """
+        filename = save_upload(request)
+        
+        image = S3Object.create(filename,
+                        "user/image/{0}.jpg".format(time.time()),
+                        "media.dellarobbiathailand.com")
+        #set Url, key and bucket
+        data = {'url': image.generate_url(),
+                "id": image.id,
+                'key': image.key,
+                'bucket': image.bucket}
+        
+        return self.create_response(request, data)
+    
+    def change_password(self, request, **kwargs):
+        """
+        Change the password of the user with 
+        the specified pk
+        """
+        user = self._meta.queryset.get(pk=kwargs['pk'])
+        logger.debug(user)
+        data = json.loads(request.body)
+        
+        try:
+            new_pass = data['new_password']
+            repeat_new_pass = data['repeat_new_password']
+        except (KeyError, TypeError) as e:
+            raise
+           
+        if new_pass != repeat_new_pass:
+            raise ValueError("Passwords do not match")
+        
+        user.set_password(new_pass)
+        user.save()
+        return self.create_response(request, {})
     
 
 class GroupResource(ModelResource):

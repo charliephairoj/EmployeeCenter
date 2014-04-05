@@ -43,7 +43,9 @@ urlpatterns = patterns('',
     url(r'^login$', 'login.views.app_login'),
     url(r'^logout$', 'login.views.logout'),
     url(r'^api/v1/current_user$', 'auth.views.current_user'),
-    url(r'^/api/v1/current_user$', 'auth.views.current_user')
+    url(r'^/api/v1/current_user$', 'auth.views.current_user'),
+    url(r'^/api/v1/change_password', 'auth.views.change_password'),
+    url(r'^/api/v1/change_password', 'auth.views.change_password')
 )
 
 

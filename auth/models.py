@@ -10,11 +10,6 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
 
-class Employee(models.Model):
-    user = models.OneToOneField(User)
-    telephone = models.TextField(null=True)
-    
-    
 class Log(models.Model):
     employee = models.ForeignKey(User)
     event = models.TextField()
@@ -132,3 +127,9 @@ class S3Object(models.Model):
             os.remove(filename)
 
 
+class Employee(models.Model):
+    user = models.OneToOneField(User)
+    telephone = models.TextField(null=True)
+    image = models.ForeignKey(S3Object, null=True)
+    
+    

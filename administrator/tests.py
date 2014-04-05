@@ -7,6 +7,7 @@ Replace this with more appropriate tests for your application.
 from django.contrib.auth.models import User, Permission, Group, ContentType
 from tastypie.test import ResourceTestCase
 
+from auth.models import Employee, S3Object
 
 class UserResourceTest(ResourceTestCase):
     def setUp(self):
@@ -19,6 +20,11 @@ class UserResourceTest(ResourceTestCase):
         self.user = User.objects.create_superuser('tester', 'testing@yahoo.com', 'test')
         self.user.user_permissions.add(Permission.objects.get(codename="add_user"))
         self.api_client.client.login(username='tester', password='test')
+        profile = Employee()
+        profile.user = self.user
+        profile.save()
+        self.img = S3Object()
+        self.img.save()
         
     def get_credentials(self):
         """
@@ -62,12 +68,14 @@ class UserResourceTest(ResourceTestCase):
         Tests creating a user via POST
         """
         self.assertEqual(User.objects.count(), 1)
+        
         resp = self.api_client.post('/api/v1/user', format='json',
                                     data={'username': 'test',
                                           'password': 'yay',
                                           'email': 'test@yahoo.com',
                                           'first_name': 'Charlie',
-                                          'last_name': 'P'})
+                                          'last_name': 'P',
+                                          'image': {'id': self.img.id}})
         self.assertHttpCreated(resp)
         self.assertEqual(User.objects.count(), 2)
         
@@ -79,6 +87,15 @@ class UserResourceTest(ResourceTestCase):
         self.assertEqual(user['first_name'], 'Charlie')
         self.assertEqual(user['last_name'], 'P')
         self.assertIn('groups', user)
+        
+        #Tests the actual model
+        user = User.objects.get(pk=2)
+        self.assertEqual(user.username, 'test')
+        self.assertEqual(user.first_name, 'Charlie')
+        self.assertEqual(user.last_name, 'P')
+        self.assertIsNotNone(user.employee)
+        self.assertIsNotNone(user.employee.image)
+        self.assertIsInstance(user.employee.image, S3Object)
         
     def test_failed_post(self):
         """
@@ -142,6 +159,16 @@ class UserResourceTest(ResourceTestCase):
         self.assertEqual(len(user['groups']), 1)
         self.assertIn('id', user['groups'][0])
         self.assertIn('description', user['groups'][0])
+        
+    def test_change_password(self):
+        """
+        Tests creating a new password by posting the credentials
+        """
+        resp = self.api_client.put('/api/v1/user/1/change_password',
+                                   format='json', 
+                                   data={'new_password':'TEST',
+                                         'repeat_new_password': 'TEST'})
+        self.assertHttpOK(resp)
         
 
 class GroupResourceTest(ResourceTestCase):
