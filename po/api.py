@@ -4,9 +4,11 @@ Purchase Order module
 """
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from tastypie.resources import ModelResource
 from tastypie import fields
 from tastypie.authorization import DjangoAuthorization
+from tastypie.exceptions import NotFound, BadRequest, InvalidFilterError, HydrationError, InvalidSortError, ImmediateHttpResponse, Unauthorized
 
 from po.models import PurchaseOrder, Item
 from contacts.models import Supplier
@@ -113,6 +115,54 @@ class PurchaseOrderResource(ModelResource):
         
         return bundle
     
+    def obj_upate(self, bundle, **kwargs):
+        """
+        Determines what to do if the purchase order is updated
+        """
+        #update flag
+        updated = False
+        
+        #Get the bundle obj and data
+        if not bundle.obj or not self.get_bundle_detail_data(bundle):
+            try:
+                lookup_kwargs = self.lookup_kwargs_with_identifiers(bundle, kwargs)
+            except:
+                # if there is trouble hydrating the data, fall back to just
+                # using kwargs by itself (usually it only contains a "pk" key
+                # and this will work fine.
+                lookup_kwargs = kwargs
+
+            try:
+                bundle.obj = self.obj_get(bundle=bundle, **lookup_kwargs)
+            except ObjectDoesNotExist:
+                raise NotFound("A model instance matching the provided arguments could not be found.")
+            
+        #Check if the number of items have changed
+        if bundle.obj.items.count() != len(bundle.data['items']):
+            updated = True
+            
+        #Check if quantities have changed and whether item exists
+        for item in bundle.data['items']:
+            try:
+                item_obj = bundle.obj.items.get(pk=item['id'])
+                if item['quantity'] != item_obj.quantity:
+                    updated = True
+            except KeyError:
+                updated = True
+                #Create a new item
+                item_obj = Item.create(supplier=bundle.obj.supplier, **item)
+                item_obj.supplier = bundle.obj.supplier
+                item_obj.save()
+                item_obj.purchase_order = bundle.obj
+                item_obj.save()
+        
+        if updated:
+            bundle.obj.calculate_total()
+            bundle.obj.save()
+            bundle.obj.create_and_upload_pdf()
+            bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
+            
+        return bundle
     
         
 class ItemResource(ModelResource):

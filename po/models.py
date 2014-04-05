@@ -197,7 +197,7 @@ class Item(models.Model):
                 item.unit_cost = item.supply.cost
             else:
                 if sys.version_info[:2] == (2, 6):
-                    discount_amount = item.supply.cost * (Decimal(str(item.supply.discount) / 100))
+                    discount_amount = item.supply.cost * (Decimal(str(item.supply.discount)) / 100)
                 elif sys.version_info[:2] == (2, 7):
                     discount_amount = item.supply.cost * (Decimal(item.supply.discount) / 100)
                 item.unit_cost = round(item.supply.cost - discount_amount, 2)
