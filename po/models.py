@@ -205,7 +205,7 @@ class Item(models.Model):
         if "quantity" in kwargs:
             item.quantity = int(Decimal(kwargs["quantity"]))
             
-            item.total = Decimal(item.unit_cost * Decimal(item.quantity))
+            item.total = Decimal(item.unit_cost) * Decimal(item.quantity)
             #if there is a discount apply the discount
             if item.discount > 0:
                 item.total = item.total - ((Decimal(item.discount) / Decimal('100')) * item.total)
