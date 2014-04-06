@@ -4,7 +4,7 @@ Models for the Purchase Orders App
 import sys, os
 import datetime
 import logging
-from decimal import Decimal
+import decimal
 import dateutil.parser
 
 from django.conf import settings
@@ -20,6 +20,12 @@ from po.PDF import PurchaseOrderPDF
 
 logger = logging.getLogger(__name__)
 
+
+class Decimal(decimal.Decimal):
+    #Temporary class to propery change all the values to decimal    
+    def __init__(self, value=0, *args, **kwargs):
+        value = str(value)
+        super(Decimal, self).__init__(value, *args, **kwargs)
 
 # Create your models here.
 class PurchaseOrder(models.Model):
