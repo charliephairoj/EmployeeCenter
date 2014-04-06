@@ -197,18 +197,19 @@ class Item(models.Model):
                 item.unit_cost = item.supply.cost
             else:
                 if sys.version_info[:2] == (2, 6):
-                    discount_amount = item.supply.cost * (Decimal(str(item.supply.discount)) / 100)
+                    discount_amount = Decimal(str(item.supply.cost)) * (Decimal(str(item.supply.discount)) / Decimal('100'))
                 elif sys.version_info[:2] == (2, 7):
-                    discount_amount = item.supply.cost * (Decimal(item.supply.discount) / 100)
-                item.unit_cost = round(item.supply.cost - discount_amount, 2)
+                    discount_amount = Decimal(item.supply.cost) * (Decimal(item.supply.discount) / Decimal('100'))
+                item.unit_cost = round(Decimal(str(item.supply.cost)) - discount_amount, 2)
 
         if "quantity" in kwargs:
-            item.quantity = int(Decimal(kwargs["quantity"]))
+            item.quantity = int(kwargs["quantity"])
             
             item.total = Decimal(str(item.unit_cost)) * Decimal(str(item.quantity))
             #if there is a discount apply the discount
             if item.discount > 0:
-                item.total = item.total - ((Decimal(str(item.discount)) / Decimal('100')) * item.total)
+                item.total = item.total - ((Decimal(str(item.discount)) / Decimal('100')) * Decimal(str(item.total)))
+                
         return item
     
     
