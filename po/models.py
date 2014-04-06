@@ -22,10 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class Decimal(decimal.Decimal):
-    #Temporary class to propery change all the values to decimal    
+    """
+    Temporary class to propery change all the values to decimal   
+    while production is still on python2.6. When production system 
+    is on python2.7, this class will be come obsolete, as the 
+    python2.7 decimal automatically converts float to decimal
+    """ 
     def __init__(self, value=0, *args, **kwargs):
         value = str(value)
         super(Decimal, self).__init__(value, *args, **kwargs)
+
 
 # Create your models here.
 class PurchaseOrder(models.Model):
@@ -197,10 +203,10 @@ class Item(models.Model):
             item.supply = Supply.objects.get(id=kwargs['id'])
             item.supply.supplier = supplier
             item.description = item.supply.description
-            item.unit_cost = item.supply.cost
-            item.discount = item.supply.discount
+            item.unit_cost = Decimal(item.supply.cost)
+            item.discount = Decimal(item.supply.discount)
             if item.supply.discount == 0:
-                item.unit_cost = item.supply.cost
+                item.unit_cost = Decimal(item.supply.cost)
             else:
                 if sys.version_info[:2] == (2, 6):
                     discount_amount = Decimal(str(item.supply.cost)) * (Decimal(str(item.supply.discount)) / Decimal('100'))
@@ -215,7 +221,7 @@ class Item(models.Model):
             #if there is a discount apply the discount
             if item.discount > 0:
                 item.total = item.total - ((Decimal(str(item.discount)) / Decimal('100')) * Decimal(str(item.total)))
-                
+                logger.debug(type(item.total))
         return item
     
     
