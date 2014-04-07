@@ -354,7 +354,8 @@ class PurchaseOrderPDF():
                                    fontSize=10,
                                    textColor=colors.CMYKColor(black=60))
         if supply.discount > 0:
-            description += " (discounted %s%% from %s)" %(supply.description, supply.discount, supply.cost)
+            description += " (discounted {0}% from {1})".format(supply.discount,
+                                                               supply.unit_cost)
         #return description
         return Paragraph(description, style)
 

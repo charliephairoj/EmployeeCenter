@@ -221,7 +221,9 @@ class Item(models.Model):
             #if there is a discount apply the discount
             if item.discount > 0:
                 item.total = item.total - ((Decimal(str(item.discount)) / Decimal('100')) * Decimal(str(item.total)))
-                logger.debug(type(item.total))
+        
+        logger.debug(type(item.unit_cost))
+        logger.debug(type(item.total))
         return item
     
     
