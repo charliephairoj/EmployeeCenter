@@ -248,7 +248,9 @@ class ShippingPDF(object):
     def _create_products_item_section(self, product):
         data = []
         #add the data
-        data.append([product.item.product.id, product.description, product.quantity])
+        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
+                     product.description, 
+                     product.quantity])
         try:
             data.append(['', self._get_fabric_table(product.item.fabric, "   Fabric:")])
         except:
