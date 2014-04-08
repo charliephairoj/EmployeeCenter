@@ -3,6 +3,7 @@ API Resource classes for the
 Purchase Order module
 """
 import logging
+from decimal import *
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from tastypie.resources import ModelResource
@@ -52,12 +53,7 @@ class PurchaseOrderResource(ModelResource):
         #Add URLS for the acknowledgement
         #and the production pdf to the data
         #bundle
-        logger.info(bundle.request.GET)
         if 'pdf' in bundle.request.GET.keys():
-            logger.debug(bundle.request)
-            logger.debug(bundle.request.GET)
-            logger.debug(dir(bundle.request.GET))
-            logger.debug(bundle.request.GET.keys())
             try:
                 bundle.data['pdf'] = {'url': bundle.obj.pdf.generate_url()}
             except AttributeError as e: 
@@ -93,8 +89,8 @@ class PurchaseOrderResource(ModelResource):
         #Create the items 
         self.items = [Item.create(supplier=bundle.obj.supplier, **item_data) for item_data in bundle.data['items']]
         
-        for item in self.items:
-            item.supplier = bundle.obj.supplier
+        #for item in self.items:
+        #    item.supplier = bundle.obj.supplier
        
         bundle = self.save(bundle)
         
@@ -105,7 +101,7 @@ class PurchaseOrderResource(ModelResource):
         logger.debug("Calculating totals...")
         bundle.obj.calculate_total()
         bundle.obj.save()
-        
+
         #Create a pdf to be uploaded 
         #to the S3 service. Then generate 
         #a url for the data that will be returned to the customer
@@ -115,13 +111,13 @@ class PurchaseOrderResource(ModelResource):
         
         return bundle
     
-    def obj_upate(self, bundle, **kwargs):
+    def obj_update(self, bundle, **kwargs):
         """
         Determines what to do if the purchase order is updated
         """
         #update flag
         updated = False
-        
+        logger.debug('hhhiashdfiasdf')
         #Get the bundle obj and data
         if not bundle.obj or not self.get_bundle_detail_data(bundle):
             try:
@@ -144,15 +140,17 @@ class PurchaseOrderResource(ModelResource):
         #Check if quantities have changed and whether item exists
         for item in bundle.data['items']:
             try:
-                item_obj = bundle.obj.items.get(pk=item['id'])
+                item_obj = bundle.obj.items.get(pk=item['id'], purchase_order=bundle.obj)
                 if item['quantity'] != item_obj.quantity:
                     updated = True
-            except KeyError:
+                    item_obj.supply.supplier = bundle.obj.supplier
+                    item_obj.quantity = item['quantity']
+                    item_obj.calculate_total()
+                    item_obj.save()
+            except (KeyError, Item.DoesNotExist):
                 updated = True
                 #Create a new item
                 item_obj = Item.create(supplier=bundle.obj.supplier, **item)
-                item_obj.supplier = bundle.obj.supplier
-                item_obj.save()
                 item_obj.purchase_order = bundle.obj
                 item_obj.save()
         

@@ -4,33 +4,19 @@ Models for the Purchase Orders App
 import sys, os
 import datetime
 import logging
-import decimal
-import dateutil.parser
+from decimal import *
 
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 
-
 from supplies.models import Supply
-from contacts.models import Supplier, SupplierContact
+from contacts.models import Supplier
 from auth.models import S3Object
 from po.PDF import PurchaseOrderPDF
 
 
 logger = logging.getLogger(__name__)
-
-
-class Decimal(decimal.Decimal):
-    """
-    Temporary class to propery change all the values to decimal   
-    while production is still on python2.6. When production system 
-    is on python2.7, this class will be come obsolete, as the 
-    python2.7 decimal automatically converts float to decimal
-    """ 
-    def __init__(self, value=0, *args, **kwargs):
-        value = str(value)
-        super(Decimal, self).__init__(value, *args, **kwargs)
 
 
 # Create your models here.
@@ -120,7 +106,8 @@ class PurchaseOrder(models.Model):
         """
         Calculate the subtotal, total, and grand total
         """
-        return self._calculate_grand_total()
+        
+        return Decimal(str(round(self._calculate_grand_total(), 2)))
         
     def create_pdf(self):
         """
@@ -153,7 +140,7 @@ class PurchaseOrder(models.Model):
         else:
             raise ValueError('Missing items')
         
-        logging.debug("The subtotal is {0:.2f}".format(self.subtotal))
+        logger.debug("The subtotal is {0:.2f}".format(self.subtotal))
         return self.subtotal
     
     def _calculate_total(self):
@@ -166,7 +153,7 @@ class PurchaseOrder(models.Model):
         else:
             self.total = subtotal
 
-        logging.debug("The total is {0:.2f}".format(self.total))
+        logger.debug("The total is {0:.2f}".format(self.total))
         return self.total
     
     def _calculate_grand_total(self):
@@ -174,12 +161,16 @@ class PurchaseOrder(models.Model):
         Calcualte the grand total
         """
         total = self._calculate_total()
+        
+        logger.debug("The vat is at {0}%".format(self.vat))
         if self.vat > 0:
             self.grand_total = total + (total * (Decimal(self.vat) / Decimal('100')))
         else:
             self.grand_total = total
         
-        logging.debug("The grand total is {0:.2f}".format(self.grand_total))
+        #convert to 2 decimal places
+        self.grand_total = Decimal(str(round(self.grand_total, 2)))
+        logger.debug("The grand total is {0:.2f}".format(self.grand_total))
         return self.grand_total
         
 class Item(models.Model):
@@ -196,34 +187,38 @@ class Item(models.Model):
     @classmethod
     def create(cls, supplier=None, **kwargs):
         item = cls()
-        logger.debug(supplier)
         try:
             item.supply = Supply.objects.get(id=kwargs['supply']["id"])
         except KeyError:
             item.supply = Supply.objects.get(id=kwargs['id'])
-            item.supply.supplier = supplier
-            item.description = item.supply.description
-            item.unit_cost = Decimal(item.supply.cost)
-            item.discount = Decimal(item.supply.discount)
-            if item.supply.discount == 0:
-                item.unit_cost = Decimal(item.supply.cost)
-            else:
-                if sys.version_info[:2] == (2, 6):
-                    discount_amount = Decimal(str(item.supply.cost)) * (Decimal(str(item.supply.discount)) / Decimal('100'))
-                elif sys.version_info[:2] == (2, 7):
-                    discount_amount = Decimal(item.supply.cost) * (Decimal(item.supply.discount) / Decimal('100'))
-                item.unit_cost = round(Decimal(str(item.supply.cost)) - discount_amount, 2)
-
-        if "quantity" in kwargs:
-            item.quantity = int(kwargs["quantity"])
             
-            item.total = Decimal(str(item.unit_cost)) * Decimal(str(item.quantity))
-            #if there is a discount apply the discount
-            if item.discount > 0:
-                item.total = item.total - ((Decimal(str(item.discount)) / Decimal('100')) * Decimal(str(item.total)))
+        item.supply.supplier = supplier
+        item.description = item.supply.description
+        item.unit_cost = item.supply.cost
+        item.discount = item.supply.discount
+        item.quantity = int(kwargs["quantity"])
         
-        logger.debug(type(item.unit_cost))
-        logger.debug(type(item.total))
+        item.calculate_total()
+       
         return item
+    
+    def calculate_total(self):
+        """
+        Calculate the totals based on the unit_cost, quantity
+        and the discount provied
+        """
+        #Calculate late the unit_cost based on discount if available
+        if self.supply.discount == 0:
+            self.unit_cost = Decimal(self.supply.cost)
+            logger.debug("{0} unit cost is {1}".format(self.description, self.unit_cost))
+        else:
+            if sys.version_info[:2] == (2, 6):
+                discount_amount = Decimal(str(self.supply.cost)) * (Decimal(str(self.supply.discount)) / Decimal('100'))
+            elif sys.version_info[:2] == (2, 7):
+                discount_amount = Decimal(self.supply.cost) * (Decimal(self.supply.discount) / Decimal('100'))
+            self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
+            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.unit_cost))
+                    
+        self.total = Decimal(self.unit_cost) * Decimal(self.quantity)
     
     

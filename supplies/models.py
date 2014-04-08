@@ -155,7 +155,6 @@ class Supply(models.Model):
         Returns the corresponding product
         based on the supplier
         """
-        print self.id, supplier.id
         if not hasattr(self, 'product'):
             self.product = Product.objects.get(supply=self, supplier=supplier)
 
