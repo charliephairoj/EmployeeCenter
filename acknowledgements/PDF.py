@@ -651,16 +651,18 @@ class ProductionPDF(AcknowledgementPDF):
     def _create_products_item_section(self, product):
         data = []
         #add the data
-        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), product.description,
+        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
+                     product.description,
                      product.quantity])
         try:
             data.append(['', self._get_fabric_table(product.fabric, '   Fabric:'), ''])
         except:
             pass
-        if product.is_custom_size:
-            data.append(['', u'   กว้าง: %imm' % (product.width)])
-            data.append(['', u'   ลึก: %imm' % (product.depth)])
-            data.append(['', u'   สูง: %imm' % (product.height)])
+
+        data.append(['', u'   กว้าง: %imm' % (product.width)])
+        data.append(['', u'   ลึก: %imm' % (product.depth)])
+        data.append(['', u'   สูง: %imm' % (product.height)])
+        
         #increase the item number
         if len(product.pillow_set.all()) > 0:
             for pillow in product.pillow_set.all():
