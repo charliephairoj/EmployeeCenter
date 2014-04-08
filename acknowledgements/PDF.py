@@ -297,8 +297,11 @@ class AcknowledgementPDF(object):
     def _create_products_item_section(self, product):
         data = []
         #add the data
-        data.append([code128.Code128("AI-{0}".format(product.id), barHeight=20), product.description,
-                     product.unit_price, product.quantity, product.total])
+        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
+                     product.description,
+                     product.unit_price, 
+                     product.quantity, 
+                     product.total])
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except Exception as e:
