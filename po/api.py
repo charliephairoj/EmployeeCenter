@@ -132,7 +132,12 @@ class PurchaseOrderResource(ModelResource):
                 bundle.obj = self.obj_get(bundle=bundle, **lookup_kwargs)
             except ObjectDoesNotExist:
                 raise NotFound("A model instance matching the provided arguments could not be found.")
-            
+        
+        #Update order details
+        if bundle.obj.discount != int(bundle.data['discount']):
+            bundle.obj.discount = bundle.data['discount']
+            updated = True
+        
         #Check if the number of items have changed
         if bundle.obj.items.count() != len(bundle.data['items']):
             updated = True

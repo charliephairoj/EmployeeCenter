@@ -172,9 +172,9 @@ class PurchaseOrderPDF():
             data.append(['', "E: {0}".format(self.supplier.email)])
         try:
             contact = self.supplier.contacts.get(primary=True)
-            data.append(['Contact:', "{0}".format(contact.name)])
-            data.append(['', "{0}".format(contact.email)])
-            data.append(['', "{0}".format(contact.telephone)])
+            data.append(['Contact:', u"{0}".format(contact.name)])
+            data.append(['', u"{0}".format(contact.email)])
+            data.append(['', u"{0}".format(contact.telephone)])
         except Exception as e:
             logger.warn(e)
             
@@ -195,12 +195,13 @@ class PurchaseOrderPDF():
         #Create data array
         data = []
         #Add Employee Name
-        ship_str = u"{0} {1}".format(self.employee.first_name, self.employee.last_name)
+        ship_str = u"Dellarobbia Thailand"
         data.append(['Ship To:', ship_str])
         #Add Company Data
         data.append(['', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
         data.append(['', 'Lam Luk Ka, Pathum Thani'])
         data.append(['', 'Thailand 12150'])
+        data.append(['',u'C: {0} {1}'.format(self.employee.first_name, self.employee.last_name)])
         data.append(['',u'E: {0}'.format(self.employee.email)])
         try:
             if self.employee.employee.telephone:
@@ -354,8 +355,9 @@ class PurchaseOrderPDF():
                                    fontSize=10,
                                    textColor=colors.CMYKColor(black=60))
         if supply.discount > 0:
+            supply.supply.supplier = self.po.supplier
             description += " (discounted {0}% from {1})".format(supply.discount,
-                                                               supply.unit_cost)
+                                                               supply.supply.cost)
         #return description
         return Paragraph(description, style)
 
@@ -376,30 +378,32 @@ class PurchaseOrderPDF():
         style = []
         #calculate the totals
         #what to do if there is vat or discount
-        if self.po.vat != 0 or self.supplier.discount != 0:
+        if self.po.vat != 0 or self.po.discount != 0:
             #get subtotal and add to pdf
-            subtotal = float(self.po.subtotal)
+            subtotal = Decimal(self.po.subtotal)
             data.append(['', '', '', '', '', 'Subtotal', "{0:.2f}".format(subtotal)])
             #add discount area if discount greater than 0
-            if self.supplier.discount != 0:
-                discount = subtotal * (float(self.supplier.discount) / float(100))
-                dis_title = 'Discount {0}%'.format(self.supplier.discount)
+            if self.po.discount != 0:
+                discount = subtotal * (Decimal(self.po.discount) / Decimal('100'))
+                dis_title = 'Discount {0}%'.format(self.po.discount)
                 dis_str = "{0:.2f}".format(discount)
                 data.append(['', '', '', '', '', dis_title, dis_str])
+                
             #add vat if vat is greater than 0
             if self.po.vat != 0:
-                if self.supplier.discount != 0:
+                if self.po.discount != 0:
                     #append total to pdf
                     data.append(['', '', '', '', '', 'Total', "{0:.2f}".format(self.po.total)])
                 #calculate vat and add to pdf
                 vat = Decimal(self.po.total) * (Decimal(self.po.vat) / Decimal('100'))
                 data.append(['', '', '', '', '', 'Vat {0}%'.format(self.po.vat), "{0:.2f}".format(vat)])
         data.append(['', '', '', '', '', 'Grand Total', "{0:.2f}".format(self.po.grand_total)]) 
+        
         #adjust the style based on vat and discount
         #if there is either vat or discount
-        if self.po.vat != 0 or self.supplier.discount != 0:
+        if self.po.vat != 0 or self.po.discount != 0:
             #if there is only vat or only discount
-            if self.po.vat != 0 and self.supplier.discount != 0:
+            if self.po.vat != 0 and self.po.discount != 0:
                 style.append(('LINEABOVE', (0, -5), (-1, -5), 1,
                               colors.CMYKColor(black=60)))
                 style.append(('ALIGNMENT', (-2, -5), (-1, -1), 'RIGHT'))
