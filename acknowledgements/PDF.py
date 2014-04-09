@@ -659,9 +659,9 @@ class ProductionPDF(AcknowledgementPDF):
         except:
             pass
 
-        data.append(['', u'   กว้าง: %imm' % (product.width)])
-        data.append(['', u'   ลึก: %imm' % (product.depth)])
-        data.append(['', u'   สูง: %imm' % (product.height)])
+        data.append(['', u'   กว้าง: {0}mm'.format(product.width)])
+        data.append(['', u'   ลึก: {0}mm'.format(product.depth)])
+        data.append(['', u'   สูง: {0}mm'.format(product.height)])
         
         #increase the item number
         if len(product.pillow_set.all()) > 0:

@@ -163,7 +163,8 @@ class AcknowledgementResource(ModelResource):
         Implements the obj_update method
         """
         logger.info("Updating acknowledgement...")
-        logger.debug('SUCK IT')
+        logger.debug(bundle.obj.delivery_date)
+        logger.debug(bundle.data['delivery_date'])
         return super(AcknowledgementResource, self).obj_update(bundle, **kwargs)
     
     def obj_delete(self, bundle, **kwargs):
