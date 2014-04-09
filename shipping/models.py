@@ -26,7 +26,7 @@ class Shipping(models.Model):
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
-    comments = models.TextField()
+    comments = models.TextField(null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     def get_data(self):
