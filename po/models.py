@@ -42,6 +42,7 @@ class PurchaseOrder(models.Model):
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
     project = models.TextField(null=True, default=None)
+    deposit = models.IntegerField(default=0)
     
     @classmethod
     def create(cls, user=None, **kwargs):
