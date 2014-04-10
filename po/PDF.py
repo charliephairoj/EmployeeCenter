@@ -267,7 +267,8 @@ class PurchaseOrderPDF():
         #iterate through the array
         for supply in self.supplies:
             #add the data
-            data.append([i, supply.supply.reference,
+            data.append([i,
+                         supply.supply.reference,
                          self.__get_description(supply),
                          self._format_string_to_paragraph(supply.supply.units),
                          "%.2f" % float(supply.unit_cost),
@@ -286,6 +287,18 @@ class PurchaseOrderPDF():
         totals_data, totals_style = self._get_totals()
         #merge data
         data += totals_data
+        
+        #Add section for deposit
+        if self.po.deposit != 0:
+            deposit = Decimal(str(round((Decimal(self.po.deposit) / Decimal('100')) * self.po.grand_total, 2)))
+            data += [['',
+                     '',
+                     '',
+                     '',
+                     '',
+                     'Deposit {0}%'.format(self.po.deposit),
+                     deposit]]
+            
         #Create Table
         table = Table(data, colWidths=(40, 84, 230, 50, 50, 40, 65))
         #Create table style data and merge with totals style data
@@ -306,6 +319,11 @@ class PurchaseOrderPDF():
                       ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
                       ('VALIGN', (0, 1), (-1, -1), 'TOP')]
         style_data += totals_style
+        
+        #Add style if there is a deposit
+        if self.po.deposit !=0:
+            style_data.append(('LINEABOVE', (-3, -1), (-1, -1), 1, colors.CMYKColor(black=60)))
+            
         #Create and apply table style
         style = TableStyle(style_data)
         table.setStyle(style)

@@ -134,9 +134,12 @@ class PurchaseOrderResource(ModelResource):
                 raise NotFound("A model instance matching the provided arguments could not be found.")
         
         #Update order details
-        if bundle.obj.discount != int(bundle.data['discount']):
-            bundle.obj.discount = bundle.data['discount']
-            updated = True
+        try:
+            if bundle.obj.discount != int(bundle.data['discount']):
+                bundle.obj.discount = bundle.data['discount']
+                updated = True
+        except KeyError:
+            pass
         
         #Check if the number of items have changed
         if bundle.obj.items.count() != len(bundle.data['items']):

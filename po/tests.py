@@ -5,6 +5,7 @@ import random
 import logging
 import dateutil.parser
 import datetime
+import subprocess
 from decimal import Decimal
 
 from django.test import TestCase
@@ -43,6 +44,7 @@ base_fabric2['color'] = 'Charcoal'
 
 base_purchase_order = {'supplier': {'id':1},
                        'project': 'MC House',
+                       'deposit': '50',
                        'items': [{'id': 1, 'quantity':10},
                                  {'id': 2, 'quantity': 3}],
                        'vat': '7'}
@@ -186,7 +188,6 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new resource via POST
         """
-        self.skipTest('isolate')
         #validate the response
         resp = self.api_client.post('/api/v1/purchase-order',
                                     data=base_purchase_order)
@@ -200,6 +201,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(len(obj['items']), 2)
         self.assertIn('project', obj)
         self.assertEqual(obj['project'], 'MC House')
+        print obj['pdf']['url']
         
         #validate the resource in the database
         po = PurchaseOrder.objects.get(pk=2)
@@ -221,12 +223,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(self.item2.supply.id, 2)
         self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
         self.assertEqual(self.item2.quantity, 3)
-        logger.debug(self.item1.unit_cost)
-        logger.debug(self.item1.total)
-        logger.debug(self.item2.unit_cost)
-        logger.debug(self.item2.total)
         self.assertEqual(self.item2.total, Decimal('34.5'))
-    
     
     def test_updating_the_po(self):
         """
