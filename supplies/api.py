@@ -78,7 +78,9 @@ class SupplyResource(ModelResource):
         """
         Implements the hydrate function 
         """
-        
+        #Set the country, in order to retrieve the correct quantity
+        bundle = self._set_country(bundle)
+            
         #Takes supplier and add to supplier list in data
         if "supplier" in bundle.data:
             try:
@@ -103,7 +105,11 @@ class SupplyResource(ModelResource):
         except KeyError as e:
             logger.warn(e)
             
-        
+        #Adds the quantity
+        try:
+            bundle.obj.quantity = bundle.data['quantity']
+        except KeyError:
+            pass
             
         #Adds the image
         if "image" in bundle.data:
@@ -170,6 +176,12 @@ class SupplyResource(ModelResource):
         Implements the dehydrate method to manipulate data
         before it is returned to the client
         """
+        #Checks if the country is set
+        bundle = self._set_country(bundle)
+           
+        #Adds the quantity to the data field
+        bundle.data['quantity'] = bundle.obj.quantity
+             
         #Replaces custom-type with type after supply creation
         if "custom-type" in bundle.data:
             bundle.data['type'] = bundle.obj.type
@@ -331,9 +343,10 @@ class SupplyResource(ModelResource):
         This method checks that the request method is post, and that
         there is both a quantity and an acknowledgement ID
         """
-        if not request.method == "POST":
-            pass#return self.create
+  
         obj = self._meta.queryset.get(pk=kwargs['pk'])
+        if request.GET.has_key('country'):
+            obj.country = request.GET.get('country')
         quantity = request.REQUEST.get('quantity')
         obj.quantity = round(float(obj.quantity) + float(quantity), 2)
         obj.save()
@@ -346,7 +359,7 @@ class SupplyResource(ModelResource):
         log.save()
         
         #Prepare a dictionary of the resource
-        data = {}
+        data = {'quantity': obj.quantity}
         for key in obj.__dict__:
             if key[0] != "_":
                 data[key] = obj.__dict__[key]
@@ -364,9 +377,10 @@ class SupplyResource(ModelResource):
         there is both a quantity and an acknowledgement ID
         """
         
-        if not request.method == "POST":
-            pass#return self.create
+       
         obj = self._meta.queryset.get(pk=kwargs['pk'])
+        if request.GET.has_key('country'):
+            obj.country = request.GET.get('country')
         quantity = request.REQUEST.get('quantity')
         obj.quantity = round(float(obj.quantity) - float(quantity), 2)
         obj.save()
@@ -378,7 +392,7 @@ class SupplyResource(ModelResource):
                   quantity=quantity)
         log.save()
         
-        data = {}
+        data = {'quantity': obj.quantity}
         for key in obj.__dict__:
             if key[0] != "_":
                 data[key] = obj.__dict__[key]
@@ -421,6 +435,22 @@ class SupplyResource(ModelResource):
             data['cost'] = product.cost
             
         return data
+
+    def _set_country(self, bundle):
+        """
+        Sets the country for the supply object
+        
+        The supply object uses the country to correct determine the which
+        quantity to return for the quantity property. By default, the 
+        country is Thailand.
+        """
+        if bundle.request.GET.has_key('country'):
+            bundle.obj.country = bundle.request.GET.get('country')
+        else:
+            bundle.obj.country = 'TH'
+            
+        return bundle
+    
             
 class FabricResource(SupplyResource):
     #supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier', full=True)

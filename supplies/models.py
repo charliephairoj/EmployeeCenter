@@ -30,7 +30,8 @@ class Supply(models.Model):
     discount = models.IntegerField(default=0)
     #reference = models.TextField()
     notes = models.TextField(null=True)
-    quantity = models.FloatField(default=0)
+    quantity_th = models.FloatField(db_column='quantity', default=0)
+    quantity_kh = models.FloatField(default=0)
     quantity_units = models.TextField(default="mm")
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     image = models.ForeignKey(S3Object, null=True)
@@ -74,6 +75,20 @@ class Supply(models.Model):
         except AttributeError:
             raise ValueError("Please set the supplier for this supply in order to get the purchasing units")
         
+    @property
+    def quantity(self):
+        try:
+            return getattr(self, "quantity_{0}".format(self.country.lower()))
+        except AttributeError:
+            return self.quantity_th
+        
+    @quantity.setter
+    def quantity(self, value):
+        try:
+            setattr(self, 'quantity_{0}'.format(self.country.lower()), value)
+        except AttributeError:
+            self.quantity_th = value
+            
     @classmethod
     def create(cls, user=None, commit=True, **kwargs):
         """
