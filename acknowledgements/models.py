@@ -28,7 +28,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField()
+    _delivery_date = models.DateTimeField(db_column='delivery_date')
     status = models.TextField()
     remarks = models.TextField(null=True, default=None)
     fob = models.TextField(null=True)
@@ -52,6 +52,9 @@ class Acknowledgement(models.Model):
                                                      db_column="original_acknowledgement_pdf")
 
 
+    @property
+    def delivery_date(self):
+        
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement
@@ -87,11 +90,6 @@ class Acknowledgement(models.Model):
         
         #Save the ack and by overriden method, the items
         acknowledgement.save()
-
-        #Log creation of the acknowledgement
-        AcknowledgementLog.create("Ack# {0} Created".format(acknowledgement.id),
-                                    acknowledgement,
-                                    acknowledgement.employee)
 
         #Create the order PDFs
         ack, production = acknowledgement._create_pdfs()
@@ -157,8 +155,6 @@ class Acknowledgement(models.Model):
             message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
         except AttributeError:
             raise TypeError("Missing Delivery Date")
-
-        AcknowledgementLog.create(message, self.acknowledgement, employee)
     
     def create_and_upload_pdfs(self):
         ack_filename, production_filename = self.create_pdfs()
@@ -591,7 +587,10 @@ class Pillow(models.Model):
         return pillow
 
 
-class AcknowledgementLog(Log):
+class Log(models.Model):
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    delivery_date = models.DateField(null=True)
     acknowledgement = models.ForeignKey(Acknowledgement)
 
     @classmethod

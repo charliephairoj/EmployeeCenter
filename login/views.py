@@ -6,7 +6,6 @@ import json
 from django.shortcuts import render
 from django.contrib.staticfiles.views import serve
 from django.http import HttpResponseRedirect, HttpResponse
-from oauth2client.client import OAuth2WebServerFlow
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings

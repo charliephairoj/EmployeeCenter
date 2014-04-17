@@ -1,0 +1,206 @@
+[16/Apr/2014 23:41:39] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[16/Apr/2014 23:41:39] ERROR [boto:236] Unable to read instance data, giving up
+[16/Apr/2014 23:41:40] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[16/Apr/2014 23:41:40] ERROR [boto:236] Unable to read instance data, giving up
+[16/Apr/2014 23:41:41] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[16/Apr/2014 23:41:41] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[16/Apr/2014 23:41:41] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[16/Apr/2014 23:41:41] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[16/Apr/2014 23:41:41] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[16/Apr/2014 23:41:42] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[16/Apr/2014 23:41:42] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[16/Apr/2014 23:41:43] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[16/Apr/2014 23:41:43] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[16/Apr/2014 23:41:44] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[16/Apr/2014 23:41:44] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:02:46] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[17/Apr/2014 03:02:46] ERROR [boto:236] Unable to read instance data, giving up
+[17/Apr/2014 03:02:46] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[17/Apr/2014 03:02:46] ERROR [boto:236] Unable to read instance data, giving up
+[17/Apr/2014 03:02:47] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:02:47] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:02:47] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:02:48] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:02:48] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:02:48] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:02:49] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:02:49] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:02:50] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:02:50] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:02:50] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:06:05] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[17/Apr/2014 03:06:05] ERROR [boto:236] Unable to read instance data, giving up
+[17/Apr/2014 03:06:06] ERROR [boto:232] Caught exception reading instance data
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/boto/utils.py", line 219, in retry_url
+    r = opener.open(req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 404, in open
+    response = self._open(req, data)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 422, in _open
+    '_open', req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 382, in _call_chain
+    result = func(*args)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1214, in http_open
+    return self.do_open(httplib.HTTPConnection, req)
+  File "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/urllib2.py", line 1184, in do_open
+    raise URLError(err)
+URLError: <urlopen error timed out>
+[17/Apr/2014 03:06:06] ERROR [boto:236] Unable to read instance data, giving up
+[17/Apr/2014 03:06:07] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:06:07] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:06:07] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:06:07] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:06:08] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:06:08] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:06:08] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:06:09] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:06:09] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:06:10] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:06:10] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:07:08] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:07:09] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:07:09] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:07:09] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:07:09] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:07:10] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:07:10] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:07:11] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:07:11] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:07:11] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:07:11] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:09:32] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:09:32] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:09:33] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:09:33] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:09:33] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:09:33] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:09:34] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:09:34] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:09:35] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:09:35] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:09:35] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:09:35] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:09:36] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:09:36] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:09:36] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:09:36] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:09:36] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:09:37] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:09:37] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:09:37] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:09:38] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:09:39] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:09:39] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:09:40] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:09:40] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:09:40] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:09:41] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:09:43] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:09:43] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:09:44] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:09:44] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:09:44] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:09:44] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:09:45] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:09:45] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:09:46] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:09:46] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:09:46] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:10:02] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:10:03] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:10:03] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:10:03] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:10:03] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:10:03] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:10:04] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:10:05] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:10:05] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:10:06] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:10:06] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 03:10:11] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 03:10:11] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 03:10:12] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 03:10:12] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 03:10:12] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 03:10:12] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 03:10:13] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 03:10:13] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address

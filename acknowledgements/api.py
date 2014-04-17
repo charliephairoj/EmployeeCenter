@@ -10,7 +10,7 @@ from tastypie.authorization import Authorization, DjangoAuthorization
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from acknowledgements.models import Acknowledgement, Item, Pillow
+from acknowledgements.models import Acknowledgement, Item, Log
 from acknowledgements.validation import AcknowledgementValidation
 from contacts.models import Customer
 from supplies.models import Fabric
@@ -118,6 +118,14 @@ class AcknowledgementResource(ModelResource):
             item.acknowledgement = bundle.obj
             item.save()
         
+        log_message = "Ack {0} created on {1}. Schedule to be delivered on {1}"
+        log_message = log_message.format(bundle.obj.id,
+                                         bundle.obj.time_created.strftime('%B %d, %Y'),
+                                         bundle.obj.delivery_date.strftime('%B %d, %Y'))
+        log = Log(message=log_message,
+                  delivery_date=bundle.obj.delivery_date,
+                  acknowledgement=bundle.obj)
+        log.save()
         #Create and upload the pdfs to the 
         #S3 system. The save the pdfs as
         #Attributes of the acknowledgement
