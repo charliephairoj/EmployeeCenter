@@ -204,3 +204,45 @@ URLError: <urlopen error timed out>
 [17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
 [17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
 [17/Apr/2014 03:10:14] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 09:10:46] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 09:10:46] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 09:10:47] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 09:10:47] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 09:10:47] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 09:10:47] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 09:10:48] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 09:10:48] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 09:10:49] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 09:10:49] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 09:10:49] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 09:10:50] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 09:10:58] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 09:10:58] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 09:10:58] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 09:10:58] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 09:10:59] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 09:10:59] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 09:11:00] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 09:11:01] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 09:11:01] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 09:11:01] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 09:11:21] INFO [po.api:69] Creating a purchase order
+[17/Apr/2014 09:11:23] INFO [po.api:108] Creating pdf for purchase order #12075
+[17/Apr/2014 09:11:23] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[17/Apr/2014 09:12:53] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[17/Apr/2014 09:13:38] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[17/Apr/2014 09:14:08] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 09:14:08] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Apr/2014 09:14:09] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Apr/2014 09:14:09] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Apr/2014 09:14:09] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Apr/2014 09:14:09] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Apr/2014 09:14:10] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Apr/2014 09:14:10] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Apr/2014 09:14:11] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Apr/2014 09:14:11] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Apr/2014 09:14:12] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Apr/2014 09:14:12] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Apr/2014 09:14:29] INFO [po.api:69] Creating a purchase order
+[17/Apr/2014 09:14:30] INFO [po.api:108] Creating pdf for purchase order #12076
+[17/Apr/2014 09:14:30] WARNING [po.PDF:179] SupplierContact matching query does not exist.

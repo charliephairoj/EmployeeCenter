@@ -52,9 +52,6 @@ class Acknowledgement(models.Model):
                                                      db_column="original_acknowledgement_pdf")
 
 
-    @property
-    def delivery_date(self):
-        
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement
