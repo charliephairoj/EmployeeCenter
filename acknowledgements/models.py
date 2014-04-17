@@ -28,7 +28,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    _delivery_date = models.DateTimeField(db_column='delivery_date')
+    delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField()
     remarks = models.TextField(null=True, default=None)
     fob = models.TextField(null=True)
@@ -50,8 +50,16 @@ class Acknowledgement(models.Model):
                                                      null=True,
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
-
-
+    """
+    @property
+    def delivery_date(self):
+        return self._delivery_date
+    
+    @delivery_date.setter
+    def delivery_date(self, value):
+        self._delivery_date = value
+    """
+        
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement

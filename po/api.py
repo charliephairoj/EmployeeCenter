@@ -79,7 +79,15 @@ class PurchaseOrderResource(ModelResource):
             bundle.obj.supplier = Supplier.objects.get(pk=bundle.data['supplier']['id'])
             bundle.obj.terms = bundle.obj.supplier.terms
             bundle.obj.currency = bundle.obj.supplier.currency
-            bundle.obj.discount = bundle.obj.supplier.discount
+            
+            #Conditionally apply discount from supplier or user, with user having priority
+            try:
+                discount = int(bundle.data['discount'])
+                discount = discount if discount > 0 else bundle.obj.supplier.discount
+                bundle.obj.discount = discount
+            except KeyError:
+                bundle.obj.discount = bundle.obj.supplier.discount
+                
         except KeyError:
             logger.error("Missing supplier's ID")
             raise ValueError("Expecting the supplier's ID.")
@@ -106,8 +114,8 @@ class PurchaseOrderResource(ModelResource):
         #to the S3 service. Then generate 
         #a url for the data that will be returned to the customer
         logger.info("Creating pdf for purchase order #{0}".format(bundle.obj.id))
-        bundle.obj.create_and_upload_pdf()
-        bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
+        #bundle.obj.create_and_upload_pdf()
+        #bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
         
         return bundle
     
@@ -117,7 +125,7 @@ class PurchaseOrderResource(ModelResource):
         """
         #update flag
         updated = False
-        logger.debug('hhhiashdfiasdf')
+
         #Get the bundle obj and data
         if not bundle.obj or not self.get_bundle_detail_data(bundle):
             try:
@@ -146,6 +154,7 @@ class PurchaseOrderResource(ModelResource):
             updated = True
             
         #Check if quantities have changed and whether item exists
+        #Adds the item if it does not exist
         for item in bundle.data['items']:
             try:
                 item_obj = bundle.obj.items.get(pk=item['id'], purchase_order=bundle.obj)
@@ -162,11 +171,19 @@ class PurchaseOrderResource(ModelResource):
                 item_obj.purchase_order = bundle.obj
                 item_obj.save()
         
+        #Deletes items that have been removed
+        server_items = set([i.id for i in bundle.obj.items.all()])
+        client_items = set([item['id'] for item in bundle.data['items']])
+        logger.debug((server_items, client_items))
+        for item_id in server_items.difference(client_items):
+            logger.debug(item_id)
+            bundle.obj.items.get(pk=item_id).delete()
+            
         if updated:
             bundle.obj.calculate_total()
             bundle.obj.save()
-            bundle.obj.create_and_upload_pdf()
-            bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
+            #bundle.obj.create_and_upload_pdf()
+            #bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
             
         return bundle
     
