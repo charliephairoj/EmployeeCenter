@@ -30,7 +30,7 @@ pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
 
 class StickerDocTemplate(BaseDocTemplate):
-    def __init__(self, filename, page_size=(157 * mm, 212 * mm), **kwargs):
+    def __init__(self, filename, page_size=(162 * mm, 230 * mm), **kwargs):
         """
         Constructor
         
@@ -40,10 +40,10 @@ class StickerDocTemplate(BaseDocTemplate):
         """
         self.width, self.height = page_size
         kwargs['pagesize'] = page_size
-        kwargs['leftMargin'] = 1 * mm
-        kwargs['rightMargin'] = 1 * mm
-        kwargs['topMargin'] = 1 * mm
-        kwargs['bottomMargin'] = 1 * mm
+        kwargs['leftMargin'] = 0 * mm
+        kwargs['rightMargin'] = 0 * mm
+        kwargs['topMargin'] = 0 * mm
+        kwargs['bottomMargin'] = 0 * mm
         
         BaseDocTemplate.__init__(self, filename, **kwargs)
         
@@ -54,10 +54,10 @@ class StickerDocTemplate(BaseDocTemplate):
                       0, 
                       self.width, 
                       self.height, 
-                      leftPadding=0,
-                      bottomPadding=0, 
-                      rightPadding=0,
-                      topPadding=0)
+                      leftPadding=1 * mm,
+                      bottomPadding=1 * mm, 
+                      rightPadding=1 * mm,
+                      topPadding=11 * mm)
         template = PageTemplate('Normal', [frame])
         return template
         
@@ -66,6 +66,8 @@ class StickerPage(object):
     sticker_width = 50 * mm
     sticker_height = 19 * mm
     barcode_height = 10 * mm
+    vertical_spacing = 2 * mm
+    horizontal_spacing = 3 * mm
     
     def __init__(self, code=None, description=None, codes=None, *args, **kwargs):
         """
@@ -107,8 +109,8 @@ class StickerPage(object):
             data.append(row)
             
         table = Table(data,
-                      colWidths=tuple([self.sticker_width if i % 2 == 0 else 2 * mm for i in range(5) ]),
-                      rowHeights=tuple([self.sticker_height if i % 2 == 0 else 2 * mm for i in range(19)]))
+                      colWidths=tuple([self.sticker_width if i % 2 == 0 else self.horizontal_spacing for i in range(5) ]),
+                      rowHeights=tuple([self.sticker_height if i % 2 == 0 else self.vertical_spacing for i in range(19)]))
         style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
