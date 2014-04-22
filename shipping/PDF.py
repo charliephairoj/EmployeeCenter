@@ -39,12 +39,18 @@ class ShippingDocTemplate(BaseDocTemplate):
     def __init__(self, filename, **kw):
         if "id" in kw: self.id = kw["id"]
         BaseDocTemplate.__init__(self, filename, **kw)
-        self.addPageTemplates(self._create_page_template())
+        self.addPageTemplates([self._create_page_template(template_id="main"),
+                               self._craete_page_template(template_id="labels", header=False)])
         
-    def _create_page_template(self):
-        frame = Frame(0, 0, 210*mm,297*mm, leftPadding=36, bottomPadding=30, rightPadding=36, topPadding=self.top_padding)
-        template = PageTemplate('Normal', [frame])
-        template.beforeDrawPage = self._create_header
+    def _create_page_template(self, template_id, header=True):
+        """
+        Creates a basic page template
+        """
+        top_padding = self.top_padding if header else 30
+        frame = Frame(0, 0, 210 * mm,297 * mm, leftPadding=36, bottomPadding=30, rightPadding=36, topPadding=top_padding)
+        template = PageTemplate(id=template_id, [frame])
+        if header:
+            template.beforeDrawPage = self._create_header
         return template
     
   
@@ -55,7 +61,7 @@ class ShippingDocTemplate(BaseDocTemplate):
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width*30)/img_height
+        new_width = (img_width * 30) / img_height
         canvas.drawImage(path, 42, 780, height=30, width=new_width)
         
         #Add Company Information in under the logo
@@ -364,7 +370,6 @@ class ShippingPDF(object):
         return data
     
     def _create_packing_labels_section(self):
-        print 'yyya'''
         data = []
         for product in self.products:
             #Create the barcode
