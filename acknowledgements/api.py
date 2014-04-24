@@ -51,10 +51,12 @@ class AcknowledgementResource(ModelResource):
             try:
                 ack = bundle.obj.acknowledgement_pdf
                 production = bundle.obj.production_pdf
+                label = bundle.obj.label_pdf
                 bundle.data['pdf'] = {'acknowledgement': ack.generate_url(),
-                                      'production': production.generate_url()}
+                                      'production': production.generate_url(),
+                                      'label':label.generate_url()}
             except AttributeError: 
-                logger.warn('Missing acknowledgement or production pdf')
+                logger.warn('Missing acknowledgement or production or label pdf')
             
         return bundle
     
@@ -130,18 +132,8 @@ class AcknowledgementResource(ModelResource):
         #S3 system. The save the pdfs as
         #Attributes of the acknowledgement
         logger.info("Creating PDF documents...")
-        ack, production = bundle.obj.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(bundle.obj.id)
-        production_key = "acknowledgement/Production-{0}.pdf".format(bundle.obj.id)
-        bucket = "document.dellarobbiathailand.com"
+        bundle.obj.create_and_upload_pdfs()
         
-        logger.info("Uploading PDF documents...")
-        ack_pdf = S3Object.create(ack, ack_key, bucket, encrypt_key=True)
-        prod_pdf = S3Object.create(production, production_key, bucket, encrypt_key=True)
-        bundle.obj.acknowledgement_pdf = ack_pdf
-        bundle.obj.production_pdf = prod_pdf
-        bundle.obj.original_acknowledgement_pdf = ack_pdf
-        bundle.obj.save()
         
         #Add the url of the pdf to the outgoing data
         #only for when an acknowledgement is create
