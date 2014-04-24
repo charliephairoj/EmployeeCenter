@@ -15,7 +15,7 @@ import boto.ses
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
-from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
+from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
 from auth.models import Log, S3Object
 
 
@@ -46,6 +46,10 @@ class Acknowledgement(models.Model):
                                        null=True,
                                        related_name='+',
                                        db_column="production_pdf")
+    production_pdf = models.ForeignKey(S3Object,
+                                       null=True,
+                                       related_name='+',
+                                       db_column="label_pdf")
     original_acknowledgement_pdf = models.ForeignKey(S3Object,
                                                      null=True,
                                                      related_name='+',
@@ -162,13 +166,16 @@ class Acknowledgement(models.Model):
             raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdfs(self):
-        ack_filename, production_filename = self.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
-        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
+        ack_filename, production_filename, label_filename = self.create_pdfs()
+        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
+        production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
         prod_pdf = S3Object.create(production_filename, production_key, bucket)
+        label_pdf = S3Object.create(label_filename, label_key, bucket)
 
+        self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf
         self.production_pdf = prod_pdf
 
@@ -184,12 +191,26 @@ class Acknowledgement(models.Model):
         products = self.items.all().order_by('id')
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
+        label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
         ack_filename = ack_pdf.create()
         production_filename = production_pdf.create()
-        return ack_filename, production_filename
+        label_filename = label_pdf.create()
+        return ack_filename, production_filename, label_filename
     
-    
+    def create_and_upload_shipping_label(self):
+        """
+        Creates a shipping Label pdf and uploads to S3 service
+        """
+        products = self.items.all().order_by('id')
+        label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
+        label_filename = label_pdf.create()
+        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
+        bucket = "document.dellarobbiathailand.com"
+        label_pdf = S3Object.create(label_filename, label_key, bucket)
 
+        self.label_pdf = label_pdf
+        self.save()
+        
     def calculate_totals(self, items=None):
         """Calculates the total of the order
 
