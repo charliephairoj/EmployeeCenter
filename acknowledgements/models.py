@@ -49,6 +49,10 @@ class Acknowledgement(models.Model):
     production_pdf = models.ForeignKey(S3Object,
                                        null=True,
                                        related_name='+',
+                                       db_column="production_pdf")
+    label_pdf = models.ForeignKey(S3Object,
+                                       null=True,
+                                       related_name='+',
                                        db_column="label_pdf")
     original_acknowledgement_pdf = models.ForeignKey(S3Object,
                                                      null=True,
