@@ -51,13 +51,18 @@ class AcknowledgementResource(ModelResource):
             try:
                 ack = bundle.obj.acknowledgement_pdf
                 production = bundle.obj.production_pdf
-                label = bundle.obj.label_pdf
                 bundle.data['pdf'] = {'acknowledgement': ack.generate_url(),
-                                      'production': production.generate_url(),
-                                      'label':label.generate_url()}
-            except AttributeError: 
-                logger.warn('Missing acknowledgement or production or label pdf')
+                                      'production': production.generate_url()}
+            except AttributeError as e:
+                logger.warn(e) 
+                logger.warn('Missing acknowledgement or production pdf')
             
+            try:
+                label = bundle.obj.label_pdf
+                bundle.data['pdf']['label'] = label.generate_url()
+            except AttributeError:
+                logger.warn("Missing label pdf")
+                
         return bundle
     
     def apply_filters(self, request, applicable_filters):
