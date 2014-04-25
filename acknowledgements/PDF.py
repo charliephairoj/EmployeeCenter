@@ -119,7 +119,7 @@ class ShippingLabelDocTemplate(BaseDocTemplate):
         """
         Creates a basic page template
         """
-        frame = Frame(0, 0, 210 * mm,297 * mm, leftPadding=36, bottomPadding=30, rightPadding=36, topPadding=30)
+        frame = Frame(0, 0, 210 * mm,297 * mm, leftPadding=36, bottomPadding=12, rightPadding=36, topPadding=12)
         template = PageTemplate(id=template_id, frames=[frame])
         
         return template
@@ -767,7 +767,7 @@ class ShippingLabelPDF(object):
         self.filename = "ShippingLabel-{0}.pdf".format(self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
-        doc = ShippingLabelDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
+        doc = ShippingLabelDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=12)
         #Build the document with stories
         stories = self._get_stories()
         doc.build(stories)

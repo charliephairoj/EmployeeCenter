@@ -146,11 +146,12 @@ class ShippingPDF(object):
         story.append(self._create_authorization_section())
         return story
         """
-        
+        """
         story.append(NextPageTemplate('labels'))
         #New Page
         story.append(PageBreak())
         story.append(self._create_packing_labels_section())
+        """
         return story
     
     def _create_customer_section(self):
