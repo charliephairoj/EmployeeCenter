@@ -799,7 +799,7 @@ class ShippingLabelPDF(object):
         
         if product.image:
             image_url = product.image.generate_url(time=3600)
-            description_data.append([self.get_image(image_url, height=75)])
+            description_data.append([self.get_image(image_url, height=125)])
         
         description_table = Table(description_data, colWidths=(360))
         description_style = TableStyle([('FONTSIZE', (0,0), (-1, -1), 16),
