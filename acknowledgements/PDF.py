@@ -823,7 +823,7 @@ class ShippingLabelPDF(object):
                      [code],
                      ["Ack#: {0}".format(self.ack.id)],
                      [customer_paragraph],
-                     ["Qty: {0}".format(product.quantity)]]
+                     ["Qty: {0}".format(1)]]
         
         code_table = Table(code_data, colWidths=(150))
         code_style = TableStyle([('FONTSIZE', (0, 1), (0 , 1), 8), #Font size for code
@@ -859,7 +859,12 @@ class ShippingLabelPDF(object):
     
     def _create_packing_labels_section(self):
         
-        product_data = [[self._create_packing_label(product)] for product in self.products]
+        product_data = []
+        
+        #Produces a label for each quantity of each product
+        for product in self.products:
+            for i in range(0, product.quantity):
+                product_data.append([self._create_packing_label(product)])
         
         product_table = Table(product_data, colWidths=(500))
         product_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER')])
