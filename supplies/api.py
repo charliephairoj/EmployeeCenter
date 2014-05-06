@@ -70,8 +70,10 @@ class SupplyResource(ModelResource):
         return [
                 url(r"^{0}/image$".format(self._meta.resource_name), self.wrap_view('process_image')),
                 url(r"^{0}/type".format(self._meta.resource_name), self.wrap_view('type')),
+                url(r"^{0}/log$".format(self._meta.resource_name), self.wrap_view('log')),
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
+                
                 ]
         
     def hydrate(self, bundle):
@@ -402,9 +404,44 @@ class SupplyResource(ModelResource):
         return self.create_response(request, data)
     
     def type(self, request, **kwargs):
+        """
+        returns all the types that have been used for supplies
+        """
         data = [s for s in Supply.objects.values_list('type', flat=True).distinct()]
         return self.create_response(request, data)
-    
+        
+    def log(self, request, **kwargs):
+        """
+        returns all the logs for supplies checkout in the last two weeks
+        """
+        start_date = datetime.today() - timedelta(days=7)
+        end_date = datetime.today() + timedelta(days=1)
+        
+        logs = Log.objects.filter(log__timestamp__range=[start_date, end_date])
+        data = [self.dehydrate_log(log) for log in logs]
+        
+        return self.create_response(request, data)
+        
+    def dehydrate_log(self, log):
+        """
+        Takes a log instance and returns
+        a dictionary of its properties
+        """
+        try:
+            log_dict = {'id': log.id,
+                        'message': log.message,
+                        'quantity': log.quantity,
+                        'action': log.action,
+                        'timestamp', log.timestamp.strftime('%B %d, %Y %H:%M'),
+                        'supply': {
+                            'id': log.supply.id,
+                            'description': log.supply.description
+                        }}
+                        
+            return log
+        except AttributeError as e:
+            logger.warn(e)
+            
     def dehydrate_image(self, bundle):
         """
         Takes an intance of a S3 Image
