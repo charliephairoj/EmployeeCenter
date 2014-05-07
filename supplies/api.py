@@ -432,7 +432,7 @@ class SupplyResource(ModelResource):
                         'message': log.message,
                         'quantity': log.quantity,
                         'action': log.action,
-                        'timestamp', log.timestamp.strftime('%B %d, %Y %H:%M'),
+                        'timestamp': log.timestamp.strftime('%B %d, %Y %H:%M'),
                         'supply': {
                             'id': log.supply.id,
                             'description': log.supply.description
