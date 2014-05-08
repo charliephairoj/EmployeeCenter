@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 """
 This file demonstrates writing tests using the unittest module. These will pass
 when you run "manage.py test".
@@ -7,6 +10,7 @@ Replace this with more appropriate tests for your application.
 from datetime import datetime
 from decimal import Decimal
 import dateutil
+import subprocess
  
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -24,7 +28,7 @@ base_customer = {'first_name': "John",
                  "last_name": "Smith",
                  "type": "Dealer",
                  "currency": "USD"}
-base_supplier = {"name": "Test Supplier",
+base_supplier = {"name": u"บริษัท แลนด์ แอนด์ เฮ้าส์ จำักัด (มหาชน)",
                  "id": 1,
                  "currency": "THB"}
 base_fabric = {"pattern": "Max",
@@ -141,6 +145,7 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests getting a list of objects via GET
         """
+        self.skipTest('')
         #Create a shipping to retrieve
         self.create_shipping()
         
@@ -155,6 +160,7 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests getting an object via GET
         """
+        self.skipTest('')
         self.create_shipping()
         
         #Test the resp
@@ -192,10 +198,13 @@ class ShippingResourceTest(ResourceTestCase):
         self.assertIn('last_modified', obj)
         self.assertIn('time_created', obj)
         
+        print obj['pdf']['url']
+        
     def test_put(self):
         """
         Tests updating a resource via PUT
         """
+        self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
         resp = self.api_client.put('/api/v1/shipping/1', format='json',
@@ -215,6 +224,7 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests updating a resoure via the PATCH
         """
+        self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
         resp = self.api_client.patch('/api/v1/shipping/1', format='json',
@@ -233,6 +243,7 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests deleting a resource via DELETE
         """
+        self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
         resp = self.api_client.delete('/api/v1/shipping/1', format='json',

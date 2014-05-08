@@ -109,6 +109,22 @@ class ProductionDocTemplate(AckDocTemplate):
         barcode.drawOn(canvas, x_position, 750)
 
 
+class ShippingLabelDocTemplate(BaseDocTemplate):
+    
+    def __init__(self, filename, **kw):
+        BaseDocTemplate.__init__(self, filename, **kw)
+        self.addPageTemplates([self._create_page_template(template_id="labels")])
+        
+    def _create_page_template(self, template_id):
+        """
+        Creates a basic page template
+        """
+        frame = Frame(0, 0, 210 * mm,297 * mm, leftPadding=36, bottomPadding=12, rightPadding=36, topPadding=12)
+        template = PageTemplate(id=template_id, frames=[frame])
+        
+        return template
+        
+
 class AcknowledgementPDF(object):
     """Class to create PO PDF"""
     #attributes
@@ -724,3 +740,160 @@ class ProductionPDF(AcknowledgementPDF):
         style = TableStyle(style_data)
         table.setStyle(style)
         return table
+    
+    
+class ShippingLabelPDF(object):
+    """Class to create PO PDF"""
+    
+    #attributes
+    document_type = "Shipping"
+    
+    #def methods
+    def __init__(self, customer=None, products=None, ack=None):
+        
+        #Set Defaults
+        self.width, self.height = A4
+        stylesheet = getSampleStyleSheet()
+        normalStyle = stylesheet['Normal']
+        #Set Var
+        self.customer = customer  
+        self.products = products
+        self.ack = ack
+        self.employee = self.ack.employee
+    
+    
+    #create method
+    def create(self):
+        self.filename = "ShippingLabel-{0}.pdf".format(self.ack.id)
+        self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
+        #create the doc template
+        doc = ShippingLabelDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=12)
+        #Build the document with stories
+        stories = self._get_stories()
+        doc.build(stories)
+        #return the filename
+        return self.location
+        
+    def _get_stories(self):
+        #initialize story array
+        story = []
+        
+        story.append(self._create_packing_labels_section())
+        return story
+    
+    
+    
+    def _create_packing_label(self, product):
+        """
+        Creates an individual packing label as a 
+        Table.
+        """
+        logo_path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        logo = self.get_image(logo_path, width=200)
+        
+        
+        #Add the product information to the array
+        #print product.product.image9
+        description_data = [[logo],
+                            [product.description]]
+        
+        if product.image:
+            image_url = product.image.generate_url(time=3600)
+            description_data.append([self.get_image(image_url, height=125)])
+        
+        description_table = Table(description_data, colWidths=(360))
+        description_style = TableStyle([('FONTSIZE', (0,0), (-1, -1), 16),
+                                        ('BOTTOMPADDING', (0, 0), (0, 1), 10),
+                                        ('FONT', (0,0), (-1,-1), 'Garuda'),
+                                        ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'),
+                                        ('VALIGN', (0, 0), (0, 0), 'TOP'),
+                                        ('VALIGN', (0, 1), (-1,-1), 'MIDDLE'),
+                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+        description_table.setStyle(description_style)
+        
+        code = "DRAI-{0}".format(product.id)
+        barcode = code128.Code128(code, barHeight=20)
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=12,
+                               leading=16,
+                               textColor=colors.CMYKColor(black=60))
+        customer_paragraph = Paragraph(u"Customer: {0}".format(self.ack.customer.name), style)
+        code_data = [[barcode],
+                     [code],
+                     ["Ack#: {0}".format(self.ack.id)],
+                     [customer_paragraph],
+                     ["Qty: {0}".format(1)]]
+        
+        code_table = Table(code_data, colWidths=(150))
+        code_style = TableStyle([('FONTSIZE', (0, 1), (0 , 1), 8), #Font size for code
+                                 ('FONTSIZE', (0, 2), (0 , -2), 12), #Font size for order data
+                                 ('FONTSIZE', (0, -1), (0, -1), 16), #Font size for quantity
+                                 #Set code next to barcode
+                                 ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+                                 ('TOPPADDING', (0, 1), (0, 1), 0),
+                                 
+                                 ('BOTTOMPADDING', (0, 1), (0, 1), 15), #Margin after barcode and code
+                                 
+                                 ('BOTTOMPADDING', (0, -2), (0, -2), 25), #Margin after order data
+                                 
+                                 ('FONT', (0,0), (-1,-1), 'Garuda'), #Font for all text
+                                 ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'), #Alignment for barcode, code, and qty
+                                 ('ALIGNMENT', (0, 2), (0,-2), 'LEFT'), #Alignment for order data
+                                 ('VALIGN', (0, 1), (0, 1), 'TOP'),
+                                 ('VALIGN', (0, 2), (0, -1), 'MIDDLE'),
+                                 ('BOTTOMPADDING', (0, -1), (0, -1), 10), #Toppadding for quantity box
+                                 ('TOPPADDING', (0, -1), (0, -1), 10), #Bottompadding for quantity box
+                                 ('BOX', (0, -1), (0, -1), 1, colors.CMYKColor(black=60)),
+                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+        code_table.setStyle(code_style)
+        
+        label_data = [[description_table, code_table]]
+        label = Table(label_data, colWidths=(360, 160))
+        label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                                  ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
+        label.setStyle(label_style)
+        
+        return label
+    
+    def _create_packing_labels_section(self):
+        
+        product_data = []
+        
+        #Produces a label for each quantity of each product
+        for product in self.products:
+            for i in range(0, product.quantity):
+                product_data.append([self._create_packing_label(product)])
+        
+        product_table = Table(product_data, colWidths=(500))
+        product_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER')])
+        product_table.setStyle(product_style)
+    
+        return product_table
+        
+    #helps change the size and maintain ratio
+    def get_image(self, path, width=None, height=None):
+        """Retrieves the image via the link and gets the 
+        size from the image. The correct dimensions for 
+        image are calculated based on the desired with or
+        height"""
+        try:
+            #Read image from link
+            img = utils.ImageReader(path)
+        except:
+            return None
+        #Get Size
+        imgWidth, imgHeight = img.getSize()
+        #Detect if there height or width provided
+        if width!=None and height==None:
+            ratio = float(imgHeight)/float(imgWidth)
+            newHeight = ratio*width
+            newWidth = width
+        elif height!=None and width==None:
+            ratio = float(imgWidth)/float(imgHeight)
+            newHeight = height
+            newWidth = ratio*height
+           
+        return Image(path, width=newWidth, height=newHeight)
+    

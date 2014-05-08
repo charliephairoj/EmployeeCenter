@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from acknowledgements.models import Acknowledgement, AcknowledgementLog, Item as AckItem
+from acknowledgements.models import Acknowledgement, Item as AckItem
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements

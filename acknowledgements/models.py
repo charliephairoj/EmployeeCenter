@@ -15,7 +15,7 @@ import boto.ses
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from supplies.models import Fabric
-from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF
+from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
 from auth.models import Log, S3Object
 
 
@@ -28,7 +28,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField()
+    delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField()
     remarks = models.TextField(null=True, default=None)
     fob = models.TextField(null=True)
@@ -46,12 +46,28 @@ class Acknowledgement(models.Model):
                                        null=True,
                                        related_name='+',
                                        db_column="production_pdf")
+    production_pdf = models.ForeignKey(S3Object,
+                                       null=True,
+                                       related_name='+',
+                                       db_column="production_pdf")
+    label_pdf = models.ForeignKey(S3Object,
+                                       null=True,
+                                       related_name='+',
+                                       db_column="label_pdf")
     original_acknowledgement_pdf = models.ForeignKey(S3Object,
                                                      null=True,
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
-
-
+    """
+    @property
+    def delivery_date(self):
+        return self._delivery_date
+    
+    @delivery_date.setter
+    def delivery_date(self, value):
+        self._delivery_date = value
+    """
+        
     @classmethod
     def create(cls, user, **kwargs):
         """Creates the acknowledgement
@@ -87,11 +103,6 @@ class Acknowledgement(models.Model):
         
         #Save the ack and by overriden method, the items
         acknowledgement.save()
-
-        #Log creation of the acknowledgement
-        AcknowledgementLog.create("Ack# {0} Created".format(acknowledgement.id),
-                                    acknowledgement,
-                                    acknowledgement.employee)
 
         #Create the order PDFs
         ack, production = acknowledgement._create_pdfs()
@@ -157,17 +168,18 @@ class Acknowledgement(models.Model):
             message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
         except AttributeError:
             raise TypeError("Missing Delivery Date")
-
-        AcknowledgementLog.create(message, self.acknowledgement, employee)
     
     def create_and_upload_pdfs(self):
-        ack_filename, production_filename = self.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
-        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
+        ack_filename, production_filename, label_filename = self.create_pdfs()
+        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
+        production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
         prod_pdf = S3Object.create(production_filename, production_key, bucket)
+        label_pdf = S3Object.create(label_filename, label_key, bucket)
 
+        self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf
         self.production_pdf = prod_pdf
 
@@ -183,12 +195,26 @@ class Acknowledgement(models.Model):
         products = self.items.all().order_by('id')
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
+        label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
         ack_filename = ack_pdf.create()
         production_filename = production_pdf.create()
-        return ack_filename, production_filename
+        label_filename = label_pdf.create()
+        return ack_filename, production_filename, label_filename
     
-    
+    def create_and_upload_shipping_label(self):
+        """
+        Creates a shipping Label pdf and uploads to S3 service
+        """
+        products = self.items.all().order_by('id')
+        label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
+        label_filename = label_pdf.create()
+        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
+        bucket = "document.dellarobbiathailand.com"
+        label_pdf = S3Object.create(label_filename, label_key, bucket)
 
+        self.label_pdf = label_pdf
+        self.save()
+        
     def calculate_totals(self, items=None):
         """Calculates the total of the order
 
@@ -591,7 +617,10 @@ class Pillow(models.Model):
         return pillow
 
 
-class AcknowledgementLog(Log):
+class Log(models.Model):
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    delivery_date = models.DateField(null=True)
     acknowledgement = models.ForeignKey(Acknowledgement)
 
     @classmethod

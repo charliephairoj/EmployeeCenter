@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 
 from contacts.models import Contact, Supplier
 from auth.models import S3Object
+from media.stickers import StickerPage
 
 
 #Creates the main supplies class
@@ -165,6 +166,17 @@ class Supply(models.Model):
 
         return supply
 
+    def create_stickers(self):
+        sticker_page = StickerPage(code="DRS-{0}".format(self.id), 
+                                   description=self.description)
+        filename = sticker_page.create("DRS-{0}".format(self.id))    
+        stickers = S3Object.create(filename, 
+                                   "supplies/stickers/{0}".format(filename), 
+                                   'document.dellarobbiathailand.com', 
+                                    encrypt_key=True)
+        self.sticker = stickers
+        self.save()
+        
     def _get_product(self, supplier):
         """
         Returns the corresponding product
