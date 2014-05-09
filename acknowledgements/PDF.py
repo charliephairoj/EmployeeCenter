@@ -280,7 +280,7 @@ class AcknowledgementPDF(object):
             data.append([self._create_products_item_section(product)])
 
         data.append([self._create_totals_section()])
-        table = Table(data, colWidths=(520), repeatRows=1)
+        table = Table(data, colWidths=(535), repeatRows=1)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
@@ -294,7 +294,7 @@ class AcknowledgementPDF(object):
 
     def _create_products_title_section(self):
         titles = ['Product ID', 'Description', 'Unit Price', 'Qty', 'Total']
-        table = Table([titles], colWidths=(65, 300, 60, 40, 65))
+        table = Table([titles], colWidths=(80, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
                       ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
@@ -357,7 +357,7 @@ class AcknowledgementPDF(object):
         if product.image:
             data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=290)])
         #Create table
-        table = Table(data, colWidths=(65, 300, 60, 40, 65))
+        table = Table(data, colWidths=(80, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=80)),
@@ -640,7 +640,7 @@ class ProductionPDF(AcknowledgementPDF):
         for product in self.products:
             data.append([self._create_products_item_section(product)])
         #Create Table
-        table = Table(data, colWidths=(520), repeatRows=1)
+        table = Table(data, colWidths=(535), repeatRows=1)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                       ('TOPPADDING', (0, 0), (-1, -1), 0),
@@ -652,7 +652,7 @@ class ProductionPDF(AcknowledgementPDF):
 
     def _create_products_title_section(self):
         table = Table([['Product ID', 'Description', 'Qty']],
-                      colWidths=(65, 420, 40))
+                      colWidths=(80, 420, 40))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
                       ('GRID', (0,0), (-1, 0), 1, colors.CMYKColor(black=60)),
@@ -720,7 +720,7 @@ class ProductionPDF(AcknowledgementPDF):
         if product.image:
             data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=400)])
         #Create table
-        table = Table(data, colWidths=(65, 420, 40))
+        table = Table(data, colWidths=(80, 420, 40))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),
                        colors.CMYKColor(black=60)),
                             #Lines around content
