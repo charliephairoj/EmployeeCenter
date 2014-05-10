@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Permission, ContentType
 from tastypie.test import ResourceTestCase
 
 from contacts.models import Supplier
-from supplies.models import Supply, Fabric, Foam, SupplyLog
+from supplies.models import Supply, Fabric, Foam, Log
 from auth.models import S3Object
 
 
@@ -140,6 +140,10 @@ class SupplyResourceTestCase(ResourceTestCase):
         """
         Tests gettings the log for all the supplies
         """
+        
+        resp = self.api_client.get('/api/v1/supply/log')
+        self.assertHttpOK(resp)
+        obj = self.deserialize(resp)
     
     @unittest.skip('No longer using this method to change quantity')    
     def test_get_without_price(self):
