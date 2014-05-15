@@ -2,6 +2,7 @@
 API file for supplies
 """
 from decimal import Decimal
+from datetime import datetime, timedelta
 import time
 import logging
 import json
@@ -270,7 +271,13 @@ class SupplyResource(ModelResource):
         Extra suppliers before the parent obj_update method destroys it.
         """
         #Get suppliers data before erased by parent method
-        suppliers = bundle.data['suppliers']
+        try:
+            suppliers = bundle.data['suppliers']
+        except KeyError as e:
+            try: 
+                suppliers = [bundle.data['supplier']]
+            except KeyError:
+                raise
         
         bundle = super(SupplyResource, self).obj_update(bundle, **kwargs)
         
@@ -417,7 +424,7 @@ class SupplyResource(ModelResource):
         start_date = datetime.today() - timedelta(days=7)
         end_date = datetime.today() + timedelta(days=1)
         
-        logs = Log.objects.filter(log__timestamp__range=[start_date, end_date])
+        logs = Log.objects.filter(timestamp__range=[start_date, end_date])
         data = [self.dehydrate_log(log) for log in logs]
         
         return self.create_response(request, data)
@@ -438,7 +445,7 @@ class SupplyResource(ModelResource):
                             'description': log.supply.description
                         }}
                         
-            return log
+            return log_dict
         except AttributeError as e:
             logger.warn(e)
             
