@@ -6,7 +6,9 @@ from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
 from po.api import PurchaseOrderResource, ItemResource as POItemResource
 from shipping.api import ShippingResource
+from projects.api import ProjectResource
 from supplies.api import SupplyResource, FabricResource
+from equipment.api import EquipmentResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
 from administrator.api import UserResource, GroupResource, PermissionResource
 """
@@ -23,8 +25,10 @@ v1_api.register(AcknowledgementResource())
 v1_api.register(PurchaseOrderResource())
 v1_api.register(POItemResource())
 v1_api.register(ShippingResource())
+v1_api.register(ProjectResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())
+v1_api.register(EquipmentResource())
 v1_api.register(UserResource())
 v1_api.register(GroupResource())
 v1_api.register(PermissionResource())
