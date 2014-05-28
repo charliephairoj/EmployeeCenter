@@ -17,6 +17,7 @@ from products.models import Product, Upholstery
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
 from auth.models import Log, S3Object
+from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class Acknowledgement(models.Model):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
+    project = models.ForeignKey(Project, null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,
@@ -58,6 +60,7 @@ class Acknowledgement(models.Model):
                                                      null=True,
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
+                                                    
     """
     @property
     def delivery_date(self):

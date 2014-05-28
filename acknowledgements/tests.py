@@ -17,6 +17,8 @@ from supplies.models import Fabric
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
 from auth.models import S3Object
+from projects.models import Project
+
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
 base_customer = {'first_name': "John",
@@ -49,6 +51,7 @@ base_ack = {'customer': {'id': 1},
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
             'employee': {'id': 1},
+            'project': {'codename': 'Ladawan1'}
             'items': [{'id': 1,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
@@ -244,6 +247,10 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(158500))
         self.assertEqual(len(ack['items']), 3)
+        self.assertIn('project', ack)
+        self.assertEqual(ack['project']['id'], 1)
+        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        
         #Test standard sized item 
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
@@ -280,6 +287,9 @@ class AcknowledgementResourceTest(ResourceTestCase):
         root_ack = Acknowledgement.objects.order_by('-id').all()[0]
         self.assertEqual(root_ack.id, 2)
         self.assertEqual(root_ack.items.count(), 3)
+        self.assertIsInstancee(root_ack.project, Project)
+        self.assertEqual(root_ack.project.id, 1)
+        self.assertEqual(root_ack.project.codename, "Ladawan1")
         root_ack_items = root_ack.items.all()
         item1 = root_ack_items[0]
         item2 = root_ack_items[1]

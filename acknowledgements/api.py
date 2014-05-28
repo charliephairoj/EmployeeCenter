@@ -84,7 +84,7 @@ class AcknowledgementResource(ModelResource):
         bundle.obj = Acknowledgement()
         #hydrate
         bundle = self.full_hydrate(bundle)
-        logger.debug(bundle.obj.vat)
+        
         #Set the customer
         try:
             logger.info("Setting customer...")
@@ -108,6 +108,17 @@ class AcknowledgementResource(ModelResource):
         #Set Status
         bundle.obj.status = "ACKNOWLEDGED"
         
+        #Set the project or create a new one
+        if "project" in bundle.data:
+            try:
+                project = Project.objects.get(pk=bundle.data['project']['id'])
+            except KeyError, Project.DoesNotExist:
+                project = Project()
+                project.codename = bundle.data['project']['codename']
+                project.save()
+                
+            bundle.obj.project = project
+            
         #Create items without saving them 
         logger.info("Creating items...")
         self.items = [Item.create(acknowledgement=bundle.obj,

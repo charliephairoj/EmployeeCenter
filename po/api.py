@@ -13,6 +13,7 @@ from tastypie.exceptions import NotFound, BadRequest, InvalidFilterError, Hydrat
 
 from po.models import PurchaseOrder, Item
 from contacts.models import Supplier
+from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ class PurchaseOrderResource(ModelResource):
                     po_item.save()
             except:
                 pass
-            
+        
         return bundle
     
     def dehydrate(self, bundle):
@@ -60,6 +61,10 @@ class PurchaseOrderResource(ModelResource):
                 logger.warn(e)
                 logger.warn('Missing pdf')
             
+        #Adds a dictionary for the project if it exists
+        if bundle.obj.project:
+            bundle.data['project'] = {'id': bundle.obj.project.id,
+                                      'codename': bundle.obj.project.codename}
         return bundle
         
     def obj_create(self, bundle, **kwargs):
@@ -73,6 +78,18 @@ class PurchaseOrderResource(ModelResource):
         bundle = self.full_hydrate(bundle, **kwargs)
         #Assign the employee
         bundle.obj.employee = bundle.request.user
+        
+        #Set the project or create a new one
+        if "project" in bundle.data:
+            try:
+                project = Project.objects.get(pk=bundle.data['project']['id'])
+            except KeyError, Project.DoesNotExist:
+                project = Project()
+                project.codename = bundle.data['project']['codename']
+                project.save()
+                
+            bundle.obj.project = project
+        
         #Assign the supplier
         #and the terms
         try:
@@ -81,12 +98,12 @@ class PurchaseOrderResource(ModelResource):
             bundle.obj.currency = bundle.obj.supplier.currency
             
             #Conditionally apply discount from supplier or user, with user having priority
+            bundle.obj.discount = bundle.obj.supplier.discount
             try:
                 discount = int(bundle.data['discount'])
-                discount = discount if discount > 0 else bundle.obj.supplier.discount
                 bundle.obj.discount = discount
             except KeyError:
-                bundle.obj.discount = bundle.obj.supplier.discount
+                pass
                 
         except KeyError:
             logger.error("Missing supplier's ID")
@@ -113,6 +130,7 @@ class PurchaseOrderResource(ModelResource):
         #Create a pdf to be uploaded 
         #to the S3 service. Then generate 
         #a url for the data that will be returned to the customer
+        
         logger.info("Creating pdf for purchase order #{0}".format(bundle.obj.id))
         bundle.obj.create_and_upload_pdf()
         bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
@@ -160,10 +178,18 @@ class PurchaseOrderResource(ModelResource):
                 item_obj = bundle.obj.items.get(pk=item['id'], purchase_order=bundle.obj)
                 if item['quantity'] != item_obj.quantity:
                     updated = True
-                    item_obj.supply.supplier = bundle.obj.supplier
                     item_obj.quantity = item['quantity']
-                    item_obj.calculate_total()
-                    item_obj.save()
+                   
+                if "discount" in item:
+                    updated = True
+                    item_obj.discount = item['discount']
+                else:
+                    if item_obj.discount != 0:
+                        item_obj.discount = 0
+                        updated = True
+                item_obj.supply.supplier = bundle.obj.supplier
+                item_obj.calculate_total()
+                item_obj.save()
             except (KeyError, Item.DoesNotExist):
                 updated = True
                 #Create a new item
@@ -182,8 +208,8 @@ class PurchaseOrderResource(ModelResource):
         if updated:
             bundle.obj.calculate_total()
             bundle.obj.save()
-            #bundle.obj.create_and_upload_pdf()
-            #bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
+            bundle.obj.create_and_upload_pdf()
+            bundle.data["pdf"] = {"url": bundle.obj.pdf.generate_url()}
             
         return bundle
     

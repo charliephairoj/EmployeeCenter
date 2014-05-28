@@ -12,11 +12,11 @@ from auth.models import S3Object
 
 
 class Project(models.Model):
-    customer = models.ForeignKey(Customer)
-    type = models.TextField()
-    reference = models.TextField()
-    codename = models.TextField()
-    _due_date = models.DateField(db_column="due_date")
+    customer = models.ForeignKey(Customer, null=True)
+    type = models.TextField(null=True)
+    reference = models.TextField(null=True)
+    codename = models.TextField(null=True)
+    _due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
 
