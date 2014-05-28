@@ -16,10 +16,11 @@ class Project(models.Model):
     type = models.TextField(null=True)
     reference = models.TextField(null=True)
     codename = models.TextField(null=True)
-    _due_date = models.DateField(db_column="due_date", null=True)
+    #_due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
 
+    """
     @property
     def due_date(self):
         return self._due_date
@@ -32,7 +33,8 @@ class Project(models.Model):
             self._due_date = date
         else:
             self._due_date = dateutil.parser.parse(date).date()
-
+    """
+    
     @classmethod
     def create(cls, **kwargs):
         """
@@ -67,54 +69,6 @@ class Project(models.Model):
         project.save()
         return project
 
-    def update(self, **kwargs):
-        """
-        Updates the Project
-        """
-        if "due_date" in kwargs:
-            self.due_date = kwargs["due_date"]
-        if "status" in kwargs:
-            self.status = kwargs["status"]
-        if "reference" in kwargs:
-            if kwargs["reference"] != self.reference:
-                self._update_reference(kwargs["reference"])
-
-    def to_dict(self, user=None):
-        """
-        Returns the projects attribute as a dictionary
-        """
-        return {"id": self.id,
-                'customer': self.customer.to_dict(),
-                "reference": self.reference,
-                "codename": self.codename,
-                "due_date": self.due_date.isoformat(),
-                "status": self.status,
-                "type": self.type,
-                "deleted": self.deleted,
-                "rooms": [room.to_dict() for room in self.room_set.all()]}
-
-    def _update_reference(self, new_reference):
-        """
-        Updates the reference
-
-        This method will update the reference, along with the corresponding
-        model and all the items in this project
-        """
-        old_reference = self.reference
-        self.reference = new_reference
-
-        try:
-            model = Model.objects.get(model=old_reference)
-            model.model = self.reference
-        except Model.DoesNotExist:
-            pass
-
-        items = [room.item_set.all() for room in self.room_set.all()]
-        for item in items:
-            if item.type.lower() == "upholstery":
-                description = "{0} {1}".format(item.model.model,
-                                               item.configuration.configuration)
-                item.update(description=description)
 
 
 class Room(models.Model):
