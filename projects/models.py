@@ -5,7 +5,7 @@ import datetime
 import dateutil
 
 from django.db import models
-from acknowledgements.models import Acknowledgement, Item as AcknowledgementItem
+#from acknowledgements.models import Acknowledgement, Item as AcknowledgementItem
 from products.models import Product, Model, Upholstery
 from contacts.models import Customer
 from auth.models import S3Object

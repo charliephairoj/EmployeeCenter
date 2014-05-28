@@ -51,7 +51,7 @@ base_ack = {'customer': {'id': 1},
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
             'employee': {'id': 1},
-            'project': {'codename': 'Ladawan1'}
+            'project': {'codename': 'Ladawan1'},
             'items': [{'id': 1,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
@@ -166,6 +166,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         del ack_data['customer']
         del ack_data['items']
         del ack_data['employee']
+        del ack_data['project']
         self.ack = Acknowledgement(**ack_data)
         self.ack.customer = self.customer
         self.ack.employee = self.user
@@ -287,7 +288,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         root_ack = Acknowledgement.objects.order_by('-id').all()[0]
         self.assertEqual(root_ack.id, 2)
         self.assertEqual(root_ack.items.count(), 3)
-        self.assertIsInstancee(root_ack.project, Project)
+        self.assertIsInstance(root_ack.project, Project)
         self.assertEqual(root_ack.project.id, 1)
         self.assertEqual(root_ack.project.codename, "Ladawan1")
         root_ack_items = root_ack.items.all()
@@ -537,6 +538,7 @@ class TestItemResource(ResourceTestCase):
         del ack_data['customer']
         del ack_data['items']
         del ack_data['employee']
+        del ack_data['project']
         self.ack = Acknowledgement(**ack_data)
         self.ack.customer = self.customer
         self.ack.employee = self.user

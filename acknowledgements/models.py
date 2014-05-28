@@ -14,10 +14,11 @@ import boto.ses
 
 from contacts.models import Customer
 from products.models import Product, Upholstery
+from projects.models import Project
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
 from auth.models import Log, S3Object
-from projects.models import Project
+
 
 
 logger = logging.getLogger(__name__)

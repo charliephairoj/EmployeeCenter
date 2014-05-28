@@ -249,6 +249,10 @@ class AcknowledgementPDF(object):
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
+            
+        if self.ack.project:
+            data.append(['Project:', self.ack.project.codename])
+            
         if self.ack.remarks is not None and self.ack.remarks != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
@@ -573,32 +577,10 @@ class ProductionPDF(AcknowledgementPDF):
             a_story.hAlign = 'LEFT'
         #creates the data to hold the product information
         Story.append(self._create_products_section())
+        
+        Story.append(self._create_signature_section())
+        
         return Story
-
-    def _create_heading(self):
-        """
-        Create Heading.
-
-        This method Creates the heading, which
-        includes the logo and the subheading"""
-
-        #create the heading
-        heading = Table([
-                         [self.get_image("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", height=30), 
-                         self._create_sub_heading()]], colWidths=(320, 210))
-        #create the heading format and apply
-        headingStyle = TableStyle([('TOPPADDING', (0, 0), (-1, -1), 0),
-                                   ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                                   ('VALIGN', (0, 0), (0, -1), 'BOTTOM'),
-                                   ('FONT', (0, 0), (-1, -1), 'Garuda'),
-                                   ('TEXTCOLOR', (0, 0), (-1, -1),
-                                    colors.CMYKColor(black=60)),
-                                   ('VALIGN', (1, 0), (1, -1), 'TOP'),
-                                   ('ALIGNMENT', (1, 0), (1, -1), 'RIGHT'),
-                                   ('FONTSIZE', (0, 1), (0, -1), 8)])
-        heading.setStyle(headingStyle)
-        #Return the heading
-        return heading
 
     def _create_ack_section(self):
         #Create data array
@@ -610,6 +592,10 @@ class ProductionPDF(AcknowledgementPDF):
         delivery_date_str, date_obj = self.outputBKKTime(self.ack.delivery_date, '%d {0}, %Y')
         deliver_date_str = delivery_date_str.format(self.thai_months[date_obj.month-1])
         data.append(['กำหนดส่ง:', deliver_date_str])
+        
+        if self.ack.project:
+            data.append(['Project:', self.ack.project.codename])
+            
         if self.ack.remarks is not None and self.ack.remarks != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
@@ -740,6 +726,22 @@ class ProductionPDF(AcknowledgementPDF):
         style = TableStyle(style_data)
         table.setStyle(style)
         return table
+        
+    def _create_signature_section(self):
+        #create the signature
+        signature = Table([['x', '', 'x'],['Office Manager', '', 'Manager']],
+                          colWidths=(200, 100, 200))
+        style = TableStyle([
+                             ('TEXTCOLOR', (0,0), (-1,-1),
+                              colors.CMYKColor(black=60)),
+                             ('LINEBELOW', (0,0), (0,0), 1,
+                              colors.CMYKColor(black=60)),
+                             ('LINEBELOW', (-1,0), (-1,0), 1,
+                              colors.CMYKColor(black=60)),
+                             ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                             ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
+        signature.setStyle(style)
+        return signature
     
     
 class ShippingLabelPDF(object):

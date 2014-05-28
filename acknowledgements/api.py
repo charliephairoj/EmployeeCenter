@@ -15,7 +15,7 @@ from acknowledgements.validation import AcknowledgementValidation
 from contacts.models import Customer
 from supplies.models import Fabric
 from auth.models import S3Object
-
+from projects.models import Project
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,11 @@ class AcknowledgementResource(ModelResource):
             except AttributeError:
                 logger.warn("Missing label pdf")
                 
+        #Adds a dictionary for the project if it exists
+        if bundle.obj.project:
+            bundle.data['project'] = {'id': bundle.obj.project.id,
+                                      'codename': bundle.obj.project.codename}
+                                      
         return bundle
     
     def apply_filters(self, request, applicable_filters):
