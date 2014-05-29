@@ -44,6 +44,7 @@ class PurchaseOrder(models.Model):
     pdf = models.ForeignKey(S3Object, null=True)
     project = models.ForeignKey(Project, null=True)
     deposit = models.IntegerField(default=0)
+    deposit_type = models.TextField(default="percent")
     
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -187,6 +188,7 @@ class Item(models.Model):
     discount = models.IntegerField(default=0)
     unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    comments = models.TextField(null=True)
         
     @classmethod
     def create(cls, supplier=None, **kwargs):
@@ -202,6 +204,9 @@ class Item(models.Model):
         item.discount = item.supply.discount
         if "discount" in kwargs:
             item.discount = kwargs['discount']
+            
+        if "comments" in kwargs:
+            item.comments = kwargs['comments']
         
         item.quantity = int(kwargs["quantity"])
         

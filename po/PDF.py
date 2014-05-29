@@ -292,13 +292,19 @@ class PurchaseOrderPDF():
         
         #Add section for deposit
         if int(self.po.deposit) != 0:
-            deposit = Decimal(str(round((Decimal(self.po.deposit) / Decimal('100')) * self.po.grand_total, 2)))
+            if self.po.deposit_type == "percent":
+                deposit = Decimal(str(round((Decimal(self.po.deposit) / Decimal('100')) * self.po.grand_total, 2)))
+                deposit_title = "{0}%".format(self.po.deposit)
+            elif self.po.deposit_type == "amount":
+                deposit = "{0}".format(self.po.deposit)
+                deposit_title = ""
+                
             data += [['',
                      '',
                      '',
                      '',
                      '',
-                     'Deposit {0}%'.format(self.po.deposit),
+                     'Deposit {0}'.format(deposit_title),
                      deposit]]
             
         #Create Table
@@ -368,6 +374,9 @@ class PurchaseOrderPDF():
     def __get_description(self, supply):
         #Set description
         description = supply.description
+        
+        if supply.comments:
+            description += "<br/>[Comments: {0}]".format(supply.comments.replace('\n', '<br/>'))
         #If there is a discount then append
         # original price string
         style = ParagraphStyle(name='Normal',
