@@ -14,6 +14,7 @@ from tastypie import fields
 from tastypie.resources import ModelResource
 from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import Unauthorized
+from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from supplies.models import Supply, Fabric, Product, Log
 from contacts.models import Supplier
@@ -27,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class SupplyResource(ModelResource):
-    #suppliers = fields.ToManyField('contacts.api.SupplierResource', 'suppliers',
-    #                             readonly=True, full=True)
+    log = fields.ToManyField('supplies.api.LogResource', 'log') 
     
     class Meta:
         queryset = Supply.objects.all()
@@ -37,7 +37,9 @@ class SupplyResource(ModelResource):
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
         ordering = ['image']
-        filtering = {'upc': 'exact'}
+        filtering = {'upc': 'exact',
+                     'quantity': ALL,
+                     'last_modified': ALL}
         #fields = ['purchasing_units', 'description', 'cost', 'id', 'pk']
     
     def apply_filters(self, request, applicable_filters):
@@ -495,7 +497,18 @@ class SupplyResource(ModelResource):
             
         return bundle
     
-            
+class LogResource(ModelResource):
+    supply = fields.ForeignKey('supplies.api.SupplyResource', 'supply')
+    
+    class Meta:
+        queryset = Log.objects.all()  
+        resource_name = 'log'
+        filtering = {
+            'timestamp': ALL,
+            'action': ALL
+        }
+        
+        
 class FabricResource(SupplyResource):
     #supplier = fields.ToOneField('contacts.api.SupplierResource', 'supplier', full=True)
     class Meta:

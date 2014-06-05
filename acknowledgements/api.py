@@ -118,9 +118,12 @@ class AcknowledgementResource(ModelResource):
             try:
                 project = Project.objects.get(pk=bundle.data['project']['id'])
             except KeyError, Project.DoesNotExist:
-                project = Project()
-                project.codename = bundle.data['project']['codename']
-                project.save()
+                try:
+                    project = Project()
+                    project.codename = bundle.data['project']['codename']
+                    project.save()
+                except KeyError:
+                    project = None
                 
             bundle.obj.project = project
             

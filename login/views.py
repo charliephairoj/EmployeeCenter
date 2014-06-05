@@ -46,7 +46,8 @@ def app_login(request):
                 return render(request, 'home.html', {'user_data': jsonStr})
             """
             #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
-            return HttpResponseRedirect('index.html')
+            
+            return render(request, 'index.html')
 
             #return render(request, 'home.html', {'user_data': jsonStr})
 
@@ -78,7 +79,8 @@ def app_login(request):
                     login(request, user)
 
                     #Gets user profile to do checks
-                    return HttpResponseRedirect('/')
+                    url = 'http://localhost:9001/index.html' if settings.DEBUG else '/'
+                    return HttpResponseRedirect(url)
 
                 else:
                     return HttpResponseRedirect('/login')
