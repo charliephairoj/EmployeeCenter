@@ -156,21 +156,25 @@ class ShippingPDF(object):
     
     def _create_customer_section(self):
         #extract supplier address
-        address = self.customer.address_set.all()[0] 
+        try:
+            address = self.customer.address_set.all()[0] 
+        except IndexError:
+            address = None
         #Create data array
         data = []
         #Add supplier name
         data.append(['Customer:', self.customer.name])
-        #Extract address
-        addr = address.address1 if address.address1 != None else ''
-        city = address.city if address.city != None else ''
-        territory = address.territory if address.territory != None else ''
-        country = address.country if address.country != None else ''
-        zipcode = address.zipcode if address.zipcode != None else ''
-        #add supplier address data
-        data.append(['', addr])
-        data.append(['', u'{0}, {1}'.format(city, territory)])
-        data.append(['', u"{0} {1}".format(country, zipcode)]) 
+        if address:
+            #Extract address
+            addr = address.address1 if address.address1 != None else ''
+            city = address.city if address.city != None else ''
+            territory = address.territory if address.territory != None else ''
+            country = address.country if address.country != None else ''
+            zipcode = address.zipcode if address.zipcode != None else ''
+            #add supplier address data
+            data.append(['', addr])
+            data.append(['', u'{0}, {1}'.format(city, territory)])
+            data.append(['', u"{0} {1}".format(country, zipcode)]) 
         #Create Table
         table = Table(data, colWidths=(80, 200))
         #Create and apply Table Style
