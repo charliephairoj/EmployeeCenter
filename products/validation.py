@@ -70,12 +70,12 @@ class ProductValidation(Validation):
                 
         #Checks that the wholesale price is present and greater than 1
         try:
-            if decimal.Decimal(bundle.data['wholesale_price']) <= 0:
-                errors['wholesale_price'] = "The wholesale price must be greater than 0."
+            if decimal.Decimal(bundle.data['price']) <= 0:
+                errors['price'] = "The price must be greater than 0."
         except KeyError:
-            errors['wholesale_price'] = "Expecting a wholesale price."
+            errors['price'] = "Expecting a price."
         except decimal.InvalidOperation:
-            errors['wholesale_price'] = "{0} is not a valid price.".format(bundle.data['wholesale_price'])
+            errors['price'] = "{0} is not a valid price.".format(bundle.data['price'])
             
         return errors
     
