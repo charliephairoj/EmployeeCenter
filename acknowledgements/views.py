@@ -12,7 +12,16 @@ from acknowledgements.models import Acknowledgement, Item, Delivery
 from auth.models import S3Object
 from utilities.http import save_upload, process_api
 
+from acknowledgements.schedule import AcknowledgementScheduleHTML
 
+
+def schedule(request):
+    if request.method == "GET":
+        ackSched = AcknowledgementScheduleHTML()
+        ackSched.create()
+        return HttpResponse(ackSched.get_message())
+        
+        
 @login_required
 def acknowledgement(request, ack_id=0):
     #Get Request

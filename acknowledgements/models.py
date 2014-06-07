@@ -321,7 +321,7 @@ class Acknowledgement(models.Model):
     def email_decoroom(self):
         """Emails decoroom"""
         self._email(self.acknowledgement_pdf, ['praparat@decoroom.com'])
-        self._email(self.production_pdf, ['sales@decoroom.com'])
+        self._email(self.acknowledgement_pdf, ['sales@decoroom.com'])
 
 
 class Item(models.Model):
