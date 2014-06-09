@@ -488,7 +488,7 @@ class AcknowledgementPDF(object):
 
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', 'x'],['Purchasing Agent', '', 'Manager']],
+        signature = Table([['x', '', 'x'],['Office Manager', '', 'Charlie Phairojmahakij']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
@@ -577,7 +577,7 @@ class ProductionPDF(AcknowledgementPDF):
             a_story.hAlign = 'LEFT'
         #creates the data to hold the product information
         Story.append(self._create_products_section())
-        
+        Story.append(Spacer(0, 50))
         Story.append(self._create_signature_section())
         
         return Story
@@ -729,7 +729,7 @@ class ProductionPDF(AcknowledgementPDF):
         
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', 'x'],['Office Manager', '', 'Manager']],
+        signature = Table([['x', '', 'x'],['Office Manager', '', 'Charlie Phairojmahakij']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
