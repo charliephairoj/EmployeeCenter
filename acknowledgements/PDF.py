@@ -464,8 +464,13 @@ class AcknowledgementPDF(object):
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                     total -= discount
                     data.append(['', '', '', 'Total', "%.2f" % total])
+                    
+                    prevat_total = total
+                else:
+                    prevat_total = self.ack.subtotal
+                    
                 #calculate vat and add to pdf
-                vat = Decimal(self.ack.subtotal) * (Decimal(self.ack.vat) / Decimal(100))
+                vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
         data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total])
         table = Table(data, colWidths=(65, 300, 30, 70, 65))
