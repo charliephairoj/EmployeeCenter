@@ -50,7 +50,7 @@ class ProjectResource(ModelResource):
         """
         Adds a new supply to the project
         """
-        if reequest.method = "POST":
+        if reequest.method == "POST":
             #Get the project
             project = Project.objects.get(pk=kwargs['pk'])
         
