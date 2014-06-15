@@ -8,6 +8,7 @@ from django.db import models
 #from acknowledgements.models import Acknowledgement, Item as AcknowledgementItem
 from products.models import Product, Model, Upholstery
 from contacts.models import Customer
+from supplies.models import Supply
 from auth.models import S3Object
 
 
@@ -19,7 +20,7 @@ class Project(models.Model):
     #_due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
-
+    supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
     """
     @property
     def due_date(self):
@@ -356,4 +357,9 @@ class Item(models.Model):
         product_data["model"] = {"id": model.id}
         return Upholstery.create(**product_data)
 
+
+class ProjectSupply(models.Model):
+    supply = models.ForeignKey(Supply)
+    project = models.ForeignKey(Project)
+    quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
 

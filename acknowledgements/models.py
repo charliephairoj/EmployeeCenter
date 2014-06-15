@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class Acknowledgement(models.Model):
     po_id = models.TextField(default=None, null=True)
     discount = models.IntegerField(default=0)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
