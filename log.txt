@@ -1,0 +1,626 @@
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:21:13] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[14/Jun/2014 16:21:13] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[14/Jun/2014 16:51:50] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[14/Jun/2014 16:51:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:43] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 09:58:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 09:58:50] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 09:58:50] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 09:58:50] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 09:58:51] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 09:58:51] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 09:58:51] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 09:58:52] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 09:58:53] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 09:58:53] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 09:58:54] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 09:58:54] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 10:00:59] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 10:00:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:03:22] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 11:03:22] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:02] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 11:06:02] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:06:50] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 11:06:50] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:12:30] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 11:12:30] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:23] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[15/Jun/2014 11:16:23] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[15/Jun/2014 11:16:32] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:16:33] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:16:34] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:16:35] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:16:35] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:16:35] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:16:35] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:16:36] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:16:36] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:16:37] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:16:38] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:16:38] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:16:39] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:19:43] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:19:44] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:19:45] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:19:46] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:19:47] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:19:47] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:19:48] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:19:49] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:19:49] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:19:49] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:19:53] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:19:54] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:19:55] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:19:55] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:19:55] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:19:56] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:19:57] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:19:57] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:19:58] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:19:58] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:19:58] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:20:01] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:20:04] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:22:02] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:22:02] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:22:02] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:22:03] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:22:04] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:22:04] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:22:05] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:22:05] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:22:05] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:23:03] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:23:04] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:23:04] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:23:04] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:23:04] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:23:05] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:23:05] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:23:06] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:23:06] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:23:07] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:23:07] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:23:32] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:23:32] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:23:33] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:23:33] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:23:33] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:23:33] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:23:34] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:23:34] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:23:35] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:23:35] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:23:35] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:23:36] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:27:26] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:27:26] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:27:27] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:27:27] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:27:27] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:27:28] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:27:28] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 11:27:28] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 11:27:29] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:27:30] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 11:27:30] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:27:30] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 11:27:30] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 11:27:31] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 11:27:32] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 11:27:32] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 11:27:32] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[15/Jun/2014 12:27:53] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 12:27:56] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[15/Jun/2014 12:27:57] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[15/Jun/2014 12:27:57] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[15/Jun/2014 12:27:57] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[15/Jun/2014 12:27:57] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[15/Jun/2014 12:27:58] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[15/Jun/2014 12:27:58] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[15/Jun/2014 12:27:59] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[15/Jun/2014 12:27:59] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[15/Jun/2014 12:28:00] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[15/Jun/2014 12:28:00] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 17:57:59] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[16/Jun/2014 17:57:59] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:25] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[16/Jun/2014 18:00:25] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 18:00:35] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[16/Jun/2014 18:00:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[16/Jun/2014 19:11:45] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[16/Jun/2014 19:11:45] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:35] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 08:57:35] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:36] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 08:57:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:36] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 08:57:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:36] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 08:57:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:36] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 08:57:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 08:57:36] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 08:57:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:05:48] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 09:05:48] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:47] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 09:34:47] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:34:48] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 09:34:49] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 09:34:49] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 09:34:49] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 09:34:49] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 09:34:50] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 09:34:50] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 09:34:51] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 09:34:51] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 09:34:52] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 09:34:52] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:47:39] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 09:47:39] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:52:29] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 09:52:29] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 09:55:36] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[17/Jun/2014 09:55:36] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[17/Jun/2014 15:20:25] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:20:26] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:20:26] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:20:26] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:20:26] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:20:27] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:20:27] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:20:28] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:20:29] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:20:30] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:20:30] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:20:43] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:20:43] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:20:44] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:20:44] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:20:44] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:20:44] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:20:45] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:20:46] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:20:47] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:20:47] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:20:48] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:21:44] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:21:44] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:21:44] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:21:45] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:21:45] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:21:45] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:21:46] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:21:46] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:21:47] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:21:47] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:21:47] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:21:54] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:21:54] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:21:55] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:21:55] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:21:55] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:21:55] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:21:56] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:21:56] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:21:56] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:21:57] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:21:58] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:21:58] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:21:58] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:21:59] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:22:00] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:22:01] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:22:01] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:23:33] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:23:34] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:23:34] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:23:35] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:23:35] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:25:23] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[17/Jun/2014 15:25:24] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[17/Jun/2014 15:25:24] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[17/Jun/2014 15:25:24] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[17/Jun/2014 15:25:25] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[17/Jun/2014 15:25:26] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[17/Jun/2014 15:25:26] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[17/Jun/2014 15:25:27] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[17/Jun/2014 15:25:27] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[17/Jun/2014 15:25:28] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[17/Jun/2014 15:25:28] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[17/Jun/2014 15:25:51] WARNING [supplies.api:111] 'type'
+[17/Jun/2014 16:15:27] WARNING [po.PDF:179] SupplierContact matching query does not exist.
