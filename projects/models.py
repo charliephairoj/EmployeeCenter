@@ -17,7 +17,7 @@ class Project(models.Model):
     type = models.TextField(null=True)
     reference = models.TextField(null=True)
     codename = models.TextField(null=True)
-    #_due_date = models.DateField(db_column="due_date", null=True)
+    due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
     supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
@@ -74,7 +74,7 @@ class Project(models.Model):
 
 class Room(models.Model):
     description = models.TextField()
-    project = models.ForeignKey(Project)
+    project = models.ForeignKey(Project, related_name="rooms")
     reference = models.TextField()
     image = models.ForeignKey(S3Object, null=True, related_name="+")
     schematic = models.ForeignKey(S3Object, null=True, related_name="+")

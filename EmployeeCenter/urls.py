@@ -6,7 +6,7 @@ from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
 from po.api import PurchaseOrderResource, ItemResource as POItemResource
 from shipping.api import ShippingResource
-from projects.api import ProjectResource
+from projects.api import ProjectResource, RoomResource
 from supplies.api import SupplyResource, FabricResource
 from equipment.api import EquipmentResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
@@ -26,6 +26,7 @@ v1_api.register(PurchaseOrderResource())
 v1_api.register(POItemResource())
 v1_api.register(ShippingResource())
 v1_api.register(ProjectResource())
+v1_api.register(RoomResource())
 v1_api.register(SupplyResource())
 v1_api.register(FabricResource())
 v1_api.register(EquipmentResource())

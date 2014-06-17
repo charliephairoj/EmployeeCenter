@@ -530,6 +530,14 @@ class FabricResource(SupplyResource):
                                        Q(color__icontains=query))
         return obj_list
     
+    def hydrate(self, bundle):
+        """
+        Prepare the fabric to be saved to the database
+        """
+        bundle.obj.description = "Pattern:{0}, Col: {1}".format(bundle.obj.pattern, bundle.obj.color)
+        
+        return bundle
+        
     def dehydrate(self, bundle):
         """
         Prepare the bundle for return to the client
