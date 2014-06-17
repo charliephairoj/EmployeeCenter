@@ -534,7 +534,7 @@ class FabricResource(SupplyResource):
         """
         Prepare the fabric to be saved to the database
         """
-        bundle.obj.description = "Pattern:{0}, Col: {1}".format(bundle.obj.pattern, bundle.obj.color)
+        bundle.obj.description = "Pattern:{0}, Col: {1}".format(bundle.data['pattern'], bundle.data['color'])
         
         return bundle
         
