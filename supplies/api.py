@@ -535,6 +535,23 @@ class FabricResource(SupplyResource):
         Prepare the fabric to be saved to the database
         """
         bundle.obj.description = "Pattern:{0}, Col: {1}".format(bundle.data['pattern'], bundle.data['color'])
+        bundle.obj.type = "Fabric"
+        bundle.obj.units = 'm'
+        
+        if "cost" in bundle.data:
+            if float(bundle.data['cost']) > 0:
+                try:
+                    try: 
+                        p = Product.objects.get(supply=bundle.obj,
+                                                supplier=Supplier.objects.get(pk=bundle.data['supplier']['id']))
+                    except Product.DoesNotExist:
+                        p = Product()
+                        p.supply = bundle.obj
+                        p.supplier = Supplier.objects.get(pk=bundle.data['supplier']['id'])
+                        p.cost = bundle.data['cost']
+                    p.save()
+                except KeyError:
+                    pass
         
         return bundle
         
