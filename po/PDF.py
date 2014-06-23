@@ -446,10 +446,16 @@ class PurchaseOrderPDF():
                 
         #if there is no vat or discount
         else:
-            style.append(('LINEABOVE', (0, -1), (-1, -1), 1,
-                          colors.CMYKColor(black=60)))
-            style.append(('ALIGNMENT', (-2, -1), (-1, -1), 'RIGHT'))
-            style.append(('BOTTOMPADDING', (-2, -1), (-1, -1), 1))
+            if int(self.po.deposit) == 0:
+                style.append(('LINEABOVE', (0, -1), (-1, -1), 1,
+                              colors.CMYKColor(black=60)))
+                style.append(('ALIGNMENT', (-1, -1), (-1, -1), 'RIGHT'))
+                style.append(('BOTTOMPADDING', (-2, -1), (-1, -1), 1))
+            elif int(self.po.deposit) > 0:
+                style.append(('LINEABOVE', (0, -2), (-1, -2), 1,
+                              colors.CMYKColor(black=60)))
+                style.append(('ALIGNMENT', (-2, -1), (-1, -1), 'RIGHT'))
+                style.append(('BOTTOMPADDING', (-2, -1), (-1, -1), 1))
         style.append(('ALIGNMENT', (-2, -3), (-1, -1), 'RIGHT'))
         #Return data and style
         return data, style

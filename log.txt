@@ -624,3 +624,11 @@
 [17/Jun/2014 15:25:28] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
 [17/Jun/2014 15:25:51] WARNING [supplies.api:111] 'type'
 [17/Jun/2014 16:15:27] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[17/Jun/2014 16:40:35] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[17/Jun/2014 16:46:32] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[19/Jun/2014 17:31:16] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[19/Jun/2014 17:32:07] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[19/Jun/2014 17:34:57] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[20/Jun/2014 09:14:15] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[20/Jun/2014 09:20:01] WARNING [po.PDF:179] SupplierContact matching query does not exist.
+[20/Jun/2014 09:21:08] WARNING [po.PDF:179] SupplierContact matching query does not exist.
