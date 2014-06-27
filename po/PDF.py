@@ -44,6 +44,11 @@ class PODocTemplate(BaseDocTemplate):
     def __init__(self, filename, **kw):
         if "id" in kw:
             self.id = kw["id"]
+        if "revision" in kw:
+            self.revision = kw['revision']
+        if "revision_date" in kw:
+            self.revision_date = kw['revision_date']
+            
         BaseDocTemplate.__init__(self, filename, **kw)
         self.addPageTemplates(self._create_page_template())
 
@@ -88,6 +93,19 @@ class PODocTemplate(BaseDocTemplate):
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 750)
+        
+        #Create the revision
+        if self.revision:
+            if self.revision_date:
+                revision_str = "Revision: {0}, #{1}".format(self.revision_date.strftime('%B %d, %Y'),
+                                                            self.revision)
+                revision_x = 500
+            else: 
+                revision_str = 'Revision: #{0}'.format(self.revision)
+                revision_x = 550
+                
+            canvas.setFont("Helvetica", 16)
+            canvas.drawRightString(revision_x, 700, revision_str)
 
 
 class PurchaseOrderPDF():
@@ -96,7 +114,7 @@ class PurchaseOrderPDF():
 
     #def methods
     def __init__(self, supplier=None, items=None, po=None, attention=None,
-                 misc=None, connection=None):
+                 misc=None, connection=None, revision=None, revision_date=None):
         #set connection
         self.connection = connection if connection != None else S3Connection(settings.AWS_ACCESS_KEY_ID, 
                                                                              settings.AWS_SECRET_ACCESS_KEY)
@@ -110,6 +128,8 @@ class PurchaseOrderPDF():
         self.po = po
         self.employee = self.po.employee
         self.attention = attention
+        self.revision = revision
+        self.revision_date = revision_date
 
     #create method
     def create(self):
@@ -117,7 +137,8 @@ class PurchaseOrderPDF():
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
         doc = PODocTemplate(self.location, id=self.po.id, pagesize=A4,
-                             leftMargin=36, rightMargin=36, topMargin=36)
+                             leftMargin=36, rightMargin=36, topMargin=36,
+                             revision=self.revision, revision_date=self.revision_date)
         #Build the document with stories
         doc.build(self._get_stories())
         #return the filename

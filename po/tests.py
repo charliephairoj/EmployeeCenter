@@ -171,6 +171,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
         self.assertNotIn('pdf', obj)
+        self.assertEqual(obj['revision'], 0)
         
     def test_get_with_pdf(self):
         """
@@ -225,9 +226,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(self.item2, Item)
         self.assertIsInstance(self.item2.supply, Supply)
         self.assertEqual(self.item2.supply.id, 2)
-        self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
+        self.assertEqual(self.item2.unit_cost, Decimal('12.11'))
         self.assertEqual(self.item2.quantity, 3)
-        self.assertEqual(self.item2.total, Decimal('34.5'))
+        self.assertEqual(self.item2.total, Decimal('34.51'))
         project = po.project
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 1)
@@ -272,9 +273,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(self.item2, Item)
         self.assertIsInstance(self.item2.supply, Supply)
         self.assertEqual(self.item2.supply.id, 2)
-        self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
+        #self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
         self.assertEqual(self.item2.quantity, 3)
-        self.assertEqual(self.item2.total, Decimal('34.5'))
+        self.assertEqual(self.item2.total, Decimal('34.51'))
         project = po.project
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 2)
@@ -308,27 +309,27 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(po['id'], 1)
         self.assertEqual(po['supplier']['id'], 1)
         self.assertEqual(po['vat'], 7)
-        self.assertEqual(po['grand_total'], '36.91')
+        self.assertEqual(po['grand_total'], '36.93')
         self.assertEqual(po['discount'], 0)
         self.assertEqual(len(po['items']), 1)
         item2 = po['items'][0]
        
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], '11.5')
-        self.assertEqual(item2['total'], '34.5')
+        self.assertEqual(item2['unit_cost'], '12.11')
+        self.assertEqual(item2['total'], '34.51')
         
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
         self.assertEqual(po.supplier.id, 1)
         self.assertEqual(po.vat, 7)
-        self.assertEqual(po.grand_total, Decimal('36.91'))
+        self.assertEqual(po.grand_total, Decimal('36.93'))
         self.assertEqual(po.items.count(), 1)
         item2 = po.items.all().order_by('id')[0]
         self.assertEqual(item2.id, 2)
         self.assertEqual(item2.quantity, 3)
-        self.assertEqual(item2.unit_cost, Decimal('11.5'))
-        self.assertEqual(item2.total, Decimal('34.5'))
+        self.assertEqual(item2.unit_cost, Decimal('12.11'))
+        self.assertEqual(item2.total, Decimal('34.51'))
         
     def test_updating_po_with_discount(self):
         """
@@ -350,30 +351,33 @@ class PurchaseOrderTest(ResourceTestCase):
                                 data=modified_po)
         self.assertHttpOK(resp)
         resp_obj = self.deserialize(resp)
+        self.assertEqual(resp_obj['revision'], 1)
         item1 = resp_obj['items'][0]
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], '6.05')
-        self.assertEqual(item1['total'], '60.5')
+        self.assertEqual(item1['unit_cost'], '12.11')
+        self.assertEqual(item1['total'], '60.55')
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], '11.5')
-        self.assertEqual(item2['total'], '34.5')
-        self.assertEqual(resp_obj['grand_total'], '101.65')
+        self.assertEqual(item2['discount'], 50)
+        self.assertEqual(item2['unit_cost'], '12.11')
+        self.assertEqual(item2['total'], '34.51')
+        self.assertEqual(resp_obj['grand_total'], '101.71')
         
         po = PurchaseOrder.objects.get(pk=1)
         item1 = po.items.order_by('id').all()[0]
         self.assertEqual(item1.id, 1)
         self.assertEqual(item1.quantity, 10)
         self.assertEqual(item1.discount, 50)
-        self.assertEqual(item1.unit_cost, Decimal('6.05'))
-        self.assertEqual(item1.total, Decimal('60.5'))
+        self.assertEqual(item1.unit_cost, Decimal('12.11'))
+        self.assertEqual(item1.total, Decimal('60.55'))
         item2 = po.items.order_by('id').all()[1]
         self.assertEqual(item2.id, 2)
         self.assertEqual(item2.quantity, 3)
-        self.assertEqual(item2.unit_cost, Decimal('11.5'))
-        self.assertEqual(item2.total, Decimal('34.5'))
+        self.assertEqual(item2.unit_cost, Decimal('12.11'))
+        self.assertEqual(item2.discount, 50)
+        self.assertEqual(item2.total, Decimal('34.51'))
         
         
         

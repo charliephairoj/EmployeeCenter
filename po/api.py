@@ -4,7 +4,7 @@ Purchase Order module
 """
 import logging
 from decimal import *
-
+from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from tastypie.resources import ModelResource
 from tastypie import fields
@@ -188,7 +188,10 @@ class PurchaseOrderResource(ModelResource):
                         item_obj.discount = 0
                         updated = True
                 item_obj.supply.supplier = bundle.obj.supplier
+                logger.debug("Mid Discount check 1: {0}".format(item_obj.discount))
+                
                 item_obj.calculate_total()
+                logger.debug("Mid Discount check 2: {0}".format(item_obj.discount))
                 item_obj.save()
             except (KeyError, Item.DoesNotExist):
                 updated = True
@@ -206,6 +209,8 @@ class PurchaseOrderResource(ModelResource):
             bundle.obj.items.get(pk=item_id).delete()
             
         if updated:
+            bundle.obj.revision += 1
+            bundle.obj.order_date = datetime.now()
             bundle.obj.calculate_total()
             bundle.obj.save()
             bundle.obj.create_and_upload_pdf()
