@@ -9,6 +9,7 @@ from tastypie.resources import ModelResource
 from tastypie.authorization import Authorization, DjangoAuthorization
 from django.contrib.auth.models import User
 from django.db.models import Q
+import pytz
 
 from acknowledgements.models import Acknowledgement, Item, Log
 from acknowledgements.validation import AcknowledgementValidation
@@ -187,9 +188,12 @@ class AcknowledgementResource(ModelResource):
         Implements the obj_update method
         """
         logger.info("Updating acknowledgement...")
-        logger.debug(bundle.obj.delivery_date)
-        logger.debug(bundle.data['delivery_date'])
-        return super(AcknowledgementResource, self).obj_update(bundle, **kwargs)
+            
+        bundle = super(AcknowledgementResource, self).obj_update(bundle, **kwargs)
+        
+        bundle.obj.create_and_upload_pdfs()
+        
+        return bundle
     
     def obj_delete(self, bundle, **kwargs):
         """
