@@ -4,6 +4,7 @@ Models for the Purchase Orders App
 import sys, os
 import datetime
 import logging
+import math
 from decimal import *
 
 from django.conf import settings
@@ -45,6 +46,7 @@ class PurchaseOrder(models.Model):
     project = models.ForeignKey(Project, null=True)
     deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
+    revision = models.IntegerField(default=0)
     
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -123,7 +125,9 @@ class PurchaseOrder(models.Model):
             item.supply.supplier = item.purchase_order.supplier
         #Create and upload pdf 
         pdf = PurchaseOrderPDF(po=self, items=items,
-                               supplier=self.supplier)
+                               supplier=self.supplier,
+                               revision=self.revision,
+                               revision_date=self.order_date)
         filename = pdf.create()
         return filename
         
@@ -174,7 +178,7 @@ class PurchaseOrder(models.Model):
             self.grand_total = total
         
         #convert to 2 decimal places
-        self.grand_total = Decimal(str(round(self.grand_total, 2)))
+        self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
         logger.debug("The grand total is {0:.2f}".format(self.grand_total))
         return self.grand_total
         
@@ -221,16 +225,21 @@ class Item(models.Model):
         """
         #Calculate late the unit_cost based on discount if available
         if self.supply.discount == 0 and self.discount == 0:
-            self.unit_cost = Decimal(self.supply.cost)
+            if not self.unit_cost:
+                self.unit_cost = Decimal(self.supply.cost)
             logger.debug("{0} unit cost is {1}".format(self.description, self.unit_cost))
         else:
+            logger.debug("{0} discount is {1}%".format(self.description, self.discount))
             if sys.version_info[:2] == (2, 6):
                 discount_amount = Decimal(str(self.supply.cost)) * (Decimal(str(self.discount)) / Decimal('100'))
             elif sys.version_info[:2] == (2, 7):
                 discount_amount = Decimal(self.supply.cost) * (Decimal(self.discount) / Decimal('100'))
             #self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
-            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.unit_cost))
+            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.supply.cost - discount_amount))
                     
         self.total = (Decimal(self.unit_cost) - (Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100')))) * Decimal(self.quantity)
-    
+        
+        logger.debug("{0} total quantity is {1}".format(self.description, self.quantity))
+        logger.debug("{0} total cost is {1}".format(self.description, self.total))
+        
     

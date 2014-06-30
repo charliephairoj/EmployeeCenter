@@ -8,6 +8,7 @@ import dateutil.parser
 import datetime
 import subprocess
 from decimal import Decimal
+import webbrowser
 
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission, ContentType
@@ -15,7 +16,7 @@ from tastypie.test import ResourceTestCase
 
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
-from supplies.models import Supply, Fabric, Product
+from supplies.models import Supply, Fabric, Product, Log
 from projects.models import Project
 
 
@@ -171,6 +172,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
         self.assertNotIn('pdf', obj)
+        self.assertEqual(obj['revision'], 0)
         
     def test_get_with_pdf(self):
         """
@@ -225,9 +227,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(self.item2, Item)
         self.assertIsInstance(self.item2.supply, Supply)
         self.assertEqual(self.item2.supply.id, 2)
-        self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
+        self.assertEqual(self.item2.unit_cost, Decimal('12.11'))
         self.assertEqual(self.item2.quantity, 3)
-        self.assertEqual(self.item2.total, Decimal('34.5'))
+        self.assertEqual(self.item2.total, Decimal('34.51'))
         project = po.project
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 1)
@@ -272,9 +274,9 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(self.item2, Item)
         self.assertIsInstance(self.item2.supply, Supply)
         self.assertEqual(self.item2.supply.id, 2)
-        self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
+        #self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
         self.assertEqual(self.item2.quantity, 3)
-        self.assertEqual(self.item2.total, Decimal('34.5'))
+        self.assertEqual(self.item2.total, Decimal('34.51'))
         project = po.project
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 2)
@@ -295,7 +297,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(item.quantity, 10)
         self.assertEqual(item.total, Decimal('121.1'))
         
-        modified_po_data = base_purchase_order.copy()
+        modified_po_data = copy.deepcopy(base_purchase_order)
         del modified_po_data['items'][0]
         
         resp = self.api_client.put('/api/v1/purchase-order/1',
@@ -308,27 +310,31 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(po['id'], 1)
         self.assertEqual(po['supplier']['id'], 1)
         self.assertEqual(po['vat'], 7)
-        self.assertEqual(po['grand_total'], '36.91')
+        self.assertEqual(po['grand_total'], '36.93')
         self.assertEqual(po['discount'], 0)
+        self.assertEqual(po['revision'], 1)
         self.assertEqual(len(po['items']), 1)
+        #Check the new pdf
+        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
+        
         item2 = po['items'][0]
        
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], '11.5')
-        self.assertEqual(item2['total'], '34.5')
+        self.assertEqual(item2['unit_cost'], '12.11')
+        self.assertEqual(item2['total'], '34.51')
         
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
         self.assertEqual(po.supplier.id, 1)
         self.assertEqual(po.vat, 7)
-        self.assertEqual(po.grand_total, Decimal('36.91'))
+        self.assertEqual(po.grand_total, Decimal('36.93'))
         self.assertEqual(po.items.count(), 1)
         item2 = po.items.all().order_by('id')[0]
         self.assertEqual(item2.id, 2)
         self.assertEqual(item2.quantity, 3)
-        self.assertEqual(item2.unit_cost, Decimal('11.5'))
-        self.assertEqual(item2.total, Decimal('34.5'))
+        self.assertEqual(item2.unit_cost, Decimal('12.11'))
+        self.assertEqual(item2.total, Decimal('34.51'))
         
     def test_updating_po_with_discount(self):
         """
@@ -350,30 +356,90 @@ class PurchaseOrderTest(ResourceTestCase):
                                 data=modified_po)
         self.assertHttpOK(resp)
         resp_obj = self.deserialize(resp)
+        self.assertEqual(resp_obj['revision'], 1)
+        #Check the new pdf
+        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        
         item1 = resp_obj['items'][0]
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], '6.05')
-        self.assertEqual(item1['total'], '60.5')
+        self.assertEqual(item1['unit_cost'], '12.11')
+        self.assertEqual(item1['total'], '60.55')
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], '11.5')
-        self.assertEqual(item2['total'], '34.5')
-        self.assertEqual(resp_obj['grand_total'], '101.65')
+        self.assertEqual(item2['discount'], 5)
+        self.assertEqual(item2['unit_cost'], '12.11')
+        self.assertEqual(item2['total'], '34.51')
+        self.assertEqual(resp_obj['grand_total'], '101.72')
         
         po = PurchaseOrder.objects.get(pk=1)
         item1 = po.items.order_by('id').all()[0]
         self.assertEqual(item1.id, 1)
         self.assertEqual(item1.quantity, 10)
         self.assertEqual(item1.discount, 50)
-        self.assertEqual(item1.unit_cost, Decimal('6.05'))
-        self.assertEqual(item1.total, Decimal('60.5'))
+        self.assertEqual(item1.unit_cost, Decimal('12.11'))
+        self.assertEqual(item1.total, Decimal('60.55'))
         item2 = po.items.order_by('id').all()[1]
         self.assertEqual(item2.id, 2)
         self.assertEqual(item2.quantity, 3)
-        self.assertEqual(item2.unit_cost, Decimal('11.5'))
-        self.assertEqual(item2.total, Decimal('34.5'))
+        self.assertEqual(item2.unit_cost, Decimal('12.11'))
+        self.assertEqual(item2.discount, 5)
+        self.assertEqual(item2.total, Decimal('34.51'))
+        
+    def test_updating_the_supply_price(self):
+        """
+        Test updating a po with a new cost for an item
+        """
+        self.assertEqual(self.po.id, 1)
+        self.assertEqual(self.po.items.count(), 1)
+        item = self.po.items.all()[0]
+        self.assertEqual(item.id, 1)
+        self.assertEqual(item.unit_cost, Decimal('12.11'))
+        self.assertEqual(Log.objects.all().count(), 0)
+        
+        modified_po = copy.deepcopy(base_purchase_order)
+        modified_po['items'][0]['unit_cost'] = Decimal('10.05')
+        del modified_po['items'][1]
+        resp = self.api_client.put('/api/v1/purchase-order/1',
+                                format='json',
+                                data=modified_po)
+        self.assertHttpOK(resp)
+        resp_obj = self.deserialize(resp)
+        self.assertEqual(resp_obj['revision'], 1)
+        #Check the new pdf
+        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        
+        self.assertEqual(resp_obj['id'], 1)
+        self.assertEqual(resp_obj['supplier']['id'], 1)
+        self.assertEqual(resp_obj['vat'], 7)
+        self.assertEqual(resp_obj['discount'], 0)
+        self.assertEqual(resp_obj['revision'], 1)
+        self.assertEqual(resp_obj['grand_total'], '107.54')
+        item1 = resp_obj['items'][0]
+        self.assertEqual(item1['id'], 1)
+        self.assertEqual(item1['quantity'], 10)
+        self.assertEqual(item1['unit_cost'], '10.05')
+        self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
+       
+        #Confirm cost change for item and supply in the database
+        po = PurchaseOrder.objects.get(pk=1)
+        self.assertEqual(po.grand_total, Decimal('107.54'))
+        item1 = po.items.order_by('id').all()[0]
+        self.assertEqual(item1.id, 1)
+        self.assertEqual(item1.quantity, 10)
+        self.assertEqual(item1.unit_cost, Decimal('10.05'))
+        supply = item1.supply
+        supply.supplier = po.supplier
+        self.assertEqual(supply.cost, Decimal('10.05'))
+        
+        self.assertEqual(Log.objects.all().count(), 1)
+        log = Log.objects.all()[0]
+        self.assertEqual(log.cost, Decimal('10.05'))
+        self.assertEqual(log.supply, supply)
+        self.assertEqual(log.supplier, po.supplier)
+        self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
+       
         
         
         
