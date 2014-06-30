@@ -224,18 +224,19 @@ class Item(models.Model):
         and the discount provied
         """
         #Calculate late the unit_cost based on discount if available
+        if not self.unit_cost:
+            self.unit_cost = Decimal(self.supply.cost)
         if self.supply.discount == 0 and self.discount == 0:
-            if not self.unit_cost:
-                self.unit_cost = Decimal(self.supply.cost)
+            
             logger.debug("{0} unit cost is {1}".format(self.description, self.unit_cost))
         else:
             logger.debug("{0} discount is {1}%".format(self.description, self.discount))
             if sys.version_info[:2] == (2, 6):
-                discount_amount = Decimal(str(self.supply.cost)) * (Decimal(str(self.discount)) / Decimal('100'))
+                discount_amount = Decimal(str(self.unit_cost)) * (Decimal(str(self.discount)) / Decimal('100'))
             elif sys.version_info[:2] == (2, 7):
-                discount_amount = Decimal(self.supply.cost) * (Decimal(self.discount) / Decimal('100'))
+                discount_amount = Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100'))
             #self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
-            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.supply.cost - discount_amount))
+            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.unit_cost - discount_amount))
                     
         self.total = (Decimal(self.unit_cost) - (Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100')))) * Decimal(self.quantity)
         
