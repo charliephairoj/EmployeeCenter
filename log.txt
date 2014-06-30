@@ -1486,3 +1486,26 @@
 [30/Jun/2014 12:06:11] WARNING [po.PDF:230] User has no employee.
 [30/Jun/2014 12:06:29] WARNING [po.PDF:230] User has no employee.
 [30/Jun/2014 12:07:55] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:19:03] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:19:07] INFO [po.api:75] Creating a purchase order
+[30/Jun/2014 12:19:07] INFO [po.api:135] Creating pdf for purchase order #2
+[30/Jun/2014 12:19:07] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:19:10] INFO [po.api:75] Creating a purchase order
+[30/Jun/2014 12:19:10] INFO [po.api:135] Creating pdf for purchase order #2
+[30/Jun/2014 12:19:10] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:19:14] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:19:18] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:21:46] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:21:50] INFO [po.api:75] Creating a purchase order
+[30/Jun/2014 12:21:50] INFO [po.api:135] Creating pdf for purchase order #2
+[30/Jun/2014 12:21:50] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:04] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:07] INFO [po.api:75] Creating a purchase order
+[30/Jun/2014 12:22:07] INFO [po.api:135] Creating pdf for purchase order #2
+[30/Jun/2014 12:22:07] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:11] INFO [po.api:75] Creating a purchase order
+[30/Jun/2014 12:22:11] INFO [po.api:135] Creating pdf for purchase order #2
+[30/Jun/2014 12:22:11] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:14] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:18] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 12:22:22] WARNING [po.PDF:230] User has no employee.
