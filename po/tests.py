@@ -446,7 +446,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(log.supply, supply)
         self.assertEqual(log.supplier, po.supplier)
         self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
-        logger.debug(log.message)
        
         
         

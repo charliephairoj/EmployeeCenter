@@ -206,13 +206,11 @@ class PurchaseOrderResource(ModelResource):
                 product = Product.objects.get(supply=item_obj.supply, supplier=bundle.obj.supplier)
                 if product.cost != Decimal(item['unit_cost']):
                     try:
-                        logger.debug("{0} : {1}".format(product.cost, Decimal(item['unit_cost'])))
                         updated = True
                         old_price = product.cost
                         product.cost = Decimal(item['unit_cost'])
                         product.save()
                         item_obj.unit_cost = product.cost
-                        logger.debug("{0} : {1}".format(product.cost, item_obj.unit_cost))
                         
                         item_obj.calculate_total()
                         item_obj.save()
