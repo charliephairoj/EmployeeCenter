@@ -222,10 +222,11 @@ class PurchaseOrderResource(ModelResource):
                                   action="PRICE CHANGE",
                                   quantity=None,
                                   cost=product.cost,
-                                  message="Price change from {0}{2} to {1}{2} for {3}".format(old_price,
-                                                                                              product.cost,
-                                                                                              bundle.obj.supplier.currency,
-                                                                                              item_obj.supply.description))
+                                  message="Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
+                                                                                                              product.cost,
+                                                                                                              bundle.obj.supplier.currency,
+                                                                                                              item_obj.supply.description,
+                                                                                                              bundle.obj.supplier.name))
                         log.save()
                     except Exception as e:
                         logger.error(e)
