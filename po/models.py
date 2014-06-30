@@ -4,6 +4,7 @@ Models for the Purchase Orders App
 import sys, os
 import datetime
 import logging
+import math
 from decimal import *
 
 from django.conf import settings
@@ -177,7 +178,7 @@ class PurchaseOrder(models.Model):
             self.grand_total = total
         
         #convert to 2 decimal places
-        self.grand_total = Decimal(str(round(self.grand_total, 2)))
+        self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
         logger.debug("The grand total is {0:.2f}".format(self.grand_total))
         return self.grand_total
         
@@ -224,7 +225,8 @@ class Item(models.Model):
         """
         #Calculate late the unit_cost based on discount if available
         if self.supply.discount == 0 and self.discount == 0:
-            self.unit_cost = Decimal(self.supply.cost)
+            if not self.unit_cost:
+                self.unit_cost = Decimal(self.supply.cost)
             logger.debug("{0} unit cost is {1}".format(self.description, self.unit_cost))
         else:
             logger.debug("{0} discount is {1}%".format(self.description, self.discount))

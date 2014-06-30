@@ -1241,3 +1241,245 @@
 [26/Jun/2014 16:08:00] INFO [products.api:169] Setting configuration as: Loveseat
 [26/Jun/2014 16:08:00] INFO [products.api:164] Setting model as: AC-2021 Eaton
 [26/Jun/2014 16:08:00] INFO [products.api:169] Setting configuration as: Loveseat
+[28/Jun/2014 12:27:42] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 12:27:46] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 12:27:46] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 12:27:46] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 12:27:50] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 12:27:50] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 12:27:50] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 12:27:54] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 12:27:58] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:57:52] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:57:56] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 16:57:56] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 16:57:56] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:58:00] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 16:58:00] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 16:58:00] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:58:03] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:58:07] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:59:44] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:59:48] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 16:59:48] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 16:59:48] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 16:59:52] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 16:59:52] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 16:59:52] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:00:45] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:00:51] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 17:00:51] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 17:00:51] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:00:54] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 17:00:54] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 17:00:54] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:00:58] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:01:02] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:13:57] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:14:01] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 17:14:01] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 17:14:01] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:14:04] INFO [po.api:74] Creating a purchase order
+[28/Jun/2014 17:14:04] INFO [po.api:134] Creating pdf for purchase order #2
+[28/Jun/2014 17:14:04] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:14:08] WARNING [po.PDF:232] User has no employee.
+[28/Jun/2014 17:14:12] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:30:46] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:30:51] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:30:51] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:30:51] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:30:55] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:30:55] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:30:55] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:30:59] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:31:03] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:32:35] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:32:39] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:32:40] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:32:40] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:32:43] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:32:43] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:32:43] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:32:47] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:32:51] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:33:26] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:33:31] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:33:31] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:33:31] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:33:35] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:33:35] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:33:35] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:33:38] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:33:42] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:37:00] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:37:05] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:37:05] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:37:05] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:37:09] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:37:09] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:37:09] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:37:13] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:37:17] WARNING [po.PDF:232] User has no employee.
+[29/Jun/2014 00:39:33] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:39:38] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:39:38] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:39:38] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:39:41] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:39:42] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:39:42] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:39:45] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:39:49] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:44:20] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:44:24] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:44:24] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:44:24] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:44:28] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:44:28] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:44:28] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:44:32] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:44:36] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:45:33] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:45:38] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:45:38] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:45:38] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:45:42] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:45:42] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:45:42] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:45:45] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:45:49] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:47:24] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:47:28] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:47:28] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:47:28] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:47:32] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:47:32] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:47:32] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:47:36] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:47:39] WARNING [po.PDF:234] User has no employee.
+[29/Jun/2014 00:50:25] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:50:29] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:50:29] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:50:29] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:50:32] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:50:32] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:50:32] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:50:36] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:50:39] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:52:03] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:52:07] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:52:07] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:52:07] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:52:10] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:52:10] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:52:11] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:52:14] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:52:18] WARNING [po.PDF:255] User has no employee.
+[29/Jun/2014 00:59:06] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:11] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:59:12] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:59:12] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:15] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:59:15] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:59:15] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:18] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:22] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:40] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:44] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:59:44] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:59:44] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:48] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 00:59:48] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 00:59:48] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:51] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 00:59:55] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:01:20] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:01:24] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 01:01:24] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 01:01:24] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:01:27] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 01:01:27] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 01:01:27] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:01:31] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:01:34] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:02:15] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:02:19] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 01:02:19] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 01:02:19] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:02:23] INFO [po.api:74] Creating a purchase order
+[29/Jun/2014 01:02:23] INFO [po.api:134] Creating pdf for purchase order #2
+[29/Jun/2014 01:02:23] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:02:27] WARNING [po.PDF:230] User has no employee.
+[29/Jun/2014 01:02:55] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 10:15:14] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 10:22:22] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[30/Jun/2014 10:22:23] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[30/Jun/2014 10:22:23] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[30/Jun/2014 10:22:23] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[30/Jun/2014 10:22:23] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[30/Jun/2014 10:22:24] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[30/Jun/2014 10:22:24] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[30/Jun/2014 10:29:12] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[30/Jun/2014 10:29:12] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[30/Jun/2014 10:29:13] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[30/Jun/2014 10:29:14] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[30/Jun/2014 10:29:14] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[30/Jun/2014 10:29:14] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[30/Jun/2014 10:29:14] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[30/Jun/2014 10:29:17] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[30/Jun/2014 10:29:18] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[30/Jun/2014 10:29:18] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[30/Jun/2014 10:29:18] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[30/Jun/2014 10:29:25] WARNING [contacts.api:242] Supplier #181: บริษัท ไทยมิตซุยสเปเชียลตี้เคมีคอล จำกัด does not have an address
+[30/Jun/2014 10:29:26] WARNING [contacts.api:242] Supplier #186: บริษัท แพนสยาม แมนูแฟคเจอริ่ง จำกัด does not have an address
+[30/Jun/2014 10:29:26] WARNING [contacts.api:242] Supplier #187: บริษัท พังงาไม้อัด จำกัด does not have an address
+[30/Jun/2014 10:29:26] WARNING [contacts.api:242] Supplier #188: หจก. พีที. อินเฟอร์เมชั่น แอนด์ คอมพิวเตอร์ ซัพพลาย does not have an address
+[30/Jun/2014 10:29:26] WARNING [contacts.api:242] Supplier #200: บริษัท ไทยโฟม อินดัสตรี จำกัด does not have an address
+[30/Jun/2014 10:29:26] WARNING [contacts.api:242] Supplier #191: บริษัท ไอราพต ดีเวลลอปเมนท์ จำกัด does not have an address
+[30/Jun/2014 10:29:27] WARNING [contacts.api:242] Supplier #193: บริษัท โคเตอร์นิตี้ จำกัด does not have an address
+[30/Jun/2014 10:29:28] WARNING [contacts.api:242] Supplier #179: บริษัท ยู.เอส. ไลน์ จำกัด does not have an address
+[30/Jun/2014 10:29:28] WARNING [contacts.api:242] Supplier #196: บริษัท บางกอกโฟม จำกัด does not have an address
+[30/Jun/2014 10:29:29] WARNING [contacts.api:242] Supplier #156: Safe And Save Success Ltd., Part does not have an address
+[30/Jun/2014 10:29:29] WARNING [contacts.api:242] Supplier #194: ร้าน ซี.เฮซ. วู๊ดส์ does not have an address
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #435, คุณกรพัณณ์  พงษ์เจริญ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #436, Chaichana Malhotra has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #437, คุณอนุชา  กิตติเจษฎา has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #438, คุณจีรสีห์  เดชาชาญ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #439, คุณเบญจมาภรณ์  สุชำนิวรการ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #440, บ.จรัสพร จก. has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #441, คุณวิไลลักษณ์  มัทนพจนารถ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #442, คุณกิตติพงษ์  ทองอนันต์ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #443, คุณอภิญญา  สกุลทอง has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #444, คุณศิริลดา  คุณปลื้ม has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:01:43] ERROR [contacts.api:41] Contact #445, คุณเชอรี่ has no currency
+[30/Jun/2014 11:01:43] ERROR [contacts.api:42] 'NoneType' object has no attribute 'upper'
+[30/Jun/2014 11:02:07] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:06:58] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:18:54] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:19:36] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:22:01] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:23:12] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:24:55] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:26:14] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:29:13] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:40:02] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:41:05] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:41:40] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:46:24] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:51:01] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:52:09] WARNING [po.PDF:230] User has no employee.
+[30/Jun/2014 11:52:53] WARNING [po.PDF:230] User has no employee.

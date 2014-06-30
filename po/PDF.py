@@ -98,15 +98,13 @@ class PODocTemplate(BaseDocTemplate):
         if self.revision:
             if self.revision_date:
                 revision_str = "Revision: {0}, #{1}".format(self.revision_date.strftime('%B %d, %Y'),
-                                                            self.revision)
-                revision_x = 500
-            else: 
+                                                        self.revision)
+            else:
                 revision_str = 'Revision: #{0}'.format(self.revision)
-                revision_x = 550
                 
-            canvas.setFont("Helvetica", 16)
-            canvas.drawRightString(revision_x, 700, revision_str)
-
+            canvas.setFillColorCMYK(0, 0, 0, 1)
+            canvas.setFont("Helvetica", 12)
+            canvas.drawRightString(550, 730, revision_str)
 
 class PurchaseOrderPDF():
     """Class to create PO PDF"""

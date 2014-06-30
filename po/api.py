@@ -14,6 +14,7 @@ from tastypie.exceptions import NotFound, BadRequest, InvalidFilterError, Hydrat
 from po.models import PurchaseOrder, Item
 from contacts.models import Supplier
 from projects.models import Project
+from supplies.models import Supply, Log, Product
 
 
 logger = logging.getLogger(__name__)
@@ -188,17 +189,48 @@ class PurchaseOrderResource(ModelResource):
                         item_obj.discount = 0
                         updated = True
                 item_obj.supply.supplier = bundle.obj.supplier
-                logger.debug("Mid Discount check 1: {0}".format(item_obj.discount))
+                logger.debug("Item ID: {0}, Mid Discount check 1: {1}".format(item_obj.id, item_obj.discount))
                 
                 item_obj.calculate_total()
-                logger.debug("Mid Discount check 2: {0}".format(item_obj.discount))
+                logger.debug("Item IDL {0}, Mid Discount check 2: {1}".format(item_obj.id, item_obj.discount))
                 item_obj.save()
             except (KeyError, Item.DoesNotExist):
                 updated = True
                 #Create a new item
                 item_obj = Item.create(supplier=bundle.obj.supplier, **item)
+                logger.debug("New Item with discount {0}".format(item))
                 item_obj.purchase_order = bundle.obj
                 item_obj.save()
+            
+            if "unit_cost" in item:
+                product = Product.objects.get(supply=item_obj.supply, supplier=bundle.obj.supplier)
+                if product.cost != Decimal(item['unit_cost']):
+                    try:
+                        logger.debug("{0} : {1}".format(product.cost, Decimal(item['unit_cost'])))
+                        updated = True
+                        old_price = product.cost
+                        product.cost = Decimal(item['unit_cost'])
+                        product.save()
+                        item_obj.unit_cost = product.cost
+                        logger.debug("{0} : {1}".format(product.cost, item_obj.unit_cost))
+                        
+                        item_obj.calculate_total()
+                        item_obj.save()
+                        logger.debug(item_obj.__dict__)
+                        log = Log(supply=item_obj.supply,
+                                  supplier=bundle.obj.supplier,
+                                  action="PRICE CHANGE",
+                                  quantity=None,
+                                  cost=product.cost,
+                                  message="Price change from {0}{2} to {1}{2} for {3}".format(old_price,
+                                                                                              product.cost,
+                                                                                              bundle.obj.supplier.currency,
+                                                                                              item_obj.supply.description))
+                        log.save()
+                    except Exception as e:
+                        logger.error(e)
+                        raise
+                    
         
         #Deletes items that have been removed
         server_items = set([i.id for i in bundle.obj.items.all()])
