@@ -37,7 +37,8 @@ class SupplyResource(ModelResource):
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
         ordering = ['image']
-        filtering = {'upc': 'exact',
+        filtering = {'id': ALL,
+                     'upc': 'exact',
                      'quantity': ALL,
                      'last_modified': ALL}
         #fields = ['purchasing_units', 'description', 'cost', 'id', 'pk']
@@ -504,6 +505,7 @@ class LogResource(ModelResource):
         queryset = Log.objects.all()  
         resource_name = 'log'
         filtering = {
+            'supply': ALL_WITH_RELATIONS,
             'timestamp': ALL,
             'action': ALL
         }
