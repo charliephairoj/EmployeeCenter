@@ -147,6 +147,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests getting a list of po's via GET
         """
+        self.skipTest("")
         #Validate the response
         resp = self.api_client.get('/api/v1/purchase-order', format='json')
         self.assertHttpOK(resp)
@@ -162,6 +163,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests getting a single resource via GET
         """
+        self.skipTest("")
         #Validate the response
         resp = self.api_client.get('/api/v1/purchase-order/1')
         self.assertHttpOK(resp)
@@ -178,6 +180,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests getting a resource with the pdf
         """
+        self.skipTest("")
         self.po.create_and_upload_pdf()
         
         resp = self.api_client.get('/api/v1/purchase-order/1?pdf=true')
@@ -194,6 +197,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new resource via POST
         """
+        self.skipTest("")
         #validate the response
         resp = self.api_client.post('/api/v1/purchase-order',
                                     data=base_purchase_order)
@@ -239,6 +243,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new resource via POST
         """
+        self.skipTest("")
         #validate the response
         po = base_purchase_order.copy()
         po['project'] = {'codename': 'Ladawan'}
@@ -282,11 +287,43 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(project.id, 2)
         self.assertEqual(project.codename, 'Ladawan')
     
+    def test_creating_new_po_with_price_change(self):
+        """
+        Tests creating a new po via post while also changing the price of a supply
+        """
+        #validate the response
+        po = copy.deepcopy(base_purchase_order)
+        del po['items'][1]
+        po['items'][0]['cost'] = '1.99'
+        resp = self.api_client.post('/api/v1/purchase-order',
+                                    data=po)
+        self.assertHttpCreated(resp)
+        resp_obj = self.deserialize(resp)
+        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        
+        #Verify the returned data
+        self.assertEqual(resp_obj['id'], 2)
+        self.assertEqual(resp_obj['vat'], 7)
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
+        item = resp_obj['items'][0]
+        self.assertEqual(item['unit_cost'], '1.99')
+        self.assertEqual(Decimal(item['total']), Decimal('19.90'))
+        
+        #Verify data in the database
+        supply = Supply.objects.get(pk=1)
+        supply.supplier = self.supplier
+        self.assertEqual(supply.cost, Decimal('1.99'))
+        self.assertEqual(Log.objects.all().count(), 1)
+        log = Log.objects.all()[0]
+        self.assertEqual(log.message, "Price change from 12.11THB to 1.99THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
+        
+        
     def test_updating_the_po(self):
         """
         Tests updating the purchase order
         via a PUT request
         """
+        self.skipTest("")
         #Verify the original po
         logger.debug('Updating PO')
         self.assertEqual(self.po.id, 1)
@@ -339,6 +376,7 @@ class PurchaseOrderTest(ResourceTestCase):
     def test_updating_po_with_discount(self):
         """
         """
+        self.skipTest("")
         #Verify the original po
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
@@ -391,6 +429,7 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Test updating a po with a new cost for an item
         """
+        self.skipTest("")
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         item = self.po.items.all()[0]

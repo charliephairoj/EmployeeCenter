@@ -11,7 +11,7 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 
-from supplies.models import Supply
+from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
 from auth.models import S3Object
 from po.PDF import PurchaseOrderPDF
@@ -204,7 +204,28 @@ class Item(models.Model):
             
         item.supply.supplier = supplier
         item.description = item.supply.description
-        item.unit_cost = item.supply.cost
+        
+        #Apply costs
+        if "cost" in kwargs:
+            if Decimal(kwargs['cost']) != item.supply.cost:
+                item.unit_cost = Decimal(kwargs['cost'])
+                product = Product.objects.get(supply=item.supply, supplier=supplier)
+                old_price = product.cost
+                product.cost = Decimal(kwargs['cost'])
+                product.save()
+                log = Log(supply=item.supply,
+                          supplier=supplier,
+                          action="PRICE CHANGE",
+                          quantity=None,
+                          cost=product.cost,
+                          message="Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
+                                                                                                      product.cost,
+                                                                                                      supplier.currency,
+                                                                                                      item.supply.description,
+                                                                                                      supplier.name))
+                log.save()
+        else:
+            item.unit_cost = item.supply.cost
         item.discount = item.supply.discount
         if "discount" in kwargs:
             item.discount = kwargs['discount']
