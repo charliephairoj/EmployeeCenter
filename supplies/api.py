@@ -265,6 +265,17 @@ class SupplyResource(ModelResource):
             product = self.hydrate_product(product=product, bundle=bundle, **supplier)
             product.save()
         
+            log = Log(supply=product.supply,
+                      supplier=product.supplier,
+                      action="PRICE CHANGE",
+                      quantity=None,
+                      cost=product.cost,
+                      message="Price set to {0}{1} for {2} [Supplier: {3}]".format(product.cost,
+                                                                                   product.supplier.currency,
+                                                                                   product.supply.description,
+                                                                                   product.supplier.name))
+            log.save()
+            
         return bundle
     
     def obj_update(self, bundle, **kwargs):
@@ -303,14 +314,27 @@ class SupplyResource(ModelResource):
         """
         #Get product by supplier and supply if not provided
         if not product:
-            product = Product.objects.get(supply=supply, supplier=supply)
+            product = Product.objects.get(supply=supply, supplier=supplier)
             
         #Update all fields with value
         for field in product._meta.get_all_field_names():
             if field in kwargs and field not in ['id', 'supplier', 'supply']:
                 if field.lower() == 'cost':
                     if bundle.request.user.has_perm('supplies.view_cost'):
-                        product.cost = kwargs[field]
+                        if Decimal(kwargs[field]) != product.cost:
+                            old_price = product.cost
+                            product.cost = kwargs[field]
+                            log = Log(supply=product.supply,
+                                      supplier=product.supplier,
+                                      action="PRICE CHANGE",
+                                      quantity=None,
+                                      cost=product.cost,
+                                      message="Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
+                                                                                                                  product.cost,
+                                                                                                                  product.supplier.currency,
+                                                                                                                  product.supply.description,
+                                                                                                                  product.supplier.name))
+                            log.save()
                 else:
                     setattr(product, field, kwargs[field])
             
