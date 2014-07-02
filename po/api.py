@@ -203,8 +203,12 @@ class PurchaseOrderResource(ModelResource):
                 item_obj.save()
             
             if "unit_cost" in item:
+                logger.debug('unit cost in ')
+                
                 product = Product.objects.get(supply=item_obj.supply, supplier=bundle.obj.supplier)
-                if product.cost != Decimal(item['unit_cost']):
+                logger.debug('{0} : {1}'.format(product.cost, item['unit_cost']))
+                
+                if product.cost != Decimal(item['unit_cost']) or item_obj.unit_cost != Decimal(item['unit_cost']):
                     try:
                         updated = True
                         old_price = product.cost
@@ -234,7 +238,6 @@ class PurchaseOrderResource(ModelResource):
         #Deletes items that have been removed
         server_items = set([i.id for i in bundle.obj.items.all()])
         client_items = set([item['id'] for item in bundle.data['items']])
-        logger.debug((server_items, client_items))
         for item_id in server_items.difference(client_items):
             logger.debug(item_id)
             bundle.obj.items.get(pk=item_id).delete()
