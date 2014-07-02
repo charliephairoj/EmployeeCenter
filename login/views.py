@@ -79,7 +79,7 @@ def app_login(request):
                     login(request, user)
 
                     #Gets user profile to do checks
-                    url = 'http://localhost:9001/index.html' if settings.DEBUG else '/'
+                    url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
                     return HttpResponseRedirect(url)
 
                 else:

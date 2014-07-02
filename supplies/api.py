@@ -270,7 +270,7 @@ class SupplyResource(ModelResource):
                       action="PRICE CHANGE",
                       quantity=None,
                       cost=product.cost,
-                      message="Price set to {0}{1} for {2} [Supplier: {3}]".format(product.cost,
+                      message=u"Price set to {0}{1} for {2} [Supplier: {3}]".format(product.cost,
                                                                                    product.supplier.currency,
                                                                                    product.supply.description,
                                                                                    product.supplier.name))
@@ -329,7 +329,7 @@ class SupplyResource(ModelResource):
                                       action="PRICE CHANGE",
                                       quantity=None,
                                       cost=product.cost,
-                                      message="Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
+                                      message=u"Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
                                                                                                                   product.cost,
                                                                                                                   product.supplier.currency,
                                                                                                                   product.supply.description,
@@ -524,12 +524,14 @@ class SupplyResource(ModelResource):
     
 class LogResource(ModelResource):
     supply = fields.ForeignKey('supplies.api.SupplyResource', 'supply')
+    supplier = fields.ForeignKey('contacts.api.SupplierResource', 'supplier', null=True)
     
     class Meta:
         queryset = Log.objects.all()  
         resource_name = 'log'
         filtering = {
             'supply': ALL_WITH_RELATIONS,
+            'supplier': ALL_WITH_RELATIONS,
             'timestamp': ALL,
             'action': ALL
         }

@@ -218,7 +218,7 @@ class Item(models.Model):
                           action="PRICE CHANGE",
                           quantity=None,
                           cost=product.cost,
-                          message="Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
+                          message=u"Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
                                                                                                       product.cost,
                                                                                                       supplier.currency,
                                                                                                       item.supply.description,
