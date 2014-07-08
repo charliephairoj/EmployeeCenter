@@ -527,8 +527,9 @@ class LogResource(ModelResource):
     supplier = fields.ForeignKey('contacts.api.SupplierResource', 'supplier', null=True)
     
     class Meta:
-        queryset = Log.objects.all()  
+        queryset = Log.objects.all().order_by('-id')  
         resource_name = 'log'
+        #ordering = ['quantity']
         filtering = {
             'supply': ALL_WITH_RELATIONS,
             'supplier': ALL_WITH_RELATIONS,

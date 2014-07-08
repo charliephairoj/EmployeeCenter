@@ -56,7 +56,7 @@ def app_login(request):
             logout(request)
             #create a new login form
             form = LoginForm()
-            return render(request, 'auth/login.html', {'form':form})
+            return render(request, 'login.html', {'form':form})
     #what to do with a post request
     elif request.method == "POST":
         #initialize form with post data
