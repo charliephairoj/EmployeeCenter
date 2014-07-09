@@ -30,7 +30,7 @@ pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
 
 class StickerDocTemplate(BaseDocTemplate):
-    def __init__(self, filename, page_size=(162 * mm, 230 * mm), **kwargs):
+    def __init__(self, filename, page_size=(168 * mm, 221.5 * mm), **kwargs):
         """
         Constructor
         
@@ -54,10 +54,10 @@ class StickerDocTemplate(BaseDocTemplate):
                       0, 
                       self.width, 
                       self.height, 
-                      leftPadding=1 * mm,
+                      leftPadding=6 * mm,
                       bottomPadding=1 * mm, 
-                      rightPadding=1 * mm,
-                      topPadding=11 * mm)
+                      rightPadding=6 * mm,
+                      topPadding=1.5 * mm)
         template = PageTemplate('Normal', [frame])
         return template
         
@@ -66,8 +66,8 @@ class StickerPage(object):
     sticker_width = 50 * mm
     sticker_height = 19 * mm
     barcode_height = 10 * mm
-    vertical_spacing = 2 * mm
-    horizontal_spacing = 3 * mm
+    vertical_spacing = 3 * mm
+    horizontal_spacing = 2.5 * mm
     
     def __init__(self, code=None, description=None, codes=None, *args, **kwargs):
         """
