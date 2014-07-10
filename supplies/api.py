@@ -113,6 +113,7 @@ class SupplyResource(ModelResource):
             
         #Adds the quantity
         try:
+            logger.debug("{0} : {1}".format(bundle.obj.quantity, bundle.data['quantity']))
             bundle.obj.quantity = bundle.data['quantity']
         except KeyError:
             pass
