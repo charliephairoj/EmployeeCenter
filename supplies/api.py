@@ -37,6 +37,7 @@ class SupplyResource(ModelResource):
         validation = SupplyValidation()
         authorization = DjangoAuthorization()
         ordering = ['image']
+        excludes = ['quantity_th', 'quantity_kh']
         filtering = {'id': ALL,
                      'upc': 'exact',
                      'quantity': ALL,
@@ -113,8 +114,20 @@ class SupplyResource(ModelResource):
             
         #Adds the quantity
         try:
-            logger.debug("{0} : {1}".format(bundle.obj.quantity, bundle.data['quantity']))
-            bundle.obj.quantity = bundle.data['quantity']
+            if bundle.obj.quantity != bundle.data['quantity'] and bundle.obj.quantity:
+                action = "ADD" if float(bundle.data['quantity']) > bundle.obj.quantity else "SUBTRACT"
+                diff = abs(bundle.obj.quantity - float(bundle.data['quantity']))
+                bundle.obj.quantity = float(bundle.data['quantity'])
+                log = Log(supply=bundle.obj,
+                          action=action,
+                          quantity=diff,
+                          message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
+                                                               diff,
+                                                               bundle.obj.units,
+                                                               "to" if action == "ADD" else "from",
+                                                               bundle.obj.description))
+                log.save()
+           
         except KeyError:
             pass
             

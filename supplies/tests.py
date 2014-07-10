@@ -253,13 +253,22 @@ class SupplyResourceTestCase(ResourceTestCase):
         """
         Tests adding quantity to the item
         """
+        
+        #Validate original data
+        supply = Supply.objects.get(pk=1)
+        supply.country = 'TH'
+        self.assertEqual(supply.quantity, 10.8)
+        self.assertEqual(Log.objects.all().count(), 0)
+        
+        #Prepare modified data for PUT
         modified_data = base_supply.copy()
         modified_data['description'] = 'new'
         modified_data['type'] = 'Glue'
+        modified_data['quantity'] = 11
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
-        resp = self.api_client.put('/api/v1/supply/1', format='json',
+        resp = self.api_client.put('/api/v1/supply/1?country=TH', format='json',
                                    data=modified_data)
         
         self.assertHttpOK(resp)
@@ -268,10 +277,23 @@ class SupplyResourceTestCase(ResourceTestCase):
         #Tests the returned data
         obj = self.deserialize(resp)
         self.assertEqual(obj['type'], 'Glue')
+        self.assertEqual(obj['quantity'], 11)
+        self.assertEqual(obj['description'], 'new')
+        self.assertFalse(obj.has_key('quantity_th'))
+        self.assertFalse(obj.has_key('quantity_kh'))
         
         #Tests the resource in the database
         supply = Supply.objects.get(pk=1)
+        supply.country = 'TH'
         self.assertEqual(supply.type, 'Glue')
+        self.assertEqual(supply.country, 'TH')
+        self.assertEqual(supply.description, 'new')
+        self.assertEqual(supply.quantity, 11)
+        self.assertEqual(Log.objects.all().count(), 1)
+        log = Log.objects.all()[0]
+        self.assertEqual(log.action, 'ADD')
+        self.assertEqual(log.quantity, Decimal('0.2'))
+        self.assertEqual(log.message, "Added 0.2ml to test")
         
     def test_add(self):
         """
