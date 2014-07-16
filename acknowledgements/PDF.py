@@ -508,7 +508,7 @@ class AcknowledgementPDF(object):
         return signature
 
     #helps change the size and maintain ratio
-    def get_image(self, path, width=None, height=None, max_width=0):
+    def get_image(self, path, width=None, height=None, max_width=0, max_height=0):
         """Retrieves the image via the link and gets the
         size from the image. The correct dimensions for
         image are calculated based on the desired with or
@@ -631,7 +631,7 @@ class ProductionPDF(AcknowledgementPDF):
         for product in self.products:
             data.append([self._create_products_item_section(product)])
         #Create Table
-        table = Table(data, colWidths=(535), repeatRows=1)
+        table = Table(data, colWidths=(535), repeatRows=1, splitByRow=True)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                       ('TOPPADDING', (0, 0), (-1, -1), 0),
@@ -691,8 +691,8 @@ class ProductionPDF(AcknowledgementPDF):
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
-                                   leading=22,
-                                   fontSize=14,
+                                   leading=16,
+                                   fontSize=12,
                                    wordWrap='CJK',
                                    allowWidows=1,
                                    allowOrphans=1,
@@ -711,7 +711,7 @@ class ProductionPDF(AcknowledgementPDF):
         if product.image:
             data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=400)])
         #Create table
-        table = Table(data, colWidths=(80, 420, 40))
+        table = Table(data, colWidths=(80, 420, 40), splitByRow=True)
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),
                        colors.CMYKColor(black=60)),
                             #Lines around content
