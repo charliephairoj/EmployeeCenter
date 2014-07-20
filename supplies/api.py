@@ -114,7 +114,7 @@ class SupplyResource(ModelResource):
             
         #Adds the quantity
         try:
-            if Decimal(str(bundle.obj.quantity)) != Decimal(bundle.data['quantity']) and bundle.obj.quantity:
+            if Decimal(str(bundle.obj.quantity)) != Decimal(bundle.data['quantity']) and bundle.obj.quantity and bundle.obj.id:
                 action = "ADD" if float(bundle.data['quantity']) > bundle.obj.quantity else "SUBTRACT"
                 diff = abs(Decimal(str(bundle.obj.quantity)) - Decimal(bundle.data['quantity']))
                 bundle.obj.quantity = float(bundle.data['quantity'])

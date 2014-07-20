@@ -47,7 +47,7 @@ def app_login(request):
             """
             #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
             
-            return render(request, 'index.html')
+            return render(request, 'index.html', settings.TEMPLATE_DIRS[0])
 
             #return render(request, 'home.html', {'user_data': jsonStr})
 

@@ -10,6 +10,7 @@ from tastypie.resources import ModelResource
 from tastypie import fields
 from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import NotFound, BadRequest, InvalidFilterError, HydrationError, InvalidSortError, ImmediateHttpResponse, Unauthorized
+from django.db.models import Q
 
 from po.models import PurchaseOrder, Item
 from contacts.models import Supplier
@@ -30,7 +31,17 @@ class PurchaseOrderResource(ModelResource):
         queryset = PurchaseOrder.objects.all().order_by('-id')
         always_return_data = True
         authorization = DjangoAuthorization() 
+      
+    def apply_filters(self, request, applicable_filters):
+        obj_list = super(PurchaseOrderResource, self).apply_filters(request, applicable_filters)
         
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(supplier__name__icontains=query) | 
+                                       Q(pk__icontains=query))
+        return obj_list
+          
     def hydrate(self, bundle):
         """
         Prepares the data before it is applied to the models
