@@ -114,7 +114,10 @@ class SupplyResource(ModelResource):
             
         #Adds the quantity
         try:
-            if Decimal(str(bundle.obj.quantity)) != Decimal(bundle.data['quantity']) and bundle.obj.quantity and bundle.obj.id:
+            logger.debug("{0} : {1}".format(bundle.obj.quantity, bundle.data['quantity']))
+            logger.debug(bundle.obj.id)
+            logger.debug(bool(Decimal(str(bundle.obj.quantity)) != Decimal(bundle.data['quantity']) and bundle.obj.quantity != None))
+            if Decimal(str(bundle.obj.quantity)) != Decimal(bundle.data['quantity']) and bundle.obj.quantity != None:
                 action = "ADD" if float(bundle.data['quantity']) > bundle.obj.quantity else "SUBTRACT"
                 diff = abs(Decimal(str(bundle.obj.quantity)) - Decimal(bundle.data['quantity']))
                 bundle.obj.quantity = float(bundle.data['quantity'])
@@ -127,7 +130,7 @@ class SupplyResource(ModelResource):
                                                                "to" if action == "ADD" else "from",
                                                                bundle.obj.description))
                 log.save()
-           
+                        
         except KeyError:
             pass
             
@@ -217,14 +220,14 @@ class SupplyResource(ModelResource):
                 sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id), 
                                            description=bundle.obj.description)
                 filename = sticker_page.create("DRS-{0}".format(bundle.obj.id))    
-                stickers = S3Object.create(filename, 
-                                           "supplies/stickers/{0}".format(filename), 
-                                           'document.dellarobbiathailand.com', 
-                                           encrypt_key=True)
-                bundle.obj.sticker = stickers
+                #stickers = S3Object.create(filename, 
+                #                           "supplies/stickers/{0}".format(filename), 
+                #                           'document.dellarobbiathailand.com', 
+                #                           encrypt_key=True)
+                #bundle.obj.sticker = stickers
                 bundle.obj.save()
                 
-            bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
+            #bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
         #If getting a list
         else:
             bundle.data['suppliers'] = [{'name': supplier.name,
@@ -306,9 +309,9 @@ class SupplyResource(ModelResource):
                 suppliers = [bundle.data['supplier']]
             except KeyError:
                 raise
-        
+
         bundle = super(SupplyResource, self).obj_update(bundle, **kwargs)
-        
+
         for supplier_data in suppliers:
             supplier = Supplier.objects.get(pk=supplier_data['id'])
             try:

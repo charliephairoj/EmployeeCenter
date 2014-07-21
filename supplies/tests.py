@@ -338,6 +338,54 @@ class SupplyResourceTestCase(ResourceTestCase):
         
         self.assertEqual(Log.objects.all().count(), 0)
         
+    def test_put_subtracting_quantity_to_0(self):
+        """
+        Tests adding quantity to the item
+        """
+        
+        #Validate original data
+        supply = Supply.objects.get(pk=1)
+        supply.country = 'TH'
+        supply.quantity = 1
+        supply.save()
+        
+        self.assertEqual(supply.quantity, 1)
+        self.assertEqual(Log.objects.all().count(), 0)
+        
+        #Prepare modified data for PUT
+        modified_data = base_supply.copy()
+        modified_data['description'] = 'new'
+        modified_data['type'] = 'Glue'
+        modified_data['quantity'] = '0'
+        
+        #Tests the api and the response
+        self.assertEqual(Supply.objects.count(), 2)
+        resp = self.api_client.put('/api/v1/supply/1?country=TH', format='json',
+                                   data=modified_data)
+        
+        self.assertHttpOK(resp)
+        self.assertEqual(Supply.objects.count(), 2)
+
+        #Tests the returned data
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['quantity'], 0)
+
+        self.assertFalse(obj.has_key('quantity_th'))
+        self.assertFalse(obj.has_key('quantity_kh'))
+        
+        #Tests the resource in the database
+        supply = Supply.objects.get(pk=1)
+        supply.country = 'TH'
+        self.assertEqual(supply.quantity, 0)
+        
+        logger.debug('tests')
+        for l in Log.objects.all():
+            logger.debug(l.__dict__)
+        log = Log.objects.all().order_by('-id')[0]
+        self.assertEqual(Log.objects.all().count(), 1)
+        self.assertEqual(log.quantity, 1)
+        self.assertEqual(log.action, 'SUBTRACT')
+        
     def test_add(self):
         """
         Tests adding a quantity

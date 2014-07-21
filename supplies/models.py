@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from decimal import Decimal
 
 from django.conf import settings
@@ -7,6 +8,9 @@ from django.contrib.auth.models import User
 from django.db import models
 from django_hstore import hstore
 from django.shortcuts import get_object_or_404
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+import boto.ses
 
 from contacts.models import Contact, Supplier
 from auth.models import S3Object
@@ -39,7 +43,7 @@ class Supply(models.Model):
     sticker = models.ForeignKey(S3Object, null=True, related_name="supply_sticker")
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
-    #upc = models.TextField(default='')
+    _check_quantity = False
 
     class Meta:
         permissions = (('view_supplier', 'Can view the Supplier'),
@@ -85,6 +89,10 @@ class Supply(models.Model):
         
     @quantity.setter
     def quantity(self, value):
+        
+        if Decimal(str(value)) < self.quantity_th:
+            self._check_quantity = True
+            
         try:
             setattr(self, 'quantity_{0}'.format(self.country.lower()), value)
         except AttributeError:
@@ -186,7 +194,59 @@ class Supply(models.Model):
             self.product = Product.objects.get(supply=self, supplier=supplier)
 
         return self.product
+    def test_if_critically_low_quantity(self):
+        sql = """
+        WITH weekly_average as (
+            SELECT s.id as id, sum(sl.quantity) as week_total
+            FROM supplies_log as sl
+            INNER JOIN supplies_supply as s
+            ON s.id = sl.supply_id
+            GROUP BY s.id, sl.action, date_trunc('day', log_timestamp)
+            HAVING (date_trunc('day', log_timestamp) > NOW() - interval '4 weeks'
+            AND sl.action = 'SUBTRACT'))
+        SELECT id, description, quantity
+        FROM supplies_supply as s
+        WHERE id in (SELECT id from weekly_average WHERE id = s.id)
+        AND s.quantity < (SELECT avg(week_total) FROM weekly_average WHERE id = s.id)
+        AND {0} IN (SELECT id FROM weekly_average);
+        """
+        try:
+            s = Supply.objects.raw(sql.format(self.id))[0]
+            return True
+        except IndexError:
+            return False
     
+    def email_critically_low_quantity(self):
+        """Emails when a material has become critically low"""
+        key_id = settings.AWS_ACCESS_KEY_ID
+        access_key = settings.AWS_SECRET_ACCESS_KEY
+        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=key_id, aws_secret_access_key=access_key)
+        img_src = self.image.generate_url(time=3600) if self.image else "" 
+        body = u"{0} has a critically low stock of {1}{2} as of {3} <br /> <img src='{4}' />"
+        body = body.format(self.description,
+                           self.quantity, 
+                           self.units,
+                           datetime.now().strftime('%B %d, %Y'),
+                           img_src)
+        conn.send_email('no-replay@dellarobbiathailand.com',
+                        '{0} Critically Low'.format(self.description),
+                        body,
+                        'charliep@dellarobbiathailand.com',
+                        format='html')
+    
+    def save(self, *args, **kwargs):
+        """
+        Custom Save Method
+        
+        Tests if the quantity needs to be check for being 
+        critically low.
+        """
+        if self._check_quantity:
+            if self.test_if_critically_low_quantity():
+                self.email_critically_low_quantity()
+            self._check_quantity = False
+            
+        super(Supply, self).save(*args, **kwargs)
      
 class Product(models.Model):
     supplier = models.ForeignKey(Supplier)
