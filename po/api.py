@@ -209,15 +209,12 @@ class PurchaseOrderResource(ModelResource):
                 updated = True
                 #Create a new item
                 item_obj = Item.create(supplier=bundle.obj.supplier, **item)
-                logger.debug("New Item with discount {0}".format(item))
                 item_obj.purchase_order = bundle.obj
                 item_obj.save()
             
             if "unit_cost" in item:
-                logger.debug('unit cost in ')
                 
                 product = Product.objects.get(supply=item_obj.supply, supplier=bundle.obj.supplier)
-                logger.debug('{0} : {1}'.format(product.cost, item['unit_cost']))
                 
                 if product.cost != Decimal(item['unit_cost']) or item_obj.unit_cost != Decimal(item['unit_cost']):
                     try:
@@ -229,7 +226,6 @@ class PurchaseOrderResource(ModelResource):
                         
                         item_obj.calculate_total()
                         item_obj.save()
-                        logger.debug(item_obj.__dict__)
                         log = Log(supply=item_obj.supply,
                                   supplier=bundle.obj.supplier,
                                   action="PRICE CHANGE",
@@ -250,7 +246,6 @@ class PurchaseOrderResource(ModelResource):
         server_items = set([i.id for i in bundle.obj.items.all()])
         client_items = set([item['id'] for item in bundle.data['items']])
         for item_id in server_items.difference(client_items):
-            logger.debug(item_id)
             bundle.obj.items.get(pk=item_id).delete()
             
         if updated:

@@ -249,19 +249,19 @@ class Item(models.Model):
             self.unit_cost = Decimal(self.supply.cost)
         if self.supply.discount == 0 and self.discount == 0:
             
-            logger.debug("{0} unit cost is {1}".format(self.description, self.unit_cost))
+            logger.debug(u"{0} unit cost is {1}".format(self.description, self.unit_cost))
         else:
-            logger.debug("{0} discount is {1}%".format(self.description, self.discount))
+            logger.debug(u"{0} discount is {1}%".format(self.description, self.discount))
             if sys.version_info[:2] == (2, 6):
                 discount_amount = Decimal(str(self.unit_cost)) * (Decimal(str(self.discount)) / Decimal('100'))
             elif sys.version_info[:2] == (2, 7):
                 discount_amount = Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100'))
             #self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
-            logger.debug("{0} discounted unit cost is {1}".format(self.description, self.unit_cost - discount_amount))
+            logger.debug(u"{0} discounted unit cost is {1}".format(self.description, self.unit_cost - discount_amount))
                     
         self.total = (Decimal(self.unit_cost) - (Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100')))) * Decimal(self.quantity)
         
-        logger.debug("{0} total quantity is {1}".format(self.description, self.quantity))
-        logger.debug("{0} total cost is {1}".format(self.description, self.total))
+        logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
+        logger.debug(u"{0} total cost is {1}".format(self.description, self.total))
         
     
