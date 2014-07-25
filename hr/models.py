@@ -71,11 +71,8 @@ class Attendance(models.Model):
         
         self.overtime = self.total_time - self.regular_time if self.total_time <= 8 else 0
         
-<<<<<<< HEAD
+
         #Adds and extra hour lunch OT if employee is a driver
         if self.employee.department.lower() == 'transportation':
             self.total_time += 1
             self.
-=======
-     
->>>>>>> ok
