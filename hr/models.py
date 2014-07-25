@@ -39,6 +39,14 @@ class Employee(models.Model):
                                                 employee=self)
         total_regular_time = [a.regular_time for a in attendances]
         total_overtime = [a.overtime for a in attendances]
+        
+    def _calculate_daily_wages(self, attendance):
+        """
+        Calculates the daily wages based on attendance
+        """
+        
+        
+        
 class Attendance(models.Model):
     
     start_time = models.DateTimeField()
@@ -57,10 +65,13 @@ class Attendance(models.Model):
     def _calculate_different_time_types(self):
         """
         Calculates the times to be work"""
-        self.total_time = (end_time - start_time).total_seconds() / 3600
+        self.total_time = ((end_time - start_time).total_seconds() / 3600) - 1
         
         self.regular_time = 8 if self.total_time <= 8 else self.total_time
         
         self.overtime = self.total_time - self.regular_time if self.total_time <= 8 else 0
         
-     
+        #Adds and extra hour lunch OT if employee is a driver
+        if self.employee.department.lower() == 'transportation':
+            self.total_time += 1
+            self.

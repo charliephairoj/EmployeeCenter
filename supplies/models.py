@@ -208,7 +208,7 @@ class Supply(models.Model):
         FROM supplies_supply as s
         WHERE id in (SELECT id from weekly_average WHERE id = s.id)
         AND s.quantity < (SELECT avg(week_total) FROM weekly_average WHERE id = s.id)
-        AND {0} IN (SELECT id FROM weekly_average);
+        AND {0} = s.id;
         """
         try:
             s = Supply.objects.raw(sql.format(self.id))[0]
