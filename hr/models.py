@@ -75,4 +75,3 @@ class Attendance(models.Model):
         #Adds and extra hour lunch OT if employee is a driver
         if self.employee.department.lower() == 'transportation':
             self.total_time += 1
-            self.
