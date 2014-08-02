@@ -3,6 +3,7 @@ Models to be use in the HR application
 """
 import logging
 from decimal import Decimal
+from datetime import datetime, timedelta
 
 from django.db import models
 
@@ -142,18 +143,40 @@ class Employee(models.Model):
 
 class Attendance(models.Model):
     
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    employee = models.ForeignKey(Employee)
+    date = models.DateField()
+    start_time = models.DateTimeField(null=True)
+    end_time = models.DateTimeField(null=True)
+    employee = models.ForeignKey(Employee, related_name='attendances')
+    _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
     regular_time = models.DecimalField(decimal_places=2, max_digits=12)
     overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     total_time = models.DecimalField(decimal_places=2, max_digits=12)
     
+    @property
+    def enable_overtime(self):
+        """
+        Getter for enable overtime
+        """
+        return self._enable_overtime
+        
+    @enable_overtime.setter
+    def enable_overtime(self, value):
+        self._enable_overtime = bool(value)
+        if self.start_time and self.end_time:
+            self._calculate_times()
+        
     def __init__(self, *args, **kwargs):
         """
         Override the initialization method
         """
         super(Attendance, self).__init__(*args, **kwargs)
+        if self.start_time and self.end_time:
+            self._calculate_different_time_types()
+        
+    def _calculate_times(self):
+        """
+        wrapper for '_calculate_different_time_types'
+        """
         self._calculate_different_time_types()
         
     def _calculate_different_time_types(self):
@@ -163,6 +186,22 @@ class Attendance(models.Model):
         total_seconds = Decimal(str((self.end_time - self.start_time).total_seconds()))
         self.total_time = (total_seconds / Decimal('3600')) - Decimal('1')
         
+        #Normalize extra minutes from clock in and clock out depend on if overtime enabled
+        if not self.enable_overtime:
+            if self._check_clock_in_on_time() and self._check_clock_out_on_time():
+                self.total_time = Decimal('8')
+                
+        else:
+            if self.start_time.hour == 7:
+                d = self.start_time
+                
+                #calculate the difference in time need to make 8
+                td = timedelta(hours=8 - d.hour if d.minute == 0 else 0,
+                               minutes=60 - d.minute if d.minute > 0 else 0,
+                               seconds=60 - d.second if d.second > 0 else 0)
+                seconds = Decimal(str((self.end_time - (self.start_time + td)).total_seconds()))
+                self.total_time =  (seconds / Decimal('3600')) - Decimal('1')        
+        
         self.regular_time = Decimal('8') if self.total_time >= 8.25 else self.total_time
         self.overtime = self.total_time - self.regular_time if self.total_time > 8 else Decimal('0')
         
@@ -171,3 +210,25 @@ class Attendance(models.Model):
         if self.employee.department.lower() == 'transportation':
             self.total_time += Deicmal('1')
             self.overtime += Decimal('1')
+    
+    def _check_clock_in_on_time(self):
+        """
+        Checks if the clock in time is on time and not late
+        """
+        if self.start_time.hour >= 7 and self.start_time.hour <= 8:
+            if (self.start_time.hour == 8 and self.start_time.minute <= 5) or self.start_time.hour ==7:
+                return True
+            else:
+                return False
+        else:
+            return False
+            
+    def _check_clock_out_on_time(self):
+        """
+        Checks if the clock in time is on time and not late
+        """
+        if self.start_time.hour >= 5:
+            return True
+        else:
+            return False
+                

@@ -48,6 +48,49 @@ employee3_data = {
     'social_security_id': '123-33-333'
 }
 
+
+class AttendanceTest(TestCase):
+    """
+    Testing class for attendance
+    """
+    def setUp(self):
+        """
+        Set up the Testing clas:
+        """
+        super(AttendanceTest, self).setUp()
+        
+        self.employee = Employee(**employee2_data)
+        self.employee.save()
+        
+        self.attendance = Attendance(date=date(2014, 7, 1),
+                                     start_time=datetime(2014, 7, 1, 7, 30, 0),
+                                     end_time=datetime(2014, 7, 1, 17, 15, 0), 
+                                     employee=self.employee)
+        self.attendance.save()
+        
+    def test_cutoff_times_without_ot(self):
+        """
+        Tests that the hours are cutoff 
+        correctly even if the employee clocks in early
+        or clocks out late
+        """
+        self.attendance._calculate_times()
+        self.assertEqual(self.attendance.regular_time, 8)
+        self.assertEqual(self.attendance.total_time, 8)
+        self.assertEqual(self.attendance.overtime, 0)
+        
+    def test_times_with_overtime(self):
+        """
+        Tests that the times are correct if overtime is enabled for
+        this particular date
+        """
+        self.attendance.enable_overtime = True
+        self.attendance.save()
+        
+        self.assertEqual(self.attendance.regular_time, 8)
+        self.assertEqual(self.attendance.total_time, 8.25)
+        self.assertEqual(self.attendance.overtime, 0.25)
+    
 @unittest.skip("ok")
 class Employee1Test(TestCase):
     """
@@ -224,7 +267,8 @@ class Employee2Test(TestCase):
         net_pay = self.employee.calculate_net_pay(date(2014, 7, 1), date(2014, 7, 15))
         self.assertEqual(net_pay, 10211.25)
         
-        
+
+@unittest.skip("ok")        
 class Employee3Test(TestCase):
     """
     Testing class for daily worker
