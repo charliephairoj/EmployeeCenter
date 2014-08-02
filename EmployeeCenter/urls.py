@@ -11,6 +11,7 @@ from supplies.api import SupplyResource, FabricResource, LogResource
 from equipment.api import EquipmentResource
 from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
 from administrator.api import UserResource, GroupResource, PermissionResource
+from hr.api import EmployeeResource
 """
 API Section
 
@@ -34,6 +35,7 @@ v1_api.register(EquipmentResource())
 v1_api.register(UserResource())
 v1_api.register(GroupResource())
 v1_api.register(PermissionResource())
+v1_api.register(EmployeeResource())
 
 #Products Category
 v1_api.register(ModelResource())
