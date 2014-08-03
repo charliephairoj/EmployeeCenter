@@ -148,9 +148,9 @@ class Attendance(models.Model):
     end_time = models.DateTimeField(null=True)
     employee = models.ForeignKey(Employee, related_name='attendances')
     _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
-    regular_time = models.DecimalField(decimal_places=2, max_digits=12)
-    overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    total_time = models.DecimalField(decimal_places=2, max_digits=12)
+    regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
+    overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
+    total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
     
     @property
     def enable_overtime(self):
