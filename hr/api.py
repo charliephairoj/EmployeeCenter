@@ -51,4 +51,15 @@ class AttendanceResource(ModelResource):
         filtering = {
             'employee': ALL_WITH_RELATIONS,
             'date': ALL
-        }
+        },
+        excludes = ['_start_time', '_end_time']
+        
+    def dehydrate(self, bundle):
+        """
+        Dehydrate custom 
+        """
+        
+        bundle.data.update({'start_time': bundle.obj.start_time,
+                            'end_time': bundle.obj.end_time})
+        return bundle
+        
