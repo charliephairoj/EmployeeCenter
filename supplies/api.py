@@ -538,6 +538,7 @@ class SupplyResource(ModelResource):
             bundle.obj.country = 'TH'
             
         return bundle
+        
     
 class LogResource(ModelResource):
     supply = fields.ForeignKey('supplies.api.SupplyResource', 'supply')

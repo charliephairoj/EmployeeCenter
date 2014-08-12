@@ -24,11 +24,9 @@ class EmployeeResource(ModelResource):
         resource_name = 'employee'
         always_return_data = True
         authorization = DjangoAuthorization()
-        filtering = {
-            'id': ALL,
-            'name': ALL
-        }
+        filtering = {'id': ALL} 
 
+      
     def apply_filters(self, request, applicable_filters):
         obj_list = super(EmployeeResource, self).apply_filters(request, applicable_filters)
         
@@ -38,20 +36,18 @@ class EmployeeResource(ModelResource):
                                        Q(id__icontains=query))
 
         return obj_list
-        
+
                                        
 class AttendanceResource(ModelResource):
-    employee = fields.ForeignKey('hr.api.EmployeeResource', 'employee')
+    
+    employee = fields.ToOneField(EmployeeResource, 'employee')
     
     class Meta:
         queryset = Attendance.objects.all().order_by('-date')
-        resource_name = 'attendance'
+        resource_name = 'attendance' 
         always_return_data = True
         authorization = DjangoAuthorization()
-        filtering = {
-            'employee': ALL_WITH_RELATIONS,
-            'date': ALL
-        },
+        filtering = {'id': ALL, 'employee': ALL_WITH_RELATIONS}
         excludes = ['_start_time', '_end_time']
         
     def dehydrate(self, bundle):
@@ -60,6 +56,8 @@ class AttendanceResource(ModelResource):
         """
         
         bundle.data.update({'start_time': bundle.obj.start_time,
-                            'end_time': bundle.obj.end_time})
+                            'end_time': bundle.obj.end_time,
+                            'employee_id': bundle.obj.employee.id})
         return bundle
+        
         

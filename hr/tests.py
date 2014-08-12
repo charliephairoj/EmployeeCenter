@@ -7,6 +7,7 @@ from decimal import Decimal
 from datetime import date, datetime, time
 
 from django.test import TestCase
+from tastypie.test import ResourceTestCase
 from pytz import timezone
 
 from hr.models import Employee, Attendance, Shift
@@ -50,7 +51,7 @@ employee3_data = {
 }
 
 
-class AttendanceTest(TestCase):
+class AttendanceTest(ResourceTestCase):
     """
     Testing class for attendance
     """
@@ -59,6 +60,9 @@ class AttendanceTest(TestCase):
         Set up the Testing clas:
         """
         super(AttendanceTest, self).setUp()
+        
+        self.api_client.client.login(username='test', password='test')
+        
         self.shift = Shift(start_time=time(8, 0),
                            end_time=time(17, 0))
         self.shift.save()
@@ -70,6 +74,14 @@ class AttendanceTest(TestCase):
                                      end_time=datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
                                      employee=self.employee)
         self.attendance.save()
+        
+    def test_accessing_attendance_instance(self):
+        """
+        Tests that the attendance data can be correctly accessed by the model
+        """
+        a = Attendance.objects.get(pk=1)
+        self.assertEqual(a.start_time, datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')))
+        self.assertEqual(a.end_time, datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')))
         
     def test_processing_times_based_on_instance_shift_with_normal_times(self):
         """
@@ -201,6 +213,28 @@ class AttendanceTest(TestCase):
         self.assertEqual(a.regular_time, 8)
         self.assertEqual(a.total_time, 9.75)
         self.assertEqual(a.overtime, 1.5)
+    
+    def test_get_list(self):
+        """
+        Test getting a list of objects
+        """
+        resp = self.api_client.get('/api/v1/attendance')
+        self.assertHttpOK(resp)
+        
+        obj_list = self.deserialize(resp)
+        
+    def test_get_list_filter_by_employee(self):
+        """
+        Test getting a list of objects filtered by employee
+        """
+        resp = self.api_client.get('/api/v1/attendance?employee=1')
+        self.assertHttpOK(resp)
+        
+    def test_get(self):
+        """
+        Tests basic get of single object
+        """
+        resp = self.api_client.get('/api/v1/attendance/1')
     
     
 @unittest.skip("ok")

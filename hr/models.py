@@ -5,6 +5,7 @@ import logging
 from decimal import Decimal
 from datetime import datetime, timedelta
 from math import floor
+import traceback
 
 from django.db import models
 from pytz import timezone
@@ -158,7 +159,7 @@ class Timestamp(models.Model):
     
 class Attendance(models.Model):
     
-    date = models.DateField()
+    date = models.DateField(db_column='a_date')
     _start_time = models.DateTimeField(null=True, db_column='start_time')
     _end_time = models.DateTimeField(null=True, db_column='end_time')
     employee = models.ForeignKey(Employee, related_name='attendances')
@@ -168,6 +169,7 @@ class Attendance(models.Model):
     total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
     shift = models.ForeignKey(Shift, null=True)
     
+
     @property
     def start_time(self):
         try:
@@ -182,14 +184,18 @@ class Attendance(models.Model):
     @property
     def end_time(self):
         try:
+            logger.debug(self._end_time)
             return self._end_time.astimezone(self.tz)
-        except AttributeError:
+        except AttributeError as e:
+            print e
             return None
         
     @end_time.setter
     def end_time(self, value):
+        logger.debug('setter: {0}'.format(value))
         self._end_time = value
-            
+
+    
     @property
     def enable_overtime(self):
         """
@@ -231,7 +237,6 @@ class Attendance(models.Model):
             half_shift = self.shift.start_time.hour + (abs(self.shift.end_time.hour - self.shift.start_time.hour) / 2)
             if dt.hour >= half_shift:
                 self.end_time = dt
-                logger.debug(self.shift.end_time.hour - self.shift.start_time.hour)
             elif dt.hour < half_shift:
                 self.start_time = dt
                 
