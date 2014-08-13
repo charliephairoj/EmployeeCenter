@@ -184,7 +184,6 @@ class Attendance(models.Model):
     @property
     def end_time(self):
         try:
-            logger.debug(self._end_time)
             return self._end_time.astimezone(self.tz)
         except AttributeError as e:
             print e
@@ -220,6 +219,8 @@ class Attendance(models.Model):
         
         if self.start_time and self.end_time:
             self._calculate_different_time_types()
+            
+         
         
     def assign_datetime(self, dt):
         """
@@ -255,7 +256,7 @@ class Attendance(models.Model):
         
         #Normalize extra minutes from clock in and clock out depend on if overtime enabled
         logger.debug("Overtime enabled: {0}".format(self.enable_overtime))
-        if not self.enable_overtime:
+        if self.enable_overtime:
             logger.debug("Checked in and out on time: {0}".format(bool(self._check_clock_in_on_time()
                                                                        and self._check_clock_out_on_time())))
             if self._check_clock_in_on_time() and self._check_clock_out_on_time():
