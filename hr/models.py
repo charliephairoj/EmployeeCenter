@@ -3,12 +3,23 @@ Models to be use in the HR application
 """
 import logging
 from decimal import Decimal
+from datetime import datetime, timedelta
+from math import floor
+import traceback
 
 from django.db import models
+from pytz import timezone
 
 
 logger = logging.getLogger(__name__)
-
+            
+          
+class Shift(models.Model):
+    
+    start_time = models.TimeField(db_column="start_time")
+    end_time = models.TimeField(db_column="end_time")  
+    
+    
 class Employee(models.Model):
     
     name = models.TextField()
@@ -19,6 +30,7 @@ class Employee(models.Model):
     pay_period = models.TextField()
     employement_date = models.DateField(null=True)
     social_security_id = models.TextField(null=True)
+    shift = models.ForeignKey(Shift)
     
     def log_attendance(self, start_time, end_time):
         """
@@ -130,7 +142,7 @@ class Employee(models.Model):
         
         -Deductions are currently 5% of the pay
         """
-        return pay - (pay * Decimal('0.05')) if self.legal else pay
+        return pay - (pay * Decimal('0.05') if pay * Decima('0.05') < 750 else Decimal('750')) if self.legal else pay
         
     def _apply_tax_deduction(self, pay):
         """
@@ -140,20 +152,99 @@ class Employee(models.Model):
         return pay - Decimal('500') if self.legal else pay
 
 
+class Timestamp(models.Model):
+    datetime = models.DateTimeField()
+    employee = models.ForeignKey(Employee, related_name='timestamps')
+    
+    
 class Attendance(models.Model):
     
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    employee = models.ForeignKey(Employee)
-    regular_time = models.DecimalField(decimal_places=2, max_digits=12)
-    overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    total_time = models.DecimalField(decimal_places=2, max_digits=12)
+    date = models.DateField(db_column='a_date')
+    _start_time = models.DateTimeField(null=True, db_column='start_time')
+    _end_time = models.DateTimeField(null=True, db_column='end_time')
+    employee = models.ForeignKey(Employee, related_name='attendances')
+    _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
+    regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
+    overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
+    total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
+    shift = models.ForeignKey(Shift, null=True)
     
+
+    @property
+    def start_time(self):
+        try:
+            return self._start_time.astimezone(self.tz)
+        except AttributeError:
+            return None
+        
+    @start_time.setter
+    def start_time(self, value):
+        self._start_time = value
+    
+    @property
+    def end_time(self):
+        try:
+            return self._end_time.astimezone(self.tz)
+        except AttributeError as e:
+            print e
+            return None
+        
+    @end_time.setter
+    def end_time(self, value):
+        logger.debug('setter: {0}'.format(value))
+        self._end_time = value
+
+    
+    @property
+    def enable_overtime(self):
+        """
+        Getter for enable overtime
+        """
+        return self._enable_overtime
+        
+    @enable_overtime.setter
+    def enable_overtime(self, value):
+        self._enable_overtime = bool(value)
+        if self.start_time and self.end_time:
+            self._calculate_times()
+        
     def __init__(self, *args, **kwargs):
         """
         Override the initialization method
         """
         super(Attendance, self).__init__(*args, **kwargs)
+        
+        #Set standard timezone
+        self.tz = timezone('Asia/Bangkok')
+        
+        if self.start_time and self.end_time:
+            self._calculate_different_time_types()
+            
+         
+        
+    def assign_datetime(self, dt):
+        """
+        Assigns the datetime to either the start or end time
+        based on the shift assigned
+        """
+        if not self.shift:
+            self.shift = self.employee.shift
+            
+        if dt.hour <= self.shift.start_time.hour and self.shift.start_time.hour >= 5:
+            self.start_time = dt
+        elif dt.hour >= self.shift.end_time.hour:
+            self.end_time = dt
+        else:
+            half_shift = self.shift.start_time.hour + (abs(self.shift.end_time.hour - self.shift.start_time.hour) / 2)
+            if dt.hour >= half_shift:
+                self.end_time = dt
+            elif dt.hour < half_shift:
+                self.start_time = dt
+                
+    def _calculate_times(self):
+        """
+        wrapper for '_calculate_different_time_types'
+        """
         self._calculate_different_time_types()
         
     def _calculate_different_time_types(self):
@@ -163,11 +254,75 @@ class Attendance(models.Model):
         total_seconds = Decimal(str((self.end_time - self.start_time).total_seconds()))
         self.total_time = (total_seconds / Decimal('3600')) - Decimal('1')
         
-        self.regular_time = Decimal('8') if self.total_time >= 8.25 else self.total_time
-        self.overtime = self.total_time - self.regular_time if self.total_time > 8 else Decimal('0')
+        #Normalize extra minutes from clock in and clock out depend on if overtime enabled
+        logger.debug("Overtime enabled: {0}".format(self.enable_overtime))
+        if self.enable_overtime:
+            logger.debug("Checked in and out on time: {0}".format(bool(self._check_clock_in_on_time()
+                                                                       and self._check_clock_out_on_time())))
+            if self._check_clock_in_on_time() and self._check_clock_out_on_time():
+                self.total_time = Decimal('8')
+                logger.debug("Total time worked: {0} hours".format(self.total_time))
+                
+            else:
+                logger.debug("Start Time: {0}".format(self.start_time))
+                logger.debug("End Time: {0}".format(self.end_time))
+        else:
+            if self.start_time.hour == 7:
+                d = self.start_time
+                
+                #calculate the difference in time need to make 8
+                td = timedelta(hours=8 - d.hour if d.minute == 0 else 0,
+                               minutes=60 - d.minute if d.minute > 0 else 0,
+                               seconds=60 - d.second if d.second > 0 else 0)
+                seconds = Decimal(str((self.end_time - (self.start_time + td)).total_seconds()))
+                self.total_time =  (seconds / Decimal('3600')) - Decimal('1')        
         
-
+        #Calculates regular time
+        self.regular_time = Decimal('8') if self.total_time >= 8 else self.total_time
+        logger.debug("Regular time worked: {0} hours".format(self.regular_time))
+        
         #Adds and extra hour lunch OT if employee is a driver
         if self.employee.department.lower() == 'transportation':
             self.total_time += Deicmal('1')
-            self.overtime += Decimal('1')
+        
+        #Calculates overtime
+        self._calculate_overtime()
+        logger.debug("Overtime worked: {0} hours".format(self.overtime))
+    
+    def _check_clock_in_on_time(self):
+        """
+        Checks if the clock in time is on time and not late
+        """
+        if self.start_time.hour >= 7 and self.start_time.hour <= 8:
+            if (self.start_time.hour == 8 and self.start_time.minute <= 5) or self.start_time.hour == 7:
+                return True
+            else:
+                return False
+        else:
+            return False
+            
+    def _check_clock_out_on_time(self):
+        """
+        Checks if the clock in time is on time and not late
+        """
+        if self.start_time.hour >= 5:
+            return True
+        else:
+            return False
+
+    def _calculate_overtime(self):
+        """
+        Calculates the number of overtime hours due to the employee
+        
+        Rules:
+        -Must work at least 1 hour past end of shift
+        -Overtime granted by every half hour. Must work past half hour
+        Ex. worked 1.66 overtime becomes 1.5. worked 1.25 becomes 1
+        """
+        excess_time = self.total_time - self.regular_time
+        logger.debug("excess: {0}".format(excess_time))
+        
+        self.overtime = floor(excess_time * 2) / 2 if excess_time >= 1 else 0
+        self.overtime = Decimal(str(self.overtime))
+
+                
