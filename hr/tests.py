@@ -4,11 +4,13 @@ Testing File for HR application
 import logging
 import unittest
 from decimal import Decimal
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from django.test import TestCase
+from tastypie.test import ResourceTestCase
+from pytz import timezone
 
-from hr.models import Employee, Attendance
+from hr.models import Employee, Attendance, Shift
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +50,193 @@ employee3_data = {
     'social_security_id': '123-33-333'
 }
 
+
+class AttendanceTest(ResourceTestCase):
+    """
+    Testing class for attendance
+    """
+    def setUp(self):
+        """
+        Set up the Testing clas:
+        """
+        super(AttendanceTest, self).setUp()
+        
+        self.api_client.client.login(username='test', password='test')
+        
+        self.shift = Shift(start_time=time(8, 0),
+                           end_time=time(17, 0))
+        self.shift.save()
+        self.employee = Employee(shift=self.shift, **employee2_data)
+        self.employee.save()
+        
+        self.attendance = Attendance(date=date(2014, 7, 1),
+                                     start_time=datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
+                                     end_time=datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                     employee=self.employee)
+        self.attendance.save()
+        
+    def test_accessing_attendance_instance(self):
+        """
+        Tests that the attendance data can be correctly accessed by the model
+        """
+        a = Attendance.objects.get(pk=1)
+        self.assertEqual(a.start_time, datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')))
+        self.assertEqual(a.end_time, datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')))
+        
+    def test_processing_times_based_on_instance_shift_with_normal_times(self):
+        """
+        Tests that the instance can correctly assign the time
+        based on what shift the instance
+        """
+        a = Attendance(date=date(2014, 7, 2))
+        a.employee = self.employee
+        a.shift = self.shift
+        a.save()
+        
+        self.assertIsNone(a.start_time)
+        self.assertIsNone(a.end_time)
+        
+        d = datetime(2014, 7, 2, 7, 45, 0, tzinfo=timezone('Asia/Bangkok'))
+        a.assign_datetime(d)
+        self.assertIsNotNone(a.start_time)
+        self.assertEqual(a.start_time, d)
+        self.assertIsNone(a.end_time)
+        
+        d = datetime(2014, 7, 2, 18, 27, 0, tzinfo=timezone('Asia/Bangkok'))
+        a.assign_datetime(d)
+        self.assertIsNotNone(a.end_time)
+        self.assertEqual(a.end_time, d)
+        self.assertIsNotNone(a.start_time)
+        
+    def test_processing_times_based_on_instance_shift_with_late_times(self):
+        """
+        Tests that the instance can correctly assign the time
+        based on what shift the instance
+        """
+        a = Attendance(date=date(2014, 7, 2))
+        a.employee = self.employee
+        a.shift = self.shift
+        a.save()
+        
+        self.assertIsNone(a.start_time)
+        self.assertIsNone(a.end_time)
+        
+        d = datetime(2014, 7, 2, 8, 45, 0, tzinfo=timezone('Asia/Bangkok'))
+        a.assign_datetime(d)
+        self.assertIsNotNone(a.start_time)
+        self.assertEqual(a.start_time, d)
+        self.assertIsNone(a.end_time)
+        
+        d = datetime(2014, 7, 2, 10, 45, 0, tzinfo=timezone('Asia/Bangkok'))
+        a.assign_datetime(d)
+        self.assertIsNotNone(a.start_time)
+        self.assertEqual(a.start_time, d)
+        self.assertIsNone(a.end_time)
+        
+        d = datetime(2014, 7, 2, 16, 45, 0, tzinfo=timezone('Asia/Bangkok'))
+        a.assign_datetime(d)
+        self.assertIsNotNone(a.start_time)
+        self.assertIsNotNone(a.end_time)
+        self.assertEqual(a.end_time, d)
+        
+    def test_calculate_overtime_function(self):
+        """
+        Tests 'calculate overtime'
+        """
+        self.attendance.regular_time = 8
+        self.attendance.total_time = 8.4
+        self.assertNotEqual(self.attendance.overtime, 8)
+        
+        self.attendance._calculate_overtime()
+        self.assertEqual(self.attendance.overtime, 0)
+        
+        self.attendance.regular_time = 8
+        self.attendance.total_time = 9.4
+        self.assertNotEqual(self.attendance.overtime, 1)
+        
+        self.attendance._calculate_overtime()
+        self.assertEqual(self.attendance.overtime, 1)
+        
+        self.attendance.regular_time = 8
+        self.attendance.total_time = 10.6
+        self.assertNotEqual(self.attendance.overtime, 2.5)
+        
+        self.attendance._calculate_overtime()
+        self.assertEqual(self.attendance.overtime, 2.5)
+        
+    def test_cutoff_times_without_ot(self):
+        """
+        Tests that the hours are cutoff 
+        correctly even if the employee clocks in early
+        or clocks out late
+        """
+        self.attendance._calculate_times()
+        self.assertEqual(self.attendance.regular_time, 8)
+        self.assertEqual(self.attendance.total_time, 8)
+        self.assertEqual(self.attendance.overtime, 0)
+    
+    def test_times_with_overtime_but_not_over_minumum(self):
+        """
+        Tests that the times are correct if overtime is enabled for
+        this particular date
+        """
+        self.attendance.enable_overtime = True
+        self.attendance.save()
+        
+        self.assertEqual(self.attendance.regular_time, 8)
+        self.assertEqual(self.attendance.total_time, 8.25)
+        self.assertEqual(self.attendance.overtime, 0)
+        
+        a = Attendance(employee=self.employee,
+                       date=date(2014, 7, 2),
+                       start_time=datetime(2014, 7, 2, 8, 0, 0, tzinfo=timezone('Asia/Bangkok')),
+                       end_time=datetime(2014, 7, 2, 17, 45, 0, tzinfo=timezone('Asia/Bangkok')))
+        a.enable_overtime = True
+        a.save()
+        a._calculate_times()
+        self.assertEqual(a.regular_time, 8)
+        self.assertEqual(a.total_time, 8.75)
+        self.assertEqual(a.overtime, 0)
+        
+    def test_times_with_overtime_but_not_over_minumum(self):
+        """
+        Tests that the times are correct if overtime is enabled for
+        this particular date
+        """
+        a = Attendance(employee=self.employee,
+                       date=date(2014, 7, 2),
+                       start_time=datetime(2014, 7, 2, 8, 0, 0, tzinfo=timezone('Asia/Bangkok')),
+                       end_time=datetime(2014, 7, 2, 18, 45, 0, tzinfo=timezone('Asia/Bangkok')))
+        a.enable_overtime = True
+        a.save()
+        a._calculate_times()
+        self.assertEqual(a.regular_time, 8)
+        self.assertEqual(a.total_time, 9.75)
+        self.assertEqual(a.overtime, 1.5)
+    
+    def test_get_list(self):
+        """
+        Test getting a list of objects
+        """
+        resp = self.api_client.get('/api/v1/attendance')
+        self.assertHttpOK(resp)
+        
+        obj_list = self.deserialize(resp)
+        
+    def test_get_list_filter_by_employee(self):
+        """
+        Test getting a list of objects filtered by employee
+        """
+        resp = self.api_client.get('/api/v1/attendance?employee=1')
+        self.assertHttpOK(resp)
+        
+    def test_get(self):
+        """
+        Tests basic get of single object
+        """
+        resp = self.api_client.get('/api/v1/attendance/1')
+    
+    
 @unittest.skip("ok")
 class Employee1Test(TestCase):
     """
@@ -224,7 +413,8 @@ class Employee2Test(TestCase):
         net_pay = self.employee.calculate_net_pay(date(2014, 7, 1), date(2014, 7, 15))
         self.assertEqual(net_pay, 10211.25)
         
-        
+
+@unittest.skip("ok")        
 class Employee3Test(TestCase):
     """
     Testing class for daily worker
