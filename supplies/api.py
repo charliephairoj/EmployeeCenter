@@ -220,14 +220,14 @@ class SupplyResource(ModelResource):
                 sticker_page = StickerPage(code="DRS-{0}".format(bundle.obj.id), 
                                            description=bundle.obj.description)
                 filename = sticker_page.create("DRS-{0}".format(bundle.obj.id))    
-                #stickers = S3Object.create(filename, 
-                #                           "supplies/stickers/{0}".format(filename), 
-                #                           'document.dellarobbiathailand.com', 
-                #                           encrypt_key=True)
-                #bundle.obj.sticker = stickers
+                stickers = S3Object.create(filename, 
+                                           "supplies/stickers/{0}".format(filename), 
+                                           'document.dellarobbiathailand.com', 
+                                           encrypt_key=True)
+                bundle.obj.sticker = stickers
                 bundle.obj.save()
                 
-            #bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
+            bundle.data['sticker'] = {'url':bundle.obj.sticker.generate_url()}
         #If getting a list
         else:
             bundle.data['suppliers'] = [{'name': supplier.name,
