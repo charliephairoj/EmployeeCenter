@@ -250,7 +250,7 @@ class SupplyResource(ModelResource):
                                         'url': bundle.obj.image.generate_url(3600)}
             except (AttributeError, KeyError) as e:
                 logger.warn(e)
-                
+        logger.debug(bundle.data)
         return bundle
     
     def obj_create(self, bundle, **kwargs):
@@ -518,7 +518,8 @@ class SupplyResource(ModelResource):
                 'admin_only': product.admin_only,
                 'id': supplier.id,
                 'purchasing_units': product.purchasing_units,
-                'name': supplier.name}
+                'name': supplier.name,
+                'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit}
         if bundle.request.user.has_perm('supplies.view_cost'):
             data['cost'] = product.cost
             

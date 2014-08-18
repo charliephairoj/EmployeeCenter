@@ -79,7 +79,14 @@ class Supply(models.Model):
             return self._get_product(self.supplier).purchasing_units
         except AttributeError:
             raise ValueError("Please set the supplier for this supply in order to get the purchasing units")
-        
+    
+    @property
+    def quantity_per_purchasing_unit(self):
+        try:
+            return self._get_product(self.supplier).quantity_per_purchasing_unit
+        except AttributeError:
+            raise ValueError("Please set the supplier for this supply in order to get the quantity per purchasing units")
+      
     @property
     def quantity(self):
         try:
@@ -256,6 +263,7 @@ class Product(models.Model):
     reference = models.TextField(null=True)
     admin_only = models.BooleanField(default=False)
     purchasing_units = models.TextField(default='pc')
+    quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12)
 
 
 class Location(models.Model):
