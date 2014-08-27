@@ -171,6 +171,10 @@ class PurchaseOrderResource(ModelResource):
             except ObjectDoesNotExist:
                 raise NotFound("A model instance matching the provided arguments could not be found.")
         
+        #Update the order status
+        if bundle.obj.status != bundle.data['status']:
+            bundle.obj.status = bundle.data['status']
+            
         #Update order details
         try:
             if bundle.obj.discount != int(bundle.data['discount']):

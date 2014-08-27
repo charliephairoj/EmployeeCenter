@@ -263,7 +263,7 @@ class Product(models.Model):
     reference = models.TextField(null=True)
     admin_only = models.BooleanField(default=False)
     purchasing_units = models.TextField(default='pc')
-    quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12)
+    quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12, default=1)
 
 
 class Location(models.Model):

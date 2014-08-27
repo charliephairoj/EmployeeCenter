@@ -336,6 +336,7 @@ class PurchaseOrderTest(ResourceTestCase):
         
         modified_po_data = copy.deepcopy(base_purchase_order)
         del modified_po_data['items'][0]
+        modified_po_data['status'] = 'PAID'
         
         resp = self.api_client.put('/api/v1/purchase-order/1',
                                    format='json',
@@ -351,6 +352,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(po['discount'], 0)
         self.assertEqual(po['revision'], 1)
         self.assertEqual(len(po['items']), 1)
+        self.assertEqual(po['status'], 'PAID')
         #Check the new pdf
         webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
         
@@ -364,6 +366,7 @@ class PurchaseOrderTest(ResourceTestCase):
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
         self.assertEqual(po.supplier.id, 1)
+        self.assertEqual(po.status, 'PAID')
         self.assertEqual(po.vat, 7)
         self.assertEqual(po.grand_total, Decimal('36.93'))
         self.assertEqual(po.items.count(), 1)
