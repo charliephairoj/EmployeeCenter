@@ -243,6 +243,7 @@ class SupplyResource(ModelResource):
             bundle.data.update({'purchasing_units': bundle.obj.purchasing_units,
                                 'cost': bundle.obj.cost,
                                 'reference': bundle.obj.reference,
+                                'lead_time': bundle.obj.lead_time,
                                 'upc': bundle.obj.upc})
         if bundle.obj.image:
             try:
@@ -519,6 +520,7 @@ class SupplyResource(ModelResource):
                 'id': supplier.id,
                 'purchasing_units': product.purchasing_units,
                 'name': supplier.name,
+                'lead_time': product.lead_time,
                 'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit}
         if bundle.request.user.has_perm('supplies.view_cost'):
             data['cost'] = product.cost

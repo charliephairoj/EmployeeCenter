@@ -93,6 +93,13 @@ class Supply(models.Model):
             return getattr(self, "quantity_{0}".format(self.country.lower()))
         except AttributeError:
             return self.quantity_th
+            
+    @property
+    def lead_time(self):
+        try:
+            return self._get_product(self.supplier).lead_time
+        except AttributeError:
+            raise ValueError("Please set the supplier for this supply in order to get the lead time")
         
     @quantity.setter
     def quantity(self, value):
