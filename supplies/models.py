@@ -264,7 +264,7 @@ class Product(models.Model):
     admin_only = models.BooleanField(default=False)
     purchasing_units = models.TextField(default='pc')
     quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12, default=1)
-
+    lead_time = models.IntegerField(default=1)
 
 class Location(models.Model):
     """This Location class is used to track and location and in the future
