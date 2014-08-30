@@ -7,15 +7,21 @@ Replace this with more appropriate tests for your application.
 import datetime
 import dateutil
 import unittest
+import logging
 
+from django.contrib.auth.models import User, Permission, ContentType
 from django.conf import settings
 from django.test import TestCase
 from tastypie.test import ResourceTestCase
 
 from contacts.models import Customer
+from supplies.models import Supply
 from products.models import Product, Model, Configuration, Upholstery
-from projects.models import Project, Room, Item
+from projects.models import Project, Room, Item, ProjectSupply
 from auth.models import S3Object
+
+
+logger = logging.getLogger(__name__)
 
 base_customer = {"first_name": "John",
                  "last_name": "Smith",
@@ -57,12 +63,38 @@ class ProjectResourceTestCase(ResourceTestCase):
         Sets up for tests
         """
         super(ProjectResourceTestCase, self).setUp()
+        
+        self.create_user()
+        self.api_client.client.login(username='test', password='test')
+        
         #self.customer = Customer.create(**base_customer)
         #self.project = Project.create(**base_project)
         self.project = Project(codename="Ladawan")
         self.project.save()
+        self.supply = Supply(description='Grommet')
+        self.supply.save()
+        self.supply2 = Supply(description='Hinge')
+        self.supply2.save()
+        self.project_supply = ProjectSupply(supply=self.supply,
+                                            project=self.project,
+                                            quantity=2)
+        self.project_supply.save()
+    
+    def create_user(self):
+        self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
+        self.ct = ContentType(app_label='projects')
+        self.ct.save()
+        #self._create_and_add_permission('view_cost', self.user)
+        self._create_and_add_permission('change_project', self.user)
+        #self._create_and_add_permission('add_supply', self.user)
+        #self._create_and_add_permission('add_quantity', self.user)
+        #self._create_and_add_permission('subtract_quantity', self.user)
+       
         
-        
+    def _create_and_add_permission(self, codename, user):
+        p = Permission(content_type=self.ct, codename=codename)
+        p.save()
+        user.user_permissions.add(p)
         
     def test_get(self):
         """
@@ -76,6 +108,25 @@ class ProjectResourceTestCase(ResourceTestCase):
         project = obj['objects'][0]
         self.assertEqual(project['id'], 1)
         self.assertEqual(project['codename'], 'Ladawan')
+        
+    def test_get_obj(self):
+        """
+        Tests retrieving a single object via GET
+        """
+        resp = self.api_client.get('/api/v1/project/1')
+        
+        self.assertHttpOK(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['codename'], 'Ladawan')
+        self.assertIn('supplies', obj)
+        self.assertEqual(len(obj['supplies']), 1)
+        supply = obj['supplies'][0]
+        self.assertEqual(supply['id'], 1)
+        self.assertEqual(supply['description'], 'Grommet')
+        self.assertEqual(int(supply['quantity']), 2)
+        
         
     @unittest.skip('')
     def test_create_project(self):
@@ -91,15 +142,62 @@ class ProjectResourceTestCase(ResourceTestCase):
         self.assertEqual(self.project.due_date, base_due_date.date())
         self.assertEqual(self.project.codename, "Haze")
 
-    @unittest.skip('')
     def test_update_project(self):
         """
         Tests updating a project
         """
-        self._update_due_date()
-        self.project.update(reference="S9")
-        self.assertEqual(self.project.reference, "S9")
+        data = {'codename': "Ladawan 329",
+                'supplies': [{'id': 1,
+                              'description': 'Grommet',
+                              'quantity': 5},
+                              {'id': 2,
+                               'quantity': 10}]}
+        
+        resp = self.api_client.put('/api/v1/project/1', 
+                                   format='json',
+                                   data=data)
+        self.assertHttpOK(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['codename'], "Ladawan 329")
+        self.assertEqual(len(obj['supplies']), 2)
+        
+        supply1 = obj['supplies'][0]
+        self.assertEqual(supply1['id'], 1)
+        self.assertEqual(supply1['description'], 'Grommet')
+        self.assertEqual(int(supply1['quantity']), 5)
+        
+        supply2 = obj['supplies'][1]
+        self.assertEqual(supply2['id'], 2)
+        self.assertEqual(supply2['description'], 'Hinge')
+        self.assertEqual(int(supply2['quantity']), 10)
 
+    def test_update_project_deleting_supply(self):
+        """
+        Tests deleting a project supply via PUT
+        """
+        data = {'codename': "Ladawan 329",
+                'supplies': [{'id': 2,
+                              'description': 'Hinge',
+                              'quantity': 10}]}   
+                    
+        resp = self.api_client.put('/api/v1/project/1', 
+                                   format='json',
+                                   data=data)
+        self.assertHttpOK(resp)
+        
+        obj = self.deserialize(resp)
+        self.assertEqual(obj['id'], 1)
+        self.assertEqual(obj['codename'], "Ladawan 329")
+        self.assertEqual(len(obj['supplies']), 1)
+        
+        supply1 = obj['supplies'][0]
+        self.assertEqual(supply1['id'], 2)
+        self.assertEqual(supply1['description'], 'Hinge')
+        self.assertEqual(int(supply1['quantity']), 10)
+      
+        
     @unittest.skip('')
     def _update_due_date(self):
         """
