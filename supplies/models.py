@@ -266,7 +266,7 @@ class Product(models.Model):
     supplier = models.ForeignKey(Supplier)
     supply = models.ForeignKey(Supply)
     upc = models.TextField(null=True)
-    cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    cost = models.DecimalField(decimal_places=3, max_digits=12, default=0)
     reference = models.TextField(null=True)
     admin_only = models.BooleanField(default=False)
     purchasing_units = models.TextField(default='pc')
