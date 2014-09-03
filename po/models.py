@@ -190,7 +190,7 @@ class Item(models.Model):
     quantity = models.IntegerField()
     status = models.TextField(default="Ordered")
     discount = models.IntegerField(default=0)
-    unit_cost = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    unit_cost = models.DecimalField(decimal_places=3, max_digits=12, default=0)
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     comments = models.TextField(null=True)
         

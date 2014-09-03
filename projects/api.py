@@ -38,6 +38,15 @@ class ProjectResource(ModelResource):
                 url(r"^{0}/(?P<pk>\d+)/supply$".format(self._meta.resource_name), self.wrap_view('add_supply')),
                ]
     
+    def apply_filters(self, request, applicable_filters):
+        obj_list = super(ProjectResource, self).apply_filters(request, applicable_filters)
+        
+        if request.GET.has_key('q'):
+            query = request.GET.get('q')
+            obj_list = obj_list.filter(Q(codename__icontains=query))
+        
+        return obj_list
+        
     def dehydrate(self, bundle):
         """
         Custom Dehydration for the project resource

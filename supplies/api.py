@@ -53,7 +53,8 @@ class SupplyResource(ModelResource):
         if request.GET.has_key('q'):
             query = request.GET.get('q')
             obj_list = obj_list.filter(Q(product__supplier__name__icontains=query) | 
-                                       Q(description__icontains=query))
+                                       Q(description__icontains=query) |
+                                       Q(product__reference__icontains=query))
         
         if request.GET.has_key('supplier_id'):
             s_id = request.GET.get('supplier_id')

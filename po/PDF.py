@@ -11,7 +11,7 @@ use by the production team and the office overseeing
 production
 """
 
-from decimal import Decimal
+from decimal import *
 import logging
 import re
 
@@ -30,6 +30,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 
+
+getcontext().prec = 3
 
 logger = logging.getLogger(__name__)
 
@@ -288,6 +290,7 @@ class PurchaseOrderPDF():
         for supply in self.supplies:
             #add the data
             calculated_unit_cost = supply.unit_cost - (supply.unit_cost * (Decimal(supply.discount) / Decimal('100')))
+            logger.debug('unit cost: {0}'.format(calculated_unit_cost))
             data.append([i,
                          supply.supply.reference,
                          self.__get_description(supply),
