@@ -294,7 +294,7 @@ class PurchaseOrderPDF():
             data.append([i,
                          supply.supply.reference,
                          self.__get_description(supply),
-                         self._format_string_to_paragraph(supply.units),
+                         self._format_string_to_paragraph(supply.supply.purchasing_units),
                          "{0}".format(round(calculated_unit_cost, 3)),
                          supply.quantity,
                          "%.2f" % float(supply.total)])
