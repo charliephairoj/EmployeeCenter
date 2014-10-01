@@ -9,6 +9,7 @@ import datetime
 import subprocess
 from decimal import Decimal
 import webbrowser
+import unittest
 
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission, ContentType
@@ -142,7 +143,8 @@ class PurchaseOrderTest(ResourceTestCase):
         
         self.po.calculate_total()
         self.po.save()
-
+    
+    @unittest.skip('')
     def test_get_list(self):
         """
         Tests getting a list of po's via GET
@@ -158,7 +160,8 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(resp, dict)
         self.assertIsInstance(resp['objects'], list)
         self.assertEqual(len(resp['objects']), 1)
-        
+    
+    @unittest.skip('')    
     def test_get(self):
         """
         Tests getting a single resource via GET
@@ -175,7 +178,8 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(obj['terms'], 30)
         self.assertNotIn('pdf', obj)
         self.assertEqual(obj['revision'], 0)
-        
+    
+    @unittest.skip('')    
     def test_get_with_pdf(self):
         """
         Tests getting a resource with the pdf
@@ -192,7 +196,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIn('url', obj['pdf'])
         self.assertIsNotNone(obj['pdf']['url'])
 
-        
+    @unittest.skip('')   
     def test_post(self):
         """
         Tests creating a new resource via POST
@@ -238,7 +242,8 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 1)
         self.assertEqual(project.codename, 'MC House')
-        
+    
+    @unittest.skip('')    
     def test_post_with_new_project(self):
         """
         Tests creating a new resource via POST
@@ -287,6 +292,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(project.id, 2)
         self.assertEqual(project.codename, 'Ladawan')
     
+    @unittest.skip('')
     def test_creating_new_po_with_price_change(self):
         """
         Tests creating a new po via post while also changing the price of a supply
@@ -317,7 +323,7 @@ class PurchaseOrderTest(ResourceTestCase):
         log = Log.objects.all()[0]
         self.assertEqual(log.message, "Price change from 12.11THB to 1.99THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
         
-        
+    @unittest.skip('')    
     def test_updating_the_po(self):
         """
         Tests updating the purchase order
@@ -354,7 +360,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(len(po['items']), 1)
         self.assertEqual(po['status'], 'PAID')
         #Check the new pdf
-        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
         
         item2 = po['items'][0]
        
@@ -375,7 +381,8 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(item2.quantity, 3)
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.total, Decimal('34.51'))
-        
+    
+    @unittest.skip('')    
     def test_updating_po_with_discount(self):
         """
         """
@@ -428,11 +435,11 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(item2.discount, 5)
         self.assertEqual(item2.total, Decimal('34.51'))
         
+    @unittest.skip('')
     def test_updating_the_supply_price(self):
         """
         Test updating a po with a new cost for an item
         """
-        self.skipTest("")
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         item = self.po.items.all()[0]
@@ -482,6 +489,10 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(log.supplier, po.supplier)
         self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
        
+    def test_updating_the_po_by_adding_supply(self):
+        """
+        Tests whether the system can add a new supply to a current puchase order
+        """
         
         
         
