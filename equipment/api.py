@@ -18,6 +18,9 @@ from tastypie.exceptions import Unauthorized
 from equipment.models import Equipment
 
 
+logger = logging.getLogger(__name__)
+
+
 class EquipmentResource(ModelResource):
     
     class Meta:
@@ -26,4 +29,25 @@ class EquipmentResource(ModelResource):
         always_return_data = True
         authorization = DjangoAuthorization()
         ordering = ['description', 'brand']
+    
+    def hydrate(self, bundle):
+        logger.debug(bundle.obj.__dict__)
+        if "equipment_id" in bundle.data:
+            e_id = bundle.data['equipment_id'].split('-')
+            try:
+                e_id = e_id[1]
+            except IndexError:
+                e_id = e_id[0]
+                
+            bundle.obj.id = e_id
+            
+        return bundle
         
+    def obj_create(self, bundle, **kwargs):
+        """
+        Creates the equipmemt
+        """
+        #Initial supply creation
+        bundle = super(EquipmentResource, self).obj_create(bundle, **kwargs)        
+            
+        return bundle
