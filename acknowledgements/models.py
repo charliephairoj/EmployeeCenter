@@ -2,7 +2,7 @@ import os
 import dateutil.parser
 import math
 import logging
-from decimal import Decimal
+from decimal import *
 
 from pytz import timezone
 from django.conf import settings
@@ -18,7 +18,6 @@ from projects.models import Project
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
 from auth.models import Log, S3Object
-
 
 
 logger = logging.getLogger(__name__)
@@ -235,12 +234,26 @@ class Acknowledgement(models.Model):
         if not items:
             items = self.items.all()
         for product in items:
+            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(product.unit_price, product.quantity, product.total))
             running_total += product.total
+            
+        #Set the subtotal
+        logger.debug("subtotal: = {0:.2f}".format(running_total))
         self.subtotal = running_total
+        
+        #Calculate and apply discount
         discount = (Decimal(self.discount) / 100) * running_total
         running_total -= discount
+        logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount))
+        logger.debug("total: = {0:.2f}".format(running_total))
+        
+        #Calculate and apply vat
         vat = (Decimal(self.vat) / 100) * running_total
         running_total += vat
+        logger.debug("vat: + {0:.2f}".format(vat))
+        logger.debug("grand total: = {0:.2f}".format(running_total))
+        
+        #Apply total
         self.total = running_total
 
     def _change_fabric(self, product, fabric, employee=None):
@@ -427,11 +440,11 @@ class Item(models.Model):
             self.unit_price = self.product.retail_price
         """
         self.unit_price = self.product.price
-        logger.info(u"Item unit price set to {0}...".format(self.unit_price))
+        logger.info(u"Item unit price set to {0:.2f}...".format(self.unit_price))
 
         #Calculate the total cost of the the item
         self.total = self.unit_price * Decimal(self.quantity)
-        logger.info(u"Item total price set to {0}...".format(self.total))
+        logger.info(u"Item total price set to {0:.2f}...".format(self.total))
 
         #Set the appropriate dimensions or to 0
         #if no dimensions are available from the model
@@ -478,7 +491,7 @@ class Item(models.Model):
             try:
                 if float(kwargs['custom_price']) > 0:
                     self.unit_price = Decimal(kwargs["custom_price"])
-                    self.total = self.unit_price * Decimal(self.quantity)
+                    self.total = self.unit_price * Decimal(str(self.quantity))
                 else:
                     self._calculate_custom_price()
             except: 
@@ -500,7 +513,7 @@ class Item(models.Model):
         if "fabric" in kwargs:
             try:
                 self.fabric = Fabric.objects.get(pk=kwargs["fabric"]["id"])
-                logger.info(u"{0} fabric set to {1}".format(self.description,
+                logger.info(u"{0} fabric set to {1} \n".format(self.description,
                                                            self.fabric.description))
             except Fabric.DoesNotExist as e:
                 print u"Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
@@ -538,11 +551,11 @@ class Item(models.Model):
             upcharge_percentage = 0
 
         self.unit_price = self.unit_price + (self.unit_price * (Decimal(upcharge_percentage) / 100))
-        logger.info(u"Setting unit price of {0} to {1}".format(self.description, 
+        logger.info(u"Setting unit price of {0} to {1:.2f}".format(self.description, 
                                                               self.unit_price))
         
         self.total = self.unit_price * self.quantity
-        logger.info(u"Setting total of {0} to {1}...".format(self.description,
+        logger.info(u"Setting total of {0} to {1:.2f}...".format(self.description,
                                                             self.total))
 
     def _calculate_upcharge(self, difference, boundary, initial, increment):

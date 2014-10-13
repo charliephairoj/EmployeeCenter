@@ -31,8 +31,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 
 
-getcontext().prec = 3
-
 logger = logging.getLogger(__name__)
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))

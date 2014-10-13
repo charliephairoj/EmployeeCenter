@@ -196,7 +196,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertIn('url', obj['pdf'])
         self.assertIsNotNone(obj['pdf']['url'])
 
-    @unittest.skip('')   
     def test_post(self):
         """
         Tests creating a new resource via POST
@@ -243,7 +242,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(project.id, 1)
         self.assertEqual(project.codename, 'MC House')
     
-    @unittest.skip('')    
     def test_post_with_new_project(self):
         """
         Tests creating a new resource via POST
@@ -292,7 +290,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(project.id, 2)
         self.assertEqual(project.codename, 'Ladawan')
     
-    @unittest.skip('')
     def test_creating_new_po_with_price_change(self):
         """
         Tests creating a new po via post while also changing the price of a supply
@@ -323,7 +320,6 @@ class PurchaseOrderTest(ResourceTestCase):
         log = Log.objects.all()[0]
         self.assertEqual(log.message, "Price change from 12.11THB to 1.99THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
         
-    @unittest.skip('')    
     def test_updating_the_po(self):
         """
         Tests updating the purchase order
@@ -382,7 +378,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.total, Decimal('34.51'))
     
-    @unittest.skip('')    
     def test_updating_po_with_discount(self):
         """
         """
@@ -435,7 +430,6 @@ class PurchaseOrderTest(ResourceTestCase):
         self.assertEqual(item2.discount, 5)
         self.assertEqual(item2.total, Decimal('34.51'))
         
-    @unittest.skip('')
     def test_updating_the_supply_price(self):
         """
         Test updating a po with a new cost for an item

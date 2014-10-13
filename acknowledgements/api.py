@@ -178,7 +178,9 @@ class AcknowledgementResource(ModelResource):
             except Exception as e:
                 logger.error("Unable to mail decoroom.")
                 logger.error(e)
-               
+        
+        
+             
         logger.info(u"Acknowledgement #{0} created for {1}".format(bundle.obj.id, 
                                                                   bundle.obj.customer.name)) 
         return bundle
@@ -200,7 +202,6 @@ class AcknowledgementResource(ModelResource):
         Implements the obj_delete method
         """
         logger.info("Deleting acknowledgement...")
-        logger.debug(kwargs)
         super(AcknowledgementResource, self).obj_delete(bundle, **kwargs)
         
 

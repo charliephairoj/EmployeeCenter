@@ -172,8 +172,11 @@ class PurchaseOrderResource(ModelResource):
                 raise NotFound("A model instance matching the provided arguments could not be found.")
         
         #Update the order status
-        if bundle.obj.status != bundle.data['status']:
-            bundle.obj.status = bundle.data['status']
+        try:
+            if bundle.obj.status != bundle.data['status']:
+                bundle.obj.status = bundle.data['status']
+        except KeyError:
+            pass
             
         #Update order details
         try:

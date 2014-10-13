@@ -6,6 +6,12 @@ from django.contrib.auth.models import User
 from contacts.models import Contact
 
 
+class Account(models.Model):
+    id = models.TextField(primary_key=True, unique=True)
+    name = models.TextField()
+    name_th = models.TextField(null=True)
+    type = models.TextField(db_column="account_type", null=True)
+    
 # Create your models here.
 class Transaction(models.Model):
     contact = models.ForeignKey(Contact)

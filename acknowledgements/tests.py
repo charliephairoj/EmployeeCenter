@@ -8,6 +8,8 @@ from datetime import datetime
 from decimal import Decimal
 import dateutil
 import json
+import logging
+import unittest
 
 from django.contrib.auth.models import User, Permission, Group, ContentType
 from tastypie.test import ResourceTestCase
@@ -78,9 +80,7 @@ base_ack = {'customer': {'id': 1},
                           'description': 'F-01 Table'}]}
 
 
-
-        
-                
+logger = logging.getLogger(__name__)                
     
 
 class AcknowledgementResourceTest(ResourceTestCase):
@@ -187,7 +187,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
 
     def get_credentials(self):
         return self.create_basic(username=self.username, password=self.password)
-
+        
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
@@ -202,7 +202,7 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertIsNotNone(resp_obj['objects'])
         self.assertEqual(len(resp_obj['objects']), 1)
         self.assertEqual(len(resp_obj['objects'][0]['items']), 2)
-        
+    
     def test_get(self):
         """
         Tests getting the acknowledgement
@@ -221,11 +221,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertIsInstance(dateutil.parser.parse(ack['delivery_date']), datetime)
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
-        
+    
     def test_post_with_discount(self):
         """
         Testing POSTing data to the api
         """
+        
+        logger.debug("\n\n Testing creating acknowledgement with a discount \n")
         #Apply a discount to the customer
         self.customer.discount = 50
         self.customer.save()
@@ -298,11 +300,13 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item2.acknowledgement.id, 2)
         self.assertEqual(item1.description, 'Test Sofa Max')
         self.assertEqual(item2.description, 'High Gloss Table')
-        
+    
     def test_post_without_vat(self):
         """
         Testing POSTing data to the api
         """
+        logger.debug("\n\n Testing creating acknowledgement without vat \n")
+        
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.api_client.post('/api/v1/acknowledgement', format='json',
@@ -349,12 +353,14 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
-        
+    
     def test_post_with_vat(self):
         """
         Testing POSTing data to the api if there
         is vat
         """
+        logger.debug("\n\n Testing creating acknowledgement with vat \n")
+        
         #POST and verify the response
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
@@ -403,12 +409,14 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Tests links to document
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
-        
+    
     def test_post_with_vat_and_discount(self):
         """
         Testing POSTing data to the api if there
         is vat
         """
+        logger.debug("\n\n Testing creating acknowledgement with a discount and vat \n")
+        
         #Set customer discount
         self.customer.discount = 50
         self.customer.save()
@@ -461,7 +469,12 @@ class AcknowledgementResourceTest(ResourceTestCase):
         #Tests links to document
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
-        
+    
+    def test_post_with_custom_price(self):
+        """
+        Test creating a custom price
+        """
+    
     def test_put(self):
         """
         Test making a PUT call
@@ -493,7 +506,6 @@ class AcknowledgementResourceTest(ResourceTestCase):
         self.assertEqual(item2.description, 'F-04 Sofa')
         self.assertTrue(item2.is_custom_item)
         
-
     def test_delete(self):
         """
         Test making a DELETE call
@@ -504,7 +516,6 @@ class AcknowledgementResourceTest(ResourceTestCase):
                                       authentication=self.get_credentials())
         self.assertEqual(Acknowledgement.objects.count(), 1)
         self.assertHttpMethodNotAllowed(resp)
-        
         
 class TestItemResource(ResourceTestCase):
     def setUp(self):
