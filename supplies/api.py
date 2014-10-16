@@ -79,7 +79,7 @@ class SupplyResource(ModelResource):
                 url(r"^{0}/log$".format(self._meta.resource_name), self.wrap_view('log')),
                 url(r"^{0}/(?P<pk>\d+)/subtract".format(self._meta.resource_name), self.wrap_view('subtract')),
                 url(r"^{0}/(?P<pk>\d+)/add$".format(self._meta.resource_name), self.wrap_view('add')),
-                
+                url(r"^{0}/shopping_list".format(self._meta.resource_name), self.wrap_view("shopping_list"))
                 ]
         
     def hydrate(self, bundle):
@@ -473,6 +473,36 @@ class SupplyResource(ModelResource):
         logs = Log.objects.filter(timestamp__range=[start_date, end_date])
         data = [self.dehydrate_log(log) for log in logs]
         
+        return self.create_response(request, data)
+        
+    def shopping_list(self, request, **kwargs):
+        """
+        Creates a shopping list of items needed
+        """
+        name_map = {'id': 'id',
+                    'description': 'description',
+                    'quantity': 'quantity',
+                    'to_buy': 'to_buy'}
+        supplies = Supply.objects.raw("""WITH weekly_average as (
+                        SELECT s.id as id, sum(sl.quantity) as week_total
+                        FROM supplies_log as sl
+                        INNER JOIN supplies_supply as s
+                        ON s.id = sl.supply_id
+                        GROUP BY s.id, sl.action, date_trunc('week', log_timestamp)
+                        HAVING (date_trunc('week', log_timestamp) > NOW() - interval '4 weeks'
+                        AND sl.action = 'SUBTRACT'))
+                        SELECT s.id, s.description, s.quantity, 
+                        (SELECT round(avg(week_total), 2) FROM weekly_average WHERE id = s.id) as to_buy
+                        FROM supplies_supply as s
+                        WHERE (id in (SELECT id from weekly_average WHERE id = s.id)
+                        OR id in (SELECT supply_id FROM supplies_log))
+                        AND s.quantity < (SELECT avg(week_total) FROM weekly_average WHERE id = s.id)
+                        ORDER BY s.description""", translations=name_map)
+                        
+        data = [{'id':s.id, 
+                 'description': s.description,
+                 'quantity':s.quantity, 
+                 'quantity_to_buy':s.to_buy} for s in supplies]
         return self.create_response(request, data)
         
     def dehydrate_log(self, log):
