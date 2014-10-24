@@ -2,6 +2,7 @@
 
 
 import json
+import logging
 
 from django.shortcuts import render
 from django.contrib.staticfiles.views import serve
@@ -13,6 +14,10 @@ from django.utils.safestring import mark_safe
 
 from auth.views import current_user
 from login.models import LoginForm
+
+
+logger = logging.getLogger(__name__)
+
 
 @login_required
 def main(request):
@@ -83,13 +88,16 @@ def app_login(request):
                     return HttpResponseRedirect(url)
 
                 else:
+                    logger.debug('User is not active')
                     return HttpResponseRedirect('/login')
 
             else:
+                logger.debug('User is None')
                 #returns unauthenticated users
                 #back to the login page
                 return HttpResponseRedirect('/login')
         else:
+            logger.debug('Form not valid')
             return HttpResponseRedirect('/login')
 
 
