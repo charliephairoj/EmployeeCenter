@@ -272,9 +272,7 @@ class Acknowledgement(models.Model):
 
     def _email(self, pdf, recipients):
         """Emails an order confirmation"""
-        key_id = settings.AWS_ACCESS_KEY_ID
-        access_key = settings.AWS_SECRET_ACCESS_KEY
-        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=key_id, aws_secret_access_key=access_key)
+        conn = boto.ses.connect_to_region('us-east-1')
         body = u"""<table width="500" cellpadding="3" cellspacing="0">
                       <tr>
                           <td style="border-bottom-width:1px; border-bottom-style:solid; border-bottom-color:#777" width="70%"> 
@@ -611,8 +609,7 @@ class Item(models.Model):
     def _get_image_url(self):
         """Gets the item's default image."""
         try:
-            conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
-                                settings.AWS_SECRET_ACCESS_KEY)
+            conn = S3Connection()
             url = conn.generate_url(1800, 'GET', bucket=self.bucket,
                                     key=self.image_key, force_http=True)
             return url
