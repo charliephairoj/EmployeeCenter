@@ -15,13 +15,11 @@ class Account(models.Model):
 # Create your models here.
 class Transaction(models.Model):
     account = models.ForeignKey(Account)
-    amount = models.DecimalField(decimal_places=2, max_digits=12)
-    currency = models.CharField(max_length=3)
-    type = models.CharField(max_length=10)
-    invoice_id = models.TextField()
-    vendor = models.TextField()
+    debit = models.DecimalField(decimal_places=2, max_digits=12)
+    credit = models.DecimalField(decimal_places=2, max_digits=12)
+    balance = models.DecimalField(decimal_places=2, max_digits=12)
+    transaction_id = models.TextField()
     description = models.TextField()
-    employee = models.ForeignKey(User)
     transaction_date = models.DateTimeField()
 
     class Meta:
