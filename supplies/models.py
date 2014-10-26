@@ -13,6 +13,7 @@ from boto.s3.key import Key
 import boto.ses
 
 from contacts.models import Contact, Supplier
+from acknowledgements.models import Acknowledgement
 from auth.models import S3Object
 from media.stickers import StickerPage
 
@@ -280,6 +281,13 @@ class Location(models.Model):
     shelf = models.CharField(max_length=10)
 
 
+class Reservation(models.Model):
+    acknowledgement = models.ForeignKey(Acknowledgement)
+    supply = models.ForeignKey(Supply)
+    quantity = models.DecimalField(decimal_places=2, max_length=12)
+    status = models.TextField(default="RESERVED")
+    
+    
 class Log(models.Model):
     """The general log class for supplies will keep track of actions,
     such as adding, subtracting, resetting items from the inventory

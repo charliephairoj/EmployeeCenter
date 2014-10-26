@@ -573,7 +573,26 @@ class SupplyResource(ModelResource):
             
         return bundle
         
+
+class SupplyReservationResource(ModelResource):
+    acknowledgement = fields.ForeignKey('acknowledgements.api.AcknowledgementResource', 'acknowledgement')
     
+    class Meta:
+        queryset = Reservation.objects.all()
+        resource_name = 'supply-reservation'
+        filtering = {'supply': ALL_WITH_RELATIONS,
+                     'acknowledgement': ALL_WITH_RELATIONS}
+                     
+    def obj_create(self, bundle, kwargs):
+        
+        bundle = super(SupplyReservationResource, self).obj_create(bundle, **kwargs)
+        
+        if bundle.obj.quantity <= bundle.obj.supply.quantity:
+            bundle.obj.supply - bundle.obj.quantity
+            
+        
+        return bundle
+        
 class LogResource(ModelResource):
     supply = fields.ForeignKey('supplies.api.SupplyResource', 'supply')
     supplier = fields.ForeignKey('contacts.api.SupplierResource', 'supplier', null=True)
