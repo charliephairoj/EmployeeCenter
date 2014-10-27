@@ -19,11 +19,11 @@ class ContactValidation(Validation):
             
         #Checks and validates for an email address
         try:
-            match = re.search(r'\w+\@\w+\.\w+', bundle.data['email'])
+            match = re.search(r'\w+\@\w+(\-\w+)?\.\w+', bundle.data['email'])
             if not match:
                 errors["email"] = "{0} is not a valid email".format(bundle.data['email'])
         except KeyError:
-            errors["email"] = "Expecting an email for this contact"
+            pass#errors["email"] = "Expecting an email for this contact"
         
         #Checks and validates for a telephone number
         try:
