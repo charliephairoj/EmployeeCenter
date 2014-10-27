@@ -234,7 +234,7 @@ class Supply(models.Model):
         """Emails when a material has become critically low"""
         key_id = settings.AWS_ACCESS_KEY_ID
         access_key = settings.AWS_SECRET_ACCESS_KEY
-        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=key_id, aws_secret_access_key=access_key)
+        conn = boto.ses.connect_to_region('us-east-1')
         img_src = self.image.generate_url(time=3600) if self.image else "" 
         body = u"{0} has a critically low stock of {1}{2} as of {3} <br /> <img src='{4}' />"
         body = body.format(self.description,

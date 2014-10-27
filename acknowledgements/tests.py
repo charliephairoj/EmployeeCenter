@@ -15,7 +15,7 @@ from django.contrib.auth.models import User, Permission, Group, ContentType
 from tastypie.test import ResourceTestCase
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
-from supplies.models import Fabric
+from supplies.models import Fabric, Reservation
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
 from auth.models import S3Object
