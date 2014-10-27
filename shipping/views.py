@@ -70,8 +70,7 @@ def acknowledgement_item_image(request):
             for chunk in image.chunks():
                 destination.write(chunk)
         #start connection
-        conn = S3Connection(settings.AWS_ACCESS_KEY_ID,
-                            settings.AWS_SECRET_ACCESS_KEY)
+        conn = S3Connection()
         #get the bucket
         bucket = conn.get_bucket('media.dellarobbiathailand.com', True)
         #Create a key and assign it
