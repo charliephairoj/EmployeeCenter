@@ -16,7 +16,7 @@ from tastypie.authorization import DjangoAuthorization
 from tastypie.exceptions import Unauthorized
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
-from supplies.models import Supply, Fabric, Product, Log
+from supplies.models import Supply, Fabric, Product, Log, Reservation
 from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
 from utilities.http import save_upload

@@ -13,7 +13,6 @@ from boto.s3.key import Key
 import boto.ses
 
 from contacts.models import Contact, Supplier
-from acknowledgements.models import Acknowledgement
 from auth.models import S3Object
 from media.stickers import StickerPage
 
@@ -233,7 +232,9 @@ class Supply(models.Model):
     
     def email_critically_low_quantity(self):
         """Emails when a material has become critically low"""
-        conn = boto.ses.connect_to_region('us-east-1')
+        key_id = settings.AWS_ACCESS_KEY_ID
+        access_key = settings.AWS_SECRET_ACCESS_KEY
+        conn = boto.ses.connect_to_region('us-east-1', aws_access_key_id=key_id, aws_secret_access_key=access_key)
         img_src = self.image.generate_url(time=3600) if self.image else "" 
         body = u"{0} has a critically low stock of {1}{2} as of {3} <br /> <img src='{4}' />"
         body = body.format(self.description,
@@ -280,14 +281,19 @@ class Location(models.Model):
     row = models.CharField(max_length=10)
     shelf = models.CharField(max_length=10)
 
-
 class Reservation(models.Model):
-    acknowledgement = models.ForeignKey(Acknowledgement)
+    acknowledgement_id = models.IntegerField(null=True)
     supply = models.ForeignKey(Supply)
-    quantity = models.DecimalField(decimal_places=2, max_length=12)
+    quantity = models.DecimalField(decimal_places=2, max_digits=12)
     status = models.TextField(default="RESERVED")
     
-    
+    @classmethod
+    def create(self, kwargs):
+        
+        self.supply = kwargs['supply'] if isinstance(kwargs['supply'], Supply) else Supply.objects.get(id=kwargs['supply'])
+        self.acknowledgement_id = kwargs['acknowledgement_id']
+        
+        
 class Log(models.Model):
     """The general log class for supplies will keep track of actions,
     such as adding, subtracting, resetting items from the inventory

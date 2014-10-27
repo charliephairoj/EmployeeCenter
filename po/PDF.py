@@ -113,9 +113,6 @@ class PurchaseOrderPDF():
     #def methods
     def __init__(self, supplier=None, items=None, po=None, attention=None,
                  misc=None, connection=None, revision=None, revision_date=None):
-        #set connection
-        self.connection = connection if connection != None else S3Connection(settings.AWS_ACCESS_KEY_ID, 
-                                                                             settings.AWS_SECRET_ACCESS_KEY)
         #Set Defaults
         self.width, self.height = A4
         stylesheet = getSampleStyleSheet()
