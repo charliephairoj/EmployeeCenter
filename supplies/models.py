@@ -232,8 +232,6 @@ class Supply(models.Model):
     
     def email_critically_low_quantity(self):
         """Emails when a material has become critically low"""
-        key_id = settings.AWS_ACCESS_KEY_ID
-        access_key = settings.AWS_SECRET_ACCESS_KEY
         conn = boto.ses.connect_to_region('us-east-1')
         img_src = self.image.generate_url(time=3600) if self.image else "" 
         body = u"{0} has a critically low stock of {1}{2} as of {3} <br /> <img src='{4}' />"
