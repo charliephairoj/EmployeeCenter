@@ -75,6 +75,12 @@ urlpatterns += patterns('acknowledgements.views',
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
 
+
+#URL settings for reports
+urlpatterns += patterns('supplies.views', 
+    url(r'/api/v1/supply/shopping_list', 'shopping_list'),
+    url(r'api/v1/supply/shopping_list', 'shopping_list')
+)
 #URL settings for supplies
 """
 urlpatterns += patterns('supplies.views',

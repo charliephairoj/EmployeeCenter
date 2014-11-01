@@ -2,19 +2,37 @@ import os
 import json
 import logging
 import time
+from io import BytesIO
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 
-from supplies.models import Supply, SupplyLog
+from supplies.models import Supply
+from supplies.PDF import SupplyPDF
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
 
 logger = logging.getLogger('EmployeeCenter')
 
-
+@login_required
+def shopping_list(request):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'filename="supply-shopping-list.pdf"'
+    buffer = BytesIO()
+    
+    pdf = SupplyPDF(filename=buffer)
+    pdf.create()
+    
+    data = buffer.getvalue()
+    buffer.close()
+    response.write(data)
+    return response
+    
+    
+    
+    
 #Supplies
 @login_required
 def supply(request, supply_id=0):

@@ -467,13 +467,14 @@ class SupplyResource(ModelResource):
         """
         returns all the logs for supplies checkout in the last two weeks
         """
+        """
         start_date = datetime.today() - timedelta(days=7)
         end_date = datetime.today() + timedelta(days=1)
         
         logs = Log.objects.filter(timestamp__range=[start_date, end_date])
         data = [self.dehydrate_log(log) for log in logs]
-        
-        return self.create_response(request, data)
+        """
+        return self.create_response(request, 'hi')
         
     def shopping_list(self, request, **kwargs):
         """
