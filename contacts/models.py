@@ -7,15 +7,14 @@ class Contact(models.Model):
     name_th = models.TextField()
     telephone = models.TextField()
     fax = models.TextField()
-    email = models.CharField(max_length=200, null=True)
+    email = models.CharField(max_length=200, null=True, default=None)
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     discount = models.IntegerField(default=0)
     currency = models.CharField(max_length=10, null=True)
-    notes = models.TextField(null=True)
+    notes = models.TextField(null=True, default="")
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
-    
     #class Meta:
         #ordering = ['name']
 
@@ -29,7 +28,7 @@ class Address(models.Model):
     territory = models.CharField(max_length=150)
     country = models.CharField(max_length=150)
     zipcode = models.TextField()
-    contact = models.ForeignKey(Contact)
+    contact = models.ForeignKey(Contact, related_name="addresses")
     latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     user_defined_latlng = models.BooleanField(default=False)

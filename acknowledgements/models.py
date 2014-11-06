@@ -27,10 +27,10 @@ class Acknowledgement(models.Model):
     po_id = models.TextField(default=None, null=True)
     discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
-    employee = models.ForeignKey(User, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
-    status = models.TextField()
+    status = models.TextField(default='ACKNOWLEDGED')
     remarks = models.TextField(null=True, default=None)
     fob = models.TextField(null=True)
     shipping_method = models.TextField(null=True)
@@ -44,10 +44,6 @@ class Acknowledgement(models.Model):
                                             null=True,
                                             related_name='+',
                                             db_column="acknowledgement_pdf")
-    production_pdf = models.ForeignKey(S3Object,
-                                       null=True,
-                                       related_name='+',
-                                       db_column="production_pdf")
     production_pdf = models.ForeignKey(S3Object,
                                        null=True,
                                        related_name='+',
@@ -407,7 +403,7 @@ class Item(models.Model):
         
         #Save pillows
         try:
-            for pillow in self.pillows:
+            for pillow in self.pillows.all():
                 pillow.item = self
                 pillow.save()
         except AttributeError:
@@ -618,7 +614,7 @@ class Item(models.Model):
 
 
 class Pillow(models.Model):
-    item = models.ForeignKey(Item)
+    item = models.ForeignKey(Item, related_name='pillows')
     type = models.CharField(db_column="type", max_length=10)
     quantity = models.IntegerField()
     fabric = models.ForeignKey(Fabric, null=True)

@@ -1,29 +1,19 @@
-
-import json
-
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-
-from contacts.models import Supplier, SupplierContact, Customer, Contact
-from utilities.http import process_api
+from contacts.models import Customer, Supplier
+from rest_framework import viewsets
+from contacts.serializers import CustomerSerializer, SupplierSerializer
 
 
-@login_required
-def contact(request, contact_id=0):
-    return process_api(request, Contact, contact_id)
-
-
-@login_required
-def customer(request, customer_id=0):
-    return process_api(request, Customer, customer_id)
-
-
-@login_required
-def supplier(request, supplier_id=0):
-    return process_api(request, Supplier, supplier_id)
-
-
-@login_required
-def supplierContact(request, supplier_contact_id=0):
-    return process_api(request, SupplierContact, supplier_contact_id)
+class CustomerViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows acknowledgements to be view or editted
+    """
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
     
+    
+class SupplierViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows acknowledgements to be view or editted
+    """
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
