@@ -9,7 +9,7 @@ from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource as Resource
 
 from products.models import Model, Configuration, Upholstery, Pillow, ModelImage, Table
-from auth.models import S3Object
+from media.models import S3Object
 from products.validation import *
 
 

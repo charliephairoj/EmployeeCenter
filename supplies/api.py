@@ -20,7 +20,7 @@ from supplies.models import Supply, Fabric, Product, Log, Reservation
 from contacts.models import Supplier
 from supplies.validation import SupplyValidation, FabricValidation
 from utilities.http import save_upload
-from auth.models import S3Object
+from media.models import S3Object
 from media.stickers import StickerPage
 
 

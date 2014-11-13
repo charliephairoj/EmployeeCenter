@@ -13,14 +13,13 @@ import unittest
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group, ContentType
-from tastypie.test import ResourceTestCase
-from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework.test import APIRequestFactory, APITestCase, APIClient
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from supplies.models import Fabric, Reservation
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
-from auth.models import S3Object
+from media.models import S3Object
 from projects.models import Project
 
 
@@ -197,14 +196,21 @@ class AcknowledgementResourceTest(APITestCase):
 
     def get_credentials(self):
         return None#self.create_basic(username=self.username, password=self.password)
-      
+            
+    
+    def test_postasdf(self):
+        
+        factory = APIClient()
+        resp = factory.post('/api/v1/acknowledgement/', format='json', data=base_ack)
+        
+            
     @unittest.skip('ok')    
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
         """
         #Get and verify the resp
-        resp = self.client.get('/acknowledgement/', format='json')
+        resp = self.client.get('/api/v1/acknowledgement/', format='json')
         self.assertEqual(resp.status_code, 200)
 
         #Verify the data sent

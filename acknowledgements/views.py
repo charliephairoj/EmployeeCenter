@@ -14,6 +14,21 @@ from contacts.models import Customer
 logger = logging.getLogger(__name__)
 
 
+class AcknowledgementMixin(object):
+    queryset = Acknowledgement.objects.all()
+    serializer_class = AcknowledgementSerializer
+    
+        
+class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
+    pass
+    
+
+class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = Acknowledgement.objects.all()
+    serializer_class = AcknowledgementSerializer
+    paginate_by = 10
+    
+    
 class AcknowledgementViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows acknowledgements to be view or editted

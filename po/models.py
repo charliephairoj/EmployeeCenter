@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 
 from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
-from auth.models import S3Object
+from media.models import S3Object
 from po.PDF import PurchaseOrderPDF
 from projects.models import Project
 

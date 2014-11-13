@@ -6,14 +6,13 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from django_hstore import hstore
 from django.shortcuts import get_object_or_404
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
 
 from contacts.models import Contact, Supplier
-from auth.models import S3Object
+from media.models import S3Object
 from media.stickers import StickerPage
 
 

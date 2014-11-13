@@ -10,13 +10,18 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         field = ('id', 'configuration')
         
         
-class ModelSerializer(serializers.ModelSerializers):
+class ModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Model
         field = ('id', 'name', 'model')
+
+
+class PillowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pillow
         
         
-class UpholsterySerializer(serializers.ModelSerializers):
+class UpholsterySerializer(serializers.ModelSerializer):
     model = ModelSerializer()
     configuration = ConfigurationSerializer()
     pillows = PillowSerializer()
@@ -25,12 +30,7 @@ class UpholsterySerializer(serializers.ModelSerializers):
         model = Upholstery
         
         
-class PillowSerializer(serializers.ModelSerializers):
-    class Meta:
-        model = Pillow
-        
-        
-class Table(serializers.ModelSerializers):
+class TableSerializer(serializers.ModelSerializer):
     model = ModelSerializer()
     configuration = ConfigurationSerializer()
     

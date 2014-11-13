@@ -9,7 +9,7 @@ from django.db import models
 from products.models import Product, Model, Upholstery
 from contacts.models import Customer
 from supplies.models import Supply
-from auth.models import S3Object
+from media.models import S3Object
 
 
 class Project(models.Model):

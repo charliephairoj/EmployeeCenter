@@ -8,7 +8,7 @@ from boto.s3.key import Key
 from django.conf import settings
 from django.db import models
 
-from auth.models import S3Object
+from media.models import S3Object
 
 
 logger = logging.getLogger('django.request')

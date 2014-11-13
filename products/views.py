@@ -28,7 +28,7 @@ class UpholsteryViewSet(viewsets.ModelViewSet):
     serializer = UpholsterySerializer()
     
     
-class TableSerializer(viewsets.ModelViewSet):
+class TableViewSet(viewsets.ModelViewSet):
     """
     API endpoint to view and edit table
     """

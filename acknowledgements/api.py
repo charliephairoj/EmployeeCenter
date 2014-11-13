@@ -15,7 +15,7 @@ from acknowledgements.models import Acknowledgement, Item, Log
 from acknowledgements.validation import AcknowledgementValidation
 from contacts.models import Customer
 from supplies.models import Fabric
-from auth.models import S3Object
+from media.models import S3Object
 from projects.models import Project
 
 logger = logging.getLogger(__name__)

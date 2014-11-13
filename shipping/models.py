@@ -15,7 +15,7 @@ from acknowledgements.models import Acknowledgement, Item as AckItem
 from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
-from auth.models import S3Object
+from media.models import S3Object
 
 
 class Shipping(models.Model):

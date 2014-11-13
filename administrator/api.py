@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django.db.models import Q
 
 from administrator.validation import UserValidation
-from auth.models import S3Object, Employee
+from media.models import S3Object, Employee
 from utilities.http import save_upload
 
 
