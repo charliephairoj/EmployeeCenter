@@ -27,7 +27,7 @@ class Acknowledgement(models.Model):
     po_id = models.TextField(default=None, null=True)
     discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
-    user = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
+    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField(default='ACKNOWLEDGED')
@@ -346,7 +346,7 @@ class Item(models.Model):
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, default="ACKNOWLEDGED")
     comments = models.TextField(null=True)
     location = models.TextField(null=True)
     image = models.ForeignKey(S3Object, null=True)
@@ -616,7 +616,7 @@ class Item(models.Model):
 class Pillow(models.Model):
     item = models.ForeignKey(Item, related_name='pillows')
     type = models.CharField(db_column="type", max_length=10)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=1)
     fabric = models.ForeignKey(Fabric, null=True)
 
     @classmethod

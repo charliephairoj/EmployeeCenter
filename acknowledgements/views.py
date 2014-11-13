@@ -9,6 +9,7 @@ from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializer
 from contacts.serializers import CustomerSerializer
 from contacts.models import Customer
+from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
@@ -18,9 +19,66 @@ class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all()
     serializer_class = AcknowledgementSerializer
     
+    
         
 class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
-    pass
+    
+    def post(self, request):
+
+        for item in request.DATA['items']:
+            #Sort pillows
+            if "pillows" in item:
+                pillows = {}
+                for pillow in item['pillows']:
+                    try:
+                        fabric_id = pillow['fabric']['id']
+                    except KeyError:
+                        fabric_id = None
+                
+                    if (pillow['type'], fabric_id) in pillows:
+                        pillows[(pillow['type'], fabric_id)]['quantity'] += 1
+                    else: 
+                        pillows[(pillow['type'], fabric_id)] = {'quantity': 1}
+                
+                item['pillows'] = []
+                for pillow in pillows:
+                    pillow_data = {'type': pillow[0],
+                                   'fabric': {'id': pillow[1]}}
+                                   
+                    if pillows[pillow]['quantity']:
+                        pillow_data['quantity'] = pillows[pillow]['quantity']
+                        
+                    item['pillows'].append(pillow_data)
+
+        return super(AcknowledgementList, self).post(request)
+        
+    def pre_save(self, obj):
+        """
+        Override the presave in order to assign the customer to the
+        acknowledgement
+        """
+        logger.debug('test')
+        #Assign Customer
+        customer = Customer.objects.get(pk=self.request.DATA['customer']['id'])
+        obj.customer = customer
+        
+        #Assign employee
+        obj.employee = self.request.user
+        
+        #Assign project
+        try:
+            obj.project = Project.objects.get(codename=self.request.DATA['project']['codename'])
+        except Project.DoesNotExist:
+            obj.project = Project(codename=self.request.DATA['project']['codename'])
+            obj.project.save()
+            
+        return super(AcknowledgementMixin, self).pre_save(obj)
+        
+    def post_save(self, obj, *args, **kwargs):
+        """
+        Override post save in order to create the pdf
+        """
+        obj.create_and_upload_pdfs()
     
 
 class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):

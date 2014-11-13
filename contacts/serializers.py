@@ -10,13 +10,10 @@ class AddressSerializer(serializers.ModelSerializer):
         
 class CustomerSerializer(serializers.ModelSerializer):
     addresses = AddressSerializer(read_only=True)
-    name_th = serializers.Field(source="name_th")
-    notes = serializers.CharField(source="notes", required=False)
-    email = serializers.EmailField(source="email", required=False)
     
     class Meta:
         model = Customer
-        field = ('name')
+        field = ('name', 'id', 'email', 'fax')
         
         
 class SupplierSerializer(serializers.ModelSerializer):
