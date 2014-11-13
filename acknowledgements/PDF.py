@@ -194,7 +194,7 @@ class AcknowledgementPDF(object):
 
     def _create_customer_section(self):
         #extract supplier address
-        address = self.customer.address_set.all()[0]
+        address = self.customer.addresses.all()[0]
         #Create data array
         data = []
         #Add supplier name
