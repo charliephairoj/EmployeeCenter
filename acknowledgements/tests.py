@@ -527,7 +527,7 @@ class AcknowledgementResourceTest(APITestCase):
         Test creating a custom price
         """
     
-    @unittest.skip('ok')    
+    #@unittest.skip('ok')    
     def test_put(self):
         """
         Test making a PUT call
