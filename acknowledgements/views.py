@@ -15,6 +15,19 @@ from projects.models import Project
 logger = logging.getLogger(__name__)
 
 
+def acknowledgement_item_image(request):
+    if request.method == "POST":
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+        
+
 class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all()
     serializer_class = AcknowledgementSerializer
