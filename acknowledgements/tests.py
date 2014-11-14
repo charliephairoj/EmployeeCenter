@@ -11,6 +11,7 @@ import json
 import logging
 import unittest
 import copy
+import subprocess
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group, ContentType
@@ -25,7 +26,8 @@ from projects.models import Project
 
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
-base_customer = {'first_name': "John",
+base_customer = {'id': 1,
+                 'first_name': "John",
                  "last_name": "Smith",
                  'name': "John Smith",
                  'fax': '09223',
@@ -86,7 +88,8 @@ base_ack = {'customer': base_customer,
                           'height': 320,
                           "fabric": {"id": 1}},
                          {"description": "test custom item",
-                          "product": {"id": 1},
+                          "unit_price": 0,
+                          'width': 1,
                           "quantity": 1}]}
                           
                          
@@ -151,7 +154,9 @@ class AcknowledgementResourceTest(APITestCase):
         self.user.save()
         
         #Create supplier, customer and addrss
-        self.customer = Customer(**base_customer)
+        customer = copy.deepcopy(base_customer)
+        del customer['id']
+        self.customer = Customer(**customer)
         self.customer.save()
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()
@@ -201,7 +206,7 @@ class AcknowledgementResourceTest(APITestCase):
         return None#self.create_basic(username=self.username, password=self.password)
         
             
-    @unittest.skip('ok')    
+    #@unittest.skip('ok')    
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
@@ -216,13 +221,13 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(resp_obj['results']), 1)
         self.assertEqual(len(resp_obj['results'][0]['items']), 2)
     
-    @unittest.skip('ok')    
+    #@unittest.skip('ok')    
     def test_get(self):
         """
         Tests getting the acknowledgement
         """
         #Get and verify the resp
-        resp = self.client.get('/acknowledgement/1/', format='json')
+        resp = self.client.get('/api/v1/acknowledgement/1/', format='json')
         self.assertEqual(resp.status_code, 200)
 
         #Verify the data sent
@@ -235,7 +240,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
     
-    #@unittest.skip('ok')    
+    @unittest.skip('ok')    
     def test_post_with_discount(self):
         """
         Testing POSTing data to the api
@@ -248,9 +253,6 @@ class AcknowledgementResourceTest(APITestCase):
         
         #alter data
         data = copy.deepcopy(base_ack)
-        customer_data = data['customer']
-        customer_data['id'] = 1
-        data['customer'] = customer_data
         
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
@@ -268,7 +270,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
-        #self.assertEqual(Decimal(ack['total']), Decimal(158500))
+        self.assertEqual(Decimal(ack['total']), Decimal(158500))
         self.assertEqual(len(ack['items']), 3)
         self.assertIn('project', ack)
         self.assertEqual(ack['project']['id'], 1)
@@ -301,13 +303,19 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2['fabric']['id'], 1)
         self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
         self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
-        
+        subprocess.call('/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome {0}'.format(ack['pdf']['acknowledgement']), shell=True)
         #Tests the acknowledgement in the database
-        root_ack = Acknowledgement.objects.order_by('-id').all()[0]
+        root_ack = Acknowledgement.objects.get(pk=2)
+        logger.debug(root_ack.project)
         self.assertEqual(root_ack.id, 2)
         self.assertEqual(root_ack.items.count(), 3)
         self.assertIsInstance(root_ack.project, Project)
@@ -330,21 +338,23 @@ class AcknowledgementResourceTest(APITestCase):
         
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.post('/api/v1/acknowledgement', format='json',
+        resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=base_ack,
                                     authentication=self.get_credentials())
-        #self.assertHttpCreated(resp)
+
+        self.assertEqual(resp.status_code, 201)
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement
         #that is returned from the post data
-        ack = self.deserialize(resp)
+        ack = resp.data
         self.assertIsNotNone(ack)
         self.assertEqual(ack['id'], 2)
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(len(ack['items']), 3)
+                
         #Test standard sized item 
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
@@ -387,15 +397,14 @@ class AcknowledgementResourceTest(APITestCase):
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.post('/api/v1/acknowledgement', format='json',
+        resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=ack_data,
                                     authentication=self.get_credentials())
-        #self.assertHttpCreated(resp)
+        logger.debug(resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
-        
         #Verify the resulting acknowledgement
         #that is returned from the post data
-        ack = self.deserialize(resp)
+        ack = resp.data
         self.assertIsNotNone(ack)
         self.assertEqual(ack['id'], 2)
         self.assertEqual(ack['customer']['id'], 1)
@@ -432,7 +441,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
     
-    @unittest.skip('ok')    
+    #@unittest.skip('ok')    
     def test_post_with_vat_and_discount(self):
         """
         Testing POSTing data to the api if there
@@ -448,7 +457,7 @@ class AcknowledgementResourceTest(APITestCase):
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.post('/api/v1/acknowledgement', format='json',
+        resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=ack_data,
                                     authentication=self.get_credentials())
         #self.assertHttpCreated(resp)
@@ -456,7 +465,7 @@ class AcknowledgementResourceTest(APITestCase):
         
         #Verify the resulting acknowledgement
         #that is returned from the post data
-        ack = self.deserialize(resp)
+        ack = resp.data
         self.assertIsNotNone(ack)
         self.assertEqual(ack['id'], 2)
         self.assertEqual(ack['customer']['id'], 1)
@@ -505,18 +514,25 @@ class AcknowledgementResourceTest(APITestCase):
         Test making a PUT call
         """
         ack_data = base_ack.copy()
+        ack_data['items'][0]['id'] = 1
+        del ack_data['items'][0]['pillows']
+        ack_data['items'][1]['id'] = 2
+        ack_data['items'][1]['description'] = 'F-04 Sofa'
+        ack_data['items'][1]['is_custom_item'] = True
+        del ack_data['items'][2]
         ack_data['delivery_date'] = datetime.now()
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.put('/api/v1/acknowledgement/1', 
+        resp = self.client.put('/api/v1/acknowledgement/1/', 
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
-        #self.assertHttpOK(resp)
+
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(Acknowledgement.objects.count(), 1)
         
         #Validate the change
-        ack = self.deserialize(resp)
-        self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
+        ack = resp.data
+        #self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
         
         #Tests ack in database
         ack = Acknowledgement.objects.get(pk=1)
@@ -525,7 +541,7 @@ class AcknowledgementResourceTest(APITestCase):
             print a.description, a.id
             
         item1 = items[0]
-        self.assertEqual(item1.description, 'test1')
+        self.assertEqual(item1.description, 'Test Sofa Max')
         
         item2 = items[1]
         self.assertEqual(item2.description, 'F-04 Sofa')
@@ -537,9 +553,10 @@ class AcknowledgementResourceTest(APITestCase):
         Test making a DELETE call
         """
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.delete('/api/v1/acknowledgement/1',
+        resp = self.client.delete('/api/v1/acknowledgement/1/',
                                       format='json',
                                       authentication=self.get_credentials())
+
         self.assertEqual(Acknowledgement.objects.count(), 1)
         #self.assertHttpMethodNotAllowed(resp)
   

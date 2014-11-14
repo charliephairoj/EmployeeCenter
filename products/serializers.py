@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.models import Configuration, Model, Upholstery, Pillow, Table
+from products.models import Product, Configuration, Model, Upholstery, Pillow, Table
 from contacts.serializers import CustomerSerializer
 
 
@@ -20,7 +20,13 @@ class PillowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillow
         
+
+class ProductSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Product
         
+                
 class UpholsterySerializer(serializers.ModelSerializer):
     model = ModelSerializer()
     configuration = ConfigurationSerializer()

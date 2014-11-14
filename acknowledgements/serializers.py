@@ -7,6 +7,7 @@ from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.models import Product
 from supplies.models import Fabric
+from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
@@ -47,53 +48,60 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         field = ('description', 'id')
         read_only_fields = ('acknowledgement', 'total', 'image', 'type', 'product')
-        
+    
     def from_native(self, data, files=None):
         
-        instance = super(ItemSerializer, self).from_native(data, files)
-        
+        instance = super(ItemSerializer, self).from_native(data, files) or self.object
+
         #Apply base product details
         if "fabric" in data:
             fabric = Fabric.objects.get(pk=data['fabric']['id'])
             instance.fabric = fabric
-            
+           
         if "product" in data:
             instance.product = Product.objects.get(pk=data['product']['id'])
             
-            #Set Width
-            try:
-                if int(data['width']) == 0:
-                    instance.width = instance.product.width
-                else:
-                    instance.width = data['width']
-            except KeyError:
-                instance.width = instance.product.width
-              
-            #Set Depth 
-            try:
-                if int(data['depth']) == 0:
-                    instance.depth = instance.product.depth
-                else:
-                    instance.depth = data['depth']
-            except KeyError:
-                instance.depth = instance.product.depth
-            
-            #Set Height    
-            try:
-                if int(data['height']) == 0:
-                    instance.height = instance.product.height
-                else: 
-                    instance.height = data['height']
-            except KeyError:
-                instance.height = instance.product.height
-            
-            #Set unit price
-            try:
-                if int(data['unit_price']) == 0:
-                    instance.unit_price = instance.product.price
-            except KeyError:
-                instance.unit_price = instance.product.price
+        else:
+            instance.product = Product.objects.get(pk=10436)
         
+        #Set Width
+        try:
+            if int(data['width']) == 0:
+                instance.width = instance.product.width
+            else:
+                instance.width = data['width']
+        except KeyError:
+            instance.width = instance.product.width
+          
+        #Set Depth 
+        try:
+            if int(data['depth']) == 0:
+                instance.depth = instance.product.depth
+            else:
+                instance.depth = data['depth']
+        except KeyError:
+            instance.depth = instance.product.depth
+        
+        #Set Height    
+        try:
+            if int(data['height']) == 0:
+                instance.height = instance.product.height
+            else: 
+                instance.height = data['height']
+        except KeyError:
+            instance.height = instance.product.height
+              
+        #Set the custom unit price
+        try:
+            if float(data['unit_price']) == 0:
+                logger.debug(1)
+                instance.unit_price = instance.product.price
+            else:
+                instance.unit_price = data['unit_price']
+        except KeyError as e:
+            logger.debug(e)
+            instance.unit_price = instance.product.price
+                
         instance._calculate_custom_price()
         
         return instance
@@ -122,12 +130,42 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     remarks = serializers.CharField(required=False)
     shipping_method = serializers.CharField(required=False)
     fob = serializers.CharField(required=False)
+    pdf = serializers.SerializerMethodField('get_pdf')
     
     class Meta:
         model = Acknowledgement
         field = ('id', 'discount', 'delivery_date', 'status', 'remarks', 'vat')
         read_only_fields = ('total', 'subtotal', 'time_created')
+    
+    def from_native(self, data, files=None):
         
+        instance = super(AcknowledgementSerializer, self).from_native(data, files)
+
+        if "project" in data:
+            try:
+                instance.project = Project.objects.get(codename=data['project']['codename'])
+            except Project.DoesNotExist:
+                try:
+                    instance.project = Project(codename=data['project']['codename'])
+                    instance.project.save()
+                except AttributeError: 
+                    self.object.project = Project(codename=data['project']['codename'])
+            except AttributeError:
+                self.object.project = Project.objects.get(codename=data['project']['codename'])
+                
+        return instance
+        
+    def get_pdf(self, obj):
+        """
+        Get the url to access the acknowledgement and production
+        pdfs
+        """
+        try:
+            return {'acknowledgement': obj.acknowledgement_pdf.generate_url(),
+                    'production': obj.acknowledgement_pdf.generate_url()}
+        except AttributeError:
+            return None
+            
     def transform_employee(self, obj, value):
         """
         Transform the employee data before serialization

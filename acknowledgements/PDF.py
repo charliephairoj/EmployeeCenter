@@ -328,8 +328,8 @@ class AcknowledgementPDF(object):
             dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
             data.append(['', dimension_str])
         #increase the item number
-        if len(product.pillow_set.all()) > 0:
-            for pillow in product.pillow_set.all():
+        if len(product.pillows.all()) > 0:
+            for pillow in product.pillows.all():
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), '', pillow.quantity, ''])
                 if pillow.fabric:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
@@ -470,7 +470,7 @@ class AcknowledgementPDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
         data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total])
-        table = Table(data, colWidths=(65, 300, 30, 70, 65))
+        table = Table(data, colWidths=(70, 280, 10, 100, 85))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (-2, -1), (-1, -1), 1,
@@ -668,8 +668,8 @@ class ProductionPDF(AcknowledgementPDF):
         data.append(['', u'   สูง: {0}mm'.format(product.height)])
         
         #increase the item number
-        if len(product.pillow_set.all()) > 0:
-            for pillow in product.pillow_set.all():
+        if len(product.pillows.all()) > 0:
+            for pillow in product.pillows.all():
                 if pillow.type == "back":
                     pillow_type = 'หมอนพิงหลัง'
                 elif pillow.type == "accent":

@@ -62,6 +62,13 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
         customer = Customer.objects.get(pk=self.request.DATA['customer']['id'])
         obj.customer = customer
         
+        #Assign the discount
+        try:
+            if (customer.discount > 0 and 'discount' not in self.request.DATA) or int(self.request.DATA['discount']) == 0: 
+                obj.discount = customer.discount
+        except KeyError as e:
+            obj.discount = customer.discount
+            
         #Assign employee
         obj.employee = self.request.user
         
@@ -71,13 +78,18 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
         except Project.DoesNotExist:
             obj.project = Project(codename=self.request.DATA['project']['codename'])
             obj.project.save()
-            
+
+        obj.calculate_totals()
+        
         return super(AcknowledgementMixin, self).pre_save(obj)
         
     def post_save(self, obj, *args, **kwargs):
         """
         Override post save in order to create the pdf
         """
+        logger.debug(obj.items.all())
+        obj.calculate_totals()
+        
         obj.create_and_upload_pdfs()
     
 

@@ -168,15 +168,15 @@ class Acknowledgement(models.Model):
         except AttributeError:
             raise TypeError("Missing Delivery Date")
     
-    def create_and_upload_pdfs(self):
+    def create_and_upload_pdfs(self, delete_original=True):
         ack_filename, production_filename, label_filename = self.create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
         label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
-        ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
-        prod_pdf = S3Object.create(production_filename, production_key, bucket)
-        label_pdf = S3Object.create(label_filename, label_key, bucket)
+        ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
+        prod_pdf = S3Object.create(production_filename, production_key, bucket, delete_original=delete_original)
+        label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
 
         self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf

@@ -35,7 +35,7 @@ class S3Object(models.Model):
         else:
             raise AttributeError("Missing object bucket")
         if upload:
-            obj._upload(filename, delete_original, encrypt_key=encrypt_key)
+            pass#obj._upload(filename, delete_original, encrypt_key=encrypt_key)
         obj.save()
         return obj
 
@@ -124,7 +124,7 @@ class S3Object(models.Model):
         
         self.version_id = k.version_id
         if delete_original:
-            os.remove(filename)
+            pass#os.remove(filename)
 
 
 class Employee(models.Model):
