@@ -44,7 +44,7 @@ class PillowSerializer(serializers.ModelSerializer):
         
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False)
-    pillows = PillowSerializer(required=False, many=True)
+    pillows = PillowSerializer(required=False, many=True, allow_add_remove=True)
     unit_price = serializers.DecimalField(required=False)
     comments = serializers.CharField(required=False)
     location = serializers.CharField(required=False)

@@ -19,18 +19,10 @@ class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all()
     serializer_class = AcknowledgementSerializer
     
-        
-class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
-    
-    def post(self, request):
-        
-        #Create project if necessary
-        if "project" in request.DATA:
-            if "codename" in request.DATA['project']:
-                project = Project(codename=request.DATA['project']['codename'])
-                project.save()
-                request.DATA['project'] = project.id
-                
+    def _condense_pillows(self, request):
+        """
+        Condense the pillows by combining pillows of the same type and fabric
+        """
         #Condense pillow data
         for item in request.DATA['items']:
             #Sort pillows
@@ -56,9 +48,52 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
                         pillow_data['quantity'] = pillows[pillow]['quantity']
                         
                     item['pillows'].append(pillow_data)
-
-        return super(AcknowledgementList, self).post(request)
+                    
+        return request
         
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['project', 'customer', 'fabric', 'items']
+        
+        for field in fields:
+            if field in request.DATA:
+                if 'id' in request.DATA[field]:
+                    request.DATA[field] = request.DATA[field]['id']
+                    
+                if field == 'items':
+                    for index, item in enumerate(request.DATA['items']):
+                        try:
+                            request.DATA['items'][index]['fabric'] = item['fabric']['id']
+                        except (KeyError, TypeError):
+                            pass
+                            
+                elif field == 'project':
+                    if "codename" in request.DATA['project'] and "id" not in request.DATA['project']:
+                        project = Project(codename=request.DATA['project']['codename'])
+                        project.save()
+                        request.DATA['project'] = project.id
+                    elif "id" in request.DATA['project']:
+                        request.DATA['project']
+         
+        return request
+
+        
+class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Override the 'post' method in order 
+        to popular fields
+        """
+        request = self._format_primary_key_data(request)
+        
+        request = self._condense_pillows(request)
+        
+        return super(AcknowledgementList, self).post(request, *args, **kwargs)
+                    
     def pre_save(self, obj):
         """
         Override the presave in order to assign the customer to the
@@ -84,7 +119,6 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
         """
         Override post save in order to create the pdf
         """
-        logger.debug(obj.items.all())
         obj.calculate_totals()
         
         #obj.create_and_upload_pdfs()
@@ -95,6 +129,16 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
     serializer_class = AcknowledgementSerializer
     paginate_by = 10
     
+    def put(self, request, *args, **kwargs):
+        """
+        Override the 'put' method in order
+        to populate fields
+        """
+        request = self._format_primary_key_data(request)
+        
+        request = self._condense_pillows(request)
+        
+        return super(AcknowledgementDetail, self).put(request, *args, **kwargs)
     
 class AcknowledgementViewSet(viewsets.ModelViewSet):
     """

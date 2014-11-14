@@ -57,7 +57,7 @@ base_product = {"description": "test1",
                 "back_pillow": 4,
                 "accent_pillow": 3,
                 "id": 1}
-base_ack = {'customer': base_customer['id'],
+base_ack = {'customer': base_customer,
             'po_id': '123-213-231',
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
@@ -69,7 +69,7 @@ base_ack = {'customer': base_customer['id'],
             'items': [{'product': 1,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
-                       'fabric': 1,
+                       'fabric': {'id':1},
                        'pillows':[{"type": "back",
                                    "fabric": 1},
                                   {"type": "back",
@@ -408,7 +408,7 @@ class AcknowledgementResourceTest(APITestCase):
         resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=ack_data,
                                     authentication=self.get_credentials())
-        logger.debug(resp)
+
         self.assertEqual(Acknowledgement.objects.count(), 2)
         #Verify the resulting acknowledgement
         #that is returned from the post data
@@ -532,9 +532,11 @@ class AcknowledgementResourceTest(APITestCase):
         """
         Test making a PUT call
         """
+        logger.debug("\n\n Testing updating via put \n")
+        
         ack_data = base_ack.copy()
         ack_data['items'][0]['id'] = 1
-        del ack_data['items'][0]['pillows']
+        del ack_data['items'][0]['pillows'][-1]
         ack_data['items'][1]['id'] = 2
         ack_data['items'][1]['description'] = 'F-04 Sofa'
         ack_data['items'][1]['is_custom_item'] = True
@@ -552,16 +554,15 @@ class AcknowledgementResourceTest(APITestCase):
         #Validate the change
         ack = resp.data
         #self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
-        
+        logger.debug(ack['items'][0]['pillows'])
         #Tests ack in database
         ack = Acknowledgement.objects.get(pk=1)
         items = ack.items.all()
-        for a in ack.items.all():
-            print a.description, a.id
             
         item1 = items[0]
         self.assertEqual(item1.description, 'Test Sofa Max')
-        
+        self.assertEqual(item1.pillows.count(), 3)
+
         item2 = items[1]
         self.assertEqual(item2.description, 'F-04 Sofa')
         self.assertTrue(item2.is_custom_item)
