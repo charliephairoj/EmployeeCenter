@@ -37,7 +37,7 @@ class Acknowledgement(models.Model):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
-    project = models.ForeignKey(Project, null=True)
+    project = models.ForeignKey(Project, null=True, blank=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,
@@ -342,13 +342,13 @@ class Item(models.Model):
     depth = models.IntegerField(db_column='depth', default=0)
     height = models.IntegerField(db_column='height', default=0)
     units = models.CharField(max_length=20, default='mm')
-    fabric = models.ForeignKey(Fabric, null=True)
+    fabric = models.ForeignKey(Fabric, null=True, blank=True)
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
     status = models.CharField(max_length=50, default="ACKNOWLEDGED")
-    comments = models.TextField(null=True)
-    location = models.TextField(null=True)
+    comments = models.TextField(null=True, blank=True)
+    location = models.TextField(null=True, blank=True)
     image = models.ForeignKey(S3Object, null=True)
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
@@ -617,7 +617,7 @@ class Pillow(models.Model):
     item = models.ForeignKey(Item, related_name='pillows')
     type = models.CharField(db_column="type", max_length=10)
     quantity = models.IntegerField(default=1)
-    fabric = models.ForeignKey(Fabric, null=True)
+    fabric = models.ForeignKey(Fabric, null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

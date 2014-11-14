@@ -5,6 +5,7 @@ from rest_framework import serializers
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
+from products.serializers import ProductSerializer
 from products.models import Product
 from supplies.models import Fabric
 from projects.models import Project
@@ -14,12 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class PillowSerializer(serializers.ModelSerializer):
-    fabric = serializers.RelatedField(required=False)
-    quantity = serializers.RelatedField()
+    fabric = serializers.PrimaryKeyRelatedField(required=False)
     
     class Meta:
         model = Pillow
-        field = ('type', 'fabric')
+        field = ('type', 'fabric', 'quantity')
         read_only_fields = ('item',)
             
     def from_native(self, data, files):
@@ -33,78 +33,72 @@ class PillowSerializer(serializers.ModelSerializer):
                 
         return instance
         
+    def transform_fabric(self, obj, value):
+        try:
+            return {'id': obj.fabric.id,
+                    'color': obj.fabric.color,
+                    'pattern': obj.fabric.pattern}
+        except AttributeError:
+            return None
+        
         
 class ItemSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(required=False)
     pillows = PillowSerializer(required=False, many=True)
-    unit_price = serializers.RelatedField(required=False)
-    comments = serializers.RelatedField(required=False)
-    location = serializers.RelatedField(required=False)
-    fabric = serializers.RelatedField(required=False)
-    width = serializers.RelatedField()
-    depth = serializers.RelatedField()
-    height = serializers.RelatedField()
-    
+    unit_price = serializers.DecimalField(required=False)
+    comments = serializers.CharField(required=False)
+    location = serializers.CharField(required=False)
+    fabric = serializers.PrimaryKeyRelatedField(required=False)
+   
     class Meta:
         model = Item
-        field = ('description', 'id')
-        read_only_fields = ('acknowledgement', 'total', 'image', 'type', 'product')
-    
-    def from_native(self, data, files=None):
+        field = ('description', 'id', 'width', 'depth', 'height')
+        read_only_fields = ('total', 'image', 'type')
+        exclude = ('acknowledgement', )
         
-        instance = super(ItemSerializer, self).from_native(data, files) or self.object
-
-        #Apply base product details
-        if "fabric" in data:
-            fabric = Fabric.objects.get(pk=data['fabric']['id'])
-            instance.fabric = fabric
-           
-        if "product" in data:
-            instance.product = Product.objects.get(pk=data['product']['id'])
-            
+    def restore_object(self, attrs, instance):
+        """
+        Overrides the 'ModelSerializer' 'restore_object' method in order
+        to separate the pathways for update and create. The parent method
+        is called later in 'create' or 'update' method
+        """
+        if instance:
+            instance = self.update(attrs, instance)
         else:
-            instance.product = Product.objects.get(pk=10436)
-        
-        #Set Width
-        try:
-            if int(data['width']) == 0:
-                instance.width = instance.product.width
-            else:
-                instance.width = data['width']
-        except KeyError:
-            instance.width = instance.product.width
-          
-        #Set Depth 
-        try:
-            if int(data['depth']) == 0:
-                instance.depth = instance.product.depth
-            else:
-                instance.depth = data['depth']
-        except KeyError:
-            instance.depth = instance.product.depth
-        
-        #Set Height    
-        try:
-            if int(data['height']) == 0:
-                instance.height = instance.product.height
-            else: 
-                instance.height = data['height']
-        except KeyError:
-            instance.height = instance.product.height
-              
-        #Set the custom unit price
-        try:
-            if float(data['unit_price']) == 0:
-                logger.debug(1)
-                instance.unit_price = instance.product.price
-            else:
-                instance.unit_price = data['unit_price']
-        except KeyError as e:
-            logger.debug(e)
-            instance.unit_price = instance.product.price
-                
-        instance._calculate_custom_price()
+            instance = self.create(attrs, instance)
         
         return instance
+        
+    def create(self, attrs, instance):
+        """
+        Populates the instance after the parent 'restore_object' method is 
+        called. 
+        """
+        instance = super(ItemSerializer, self).restore_object(attrs, instance)
+        
+        #Set the unit_price if the instance unit_price is 0
+        if not instance.unit_price:
+            instance.unit_price = instance.product.price
+            
+        #Populate the dimension fields with instance dimensions if they are zero
+        for field in ['width', 'depth', 'height']:
+            if (getattr(instance, field) != getattr(instance.product, field) and 
+                getattr(instance, field) == 0):
+                setattr(instance, field, getattr(instance.product, field))
+        
+        #Calculate the total price of the item
+        if instance.is_custom_size:
+            instance._calculate_custom_price()
+        else:
+            instance.total = instance.quantity * instance.unit_price
+        
+        return instance
+        
+    def update(self, attrs, instance):
+        """
+        Updates the instance after the parent method is called
+        """
+        return super(ItemSerializer, self).restore_object(attrs, instance)
         
     def transform_fabric(self, obj, value):
         """
@@ -119,9 +113,9 @@ class ItemSerializer(serializers.ModelSerializer):
         
         
 class AcknowledgementSerializer(serializers.ModelSerializer):
-    customer = CustomerSerializer(read_only=True)
+    customer = serializers.PrimaryKeyRelatedField()
     employee = serializers.RelatedField()
-    project = serializers.RelatedField(required=False)
+    project = serializers.PrimaryKeyRelatedField(required=False)
     acknowledgement_pdf = serializers.RelatedField(required=False)
     production_pdf = serializers.RelatedField(required=False)
     original_acknowledgement_pdf = serializers.RelatedField(required=False)
@@ -136,22 +130,20 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         model = Acknowledgement
         field = ('id', 'discount', 'delivery_date', 'status', 'remarks', 'vat')
         read_only_fields = ('total', 'subtotal', 'time_created')
-    
-    def from_native(self, data, files=None):
+        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf',
+                   'label_pdf')
+        
+    def froms_native(self, data, files=None):
         
         instance = super(AcknowledgementSerializer, self).from_native(data, files)
+        logger.debug(self.errors)
 
         if "project" in data:
             try:
                 instance.project = Project.objects.get(codename=data['project']['codename'])
             except Project.DoesNotExist:
-                try:
-                    instance.project = Project(codename=data['project']['codename'])
-                    instance.project.save()
-                except AttributeError: 
-                    self.object.project = Project(codename=data['project']['codename'])
-            except AttributeError:
-                self.object.project = Project.objects.get(codename=data['project']['codename'])
+                instance.project = Project(codename=data['project']['codename'])
+                instance.project.save()
                 
         return instance
         
@@ -164,8 +156,16 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             return {'acknowledgement': obj.acknowledgement_pdf.generate_url(),
                     'production': obj.acknowledgement_pdf.generate_url()}
         except AttributeError:
-            return None
-            
+            return {'acknowledgement': '',
+                    'production': ''}
+    
+    def transform_customer(self, obj, value):
+        """
+        Transform the customer data before serialization
+        """
+        return {'id': obj.customer.id,
+                'name': obj.customer.name}
+                
     def transform_employee(self, obj, value):
         """
         Transform the employee data before serialization

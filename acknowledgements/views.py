@@ -19,19 +19,26 @@ class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all()
     serializer_class = AcknowledgementSerializer
     
-    
         
 class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
     
     def post(self, request):
-
+        
+        #Create project if necessary
+        if "project" in request.DATA:
+            if "codename" in request.DATA['project']:
+                project = Project(codename=request.DATA['project']['codename'])
+                project.save()
+                request.DATA['project'] = project.id
+                
+        #Condense pillow data
         for item in request.DATA['items']:
             #Sort pillows
             if "pillows" in item:
                 pillows = {}
                 for pillow in item['pillows']:
                     try:
-                        fabric_id = pillow['fabric']['id']
+                        fabric_id = pillow['fabric']
                     except KeyError:
                         fabric_id = None
                 
@@ -43,7 +50,7 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
                 item['pillows'] = []
                 for pillow in pillows:
                     pillow_data = {'type': pillow[0],
-                                   'fabric': {'id': pillow[1]}}
+                                   'fabric': pillow[1]}
                                    
                     if pillows[pillow]['quantity']:
                         pillow_data['quantity'] = pillows[pillow]['quantity']
@@ -57,28 +64,18 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
         Override the presave in order to assign the customer to the
         acknowledgement
         """
-        logger.debug('test')
-        #Assign Customer
-        customer = Customer.objects.get(pk=self.request.DATA['customer']['id'])
-        obj.customer = customer
         
         #Assign the discount
         try:
-            if (customer.discount > 0 and 'discount' not in self.request.DATA) or int(self.request.DATA['discount']) == 0: 
-                obj.discount = customer.discount
+            if (obj.customer.discount > 0 and 'discount' not in self.request.DATA) or int(self.request.DATA['discount']) == 0: 
+                obj.discount = obj.customer.discount
         except KeyError as e:
-            obj.discount = customer.discount
+            obj.discount = obj.customer.discount
             
         #Assign employee
         obj.employee = self.request.user
         
-        #Assign project
-        try:
-            obj.project = Project.objects.get(codename=self.request.DATA['project']['codename'])
-        except Project.DoesNotExist:
-            obj.project = Project(codename=self.request.DATA['project']['codename'])
-            obj.project.save()
-
+        #Calculate the acknowledgement totals
         obj.calculate_totals()
         
         return super(AcknowledgementMixin, self).pre_save(obj)
@@ -90,7 +87,7 @@ class AcknowledgementList(AcknowledgementMixin,generics.ListCreateAPIView):
         logger.debug(obj.items.all())
         obj.calculate_totals()
         
-        obj.create_and_upload_pdfs()
+        #obj.create_and_upload_pdfs()
     
 
 class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):
