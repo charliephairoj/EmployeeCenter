@@ -27,6 +27,42 @@ def get_access_key(iam, user):
         return data["create_access_key_response"]["create_access_key_result"]["access_key"]["access_key_id"]
 
 
+@login_required
+#current user profile
+def current_user(request):
+
+    user = request.user
+
+    user_data = {'firstName': user.first_name,
+                 'lastName': user.last_name,
+                 'permissions': [perm.split('.')[1] for perm in user.get_all_permissions()]}
+   
+    #get all the verified modules to be
+    #used client side
+    modules = []
+    if user.has_module_perms('contacts'):
+        modules.append('contacts')
+    if user.has_module_perms('products'):
+        modules.append('products')
+    if user.has_module_perms('po'):
+        modules.append('po')
+    if user.has_module_perms('acknowledgements'):
+        modules.append('acknowledgements')
+    if user.has_module_perms('shipping'):
+        modules.append('shipping')
+    if user.has_module_perms('supplies'):
+        modules.append('supplies')
+    if user.has_module_perms('accounting'):
+        modules.append('accounting')
+    if user.has_module_perms('projects'):
+        modules.append('projects')
+    if user.is_superuser:
+        modules.append('administrator')
+    user_data['modules'] = modules
+    #return data via http
+    return HttpResponse(json.dumps(user_data), content_type="application/json")
+
+
 #Deals with the permission
 @login_required
 def permission(request, permission_id='0'):

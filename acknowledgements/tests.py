@@ -567,7 +567,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2.description, 'F-04 Sofa')
         self.assertTrue(item2.is_custom_item)
         
-    @unittest.skip('ok')    
+    #@unittest.skip('ok')    
     def test_delete(self):
         """
         Test making a DELETE call

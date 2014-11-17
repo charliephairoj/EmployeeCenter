@@ -1,4 +1,5 @@
 import logging
+import time
 
 from rest_framework import viewsets, status
 from rest_framework import generics
@@ -10,6 +11,8 @@ from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializ
 from contacts.serializers import CustomerSerializer
 from contacts.models import Customer
 from projects.models import Project
+from utilities.http import save_upload
+from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
@@ -134,7 +137,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         """
         obj.calculate_totals()
         
-        #obj.create_and_upload_pdfs()
+        obj.create_and_upload_pdfs()
     
 
 class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):

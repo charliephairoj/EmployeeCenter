@@ -53,8 +53,8 @@ urlpatterns = patterns('',
     url(r'^$', 'login.views.app_login'),
     url(r'^login$', 'login.views.app_login'),
     url(r'^logout$', 'login.views.logout'),
-    url(r'^api/v1/current_user$', 'auth.views.current_user'),
-    url(r'^/api/v1/current_user$', 'auth.views.current_user'),
+    url(r'^api/v1/current_user$', 'administrator.views.current_user'),
+    url(r'^/api/v1/current_user$', 'administrator.views.current_user'),
     url(r'^/api/v1/change_password', 'auth.views.change_password'),
     url(r'^/api/v1/change_password', 'auth.views.change_password'),
     url(r'^api/v1/acknowledgement/$', AcknowledgementList.as_view()),
@@ -63,7 +63,18 @@ urlpatterns = patterns('',
 )
 
 
-
+urlpatterns += patterns('acknowledgements.views',
+    #url(r'^acknowledgement$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
+    url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
+    url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
+    url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image')
+    
+    #url(r'^acknowledgement/item$', 'item'),
+    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
+)
 
 
 urlpatterns += patterns('',
