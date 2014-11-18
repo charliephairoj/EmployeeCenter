@@ -163,9 +163,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         Transform the customer data before serialization
         """
-        return {'id': obj.customer.id,
-                'name': obj.customer.name}
-                
+        try:
+            return {'id': obj.customer.id,
+                    'name': obj.customer.name}
+        except AttributeError:
+                return None
     def transform_employee(self, obj, value):
         """
         Transform the employee data before serialization

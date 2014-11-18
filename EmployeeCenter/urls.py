@@ -1,6 +1,7 @@
 from django.conf.urls import *
 from django.conf import settings
 from tastypie.api import Api
+from rest_framework.routers import DefaultRouter
 
 from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
@@ -13,7 +14,11 @@ from products.api import ModelResource, ConfigurationResource, UpholsteryResourc
 from administrator.api import UserResource, GroupResource, PermissionResource
 from hr.api import EmployeeResource, AttendanceResource
 
+from contacts.views import CustomerViewSet, SupplierViewSet
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
+from products.views import ConfigurationViewSet, ModelViewSet
+from products.views import UpholsteryList, UpholsteryDetail
+from products.views import TableList, TableDetail
 """
 API Section
 
@@ -47,6 +52,13 @@ v1_api.register(UpholsteryResource())
 v1_api.register(TableResource())
 
 
+router = DefaultRouter()
+
+router.register(r'api/v1/customer', CustomerViewSet)
+router.register(r'api/v1/supplier', SupplierViewSet)
+router.register(r'api/v1/model', ModelViewSet)
+router.register(r'api/v1/configuration', ConfigurationViewSet)
+
 
 #primary login and url routing
 urlpatterns = patterns('',
@@ -57,10 +69,19 @@ urlpatterns = patterns('',
     url(r'^/api/v1/current_user$', 'administrator.views.current_user'),
     url(r'^/api/v1/change_password', 'auth.views.change_password'),
     url(r'^/api/v1/change_password', 'auth.views.change_password'),
+    
+    url(r'^', include(router.urls)),
+    
+    url(r'^api/v1/upholstery/$', UpholsteryList.as_view()),
+    url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
+    url(r'^api/v1/table/$', TableList.as_view()),
+    url(r'^api/v1/table/(?P<pk>[0-9]+)/$', TableDetail.as_view()),
+    url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/acknowledgement/$', AcknowledgementList.as_view()),
     url(r'^api/v1/acknowledgement/(?P<pk>[0-9]+)/$', AcknowledgementDetail.as_view()),
     
 )
+
 
 
 urlpatterns += patterns('acknowledgements.views',
@@ -68,7 +89,7 @@ urlpatterns += patterns('acknowledgements.views',
     #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
-    url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
+    #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image')
     

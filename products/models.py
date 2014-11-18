@@ -32,7 +32,7 @@ class Product(models.Model):
     internalUnits = 'mm',
     externalUnits = 'mm',
     bucket = models.TextField(null=True)
-    image = models.ForeignKey(S3Object, related_name='+', null=True)
+    image = models.ForeignKey(S3Object, related_name='+', null=True, blank=True)
     schematic = models.ForeignKey(S3Object, null=True)
     image_key = models.TextField(null=True)
     image_url = models.TextField(null=True)
@@ -422,9 +422,10 @@ class Table(Product):
         Implements custom __init__ and calls  the
         parent method as well
         """
-        self.type = 'table'
         
         super(Table, self).__init__(*args, **kwargs)
+        self.type = 'table'
+
 
     @classmethod
     def create(cls, user=None, **kwargs):

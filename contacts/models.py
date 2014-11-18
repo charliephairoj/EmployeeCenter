@@ -4,7 +4,7 @@ from django.db import models
 
 class Contact(models.Model):
     name = models.TextField()
-    name_th = models.TextField()
+    name_th = models.TextField(null=True, blank=True)
     telephone = models.TextField()
     fax = models.TextField()
     email = models.CharField(max_length=200, null=True, default=None)
@@ -102,13 +102,19 @@ class Customer(Contact):
 
     #class Meta:
         #ordering = ['name']
-
+    
+    def _init__(self, *args, **kwargs):
+        super(Customer, self).__init__(*args, **kwargs)
+        self.is_customer = True
     
 
 
 class Supplier(Contact):
     terms = models.IntegerField(default=0)
-
+    
+    def _init__(self, *args, **kwargs):
+        super(Supplier, self).__init__(*args, **kwargs)
+        self.is_supplier = True
     
 
 

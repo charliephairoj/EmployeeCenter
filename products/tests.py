@@ -10,7 +10,7 @@ import logging
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.conf import settings
-from tastypie.test import ResourceTestCase
+from rest_framework.test import APITestCase
 
 from products.models import Product, Model, Configuration, Upholstery, Table, Pillow
 from auth.models import S3Object
@@ -43,9 +43,10 @@ base_table = {"model": {"id": 1},
 base_table.update(base_product)
 
 
+logger = logging.getLogger(__name__)
 
 
-class ModelResourceTest(ResourceTestCase):
+class ModelResourceTest(APITestCase):
     def setUp(self):
         super(ModelResourceTest, self).setUp()
         
@@ -61,24 +62,23 @@ class ModelResourceTest(ResourceTestCase):
         self.model.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None#self.create_basic(username=self.username, password=self.password)
     
     def test_get_list(self):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/model', format='json')
+        resp = self.client.get('/api/v1/model/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate data
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
         
         #Validate the first resource
-        model = resp_obj['objects'][0]
+        model = resp_obj['results'][0]
         self.assertEqual(model['id'], 1)
         self.assertEqual(model['model'], 'AC-1')
         self.assertEqual(model['name'], 'Susie')
@@ -88,14 +88,13 @@ class ModelResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/model/1', format='json')
+        resp = self.client.get('/api/v1/model/1/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the resource
-        model = self.deserialize(resp)
+        model = resp.data
         self.assertEqual(model['id'], 1)
         self.assertEqual(model['model'], 'AC-1')
         self.assertEqual(model['name'], 'Susie')
@@ -107,17 +106,17 @@ class ModelResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/model', 
+        resp = self.client.post('/api/v1/model/', 
                                     format='json',
                                     data=base_model,
                                     authorization=self.get_credentials())
         self.assertEqual(Model.objects.count(), 2)
         
         #Validate response
-        self.assertHttpCreated(resp)
+        self.assertEqual(resp.status_code, 201)
        
         #Validate the resource
-        model = self.deserialize(resp)
+        model = resp.data
         self.assertEqual(model['id'], 2)
         self.assertEqual(model['model'], 'AC-1')
         self.assertEqual(model['name'], 'Susie')
@@ -136,17 +135,17 @@ class ModelResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/model/1', 
+        resp = self.client.put('/api/v1/model/1/', 
                                    format='json',
                                    data=updated_model,
                                    authorization=self.get_credentials())
         self.assertEqual(Model.objects.count(), 1)
         
         #Validate resp
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate resource
-        model = self.deserialize(resp)
+        model = resp.data
         self.assertEqual(model['name'], 'Patsy')
 
         
@@ -156,16 +155,16 @@ class ModelResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Model.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/model/1', 
+        resp = self.client.delete('/api/v1/model/1/', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Model.objects.count(), 0)
         
         #Validate the response
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 204)
         
     
-class ConfigurationResourceTest(ResourceTestCase):
+class ConfigurationResourceTest(APITestCase):
     def setUp(self):
         super(ConfigurationResourceTest, self).setUp()
         
@@ -179,24 +178,22 @@ class ConfigurationResourceTest(ResourceTestCase):
         self.configuration.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None#self.create_basic(username=self.username, password=self.password)
     
     def test_get_list(self):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/configuration', format='json')
+        resp = self.client.get('/api/v1/configuration/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
-        
+        self.assertEqual(resp.status_code, 200)
         #Validate data
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
         
         #Validate the first resource
-        configuration = resp_obj['objects'][0]
+        configuration = resp_obj['results'][0]
         self.assertEqual(configuration['id'], 1)
         self.assertEqual(configuration['configuration'], 'Sofa')
         
@@ -204,14 +201,13 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/configuration/1', format='json')
+        resp = self.client.get('/api/v1/configuration/1/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the resource
-        configuration = self.deserialize(resp)
+        configuration = resp.data
         self.assertEqual(configuration['id'], 1)
         self.assertEqual(configuration['configuration'], 'Sofa')
         
@@ -221,17 +217,17 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/configuration', 
+        resp = self.client.post('/api/v1/configuration/', 
                                     format='json',
                                     data=base_configuration,
                                     authorization=self.get_credentials())
         self.assertEqual(Configuration.objects.count(), 2)
         
         #Validate response
-        self.assertHttpCreated(resp)
+        self.assertEqual(resp.status_code, 201)
        
         #Validate the resource
-        configuration = self.deserialize(resp)
+        configuration = resp.data
         self.assertEqual(configuration['id'], 2)
         self.assertEqual(configuration['configuration'], 'Sofa')
         
@@ -248,10 +244,13 @@ class ConfigurationResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/configuration/1', 
+        resp = self.client.put('/api/v1/configuration/1/', 
                                    format='json',
                                    data=updated_config,
                                    authorization=self.get_credentials())
+                                   
+        #Validate resp
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(Configuration.objects.count(), 1)
         
     def test_delete(self):
@@ -260,16 +259,16 @@ class ConfigurationResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Configuration.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/configuration/1', 
+        resp = self.client.delete('/api/v1/configuration/1/', 
                                       format='json', 
                                       authentication=self.get_credentials())
+        
         self.assertEqual(Configuration.objects.count(), 0)
-        
         #Validate the response
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 204)
         
         
-class UpholsteryResourceTest(ResourceTestCase):
+class UpholsteryResourceTest(APITestCase):
     def setUp(self):
         super(UpholsteryResourceTest, self).setUp()
         
@@ -301,24 +300,23 @@ class UpholsteryResourceTest(ResourceTestCase):
         self.product.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None#self.create_basic(username=self.username, password=self.password)
     
     def test_get_list(self):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/upholstery', format='json')
+        resp = self.client.get('/api/v1/upholstery/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate data
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
         
         #Validate the first resource
-        upholstery = resp_obj['objects'][0]
+        upholstery = resp_obj['results'][0]
         self.assertEqual(upholstery['id'], 1)
         self.assertEqual(upholstery['type'], 'upholstery')
         self.assertEqual(upholstery['description'], 'AC-1 Sofa')
@@ -338,18 +336,18 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/upholstery/1', format='json')
+        resp = self.client.get('/api/v1/upholstery/1/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the resource
-        configuration = self.deserialize(resp)
+        configuration = resp.data
+        
         self.assertEqual(configuration['id'], 1)
         
         #Validate the first resource
-        upholstery = self.deserialize(resp)
+        upholstery = resp.data
         self.assertEqual(upholstery['id'], 1)
         self.assertEqual(upholstery['type'], 'upholstery')
         self.assertEqual(upholstery['description'], 'AC-1 Sofa')
@@ -369,17 +367,17 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/upholstery', 
+        resp = self.client.post('/api/v1/upholstery/', 
                                     format='json',
                                     data=base_upholstery,
                                     authorization=self.get_credentials())
         self.assertEqual(Upholstery.objects.count(), 2)
         
         #Validate response
-        self.assertHttpCreated(resp)
+        self.assertEqual(resp.status_code, 201)
        
         #Validate the first resource
-        upholstery = self.deserialize(resp)
+        upholstery = resp.data
         self.assertEqual(upholstery['id'], 2)
         self.assertEqual(upholstery['type'], 'upholstery')
         self.assertEqual(upholstery['description'], 'AC-1 Sofa')
@@ -406,14 +404,16 @@ class UpholsteryResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/upholstery/1', 
+        resp = self.client.put('/api/v1/upholstery/1/', 
                                    format='json',
                                    data=updated_uphol,
                                    authorization=self.get_credentials())
         self.assertEqual(Upholstery.objects.count(), 1)
         
+        self.assertEqual(resp.status_code, 200)
+        
         #Validate the first resource
-        upholstery = self.deserialize(resp)
+        upholstery = resp.data
         self.assertEqual(upholstery['id'], 1)
         self.assertEqual(upholstery['type'], 'upholstery')
         self.assertEqual(upholstery['description'], 'AC-1 Sofa')
@@ -432,16 +432,16 @@ class UpholsteryResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Upholstery.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/upholstery/1', 
+        resp = self.client.delete('/api/v1/upholstery/1/', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Upholstery.objects.count(), 0)
         
         #Validate the response
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 204)
         
     
-class TableResourceTest(ResourceTestCase):
+class TableResourceTest(APITestCase):
     def setUp(self):
         super(TableResourceTest, self).setUp()
         
@@ -474,24 +474,23 @@ class TableResourceTest(ResourceTestCase):
         self.product.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None#self.create_basic(username=self.username, password=self.password)
     
     def test_get_list(self):
         """
         Test getting a list of models via GET
         """
-        resp = self.api_client.get('/api/v1/table', format='json')
+        resp = self.client.get('/api/v1/table/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate data
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
         
         #Validate the first resource
-        table = resp_obj['objects'][0]
+        table = resp_obj['results'][0]
         self.assertEqual(table['id'], 1)
         self.assertEqual(table['type'], 'table')
         self.assertEqual(table['description'], 'AC-1 Coffee Table')
@@ -509,18 +508,13 @@ class TableResourceTest(ResourceTestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.api_client.get('/api/v1/table/1', format='json')
+        resp = self.client.get('/api/v1/table/1/', format='json')
         
         #Validate resp
-        self.assertValidJSONResponse(resp)
-        self.assertHttpOK(resp)
-        
-        #Validate the resource
-        configuration = self.deserialize(resp)
-        self.assertEqual(configuration['id'], 1)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the first resource
-        table = self.deserialize(resp)
+        table = resp.data
         self.assertEqual(table['id'], 1)
         self.assertEqual(table['type'], 'table')
         self.assertEqual(table['description'], 'AC-1 Coffee Table')
@@ -539,16 +533,16 @@ class TableResourceTest(ResourceTestCase):
         """
         #Validate object creation
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/table', 
+        resp = self.client.post('/api/v1/table/', 
                                     format='json',
                                     data=base_table,
                                     authorization=self.get_credentials())
         self.assertEqual(Table.objects.count(), 2)
         #Validate response
-        self.assertHttpCreated(resp)
+        self.assertEqual(resp.status_code, 201)
        
         #Validate the first resource
-        table = self.deserialize(resp)
+        table = resp.data
         self.assertEqual(table['id'], 2)
         self.assertEqual(table['type'], 'table')
         self.assertEqual(table['description'], 'AC-1 Coffee Table')
@@ -574,14 +568,15 @@ class TableResourceTest(ResourceTestCase):
         
         #Validate object update
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/table/1', 
+        resp = self.client.put('/api/v1/table/1/', 
                                    format='json',
                                    data=updated_table,
                                    authorization=self.get_credentials())
         self.assertEqual(Table.objects.count(), 1)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the first resource
-        table = self.deserialize(resp)
+        table = resp.data
         self.assertEqual(table['id'], 1)
         self.assertEqual(table['type'], 'table')
         self.assertEqual(table['description'], 'AC-1 Coffee Table')
@@ -600,12 +595,12 @@ class TableResourceTest(ResourceTestCase):
         """
         #Validate resource deleted
         self.assertEqual(Table.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/table/1', 
+        resp = self.client.delete('/api/v1/table/1/', 
                                       format='json', 
                                       authentication=self.get_credentials())
         self.assertEqual(Table.objects.count(), 0)
         
         #Validate the response
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 204)
     
     

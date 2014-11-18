@@ -9,11 +9,13 @@ import logging
 from django.test import TestCase
 from tastypie.test import ResourceTestCase
 from django.contrib.auth.models import User
+from rest_framework.test import APITestCase
 
 from contacts.models import Address, Customer, Supplier, SupplierContact
 
 
 logger = logging.getLogger(__name__)
+
 
 base_address = {"address1": "22471 Sunbrook",
                 "city": "Mission Viejo",
@@ -42,7 +44,7 @@ supplier_data['contacts'] = base_supplier_contact
 del supplier_data['first_name']
 del supplier_data['last_name']
 
-class CustomerResourceTest(ResourceTestCase):
+class CustomerResourceTest(APITestCase):
     
     def setUp(self):
         super(CustomerResourceTest, self).setUp()
@@ -62,20 +64,20 @@ class CustomerResourceTest(ResourceTestCase):
         self.address.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None #self.create_basic(username=self.username, password=self.password)
     
     def test_get_json_list(self):
         """
         Test GET of list 
         """
         #Retrieve and validate GET response
-        resp = self.api_client.get('/api/v1/customer', format='json')
-        self.assertValidJSONResponse(resp)
+        resp = self.client.get('/api/v1/customer/', format='json')
+        self.assertEqual(resp.status_code, 200)
         
         #test deserialized response
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
-        customer = resp_obj['objects'][0]
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
+        customer = resp_obj['results'][0]
         self.assertEqual(customer["name"], 'Charlie Brown')
         self.assertEqual(customer["first_name"], 'Charlie')
         self.assertEqual(customer["last_name"], 'Brown')
@@ -92,15 +94,15 @@ class CustomerResourceTest(ResourceTestCase):
         """
         #Validate resource creation
         self.assertEqual(Customer.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/customer', 
+        resp = self.client.post('/api/v1/customer/', 
                                     format='json',
                                     data=customer_data,
                                     authentication=self.get_credentials())
-        self.assertHttpCreated(resp)
+        self.assertEqual(resp.status_code, 201)
         self.assertEqual(Customer.objects.count(), 2)
         
         #Validated response to resource creation
-        customer = self.deserialize(resp)
+        customer = resp.data
         self.assertEqual(customer['id'], 2)
         self.assertEqual(customer["name"], 'Charlie Brown')
         self.assertEqual(customer["first_name"], 'Charlie')
@@ -122,10 +124,12 @@ class CustomerResourceTest(ResourceTestCase):
         modified_customer['type'] = 'Dealer'
         modified_customer['discount'] = 50
         self.assertEqual(Customer.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/customer/1',
+        resp = self.client.put('/api/v1/customer/1/',
                                    format='json',
                                    data=modified_customer, 
                                    authentication=self.get_credentials())
+        self.assertEqual(resp.status_code, 200)
+        
         self.assertEqual(Customer.objects.count(), 1)
         obj = Customer.objects.all()[0]
         self.assertEqual(obj.id, 1)
@@ -137,11 +141,12 @@ class CustomerResourceTest(ResourceTestCase):
         """
         TEst getting a customer resource via GET
         """
-        resp = self.api_client.get('/api/v1/customer/1',
+        resp = self.client.get('/api/v1/customer/1/',
                                    format='json',
                                    authentication=self.get_credentials())
-        self.assertHttpOK(resp)
-        customer = self.deserialize(resp)
+        self.assertEqual(resp.status_code, 200)
+        
+        customer = resp.data
         self.assertEqual(customer['id'], 1)
         self.assertEqual(customer["name"], 'Charlie Brown')
         self.assertEqual(customer["first_name"], 'Charlie')
@@ -158,13 +163,13 @@ class CustomerResourceTest(ResourceTestCase):
         Test delete a customer resource via get
         """
         self.assertEqual(Customer.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/customer/1',
+        resp = self.client.delete('/api/v1/customer/1/',
                                       authentication=self.get_credentials())
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(Customer.objects.count(), 0)
         
 
-class SupplierResourceTest(ResourceTestCase):
+class SupplierResourceTest(APITestCase):
     
     def setUp(self):
         super(SupplierResourceTest, self).setUp()
@@ -193,20 +198,20 @@ class SupplierResourceTest(ResourceTestCase):
         self.contact.save()
                 
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None #self.create_basic(username=self.username, password=self.password)
     
     def test_get_json_list(self):
         """
         Test GET of list 
         """
         #Retrieve and validate GET response
-        resp = self.api_client.get('/api/v1/supplier', format='json')
-        self.assertValidJSONResponse(resp)
+        resp = self.client.get('/api/v1/supplier/', format='json')
+        self.assertEqual(resp.status_code, 200)
         
         #test deserialized response
-        resp_obj = self.deserialize(resp)
-        self.assertEqual(len(resp_obj['objects']), 1)
-        supplier = resp_obj['objects'][0]
+        resp_obj = resp.data
+        self.assertEqual(len(resp_obj['results']), 1)
+        supplier = resp_obj['results'][0]
         self.assertEqual(supplier["name"], 'Zipper World Co., Ltd.')
         self.assertEqual(supplier["currency"], 'USD')
         self.assertTrue(supplier["is_supplier"])
@@ -230,15 +235,16 @@ class SupplierResourceTest(ResourceTestCase):
         """
         #Validate resource creation
         self.assertEqual(Supplier.objects.count(), 1)
-        resp = self.api_client.post('/api/v1/supplier', 
+        resp = self.client.post('/api/v1/supplier/', 
                                     format='json',
                                     data=self.supplier_data,
                                     authentication=self.get_credentials())
-        self.assertHttpCreated(resp)
+        logger.debug(resp)
+        self.assertEqual(resp.status_code, 201)
         self.assertEqual(Supplier.objects.count(), 2)
         
         #Validated response to resource creation
-        supplier = self.deserialize(resp)
+        supplier = resp.data
         self.assertEqual(supplier['id'], 2)
         self.assertEqual(supplier["name"], 'Zipper World Co., Ltd.')
         self.assertEqual(supplier["currency"], 'USD')
@@ -284,10 +290,12 @@ class SupplierResourceTest(ResourceTestCase):
                                               'primary': True})
         self.assertEqual(Supplier.objects.count(), 1)
         self.assertEqual(Supplier.objects.all()[0].contacts.count(), 1)
-        resp = self.api_client.put('/api/v1/supplier/1',
+        resp = self.client.put('/api/v1/supplier/1/',
                                    format='json',
                                    data=modified_supplier, 
                                    authentication=self.get_credentials())
+        self.assertEqual(resp.status_code, 200)
+        
         #Tests database state
         self.assertEqual(Supplier.objects.count(), 1)
         obj = Supplier.objects.all()[0]
@@ -307,8 +315,7 @@ class SupplierResourceTest(ResourceTestCase):
         self.assertEqual(contacts[1].telephone, 'ok')
         
         #Tests the response
-        self.assertHttpOK(resp)
-        supplier = self.deserialize(resp)
+        supplier = resp.data
         self.assertEqual(supplier['id'], 1)
         self.assertEqual(supplier["name"], 'Zipper Land Ltd.')
         self.assertEqual(supplier["currency"], 'USD')
@@ -336,11 +343,12 @@ class SupplierResourceTest(ResourceTestCase):
         """
         TEst getting a supplier resource via GET
         """
-        resp = self.api_client.get('/api/v1/supplier/1',
+        resp = self.client.get('/api/v1/supplier/1/',
                                    format='json',
                                    authentication=self.get_credentials())
-        self.assertHttpOK(resp)
-        supplier = self.deserialize(resp)
+        self.assertEqual(resp.status_code, 200)
+        
+        supplier = resp.data
         self.assertEqual(supplier['id'], 1)
         self.assertEqual(supplier["name"], 'Zipper World Co., Ltd.')
         self.assertEqual(supplier["currency"], 'USD')
@@ -355,7 +363,7 @@ class SupplierResourceTest(ResourceTestCase):
         Test delete a supplier resource via get
         """
         self.assertEqual(Supplier.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/supplier/1',
+        resp = self.client.delete('/api/v1/supplier/1/',
                                       authentication=self.get_credentials())
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(Supplier.objects.count(), 0)
