@@ -252,16 +252,19 @@ class Supply(models.Model):
         Tests if the quantity needs to be check for being 
         critically low.
         """
-        if self._check_quantity:
-            if self.test_if_critically_low_quantity():
-                self.email_critically_low_quantity()
-            self._check_quantity = False
+        try:
+            if self._check_quantity:
+                if self.test_if_critically_low_quantity():
+                    self.email_critically_low_quantity()
+                self._check_quantity = False
+        except Exception:
+            pass
             
         super(Supply, self).save(*args, **kwargs)
      
 class Product(models.Model):
     supplier = models.ForeignKey(Supplier)
-    supply = models.ForeignKey(Supply)
+    supply = models.ForeignKey(Supply, related_name='products')
     upc = models.TextField(null=True)
     cost = models.DecimalField(decimal_places=3, max_digits=12, default=0)
     reference = models.TextField(null=True)
