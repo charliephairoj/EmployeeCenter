@@ -15,10 +15,11 @@ from administrator.api import UserResource, GroupResource, PermissionResource
 from hr.api import EmployeeResource, AttendanceResource
 
 from contacts.views import CustomerViewSet, SupplierViewSet
-from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from products.views import ConfigurationViewSet, ModelViewSet
 from products.views import UpholsteryList, UpholsteryDetail
 from products.views import TableList, TableDetail
+from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
+from shipping.views import ShippingList, ShippingDetail
 """
 API Section
 
@@ -79,6 +80,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/acknowledgement/$', AcknowledgementList.as_view()),
     url(r'^api/v1/acknowledgement/(?P<pk>[0-9]+)/$', AcknowledgementDetail.as_view()),
+    url(r'^api/v1/shipping/$', ShippingList.as_view()),
+    url(r'^api/v1/shipping/(?P<pk>[0-9]+)/$', ShippingDetail.as_view()),
     
 )
 

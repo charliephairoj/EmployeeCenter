@@ -26,7 +26,7 @@ class Shipping(models.Model):
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
-    comments = models.TextField(null=True)
+    comments = models.TextField(null=True, blank=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
 
     def get_data(self):
@@ -129,7 +129,7 @@ class Shipping(models.Model):
         #shipping.update_acknowledgement_data()
         #Initialize and create pdf
         pdf = ShippingPDF(customer=self.customer, shipping=self,
-                          products=self.item_set.all().order_by('id'))
+                          products=self.items.all().order_by('id'))
         filename = pdf.create()
         
         return filename
@@ -148,12 +148,13 @@ class Shipping(models.Model):
         self.save()
         return self.pdf
 
+
 class Item(models.Model):
-    shipping = models.ForeignKey(Shipping)
+    shipping = models.ForeignKey(Shipping, related_name='items')
     item = models.ForeignKey(acknowledgements.models.Item)
     description = models.TextField()
     quantity = models.IntegerField()
-    comments = models.TextField()
+    comments = models.TextField(blank=True, null=True)
 
     def set_data_from_acknowledgement_item(self, item):
         self.item = item

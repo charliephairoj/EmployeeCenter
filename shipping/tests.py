@@ -11,16 +11,20 @@ from datetime import datetime
 from decimal import Decimal
 import dateutil
 import subprocess
- 
+import logging
+
 from django.test import TestCase
 from django.contrib.auth.models import User
-from tastypie.test import ResourceTestCase
+from rest_framework.test import APITestCase
 
 from acknowledgements.models import Acknowledgement, Item as AckItem
 from shipping.models import Shipping
 from supplies.models import Fabric
 from products.models import Product
 from contacts.models import Customer, Supplier, Address
+
+
+logger = logging.getLogger(__name__)
 
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
@@ -72,7 +76,7 @@ base_ack = {'customer': {'id': 1},
                           "fabric": {"id":1}}]}
 
 
-class ShippingResourceTest(ResourceTestCase):
+class ShippingResourceTest(APITestCase):
     
     def setUp(self):        
         """
@@ -96,6 +100,8 @@ class ShippingResourceTest(ResourceTestCase):
         self.password = 'pass'
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         self.user.save()
+        
+        self.client.login(username='tester', password='pass')
         
         #Create supplier, customer and addrss
         self.customer = Customer(**base_customer)
@@ -139,7 +145,7 @@ class ShippingResourceTest(ResourceTestCase):
         self.shipping.save()
         
     def get_credentials(self):
-        return self.create_basic(username=self.username, password=self.password)
+        return None#self.create_basic(username=self.username, password=self.password)
     
     def test_get_list(self):
         """
@@ -149,11 +155,11 @@ class ShippingResourceTest(ResourceTestCase):
         #Create a shipping to retrieve
         self.create_shipping()
         
-        resp = self.api_client.get('/api/v1/shipping', format='json', authentication=self.get_credentials())
-        self.assertHttpOK(resp)
+        resp = self.client.get('/api/v1/shipping/', format='json', authentication=self.get_credentials())
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the resources returned
-        resp_obj = self.deserialize(resp)
+        resp_obj = resp.data
         self.assertEqual(len(resp_obj['objects']), 1)
         
     def test_get(self):
@@ -164,12 +170,12 @@ class ShippingResourceTest(ResourceTestCase):
         self.create_shipping()
         
         #Test the resp
-        resp = self.api_client.get('/api/v1/shipping/1', format='json', 
+        resp = self.client.get('/api/v1/shipping/1/', format='json', 
                                    authentication=self.get_credentials())
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the object
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 1)
         self.assertIn("customer", obj)
         self.assertEqual(obj['customer']['id'], 1)
@@ -178,20 +184,20 @@ class ShippingResourceTest(ResourceTestCase):
         """
         Tests creating a resource via POST
         """
-        #self.skipTest("intensive")
         #Validate the resp and obj creation
         self.assertEqual(Shipping.objects.count(), 0)
-        resp = self.api_client.post('/api/v1/shipping', format='json',
-                                    authentication=self.get_credentials(),
-                                    data={'acknowledgement': {'id': 1},
-                                          'delivery_date': base_delivery_date,
-                                          'employee': {'id': self.user.id},
-                                          'items': [{'id': 1}, {'id': 2}]})
-        self.assertHttpCreated(resp)
+        shipping_data={'acknowledgement': {'id': 1},
+                       'delivery_date': base_delivery_date,
+                       'items': [{'id': 1,
+                                  'description':'test1',
+                                  'quantity': 1}]}
+        resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
+        logger.debug(resp)
+        self.assertEqual(resp.status_code, 201)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #validate the object returned
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 1)
         self.assertIn('customer', obj)
         self.assertEqual(obj['customer']['id'], 1)
@@ -207,15 +213,15 @@ class ShippingResourceTest(ResourceTestCase):
         self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
-        resp = self.api_client.put('/api/v1/shipping/1', format='json',
+        resp = self.client.put('/api/v1/shipping/1/', format='json',
                                    authentication=self.get_credentials(),
                                    data={'delivery_date':base_delivery_date,
                                          'comments': 'test'})
-        self.assertHttpOK(resp)
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #Validate the obj
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['customer']['id'], 1)
         self.assertEqual(obj['comments'], 'test')
@@ -227,14 +233,14 @@ class ShippingResourceTest(ResourceTestCase):
         self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
-        resp = self.api_client.patch('/api/v1/shipping/1', format='json',
+        resp = self.client.patch('/api/v1/shipping/1', format='json',
                                    authentication=self.get_credentials(),
                                    data={'comments': 'test'})
         self.assertHttpAccepted(resp)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #Validate the obj
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['customer']['id'], 1)
         self.assertEqual(obj['comments'], 'test')
@@ -246,9 +252,9 @@ class ShippingResourceTest(ResourceTestCase):
         self.skipTest('')
         self.create_shipping()
         self.assertEqual(Shipping.objects.count(), 1)
-        resp = self.api_client.delete('/api/v1/shipping/1', format='json',
+        resp = self.client.delete('/api/v1/shipping/1/', format='json',
                                       authentication=self.get_credentials())
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 204)
         self.assertEqual(Shipping.objects.count(), 0)
         
         

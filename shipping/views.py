@@ -1,19 +1,76 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Create your views here.
 import json
 import os
 import time
 import dateutil.parser
+import logging
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-from django.conf import settings
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
+from rest_framework import generics
 
 from shipping.models import Shipping
+from shipping.serializers import ShippingSerializer
 from acknowledgements.models import Acknowledgement
 
 
+logger = logging.getLogger(__name__)
+
+
+class ShippingMixin(object):
+    queryset = Shipping.objects.all()
+    serializer_class = ShippingSerializer
+    
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['acknowledgement']
+        
+        for field in fields:
+            if field in request.DATA:
+                if 'id' in request.DATA[field]:
+                    logger.debug(request.DATA[field])
+                    request.DATA[field] = request.DATA[field]['id']
+                
+        for index, item in enumerate(request.DATA['items']):
+            logger.debug(item)
+            logger.debug(request.DATA['items'][index])
+            request.DATA['items'][index]['item'] = item['id']
+            del request.DATA['items'][index]['id']
+                        
+        request.DATA['customer'] = Acknowledgement.objects.get(pk=request.DATA['acknowledgement']).customer.id
+        return request
+    
+    
+class ShippingList(ShippingMixin, generics.ListCreateAPIView):
+    
+    def post(self, request, *args, **kwargs):
+        logger.debug(request.__dict__)
+        logger.debug(request.DATA)
+        request = self._format_primary_key_data(request)
+        
+        return super(ShippingList, self).post(request, *args, **kwargs)
+    
+        
+    def pre_save(self, obj):
+        obj.employee = self.request.user
+        
+        return obj
+        
+    def post_save(self, obj, *args, **kwargs):
+        obj.create_and_upload_pdf()
+        
+        return obj
+        
+        
+class ShippingDetail(generics.RetrieveUpdateDestroyAPIView):
+    pass
+    
+"""
 @login_required
 def shipping(request, shipping_id=0):
     #Get Request
@@ -93,3 +150,4 @@ def acknowledgement_item_image(request):
         response = HttpResponse(json.dumps(data), mimetype="application/json")
         response.status_code = 201
         return response
+"""

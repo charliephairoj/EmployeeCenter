@@ -157,7 +157,7 @@ class ShippingPDF(object):
     def _create_customer_section(self):
         #extract supplier address
         try:
-            address = self.customer.address_set.all()[0] 
+            address = self.customer.addresses.all()[0] 
         except IndexError:
             address = None
         #Create data array
@@ -274,7 +274,7 @@ class ShippingPDF(object):
             dimension_str = dimension_str.format(product.item.width, product.item.depth, product.item.height)
             data.append(['', dimension_str])
         #increase the item number
-        pillows = product.item.pillow_set.all()
+        pillows = product.item.pillows.all()
         if len(pillows) > 0:
             for pillow in pillows:
                 data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])

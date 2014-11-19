@@ -38,7 +38,7 @@ class PillowSerializer(serializers.ModelSerializer):
             return {'id': obj.fabric.id,
                     'color': obj.fabric.color,
                     'pattern': obj.fabric.pattern}
-        except AttributeError:
+        except AttributeError: 
             return None
         
         
