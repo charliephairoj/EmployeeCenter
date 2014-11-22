@@ -5,6 +5,7 @@ import sys, os
 import datetime
 import logging
 import math
+import decimal
 from decimal import *
 
 from django.conf import settings
@@ -245,8 +246,9 @@ class Item(models.Model):
         and the discount provied
         """
         #Calculate late the unit_cost based on discount if available
+
         if not self.unit_cost:
-            self.unit_cost = Decimal(self.supply.cost)
+            self.unit_cost = self.supply.cost
         if self.supply.discount == 0 and self.discount == 0:
             
             logger.debug(u"{0} unit cost is {1}".format(self.description, self.unit_cost))
@@ -258,10 +260,17 @@ class Item(models.Model):
                 discount_amount = Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100'))
             #self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
             logger.debug(u"{0} discounted unit cost is {1}".format(self.description, self.unit_cost - discount_amount))
-                    
-        self.total = (Decimal(self.unit_cost) - (Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100')))) * Decimal(self.quantity)
         
+        #Set the discount to be used.
+        #Note: ENTER DISCOUNT OVERRULES SAVED DISCOUNT
+        self.discount = self.discount or self.supply.discount
+        
+        unit_cost = Decimal(self.unit_cost)
+        discount = unit_cost * (Decimal(self.discount) / Decimal('100'))
+        unit_cost = unit_cost - discount
+        self.total =  unit_cost * self.quantity
+
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
-        logger.debug(u"{0} total cost is {1}".format(self.description, self.total))
+        logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
         
     

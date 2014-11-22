@@ -87,13 +87,14 @@ class AcknowledgementMixin(object):
                             pass
                             
                 elif field == 'project':
-                    if "codename" in request.DATA['project'] and "id" not in request.DATA['project']:
-                        project = Project(codename=request.DATA['project']['codename'])
-                        project.save()
-                        request.DATA['project'] = project.id
-                    elif "id" in request.DATA['project']:
-                        request.DATA['project']
-         
+                    try:
+                        if "codename" in request.DATA['project'] and "id" not in request.DATA['project']:
+                            project = Project(codename=request.DATA['project']['codename'])
+                            project.save()
+                            request.DATA['project'] = project.id
+                    except TypeError:
+                        pass
+                   
         return request
 
         

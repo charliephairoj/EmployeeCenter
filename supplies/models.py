@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 from decimal import Decimal
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -14,6 +15,9 @@ import boto.ses
 from contacts.models import Contact, Supplier
 from media.models import S3Object
 from media.stickers import StickerPage
+
+
+logger = logging.getLogger(__name__)
 
 
 #Creates the main supplies class
@@ -54,9 +58,9 @@ class Supply(models.Model):
         try:
             return self._get_product(self.supplier).cost
         except AttributeError as e:
-            print e
+            logger.error(e)
             raise ValueError("Please set the supplier for this supply in order to get a cost")
-    
+            
     @property
     def reference(self):
         try:
@@ -204,7 +208,10 @@ class Supply(models.Model):
         based on the supplier
         """
         if not hasattr(self, 'product'):
-            self.product = Product.objects.get(supply=self, supplier=supplier)
+            try:
+                self.product = Product.objects.get(supply=self, supplier=supplier)
+            except Product.DoesNotExist:
+                raise ValueError("Product does not exist.")
 
         return self.product
     def test_if_critically_low_quantity(self):

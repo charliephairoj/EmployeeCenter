@@ -23,6 +23,7 @@ from products.views import UpholsteryList, UpholsteryDetail
 from products.views import TableList, TableDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
+from po.views import PurchaseOrderList, PurchaseOrderDetail
 """
 API Section
 
@@ -91,6 +92,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/acknowledgement/(?P<pk>[0-9]+)/$', AcknowledgementDetail.as_view()),
     url(r'^api/v1/shipping/$', ShippingList.as_view()),
     url(r'^api/v1/shipping/(?P<pk>[0-9]+)/$', ShippingDetail.as_view()),
+    url(r'^api/v1/purchase-order/$', PurchaseOrderList.as_view()),
+    url(r'^api/v1/purchase-order/(?P<pk>[0-9]+)/$', PurchaseOrderDetail.as_view()),
     
 )
 

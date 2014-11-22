@@ -20,7 +20,6 @@ from reportlab.graphics.barcode import code128
 
 from supplies.models import Supply, Product
 
-getcontext().prec = 2
 logger = logging.getLogger(__name__)
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))

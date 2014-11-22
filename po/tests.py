@@ -13,7 +13,7 @@ import unittest
 
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission, ContentType
-from tastypie.test import ResourceTestCase
+from rest_framework.test import APITestCase
 
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
@@ -22,6 +22,7 @@ from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
+
 
 base_address = {'address1': '22471 Sunbrook',
                 'city': 'Mission Viejo',
@@ -50,8 +51,8 @@ base_purchase_order = {'supplier': {'id':1},
                        'project': {'id': 1,
                                    'codename': 'MC House'},
                        'deposit': '50',
-                       'items': [{'id': 1, 'quantity':10},
-                                 {'id': 2, 'quantity': 3}],
+                       'items': [{'supply':{'id': 1}, 'quantity':10},
+                                 {'supply':{'id': 2}, 'quantity': 3}],
                        'vat': '7'}
 
 date = datetime.datetime.now()
@@ -76,7 +77,7 @@ def create_user(block_permissions=[]):
     return user
 
 
-class PurchaseOrderTest(ResourceTestCase):
+class PurchaseOrderTest(APITestCase):
     """
     Tests the Purchase Order
     """
@@ -99,7 +100,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.user.save()
         self.user.user_permissions.add(self.p)
         self.user.user_permissions.add(self.p2)
-        self.api_client.client.login(username=self.username, password=self.password)
+        self.client.login(username=self.username, password=self.password)
         
         
         self.supplier = Supplier(**base_supplier)
@@ -137,7 +138,7 @@ class PurchaseOrderTest(ResourceTestCase):
         self.po.save()
         #self.po.create_and_upload_pdf()
         
-        self.item = Item.create(supplier=self.supplier, **base_purchase_order['items'][0])
+        self.item = Item.create(supplier=self.supplier, id=1, **base_purchase_order['items'][0])
         self.item.purchase_order = self.po
         self.item.save()
         
@@ -151,12 +152,11 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         self.skipTest("")
         #Validate the response
-        resp = self.api_client.get('/api/v1/purchase-order', format='json')
-        self.assertHttpOK(resp)
-        self.assertValidJSONResponse(resp)
+        resp = self.client.get('/api/v1/purchase-order/', format='json')
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the returned data
-        resp = self.deserialize(resp)
+        resp = resp.data
         self.assertIsInstance(resp, dict)
         self.assertIsInstance(resp['objects'], list)
         self.assertEqual(len(resp['objects']), 1)
@@ -168,12 +168,11 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         self.skipTest("")
         #Validate the response
-        resp = self.api_client.get('/api/v1/purchase-order/1')
-        self.assertHttpOK(resp)
-        self.assertValidJSONResponse(resp)
+        resp = self.client.get('/api/v1/purchase-order/1/')
+        self.assertEqual(resp.status_code, 200)
         
         #Validate the returned data
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
         self.assertNotIn('pdf', obj)
@@ -187,11 +186,10 @@ class PurchaseOrderTest(ResourceTestCase):
         self.skipTest("")
         self.po.create_and_upload_pdf()
         
-        resp = self.api_client.get('/api/v1/purchase-order/1?pdf=true')
-        self.assertHttpOK(resp)
-        self.assertValidJSONResponse(resp)
+        resp = self.client.get('/api/v1/purchase-order/1/')
+        self.assertEqual(resp.status_code, 200)
         
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertIn('pdf', obj)
         self.assertIn('url', obj['pdf'])
         self.assertIsNotNone(obj['pdf']['url'])
@@ -200,14 +198,19 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new resource via POST
         """
-        self.skipTest("")
+
+        print '\n'
+        logger.debug("Creating new po")
+        print '\n'
+        
         #validate the response
-        resp = self.api_client.post('/api/v1/purchase-order',
-                                    data=base_purchase_order)
-        self.assertHttpCreated(resp)
+        resp = self.client.post('/api/v1/purchase-order/',
+                                data=base_purchase_order, 
+                                format='json')
+        self.assertEqual(resp.status_code, 201)
         
         #Validate the data returned
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 2)
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
@@ -246,16 +249,20 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new resource via POST
         """
-        self.skipTest("")
+        print '\n'
+        logger.debug("Creating new po with a project")
+        print '\n'
+        
         #validate the response
         po = base_purchase_order.copy()
         po['project'] = {'codename': 'Ladawan'}
-        resp = self.api_client.post('/api/v1/purchase-order',
-                                    data=po)
-        self.assertHttpCreated(resp)
+        resp = self.client.post('/api/v1/purchase-order/',
+                                data=po,
+                                format='json')
+        self.assertEqual(resp.status_code, 201)
         
         #Validate the data returned
-        obj = self.deserialize(resp)
+        obj = resp.data
         self.assertEqual(obj['id'], 2)
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
@@ -294,22 +301,26 @@ class PurchaseOrderTest(ResourceTestCase):
         """
         Tests creating a new po via post while also changing the price of a supply
         """
+        print '\n'
+        logger.debug("Creating new po with a price change")
+        print '\n'
         #validate the response
         po = copy.deepcopy(base_purchase_order)
         del po['items'][1]
         po['items'][0]['cost'] = '1.99'
-        resp = self.api_client.post('/api/v1/purchase-order',
-                                    data=po)
-        self.assertHttpCreated(resp)
-        resp_obj = self.deserialize(resp)
-        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        resp = self.client.post('/api/v1/purchase-order/',
+                                data=po,
+                                format='json')
+        self.assertEqual(resp.status_code, 201)
+        resp_obj = resp.data
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
         
         #Verify the returned data
         self.assertEqual(resp_obj['id'], 2)
         self.assertEqual(resp_obj['vat'], 7)
         self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
         item = resp_obj['items'][0]
-        self.assertEqual(item['unit_cost'], '1.99')
+        self.assertEqual(item['unit_cost'], Decimal('1.99'))
         self.assertEqual(Decimal(item['total']), Decimal('19.90'))
         
         #Verify data in the database
@@ -325,9 +336,11 @@ class PurchaseOrderTest(ResourceTestCase):
         Tests updating the purchase order
         via a PUT request
         """
-        self.skipTest("")
-        #Verify the original po
+        print '\n'
         logger.debug('Updating PO')
+        print '\n'
+        
+        #Verifying po in database
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         self.assertEqual(self.po.grand_total, Decimal('129.58'))
@@ -338,19 +351,20 @@ class PurchaseOrderTest(ResourceTestCase):
         
         modified_po_data = copy.deepcopy(base_purchase_order)
         del modified_po_data['items'][0]
+        modified_po_data['items'][0]
         modified_po_data['status'] = 'PAID'
         
-        resp = self.api_client.put('/api/v1/purchase-order/1',
+        resp = self.client.put('/api/v1/purchase-order/1/',
                                    format='json',
                                    data=modified_po_data)
         
         #Verify the response
-        self.assertHttpOK(resp)
-        po = self.deserialize(resp)
+        self.assertEqual(resp.status_code, 200)
+        po = resp.data
         self.assertEqual(po['id'], 1)
         self.assertEqual(po['supplier']['id'], 1)
         self.assertEqual(po['vat'], 7)
-        self.assertEqual(po['grand_total'], '36.93')
+        self.assertEqual(po['grand_total'], Decimal('36.93'))
         self.assertEqual(po['discount'], 0)
         self.assertEqual(po['revision'], 1)
         self.assertEqual(len(po['items']), 1)
@@ -362,8 +376,8 @@ class PurchaseOrderTest(ResourceTestCase):
        
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], '12.11')
-        self.assertEqual(item2['total'], '34.51')
+        self.assertEqual(item2['unit_cost'], Decimal('12.11'))
+        self.assertEqual(item2['total'], Decimal('34.51'))
         
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
@@ -381,7 +395,10 @@ class PurchaseOrderTest(ResourceTestCase):
     def test_updating_po_with_discount(self):
         """
         """
-        self.skipTest("")
+        print '\n'
+        logger.debug("Update purchase order with a discount for individual supply")
+        print '\n'
+        
         #Verify the original po
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
@@ -393,28 +410,30 @@ class PurchaseOrderTest(ResourceTestCase):
         
         modified_po = copy.deepcopy(base_purchase_order)
         modified_po['items'][0]['discount'] = 50
+        modified_po['items'][0]['id'] = 1
         logger.debug(modified_po)
-        resp = self.api_client.put('/api/v1/purchase-order/1',
+        resp = self.client.put('/api/v1/purchase-order/1/',
                                 format='json',
                                 data=modified_po)
-        self.assertHttpOK(resp)
-        resp_obj = self.deserialize(resp)
+        logger.debug(resp)
+        self.assertEqual(resp.status_code, 200)
+        resp_obj = resp.data
         self.assertEqual(resp_obj['revision'], 1)
         #Check the new pdf
-        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
         
         item1 = resp_obj['items'][0]
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], '12.11')
-        self.assertEqual(item1['total'], '60.55')
+        self.assertEqual(item1['unit_cost'], Decimal('12.11'))
+        self.assertEqual(item1['total'], Decimal('60.55'))
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
         self.assertEqual(item2['discount'], 5)
-        self.assertEqual(item2['unit_cost'], '12.11')
-        self.assertEqual(item2['total'], '34.51')
-        self.assertEqual(resp_obj['grand_total'], '101.72')
+        self.assertEqual(item2['unit_cost'], Decimal('12.11'))
+        self.assertEqual(item2['total'], Decimal('34.51'))
+        self.assertEqual(resp_obj['grand_total'], Decimal('101.72'))
         
         po = PurchaseOrder.objects.get(pk=1)
         item1 = po.items.order_by('id').all()[0]
@@ -443,26 +462,27 @@ class PurchaseOrderTest(ResourceTestCase):
         
         modified_po = copy.deepcopy(base_purchase_order)
         modified_po['items'][0]['unit_cost'] = Decimal('10.05')
+        modified_po['items'][0]['id'] = 1
         del modified_po['items'][1]
-        resp = self.api_client.put('/api/v1/purchase-order/1',
+        resp = self.client.put('/api/v1/purchase-order/1/',
                                 format='json',
                                 data=modified_po)
-        self.assertHttpOK(resp)
-        resp_obj = self.deserialize(resp)
+        self.assertEqual(resp.status_code, 200)
+        resp_obj = resp.data
         self.assertEqual(resp_obj['revision'], 1)
         #Check the new pdf
-        webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
         
         self.assertEqual(resp_obj['id'], 1)
         self.assertEqual(resp_obj['supplier']['id'], 1)
         self.assertEqual(resp_obj['vat'], 7)
         self.assertEqual(resp_obj['discount'], 0)
         self.assertEqual(resp_obj['revision'], 1)
-        self.assertEqual(resp_obj['grand_total'], '107.54')
+        self.assertEqual(resp_obj['grand_total'], Decimal('107.54'))
         item1 = resp_obj['items'][0]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], '10.05')
+        self.assertEqual(item1['unit_cost'], Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
        
         #Confirm cost change for item and supply in the database
