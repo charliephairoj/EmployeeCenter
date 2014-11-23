@@ -21,9 +21,9 @@ class SupplySerializer(serializers.ModelSerializer):
                   'width_units', 'depth_units', 'notes')
         
     def to_native(self, obj, *args, **kwargs):
-        logger.debug(obj)
+
         native_data = super(SupplySerializer, self).to_native(obj, *args, **kwargs)
-        logger.debug(native_data)
+
         #Set the quantity
         try:
             native_data['quantity'] = obj.quantity

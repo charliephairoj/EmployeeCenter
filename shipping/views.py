@@ -10,6 +10,7 @@ import logging
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 from rest_framework import generics
+from django.db.models import Q
 
 from shipping.models import Shipping
 from shipping.serializers import ShippingSerializer
@@ -65,6 +66,21 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         obj.create_and_upload_pdf()
         
         return obj
+        
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
+                                       Q(description__icontains=query) |
+                                       Q(products__reference__icontains=query))
+                                      
+        return queryset
         
         
 class ShippingDetail(generics.RetrieveUpdateDestroyAPIView):

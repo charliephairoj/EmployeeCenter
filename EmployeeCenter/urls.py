@@ -24,6 +24,7 @@ from products.views import TableList, TableDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
+from projects.views import ProjectViewSet
 """
 API Section
 
@@ -64,6 +65,7 @@ router.register(r'api/v1/supplier', SupplierViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 router.register(r'api/v1/supply/log', LogViewSet)
+router.register(r'api/v1/project', ProjectViewSet)
 
 
 #primary login and url routing

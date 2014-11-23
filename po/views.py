@@ -80,6 +80,21 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
                     
         return obj
         
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(supplier__name__icontains=query) | 
+                                       Q(pk__icontains=query) |
+                                       Q(items__description__icontains=query))
+                                      
+        return queryset
+        
     
 class PurchaseOrderDetail(PurchaseOrderMixin, generics.RetrieveUpdateDestroyAPIView):
     

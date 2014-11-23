@@ -11,6 +11,18 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
     queryset = Configuration.objects.all()
     serializer_class = ConfigurationSerializer
     
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(configuration__icontains=query))
+                                      
+        return queryset
 
 class ModelViewSet(viewsets.ModelViewSet):
     """
@@ -18,6 +30,21 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
     queryset = Model.objects.all()
     serializer_class = ModelSerializer
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(name__icontains=query) |
+                                       Q(model__icontains=query) |
+                                       Q(collection__icontains=query))
+                                      
+        return queryset
     
 class UpholsteryMixin(object):
     queryset = Upholstery.objects.all()
@@ -43,6 +70,21 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
         request = self._format_primary_key_data(request)
         return super(UpholsteryList, self).post(request, *args, **kwargs)
         
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(description__icontains=query) |
+                                       Q(model__model__icontains=query) |
+                                       Q(model__name__icontains=query) |
+                                       Q(configuration__configuration__icontains=query))
+                                      
+        return queryset
         
 class UpholsteryDetail(UpholsteryMixin, generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):

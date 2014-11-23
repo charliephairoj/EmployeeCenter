@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.response import Response
 from django.db import transaction
+from django.db.models import Q
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializer
@@ -139,6 +140,20 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         obj.calculate_totals()
         
         obj.create_and_upload_pdfs()
+        
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(customer__name__icontains=query) | 
+                                       Q(pk__icontains=query))
+                                      
+        return queryset
     
 
 class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):

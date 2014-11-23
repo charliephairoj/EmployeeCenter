@@ -2,6 +2,7 @@ from io import BytesIO
 import logging
 
 from rest_framework import viewsets
+from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 from rest_framework import generics
@@ -117,11 +118,37 @@ class SupplyMixin(object):
     
     
 class SupplyList(SupplyMixin, generics.ListCreateAPIView):
+    
     def post(self, request, *args, **kwargs):
         request = self._format_primary_key_data(request)
         response = super(SupplyList, self).post(request, *args, **kwargs)
         
         return response
+        
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
+                                       Q(description__icontains=query) |
+                                       Q(products__reference__icontains=query))
+        
+        #Filter based on supplier
+        s_id = self.request.QUERY_PARAMS.get('supplier_id', None)
+        if s_id:
+            queryset = queryset.filter(products__supplier_id=s_id)
+        
+        #Filter based on product upc code
+        upc = self.request.QUERY_PARAMS.get('upc', None)
+        if upc:
+            queryset = queryset.filter(product__upc=upc).distinct('product__upc')
+
+        return queryset.distinct()
         
     
     

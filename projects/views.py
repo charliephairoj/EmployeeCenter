@@ -5,11 +5,18 @@ import json
 import time
 
 from django.http import HttpResponse
+from rest_framework import viewsets
 
 from projects.models import Project, Room, Item
+from projects.serializers import ProjectSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    
 
 def project(request, project_id=0):
     return process_api(request, Project, project_id)
