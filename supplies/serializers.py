@@ -20,13 +20,16 @@ class SupplySerializer(serializers.ModelSerializer):
         fields = ('id', 'description', 'width', 'depth', 'height', 'type', 'height_units',
                   'width_units', 'depth_units', 'notes')
         
-    def to_native(self, obj):
-        
-        native_data = super(SupplySerializer, self).to_native(obj)
-        
+    def to_native(self, obj, *args, **kwargs):
+        logger.debug(obj)
+        native_data = super(SupplySerializer, self).to_native(obj, *args, **kwargs)
+        logger.debug(native_data)
         #Set the quantity
-        native_data['quantity'] = obj.quantity
-        
+        try:
+            native_data['quantity'] = obj.quantity
+        except AttributeError:
+            pass
+            
         if self.init_data:
             if 'supplier' in self.init_data:
                 obj.supplier = Supplier.objects.get(pk=self.init_data['supplier'])

@@ -35,7 +35,7 @@ def shopping_list(request):
     
 
 class SupplyMixin(object):
-    queryset = Supply.objects.all()
+    queryset = Supply.objects.all().order_by('description')
     serializer_class = SupplySerializer
     
     def pre_save(self, obj, *args, **kwargs):

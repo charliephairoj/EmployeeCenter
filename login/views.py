@@ -74,7 +74,11 @@ def app_login(request):
             cleanPassword = form.cleaned_data['password']
             #authenticate the user
             #if not authenticated user is None
+            logger.debug(cleanUsername)
+            logger.debug(cleanPassword)
             user = authenticate(username=cleanUsername, password=cleanPassword)
+            logger.debug(user)
+            logger.debug(request)
             #checks whether user authennticated
             if user is not None:
                 #checks if user is still active
