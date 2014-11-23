@@ -5,6 +5,7 @@ import json
 import logging
 
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.staticfiles.views import serve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth import authenticate, login, logout
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 def main(request):
     serve(request, 'templates/auth/login.html')
 
-
+@ensure_csrf_cookie
 def app_login(request):
     #create the form object
     #to hand the inputs

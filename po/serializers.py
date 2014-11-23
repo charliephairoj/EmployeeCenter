@@ -23,7 +23,6 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Override the 'restore_object' method
         """
-        logger.debug('test')
         if not instance:
             return self.create(attrs, instance)
         else:
@@ -54,8 +53,11 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.supply.supplier = Supplier.objects.get(pk=self.context.get('request').DATA['supplier'])
         
         #Change the price of the supply on the fly: will result in permanent price change and log of price change
-        if instance.unit_cost != instance.supply.cost:
-            self._change_supply_cost(instance.supply, instance.unit_cost)
+        try:
+            if instance.unit_cost != instance.supply.cost:
+                self._change_supply_cost(instance.supply, instance.unit_cost)
+        except ValueError:
+            logger.debug(instance.supply.supplier)
             
         instance.calculate_total()
         

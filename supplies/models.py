@@ -212,6 +212,13 @@ class Supply(models.Model):
                 self.product = Product.objects.get(supply=self, supplier=supplier)
             except Product.DoesNotExist:
                 raise ValueError("Product does not exist.")
+                
+            except Product.MultipleObjectsReturned:
+                logger.debug(self.id)
+                logger.debug(supplier.id)
+                for p in Product.objects.filter(supply=self, supplier=supplier):
+                    logger.debug('{0} : {1} : {2}'.format(self.id, self.supply.description, self.cost))
+                raise ValueError("Too many products return for this supply and supplier combo")
 
         return self.product
     def test_if_critically_low_quantity(self):

@@ -60,7 +60,7 @@ class PurchaseOrderMixin(object):
                         project = Project(codename=request.DATA['project']['codename'])
                         project.save()
                         request.DATA['project'] = project.id
-                except TypeError:
+                except (KeyError, TypeError):
                     pass
         
         return request
