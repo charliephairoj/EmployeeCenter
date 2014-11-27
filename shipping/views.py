@@ -34,12 +34,9 @@ class ShippingMixin(object):
         for field in fields:
             if field in request.DATA:
                 if 'id' in request.DATA[field]:
-                    logger.debug(request.DATA[field])
                     request.DATA[field] = request.DATA[field]['id']
                 
         for index, item in enumerate(request.DATA['items']):
-            logger.debug(item)
-            logger.debug(request.DATA['items'][index])
             request.DATA['items'][index]['item'] = item['id']
             del request.DATA['items'][index]['id']
                         
@@ -50,8 +47,7 @@ class ShippingMixin(object):
 class ShippingList(ShippingMixin, generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
-        logger.debug(request.__dict__)
-        logger.debug(request.DATA)
+
         request = self._format_primary_key_data(request)
         
         return super(ShippingList, self).post(request, *args, **kwargs)
@@ -63,7 +59,8 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         return obj
         
     def post_save(self, obj, *args, **kwargs):
-        obj.create_and_upload_pdf()
+        
+        #obj.create_and_upload_pdf()
         
         return obj
         

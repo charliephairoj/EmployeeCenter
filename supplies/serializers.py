@@ -14,11 +14,13 @@ class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(source='quantity')
     products = serializers.PrimaryKeyRelatedField(read_only=True)
     supplier = serializers.PrimaryKeyRelatedField(write_only=True)
+    notes = serializers.CharField(required=False)
+    type = serializers.CharField(required=False)
     
     class Meta:
         model = Supply
-        fields = ('id', 'description', 'width', 'depth', 'height', 'type', 'height_units',
-                  'width_units', 'depth_units', 'notes')
+        fields = ('id', 'description', 'width', 'depth', 'height', 'height_units',
+                  'width_units', 'depth_units')
         
     def to_native(self, obj, *args, **kwargs):
 
@@ -46,7 +48,7 @@ class SupplySerializer(serializers.ModelSerializer):
                     for field in ['cost', 'reference', 'purchasing_units', 
                                   'quantity_per_puchasing_units', 'upc']:
                         try:
-                            product_data[field] = getattr(obj, field)
+                            product_data[field] = getattr(product, field)
                         except AttributeError:
                             pass
                             

@@ -49,11 +49,13 @@ class ItemSerializer(serializers.ModelSerializer):
     comments = serializers.CharField(required=False)
     location = serializers.CharField(required=False)
     fabric = serializers.PrimaryKeyRelatedField(required=False)
+    image = serializers.PrimaryKeyRelatedField(required=False)
+    units = serializers.CharField(required=False)
    
     class Meta:
         model = Item
         field = ('description', 'id', 'width', 'depth', 'height')
-        read_only_fields = ('total', 'image', 'type')
+        read_only_fields = ('total', 'type')
         exclude = ('acknowledgement', )
         
     def restore_object(self, attrs, instance):
@@ -100,6 +102,16 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         return super(ItemSerializer, self).restore_object(attrs, instance)
         
+    def transform_image(self, obj, value):
+        """
+        Change the output of image
+        """
+        try:
+            return {'id': obj.image.id,
+                    'url': obj.image.generate_url()}
+        except AttributeError:
+            return None
+            
     def transform_fabric(self, obj, value):
         """
         Change output of fabric

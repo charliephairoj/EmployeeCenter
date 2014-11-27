@@ -1,5 +1,7 @@
 from rest_framework import viewsets
 from rest_framework import generics
+from django.db.models import Q
+
 from products.models import Upholstery, Table, Model, Configuration
 from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer
 

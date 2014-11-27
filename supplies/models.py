@@ -7,6 +7,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.exceptions import MultipleObjectsReturned
 from django.shortcuts import get_object_or_404
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -58,8 +59,10 @@ class Supply(models.Model):
         try:
             return self._get_product(self.supplier).cost
         except AttributeError as e:
-            logger.error(e)
-            raise ValueError("Please set the supplier for this supply in order to get a cost")
+            if not self.supplier:
+                raise ValueError("Please set the supplier for this supply in order to get a cost")
+            else: 
+                raise Exception(e)
             
     @property
     def reference(self):
@@ -217,7 +220,7 @@ class Supply(models.Model):
                 logger.debug(self.id)
                 logger.debug(supplier.id)
                 for p in Product.objects.filter(supply=self, supplier=supplier):
-                    logger.debug('{0} : {1} : {2}'.format(self.id, self.supply.description, self.cost))
+                    logger.debug('{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
                 raise ValueError("Too many products return for this supply and supplier combo")
 
         return self.product

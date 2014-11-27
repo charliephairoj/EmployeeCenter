@@ -55,7 +55,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
                 
     def transform_configuration(self, obj, value):
         return {'id': obj.configuration.id,
-                'configuratio': obj.configuration.configuration}
+                'configuration': obj.configuration.configuration}
         
         
 class TableSerializer(serializers.ModelSerializer):

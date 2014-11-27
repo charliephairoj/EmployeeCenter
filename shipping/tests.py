@@ -136,6 +136,14 @@ class ShippingResourceTest(APITestCase):
                      'width': 1500,
                      "fabric": {"id":1}}
         self.item = AckItem.create(acknowledgement=self.ack, **item_data)
+        
+        #Create an item
+        item_data = {'id': 1,
+                     'quantity': 2,
+                     'is_custom_size': True,
+                     'width': 1500,
+                     "fabric": {"id":1}}
+        self.item2 = AckItem.create(acknowledgement=self.ack, **item_data)
     
     def create_shipping(self):
         #create a shipping item
@@ -180,7 +188,40 @@ class ShippingResourceTest(APITestCase):
         self.assertIn("customer", obj)
         self.assertEqual(obj['customer']['id'], 1)
     
-    def test_post(self):
+    def test_post_with_one_item(self):
+        """
+        Tests creating a resource via POST
+        """
+        #Validate the resp and obj creation
+        self.assertEqual(Shipping.objects.count(), 0)
+        shipping_data={'acknowledgement': {'id': 1},
+                       'delivery_date': base_delivery_date,
+                       'items': [{'id': 1,
+                                  'description':'test1',
+                                  'quantity': 1},
+                                 {'id': 2}]}
+        resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(Shipping.objects.count(), 1)
+        
+        #validate the object returned
+        obj = resp.data
+        self.assertEqual(obj['id'], 1)
+        self.assertIn('customer', obj)
+        self.assertEqual(obj['customer']['id'], 1)
+        self.assertIn('last_modified', obj)
+        self.assertIn('time_created', obj)
+        self.assertEqual(len(obj['items']), 2)
+        item1 = obj['items'][0]
+        
+        #Validate resource in the database
+        shipping = Shipping.objects.get(pk=1)
+        self.assertEqual(shipping.id, 1)
+        self.assertEqual(shipping.customer.id, 1)
+        self.assertEqual(shipping.items.count(), 2)
+        
+    def test_post_with_one_item(self):
         """
         Tests creating a resource via POST
         """
@@ -192,7 +233,7 @@ class ShippingResourceTest(APITestCase):
                                   'description':'test1',
                                   'quantity': 1}]}
         resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Shipping.objects.count(), 1)
         
@@ -203,9 +244,15 @@ class ShippingResourceTest(APITestCase):
         self.assertEqual(obj['customer']['id'], 1)
         self.assertIn('last_modified', obj)
         self.assertIn('time_created', obj)
+        self.assertEqual(len(obj['items']), 1)
+        item1 = obj['items'][0]
         
-        print obj['pdf']['url']
-        
+        #Validate resource in the database
+        shipping = Shipping.objects.get(pk=1)
+        self.assertEqual(shipping.id, 1)
+        self.assertEqual(shipping.customer.id, 1)
+        self.assertEqual(shipping.items.count(), 1)
+                
     def test_put(self):
         """
         Tests updating a resource via PUT

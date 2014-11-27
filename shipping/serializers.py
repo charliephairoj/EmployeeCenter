@@ -26,7 +26,10 @@ class ShippingSerializer(serializers.ModelSerializer):
                 'name': obj.customer.name}
                 
     def transform_pdf(self, obj, value):
-        return {'url': obj.pdf.generate_url()}
+        try:
+            return {'url': obj.pdf.generate_url()}
+        except AttributeError:
+            return None
 
 
     

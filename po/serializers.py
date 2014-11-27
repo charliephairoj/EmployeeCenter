@@ -38,9 +38,17 @@ class ItemSerializer(serializers.ModelSerializer):
             
         instance.supply.supplier = Supplier.objects.get(pk=self.context.get('request').DATA['supplier'])
         
+        if not instance.unit_cost:
+            logger.debug(instance.supply.supplier)
+            instance.unit_cost = instance.supply.cost
+            
         #Change the price of the supply on the fly: will result in permanent price change and log of price change
-        if instance.unit_cost != instance.supply.cost:
-            self._change_supply_cost(instance.supply, instance.unit_cost)
+        try:
+            if instance.unit_cost != instance.supply.cost and instance.unit_cost > 0:
+                self._change_supply_cost(instance.supply, instance.unit_cost)
+        except ValueError as e:
+            logger.debug(e)
+            logger.debug(instance.supply.supplier)
             
         instance.calculate_total()
 
@@ -54,7 +62,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
         #Change the price of the supply on the fly: will result in permanent price change and log of price change
         try:
-            if instance.unit_cost != instance.supply.cost:
+            if instance.unit_cost != instance.supply.cost and instance.unit_cost > 0:
                 self._change_supply_cost(instance.supply, instance.unit_cost)
         except ValueError:
             logger.debug(instance.supply.supplier)
@@ -72,7 +80,13 @@ class ItemSerializer(serializers.ModelSerializer):
         This will change the supply's product cost, respective of supplier, in the database
         and will log the event as 'PRICE CHANGE'
         """
-        product = Product.objects.get(supply=supply, supplier=supply.supplier)
+        try:
+            product = Product.objects.get(supply=supply, supplier=supply.supplier)
+        except Product.MultipleObjectsReturned:
+            logger.debug(supply.__dict__)
+            logger.debug(supply.supplier)
+            raise ValueError('ok')
+            
         old_price = product.cost
         product.cost = cost
         product.save()
@@ -120,8 +134,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         Modify how supplier is serialized
         """
-        return {'id': obj.supplier.id,
-                'name': obj.supplier.name}
+        try:
+            return {'id': obj.supplier.id,
+                    'name': obj.supplier.name}
+        except AttributeError:
+            return value
                 
     def transform_pdf(self, obj, value):
         """

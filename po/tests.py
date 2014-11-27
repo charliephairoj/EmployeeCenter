@@ -145,7 +145,6 @@ class PurchaseOrderTest(APITestCase):
         self.po.calculate_total()
         self.po.save()
     
-    @unittest.skip('')
     def test_get_list(self):
         """
         Tests getting a list of po's via GET
@@ -161,7 +160,6 @@ class PurchaseOrderTest(APITestCase):
         self.assertIsInstance(resp['objects'], list)
         self.assertEqual(len(resp['objects']), 1)
     
-    @unittest.skip('')    
     def test_get(self):
         """
         Tests getting a single resource via GET
@@ -178,7 +176,6 @@ class PurchaseOrderTest(APITestCase):
         self.assertNotIn('pdf', obj)
         self.assertEqual(obj['revision'], 0)
     
-    @unittest.skip('')    
     def test_get_with_pdf(self):
         """
         Tests getting a resource with the pdf
@@ -411,11 +408,11 @@ class PurchaseOrderTest(APITestCase):
         modified_po = copy.deepcopy(base_purchase_order)
         modified_po['items'][0]['discount'] = 50
         modified_po['items'][0]['id'] = 1
-        logger.debug(modified_po)
+
         resp = self.client.put('/api/v1/purchase-order/1/',
                                 format='json',
                                 data=modified_po)
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 200)
         resp_obj = resp.data
         self.assertEqual(resp_obj['revision'], 1)

@@ -1,9 +1,11 @@
 import logging
+import json
 import time
 
 from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.response import Response
+from django.http import HttpResponse
 from django.db import transaction
 from django.db.models import Q
 
@@ -47,10 +49,10 @@ class AcknowledgementMixin(object):
                 pillows = {}
                 for pillow in item['pillows']:
                     try:
-                        fabric_id = pillow['fabric']
+                        fabric_id = pillow['fabric']['id'] if 'id' in pillow['fabric'] else pillow['fabric']
                     except KeyError:
                         fabric_id = None
-                
+                    logger.debug((pillow['type'], fabric_id))
                     if (pillow['type'], fabric_id) in pillows:
                         pillows[(pillow['type'], fabric_id)]['quantity'] += 1
                     else: 
@@ -85,6 +87,17 @@ class AcknowledgementMixin(object):
                         try:
                             request.DATA['items'][index]['fabric'] = item['fabric']['id']
                         except (KeyError, TypeError):
+                            pass
+                            
+                        try:
+                            request.DATA['items'][index]['product'] = item['id']
+                            del request.DATA['items'][index]['id']
+                        except KeyError as e:
+                            request.DATA['items'][index]['product'] = 10436
+                            
+                        try:
+                            request.DATA['items'][index]['image'] = item['image']['id']
+                        except (KeyError, TypeError) as e:
                             pass
                             
                 elif field == 'project':
@@ -139,7 +152,8 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         """
         obj.calculate_totals()
         
-        obj.create_and_upload_pdfs()
+        obj.save()
+        #obj.create_and_upload_pdfs()
         
     def get_queryset(self):
         """

@@ -31,9 +31,9 @@ class Acknowledgement(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField(default='ACKNOWLEDGED')
-    remarks = models.TextField(null=True, default=None)
-    fob = models.TextField(null=True)
-    shipping_method = models.TextField(null=True)
+    remarks = models.TextField(null=True, default=None, blank=True)
+    fob = models.TextField(null=True, blank=True)
+    shipping_method = models.TextField(null=True, blank=True)
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
@@ -341,7 +341,7 @@ class Item(models.Model):
     width = models.IntegerField(db_column='width', default=0)
     depth = models.IntegerField(db_column='depth', default=0)
     height = models.IntegerField(db_column='height', default=0)
-    units = models.CharField(max_length=20, default='mm')
+    units = models.CharField(max_length=20, default='mm', blank=True)
     fabric = models.ForeignKey(Fabric, null=True, blank=True)
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
@@ -349,7 +349,7 @@ class Item(models.Model):
     status = models.CharField(max_length=50, default="ACKNOWLEDGED")
     comments = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
-    image = models.ForeignKey(S3Object, null=True)
+    image = models.ForeignKey(S3Object, null=True, blank=True)
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
@@ -521,7 +521,15 @@ class Item(models.Model):
                                                 keys[1]) for keys in pillows]
 
     def _calculate_custom_price(self):
-        """Caluates the custom price based on dimensions."""
+        """
+        Caluates the custom price based on dimensions.
+        
+        Dellarobbia Collection:
+        Charge 10% for first 15cm change, then adds 1% for each extra 5cm for all dimensions summatively
+        
+        Dwell Living:
+        Charge 5% for first 15cm change, then adds 1% for each extra 5cm for all dimensions summatively
+        """
         logger.info(u"Calculating custom price for {0}...".format(self.description))
         dimensions = {}
         try:

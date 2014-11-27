@@ -62,24 +62,31 @@ base_ack = {'customer': base_customer,
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
             'employee': {'id': 1},
+            #New Project to be created
             'project': {'codename': 'Ladawan1'},
             'remarks': 'h',
             'shipping_method': 'h',
             'fob': 'h',
-            'items': [{'product': 1,
+            'items': [
+                       #Item 1:
+                       #Complete upholstery with pillows and fabrics,
+                       #and product assigned via the 'id'
+                       {'id': 1,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
                        'fabric': {'id':1},
                        'pillows':[{"type": "back",
-                                   "fabric": 1},
+                                   "fabric": {'id': 1}},
                                   {"type": "back",
-                                   "fabric": 1},
+                                   "fabric": {'id': 1}},
                                   {"type": "back",
-                                   "fabric": 2},
+                                   "fabric": {'id': 2}},
                                   {"type": "accent",
-                                   "fabric": 2},
+                                   "fabric": {'id': 2}},
                                   {"type": "accent"}]},
-                         {'product': 1,
+                         #Item 2:
+                         #Table product with custom size
+                         {'id': 1,
                           'description': 'High Gloss Table',
                           'quantity': 1,
                           'is_custom_size': True,
@@ -87,10 +94,11 @@ base_ack = {'customer': base_customer,
                           'depth': 760,
                           'height': 320,
                           "fabric": 1},
+                         #item 3:
+                         #Custom item with no product
                          {"description": "test custom item",
                           "unit_price": 0,
                           'width': 1,
-                          'product': 10436,
                           'is_custom_item': True,
                           "quantity": 1}]}
                           
@@ -139,7 +147,7 @@ class AcknowledgementResourceTest(APITestCase):
         test that all the objects have been made.
         """
         super(AcknowledgementResourceTest, self).setUp()
-        
+
         self.ct = ContentType(app_label="acknowledgements")
         self.ct.save()
         #Create the user
@@ -186,6 +194,9 @@ class AcknowledgementResourceTest(APITestCase):
         self.custom_product.id = 10436
         self.custom_product.save()
         
+        self.image = S3Object(key='test', bucket='test')
+        self.image.save()
+        
         #Create acknowledgement
         ack_data = base_ack.copy()
         del ack_data['customer']
@@ -214,7 +225,6 @@ class AcknowledgementResourceTest(APITestCase):
         return None#self.create_basic(username=self.username, password=self.password)
         
             
-    #@unittest.skip('ok')    
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
@@ -229,7 +239,6 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(resp_obj['results']), 1)
         self.assertEqual(len(resp_obj['results'][0]['items']), 2)
     
-    #@unittest.skip('ok')    
     def test_get(self):
         """
         Tests getting the acknowledgement
@@ -248,7 +257,6 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
     
-    #@unittest.skip('ok')    
     def test_post_with_discount(self):
         """
         Testing POSTing data to the api
@@ -258,18 +266,19 @@ class AcknowledgementResourceTest(APITestCase):
         #Apply a discount to the customer
         self.customer.discount = 50
         self.customer.save()
-        
-        #alter data
-        data = copy.deepcopy(base_ack)
-        
+                
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.client.post('/api/v1/acknowledgement/',  
-                                data=data,
+                                data=base_ack,
                                 format='json')
 
+        #Verify that http response is appropriate
         self.assertEqual(resp.status_code, 201)
+        
+        #Verify that an acknowledgement is created in the system
         self.assertEqual(Acknowledgement.objects.count(), 2)
+        
         #Verify the resulting acknowledgement
         #that is returned from the post data
         ack = resp.data
@@ -298,6 +307,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(item1['pillows']), 4)
         self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
@@ -315,6 +325,10 @@ class AcknowledgementResourceTest(APITestCase):
         #Test custom item with width
         item3 = ack['items'][2]
         self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -332,12 +346,253 @@ class AcknowledgementResourceTest(APITestCase):
         root_ack_items = root_ack.items.all()
         item1 = root_ack_items[0]
         item2 = root_ack_items[1]
+        item3 = root_ack_items[2]
         self.assertEqual(item1.acknowledgement.id, 2)
-        self.assertEqual(item2.acknowledgement.id, 2)
         self.assertEqual(item1.description, 'Test Sofa Max')
+        self.assertEqual(item1.quantity, 2)
+        self.assertEqual(item1.width, 1000)
+        self.assertEqual(item1.height, 320)
+        self.assertEqual(item1.depth, 760)
+        self.assertFalse(item1.is_custom_item)
+        self.assertFalse(item1.is_custom_size)
+        self.assertEqual(item2.acknowledgement.id, 2)
         self.assertEqual(item2.description, 'High Gloss Table')
+        self.assertEqual(item2.width, 1500)
+        self.assertEqual(item2.height, 320)
+        self.assertEqual(item2.depth, 760)
+        self.assertTrue(item2.is_custom_size)
+        self.assertFalse(item2.is_custom_item)
+        self.assertEqual(item3.acknowledgement.id, 2)
+        self.assertEqual(item3.description, 'test custom item')
+        self.assertEqual(item3.width, 1)
+        self.assertTrue(item3.is_custom_item)
+        self.assertEqual(item3.quantity, 1)
+        
+    def test_post_with_custom_image(self):
+        """
+        Testing POSTing data to the api with custom item with custom image
+        """
+        
+        logger.debug("\n\n Testing creating acknowledgement with a custom image \n")
+        #Apply a discount to the customer
+        ack = copy.deepcopy(base_ack)
+        ack['items'][2]['image'] = {'id': 1}
+                
+        #POST and verify the response
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.client.post('/api/v1/acknowledgement/',  
+                                data=ack,
+                                format='json')
+
+        #Verify that http response is appropriate
+        self.assertEqual(resp.status_code, 201)
+        
+        #Verify that an acknowledgement is created in the system
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = resp.data
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal(317000))
+        self.assertEqual(len(ack['items']), 3)
+        self.assertIn('project', ack)
+        self.assertEqual(ack['project']['id'], 1)
+        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
+        self.assertIsNotNone(item3['image'])
+        self.assertIn('url', item3['image'])
+        
+        
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+
+        #Tests the acknowledgement in the database
+        root_ack = Acknowledgement.objects.get(pk=2)
+        logger.debug(root_ack.project)
+        self.assertEqual(root_ack.id, 2)
+        self.assertEqual(root_ack.items.count(), 3)
+        self.assertIsInstance(root_ack.project, Project)
+        self.assertEqual(root_ack.project.id, 1)
+        self.assertEqual(root_ack.project.codename, "Ladawan1")
+        root_ack_items = root_ack.items.all()
+        item1 = root_ack_items[0]
+        item2 = root_ack_items[1]
+        item3 = root_ack_items[2]
+        self.assertEqual(item1.acknowledgement.id, 2)
+        self.assertEqual(item1.description, 'Test Sofa Max')
+        self.assertEqual(item1.quantity, 2)
+        self.assertEqual(item1.width, 1000)
+        self.assertEqual(item1.height, 320)
+        self.assertEqual(item1.depth, 760)
+        self.assertFalse(item1.is_custom_item)
+        self.assertFalse(item1.is_custom_size)
+        self.assertEqual(item2.acknowledgement.id, 2)
+        self.assertEqual(item2.description, 'High Gloss Table')
+        self.assertEqual(item2.width, 1500)
+        self.assertEqual(item2.height, 320)
+        self.assertEqual(item2.depth, 760)
+        self.assertTrue(item2.is_custom_size)
+        self.assertFalse(item2.is_custom_item)
+        self.assertEqual(item3.acknowledgement.id, 2)
+        self.assertEqual(item3.description, 'test custom item')
+        self.assertEqual(item3.width, 1)
+        self.assertTrue(item3.is_custom_item)
+        self.assertEqual(item3.quantity, 1)
+        
+    def test_post_with_discount(self):
+        """
+        Testing POSTing data to the api
+        """
+        
+        logger.debug("\n\n Testing creating acknowledgement with a discount \n")
+        #Apply a discount to the customer
+        self.customer.discount = 50
+        self.customer.save()
+                
+        #POST and verify the response
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.client.post('/api/v1/acknowledgement/',  
+                                data=base_ack,
+                                format='json')
+
+        #Verify that http response is appropriate
+        self.assertEqual(resp.status_code, 201)
+        
+        #Verify that an acknowledgement is created in the system
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = resp.data
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal(158500))
+        self.assertEqual(len(ack['items']), 3)
+        self.assertIn('project', ack)
+        self.assertEqual(ack['project']['id'], 1)
+        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
+        self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
+        
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+
+        #Tests the acknowledgement in the database
+        root_ack = Acknowledgement.objects.get(pk=2)
+        logger.debug(root_ack.project)
+        self.assertEqual(root_ack.id, 2)
+        self.assertEqual(root_ack.items.count(), 3)
+        self.assertIsInstance(root_ack.project, Project)
+        self.assertEqual(root_ack.project.id, 1)
+        self.assertEqual(root_ack.project.codename, "Ladawan1")
+        root_ack_items = root_ack.items.all()
+        item1 = root_ack_items[0]
+        item2 = root_ack_items[1]
+        item3 = root_ack_items[2]
+        self.assertEqual(item1.acknowledgement.id, 2)
+        self.assertEqual(item1.description, 'Test Sofa Max')
+        self.assertEqual(item1.quantity, 2)
+        self.assertEqual(item1.width, 1000)
+        self.assertEqual(item1.height, 320)
+        self.assertEqual(item1.depth, 760)
+        self.assertFalse(item1.is_custom_item)
+        self.assertFalse(item1.is_custom_size)
+        self.assertEqual(item2.acknowledgement.id, 2)
+        self.assertEqual(item2.description, 'High Gloss Table')
+        self.assertEqual(item2.width, 1500)
+        self.assertEqual(item2.height, 320)
+        self.assertEqual(item2.depth, 760)
+        self.assertTrue(item2.is_custom_size)
+        self.assertFalse(item2.is_custom_item)
+        self.assertEqual(item3.acknowledgement.id, 2)
+        self.assertEqual(item3.description, 'test custom item')
+        self.assertEqual(item3.width, 1)
+        self.assertTrue(item3.is_custom_item)
+        self.assertEqual(item3.quantity, 1)
     
-    #@unittest.skip('ok')    
     def test_post_without_vat(self):
         """
         Testing POSTing data to the api
@@ -361,11 +616,16 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal('317000'))
         self.assertEqual(len(ack['items']), 3)
-                
+        self.assertIn('project', ack)
+        self.assertEqual(ack['project']['id'], 1)
+        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        
         #Test standard sized item 
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -376,9 +636,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(item1['pillows']), 4)
         self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -388,12 +650,20 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2['fabric']['id'], 1)
         self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
         self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
+        
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
     
-    #@unittest.skip('ok')    
     def test_post_with_vat(self):
         """
         Testing POSTing data to the api if there
@@ -401,15 +671,19 @@ class AcknowledgementResourceTest(APITestCase):
         """
         logger.debug("\n\n Testing creating acknowledgement with vat \n")
         
-        #POST and verify the response
+        #Altering replication of base ack data
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
+        
+        #Verifying current number of acknowledgements in database
         self.assertEqual(Acknowledgement.objects.count(), 1)
+        
         resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=ack_data,
                                     authentication=self.get_credentials())
 
         self.assertEqual(Acknowledgement.objects.count(), 2)
+        
         #Verify the resulting acknowledgement
         #that is returned from the post data
         ack = resp.data
@@ -420,9 +694,14 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['vat'], 7)
         self.assertEqual(Decimal(ack['total']), Decimal(339190.00))
         self.assertEqual(len(ack['items']), 3)
+        self.assertIn('project', ack)
+        self.assertEqual(ack['project']['id'], 1)
+        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        
         #Test standard sized item 
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -433,9 +712,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(item1['pillows']), 4)
         self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
+        
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -445,11 +726,20 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2['fabric']['id'], 1)
         self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
         self.assertEqual(Decimal(item2['total']), Decimal(117000))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
+        
         #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
     
-    #@unittest.skip('ok')    
     def test_post_with_vat_and_discount(self):
         """
         Testing POSTing data to the api if there
@@ -483,9 +773,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['vat'], 7)
         self.assertEqual(Decimal(ack['total']), Decimal('169595.000'))
         self.assertEqual(len(ack['items']), 3)
+        
         #Test standard sized item 
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
         self.assertEqual(item1['quantity'], 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
@@ -496,11 +788,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(item1['pillows']), 4)
         self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
-        #Test pillows
         
         #Test custom sized item
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(item2['quantity'], 1)
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
@@ -510,24 +802,167 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2['fabric']['id'], 1)
         self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
         self.assertEqual(Decimal(item2['total']), Decimal(117000))
-        #Test custom item
+        
+        #Test custom item with width
         item3 = ack['items'][2]
-        self.assertEqual(item3['id'], 5)
-        self.assertEqual(item3['quantity'], 1)
-        self.assertFalse(item3['is_custom_size'])
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], 0)
         
         #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
+    def test_post_with_custom_price(self):
+        """
+        Test creating a custom price for all three item types
+        """
+        logger.debug("\n\n Testing creating acknowledgement with custom prices for all items \n")
+                
+        #POST and verify the response
+        ack_data = copy.deepcopy(base_ack)
+        ack_data['items'][0]['unit_price'] = 100
+        ack_data['items'][1]['unit_price'] = 200
+        ack_data['items'][2]['unit_price'] = 300
+
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.client.post('/api/v1/acknowledgement/', format='json',
+                                    data=ack_data,
+                                    authentication=self.get_credentials())
+        
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = resp.data
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal('734.00'))
+        self.assertEqual(len(ack['items']), 3)
+        
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertEqual(item1['fabric']['id'], 1)
+        self.assertEqual(len(item1['pillows']), 4)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal('100'))
+        self.assertEqual(Decimal(item1['total']), Decimal('200'))
+        
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal('234'))
+        self.assertEqual(Decimal(item2['total']), Decimal('234'))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(item3['unit_price'], Decimal('300'))
+        
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
+        self.assertIsNotNone(ack['pdf']['acknowledgement'])
+        self.assertIsNotNone(ack['pdf']['production'])
+        
+    def test_post_where_first_item_has_no_fabric(self):
+        """
+        Test creating a custom price for all three item types
+        """
+        logger.debug("\n\n Testing creating acknowledgement with custom prices for all items \n")
+                
+        #POST and verify the response
+        ack_data = copy.deepcopy(base_ack)
+        del ack_data['items'][0]['fabric']
+        del ack_data['items'][0]['pillows'][0]['fabric']
+
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.client.post('/api/v1/acknowledgement/', format='json',
+                                    data=ack_data,
+                                    authentication=self.get_credentials())
+        
+
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(Acknowledgement.objects.count(), 2)
+        
+        #Verify the resulting acknowledgement
+        #that is returned from the post data
+        ack = resp.data
+        self.assertIsNotNone(ack)
+        self.assertEqual(ack['id'], 2)
+        self.assertEqual(ack['customer']['id'], 1)
+        self.assertEqual(ack['employee']['id'], 1)
+        self.assertEqual(ack['vat'], 0)
+        self.assertEqual(Decimal(ack['total']), Decimal('317000'))
+        self.assertEqual(len(ack['items']), 3)
+        
+        #Test standard sized item 
+        item1 = ack['items'][0]
+        self.assertEqual(item1['id'], 3)
+        self.assertEqual(item1['description'], 'Test Sofa Max')
+        self.assertEqual(item1['quantity'], 2)
+        self.assertFalse(item1['is_custom_size'])
+        self.assertFalse(item1['is_custom_item'])
+        self.assertEqual(item1['width'], 1000)
+        self.assertEqual(item1['height'], 320)
+        self.assertEqual(item1['depth'], 760)
+        self.assertIsNone(item1['fabric'])
+        self.assertEqual(len(item1['pillows']), 5)
+        self.assertEqual(Decimal(item1['unit_price']), Decimal('100000'))
+        self.assertEqual(Decimal(item1['total']), Decimal('200000'))
+        
+        #Test custom sized item
+        item2 = ack['items'][1]
+        self.assertEqual(item2['id'], 4)
+        self.assertEqual(item2['description'], 'High Gloss Table')
+        self.assertEqual(item2['quantity'], 1)
+        self.assertTrue(item2['is_custom_size'])
+        self.assertFalse(item2['is_custom_item'])
+        self.assertEqual(item2['width'], 1500)
+        self.assertEqual(item2['height'], 320)
+        self.assertEqual(item2['depth'], 760)
+        self.assertEqual(item2['fabric']['id'], 1)
+        self.assertEqual(Decimal(item2['unit_price']), Decimal('117000'))
+        self.assertEqual(Decimal(item2['total']), Decimal('117000'))
+        
+        #Test custom item with width
+        item3 = ack['items'][2]
+        self.assertEqual(item3['width'], 1)
+        self.assertEqual(item3['description'], 'test custom item')
+        self.assertTrue(item3['is_custom_item'])
+        self.assertEqual(item3['quantity'], 1)
+        
+        #Tests links to document
+        self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
     
-    @unittest.skip('ok')    
-    def test_post_with_custom_price(self):
-        """
-        Test creating a custom price
-        """
-    
-    #@unittest.skip('ok')    
+    @unittest.skip('currently not allowed')    
     def test_put(self):
         """
         Test making a PUT call
@@ -547,7 +982,7 @@ class AcknowledgementResourceTest(APITestCase):
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
-
+        logger.debug(resp)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Acknowledgement.objects.count(), 1)
         
@@ -571,14 +1006,16 @@ class AcknowledgementResourceTest(APITestCase):
     def test_delete(self):
         """
         Test making a DELETE call
+        
+        'Delete' in this model has been overridden so that no acknowledgement 
+        is truly deleted. Instead the 'delete' column in the database is marked 
+        as true
         """
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.client.delete('/api/v1/acknowledgement/1/',
-                                      format='json',
                                       authentication=self.get_credentials())
 
         self.assertEqual(Acknowledgement.objects.count(), 1)
-        #self.assertHttpMethodNotAllowed(resp)
   
   
 @unittest.skip('i')     

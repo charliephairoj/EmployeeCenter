@@ -44,7 +44,7 @@ class PurchaseOrder(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
-    project = models.ForeignKey(Project, null=True)
+    project = models.ForeignKey(Project, null=True, blank=True)
     deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
