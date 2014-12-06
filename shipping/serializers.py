@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
 from shipping.models import Shipping, Item
+from acknowledgements.models import Acknowledgement
+from contacts.serializers import CustomerSerializer
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    item = serializers.PrimaryKeyRelatedField()
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     comments = serializers.CharField(required=False)
     
     class Meta:
@@ -12,9 +14,9 @@ class ItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('shipping',)
     
 class ShippingSerializer(serializers.ModelSerializer):
-    items = ItemSerializer(many=True, allow_add_remove=True)
-    customer = serializers.PrimaryKeyRelatedField()
-    acknowledgement = serializers.PrimaryKeyRelatedField()
+    items = ItemSerializer(many=True)
+    customer = CustomerSerializer()
+    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all())
     comments = serializers.CharField(required=False)
     
     class Meta:

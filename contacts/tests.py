@@ -4,6 +4,7 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
+import copy
 import logging
 
 from django.test import TestCase
@@ -118,6 +119,8 @@ class CustomerResourceTest(APITestCase):
         """
         Test updating a customer resource via PUT
         """
+        logger.debug('\n\n Test PUT for customer \n\n')
+        
         #Validate resource update instead of creation
         modified_customer = customer_data
         modified_customer['first_name'] = 'Charles'
@@ -233,13 +236,14 @@ class SupplierResourceTest(APITestCase):
         """
         Test creating supplier via POST
         """
+        logger.debug("\n\nTesting POST for Supply \n\n")
+
         #Validate resource creation
         self.assertEqual(Supplier.objects.count(), 1)
         resp = self.client.post('/api/v1/supplier/', 
                                     format='json',
                                     data=self.supplier_data,
                                     authentication=self.get_credentials())
-        logger.debug(resp)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Supplier.objects.count(), 2)
         
@@ -276,8 +280,10 @@ class SupplierResourceTest(APITestCase):
         """
         Test updating a supplier resource via PUT
         """
+        logger.debug("\n\nTesting PUT for Supplier \n\n")
+        
         #Validate resource update instead of creation
-        modified_supplier = self.supplier_data.copy()
+        modified_supplier = copy.deepcopy(self.supplier_data)
         modified_supplier['name'] = 'Zipper Land Ltd.'
         modified_supplier['terms'] = 120
         modified_supplier['discount'] = 75
@@ -290,10 +296,11 @@ class SupplierResourceTest(APITestCase):
                                               'primary': True})
         self.assertEqual(Supplier.objects.count(), 1)
         self.assertEqual(Supplier.objects.all()[0].contacts.count(), 1)
+        logger.debug(modified_supplier)
         resp = self.client.put('/api/v1/supplier/1/',
-                                   format='json',
-                                   data=modified_supplier, 
-                                   authentication=self.get_credentials())
+                               format='json',
+                               data=modified_supplier)
+        logger.debug(resp)
         self.assertEqual(resp.status_code, 200)
         
         #Tests database state

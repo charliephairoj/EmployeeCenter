@@ -9,13 +9,15 @@ from products.serializers import ProductSerializer
 from products.models import Product
 from supplies.models import Fabric
 from projects.models import Project
+from media.models import S3Object
+from administrator.models import User
 
 
 logger = logging.getLogger(__name__)
 
 
 class PillowSerializer(serializers.ModelSerializer):
-    fabric = serializers.PrimaryKeyRelatedField(required=False)
+    fabric = serializers.PrimaryKeyRelatedField(required=False, queryset=Fabric.objects.all())
     
     class Meta:
         model = Pillow
@@ -43,13 +45,13 @@ class PillowSerializer(serializers.ModelSerializer):
         
         
 class ItemSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(required=False)
-    pillows = PillowSerializer(required=False, many=True, allow_add_remove=True)
-    unit_price = serializers.DecimalField(required=False)
+    product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
+    pillows = PillowSerializer(required=False, many=True)
+    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False)
     location = serializers.CharField(required=False)
-    fabric = serializers.PrimaryKeyRelatedField(required=False)
-    image = serializers.PrimaryKeyRelatedField(required=False)
+    fabric = serializers.PrimaryKeyRelatedField(required=False, queryset=Fabric.objects.all())
+    image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
     units = serializers.CharField(required=False)
    
     class Meta:
@@ -125,13 +127,13 @@ class ItemSerializer(serializers.ModelSerializer):
         
         
 class AcknowledgementSerializer(serializers.ModelSerializer):
-    customer = serializers.PrimaryKeyRelatedField()
-    employee = serializers.RelatedField()
-    project = serializers.PrimaryKeyRelatedField(required=False)
-    acknowledgement_pdf = serializers.RelatedField(required=False)
-    production_pdf = serializers.RelatedField(required=False)
-    original_acknowledgement_pdf = serializers.RelatedField(required=False)
-    label_pdf = serializers.RelatedField(required=False)
+    customer = CustomerSerializer()
+    employee = serializers.RelatedField(queryset=User.objects.all())
+    project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
+    acknowledgement_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
+    production_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
+    original_acknowledgement_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
+    label_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
     items = ItemSerializer(many=True)
     remarks = serializers.CharField(required=False)
     shipping_method = serializers.CharField(required=False)

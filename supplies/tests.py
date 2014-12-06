@@ -32,6 +32,9 @@ base_supply = {"description": "test",
                "width": 100,
                "depth": 200,
                "height": 300,
+               "width_units": 'in',
+               "depth_units": 'in',
+               "height_units": 'mm',
                "units": "ml",
                "notes": 'This is awesome',
                'width_units': 'm',
@@ -137,6 +140,9 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(resp.status_code, 200)
         obj = resp.data
         self.assertEqual(obj['quantity'], 10.8)
+        self.assertIn('suppliers', obj)
+        self.assertEqual(len(obj['suppliers']), 1)
+        supplier = obj['suppliers'][0]
     
     def test_get_log(self):
         """
@@ -190,14 +196,19 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(int(obj['width']), 100)
         self.assertEqual(int(obj['depth']), 200)
         self.assertEqual(int(obj['height']), 300)
-        self.assertEqual(obj['reference'], 'A2234')
         self.assertEqual(obj['description'], 'test')
-        self.assertEqual(int(obj['cost']), 100)
         self.assertEqual(obj['height_units'], 'yd')
         self.assertEqual(obj['width_units'], 'm')
         self.assertEqual(obj['notes'], 'This is awesome')
         self.assertIn('type', obj)
         self.assertEqual(obj['type'], 'wood')
+        self.assertIn('suppliers', obj)
+        self.assertEqual(len(obj['suppliers']), 1)
+        
+        #Test Supplier
+        supplier = obj['suppliers'][0]
+        self.assertEqual(supplier['reference'], 'A2234')
+        self.assertEqual(supplier['cost'], Decimal('100'))
         
         #TEsts the object created
         supply = Supply.objects.order_by('-id').all()[0]
@@ -314,6 +325,8 @@ class SupplyAPITestCase(APITestCase):
         modified_data['description'] = 'new'
         modified_data['type'] = 'Glue'
         modified_data['quantity'] = '10.8'
+        modified_data['width_units'] = 'cm'
+        modified_data['depth_units'] = 'cm'
         
         #Tests the api and the response
         self.assertEqual(Supply.objects.count(), 2)
@@ -328,6 +341,8 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(obj['type'], 'Glue')
         self.assertEqual(float(obj['quantity']), 10.8)
         self.assertEqual(obj['description'], 'new')
+        self.assertEqual(obj['width_units'], 'cm')
+        self.assertEqual(obj['depth_units'], 'cm')
         self.assertFalse(obj.has_key('quantity_th'))
         self.assertFalse(obj.has_key('quantity_kh'))
         
@@ -549,9 +564,14 @@ class FabricAPITestCase(APITestCase):
         self.assertEqual(int(obj['width']), 100)
         self.assertEqual(int(obj['depth']), 0   )
         self.assertEqual(int(obj['height']), 300)
-        self.assertEqual(obj['reference'], 'A2234')
         self.assertEqual(obj['description'], 'test')
-        self.assertEqual(int(obj['cost']), 100)
+        self.assertNotIn('reference', obj)
+        self.assertNotIn('cost', obj)
+        self.assertIn('suppliers', obj)
+        
+        supplier = obj['suppliers'][0]
+        self.assertEqual(supplier['reference'], 'A2234')
+        self.assertEqual(int(supplier['cost']), 100)
         
     def test_put(self):
         """
@@ -571,7 +591,6 @@ class FabricAPITestCase(APITestCase):
 
         #Tests the returned data
         obj = resp.data
-        self.assertEqual(float(obj['cost']), float('111'))
         self.assertEqual(obj['color'], 'Aqua')
         self.assertEqual(obj['pattern'], 'Stripes')
         

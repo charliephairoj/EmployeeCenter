@@ -19,10 +19,7 @@ base_product = {"width": 1000,
                 "depth": 500,
                 "height": 400,
                 "price": 250000,
-                "wholesale_price": 100000,
-                "retail_price": 250000,
                 "manufacture_price": 50000,
-                "export_price": 100000,
                 "back_pillow": 1,
                 "accent_pillow": 2,
                 "lumbar_pillow": 3,
@@ -38,7 +35,8 @@ base_upholstery = {"model": {"id": 1},
                    'category': 'Chair'}
 base_upholstery.update(base_product)
 base_table = {"model": {"id": 1},
-              "configuration": {"id": 1},
+              "configuration": {"id": 1,
+                                "configuration": "Sofa"},
               'finish': 'high gloss'}
 base_table.update(base_product)
 
@@ -306,7 +304,7 @@ class UpholsteryResourceTest(APITestCase):
         """
         Test getting a list of models via GET
         """
-        resp = self.client.get('/api/v1/upholstery/', format='json')
+        resp = self.client.get('/api/v1/upholstery/')
         
         #Validate resp
         self.assertEqual(resp.status_code, 200)
@@ -325,10 +323,8 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['width'], 1000)
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
-        self.assertEqual(int(upholstery['manufacture_price']), 50000)
-        self.assertEqual(int(upholstery['export_price']), 100000)
-        self.assertEqual(int(upholstery['wholesale_price']), 100000)
-        self.assertEqual(int(upholstery['price']), 250000)
+        self.assertEqual(upholstery['manufacture_price'], '50000.00')
+        self.assertEqual(upholstery['price'], '250000.00')
         #self.assertEqual(upholstery['configuration']['id'], 1)
         
         
@@ -336,7 +332,7 @@ class UpholsteryResourceTest(APITestCase):
         """
         Test retrieving a resource via GET
         """
-        resp = self.client.get('/api/v1/upholstery/1/', format='json')
+        resp = self.client.get('/api/v1/upholstery/1/')
         
         #Validate resp
         self.assertEqual(resp.status_code, 200)
@@ -356,10 +352,8 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['width'], 1000)
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
-        self.assertEqual(int(upholstery['manufacture_price']), 50000)
-        self.assertEqual(int(upholstery['export_price']), 100000)
-        self.assertEqual(int(upholstery['wholesale_price']), 100000)
-        self.assertEqual(int(upholstery['price']), 250000)
+        self.assertEqual(upholstery['manufacture_price'], '50000.00')
+        self.assertEqual(upholstery['price'], '250000.00')
         
     def test_post(self):
         """
@@ -371,6 +365,7 @@ class UpholsteryResourceTest(APITestCase):
                                     format='json',
                                     data=base_upholstery,
                                     authorization=self.get_credentials())
+        logger.debug(resp)
         self.assertEqual(Upholstery.objects.count(), 2)
         
         #Validate response
@@ -386,10 +381,8 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['width'], 1000)
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
-        self.assertEqual(int(upholstery['manufacture_price']), 50000)
-        self.assertEqual(int(upholstery['export_price']), 100000)
-        self.assertEqual(int(upholstery['wholesale_price']), 100000)
-        self.assertEqual(int(upholstery['price']), 250000)
+        self.assertEqual(int(upholstery['manufacture_price']), '50000.00')
+        self.assertEqual(int(upholstery['price']), '250000.00')
         
     def test_put(self):
         """
@@ -423,7 +416,6 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
         self.assertEqual(int(upholstery['manufacture_price']), 50000)
-        self.assertEqual(int(upholstery['export_price']), 100000)
         self.assertEqual(int(upholstery['price']), 350000)
         
     def test_delete(self):
@@ -499,9 +491,7 @@ class TableResourceTest(APITestCase):
         self.assertEqual(table['width'], 1000)
         self.assertEqual(table['depth'], 500)
         self.assertEqual(table['height'], 400)
-        self.assertEqual(int(table['manufacture_price']), 50000)
-        self.assertEqual(int(table['export_price']), 100000)
-        self.assertEqual(int(table['wholesale_price']), 100000)
+        self.assertEqual(table['manufacture_price'], '50000.00')
         
         
     def test_get(self):
@@ -523,9 +513,7 @@ class TableResourceTest(APITestCase):
         self.assertEqual(table['width'], 1000)
         self.assertEqual(table['depth'], 500)
         self.assertEqual(table['height'], 400)
-        self.assertEqual(int(table['manufacture_price']), 50000)
-        self.assertEqual(int(table['export_price']), 100000)
-        self.assertEqual(int(table['wholesale_price']), 100000)
+        self.assertEqual(table['manufacture_price'], '50000.00')
         
     def test_post(self):
         """
@@ -535,8 +523,8 @@ class TableResourceTest(APITestCase):
         self.assertEqual(Table.objects.count(), 1)
         resp = self.client.post('/api/v1/table/', 
                                     format='json',
-                                    data=base_table,
-                                    authorization=self.get_credentials())
+                                    data=base_table)
+
         self.assertEqual(Table.objects.count(), 2)
         #Validate response
         self.assertEqual(resp.status_code, 201)
@@ -551,9 +539,7 @@ class TableResourceTest(APITestCase):
         self.assertEqual(table['width'], 1000)
         self.assertEqual(table['depth'], 500)
         self.assertEqual(table['height'], 400)
-        self.assertEqual(int(table['manufacture_price']), 50000)
-        self.assertEqual(int(table['export_price']), 100000)
-        self.assertEqual(int(table['wholesale_price']), 100000)
+        self.assertEqual(table['manufacture_price'], '50000.00')
         
     def test_put(self):
         """
@@ -585,9 +571,7 @@ class TableResourceTest(APITestCase):
         self.assertEqual(table['width'], 1000)
         self.assertEqual(table['depth'], 500)
         self.assertEqual(table['height'], 400)
-        self.assertEqual(int(table['manufacture_price']), 50000)
-        self.assertEqual(int(table['export_price']), 100000)
-        self.assertEqual(int(table['wholesale_price']), 120000)
+        self.assertEqual(table['manufacture_price'], '50000.00')
         
     def test_delete(self):
         """

@@ -1,14 +1,20 @@
+import logging
+
 from rest_framework import serializers
 
 from products.models import Product, Configuration, Model, Upholstery, Pillow, Table
+from media.models import S3Object
 from contacts.serializers import CustomerSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Configuration
         field = ('id', 'configuration')
-        
+
         
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +26,7 @@ class ModelSerializer(serializers.ModelSerializer):
 class PillowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillow
+        field = ('id', 'type', 'quantity')
         
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -29,62 +36,133 @@ class ProductSerializer(serializers.ModelSerializer):
         
                 
 class UpholsterySerializer(serializers.ModelSerializer):
-    model = serializers.PrimaryKeyRelatedField()
-    configuration = serializers.PrimaryKeyRelatedField()
-    pillows = PillowSerializer(required=False)
-    image = serializers.PrimaryKeyRelatedField(required=False)
+    model = serializers.PrimaryKeyRelatedField(queryset=Model.objects.all())
+    configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
+    pillows = PillowSerializer(required=False, many=True)
+    image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
 
     class Meta:
         model = Upholstery
         read_only_fields = ('description', 'type')
         exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
+    
+    def to_representation(self, instance):
+        """
+        Override the 'to_representation' method'
         
-    def restore_object(self, attrs, instance):
+        "Will call parent method and then change some of the data"
+        """
+        ret = super(UpholsterySerializer, self).to_representation(instance)
         
-        instance = super(UpholsterySerializer, self).restore_object(attrs, instance)
+        ret['model'] = {'id': instance.model.id,
+                        'model': instance.model.model,
+                        'name': instance.model.name}
+                        
+        ret['configuration'] = {'id': instance.configuration.id,
+                                'configuration': instance.configuration.configuration}
+                                
+        return ret
+            
+    def create(self, validated_data):
+        """
+        Implement the 'create' method
         
-        instance.description = "{0} {1}".format(instance.model.model, 
-                                                instance.configuration.configuration)
-                                                
+        Sets the description by combining the model number and configuration.
+        Also sets the configuration and model for the product
+        """
+        model_data = validated_data.pop('model')
+        model = Model.objects.get(pk=model_data['id'])
+        
+        config_data = validated_data.pop('configuration')
+        config = Configuration.objects.get(pk=config_data['id'])
+        
+        try:    
+            image_data = validated_data.pop('image')
+            image = S3Object.objects.get(pk=image_data['id'])
+        except (KeyError, S3Object.DoesNotExist):
+            image = None
+            
+        instance = Table.objects.create(description="{0} {1}".format(model.model, config.configuration),
+                                             model=model, configuration=config, image=image, **validated_data)
+        
         return instance
         
-    def transform_model(self, obj, value):
-        return {'id': obj.model.id,
-                'model': obj.model.model,
-                'name': obj.model.name}        
-                
-    def transform_configuration(self, obj, value):
-        return {'id': obj.configuration.id,
-                'configuration': obj.configuration.configuration}
+    def update(self, instance, validated_data):
+        """
+        Implemenet the 'update' method
+        
+        removes the configuration and model data, and then updates the instance
+        """
+        del validated_data['model']
+        del validated_data['configuration']
+        
+        for field_name in validated_data.keys():
+            setattr(instance, field_name, validated_data[field_name])
+            
+        return instance
         
         
 class TableSerializer(serializers.ModelSerializer):
-    model = serializers.PrimaryKeyRelatedField(required=False)
-    configuration = serializers.PrimaryKeyRelatedField(required=False)
+    model = serializers.PrimaryKeyRelatedField(queryset=Model.objects.all())
+    configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
     
     class Meta:
         model = Table
-        read_only_fields = ('description', 'type', 'color')
+        read_only_fields = ('description', 'type', 'color', 'finish')
         exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
         
-    def restore_object(self, attrs, instance):
+    def to_representation(self, instance):
+        """
+        Override the 'to_representation' method'
         
-        instance = super(TableSerializer, self).restore_object(attrs, instance)
+        "Will call parent method and then change some of the data"
+        """
+        ret = super(TableSerializer, self).to_representation(instance)
         
-        instance.description = "{0} {1}".format(instance.model.model, 
-                                                instance.configuration.configuration)
-                                                
+        ret['model'] = {'id': instance.model.id,
+                        'model': instance.model.model,
+                        'name': instance.model.name}
+                        
+        ret['configuration'] = {'id': instance.configuration.id,
+                                'configuration': instance.configuration.configuration}
+                                
+        return ret
+        
+    def create(self, validated_data):
+        """
+        Implement the 'create' method
+        
+        Sets the description by combining the model number and configuration.
+        Also sets the configuration and model for the product
+        """
+        model = validated_data.pop('model')
+        
+        config = validated_data.pop('configuration')
+        
+        try:    
+            image_data = validated_data.pop('image')
+            image = S3Object.objects.get(pk=image_data['id'])
+        except (KeyError, S3Object.DoesNotExist):
+            image = None
+            
+        instance = Table.objects.create(description="{0} {1}".format(model.model, config.configuration),
+                                             model=model, configuration=config, image=image, **validated_data)
+        
         return instance
         
-    def transform_model(self, obj, value):
-        return {'id': obj.model.id,
-                'model': obj.model.model,
-                'name': obj.model.name}        
-                
-    def transform_configuration(self, obj, value):
-        return {'id': obj.configuration.id,
-                'configuratio': obj.configuration.configuration}    
-    
+    def update(self, instance, validated_data):
+        """
+        Implemenet the 'update' method
         
+        removes the configuration and model data, and then updates the instance
+        """
+        del validated_data['model']
+        del validated_data['configuration']
+        
+        for field_name in validated_data.keys():
+            setattr(instance, field_name, validated_data[field_name])
+            
+        return instance
+    
         
         

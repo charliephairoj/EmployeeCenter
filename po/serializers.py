@@ -6,13 +6,14 @@ from rest_framework import serializers
 from contacts.models import Supplier
 from supplies.models import Product, Log
 from po.models import PurchaseOrder, Item
+from projects.models import Project
 
 
 logger = logging.getLogger(__name__)
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    supply = serializers.PrimaryKeyRelatedField()
+    supply = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     
     class Meta:
         model = Item
@@ -105,9 +106,9 @@ class ItemSerializer(serializers.ModelSerializer):
         
         
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    supplier = serializers.PrimaryKeyRelatedField()
-    project = serializers.PrimaryKeyRelatedField(required=False)
-    items = ItemSerializer(many=True, allow_add_remove=True)
+    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
+    items = ItemSerializer(many=True)
     
     class Meta:
         model = PurchaseOrder

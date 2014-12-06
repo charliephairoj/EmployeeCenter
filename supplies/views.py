@@ -1,5 +1,6 @@
 from io import BytesIO
 import logging
+from decimal import Decimal
 
 from rest_framework import viewsets
 from django.db.models import Q
@@ -71,7 +72,10 @@ class SupplyMixin(object):
         Internal method to apply the new quantity to the obj and
         create a log of the quantity change
         """
-        new_quantity = float(new_quantity)
+        new_quantity = Decimal(str(new_quantity))
+        
+        #Type change to ensure that calculations are only between Decimals
+        obj.quantity = Decimal(str(obj.quantity))
         
         if new_quantity < 0:
             raise ValueError('Quantity cannot be negative')
@@ -197,3 +201,18 @@ class LogViewSet(viewsets.ModelViewSet):
     queryset = Log.objects.all()
     serializer_class = LogSerializer
     
+    def get_queryset(self):
+        
+        queryset = self.queryset
+        
+        supply_id = self.request.QUERY_PARAMS.get('supply', None)
+
+        if supply_id:
+            queryset = queryset.filter(supply_id=supply_id)
+            
+        action = self.request.QUERY_PARAMS.get('action', None)
+
+        if supply_id:
+            queryset = queryset.filter(action=action)
+            
+        return queryset

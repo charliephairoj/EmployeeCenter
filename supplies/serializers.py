@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers
 
 from contacts.models import Supplier
-from supplies.models import Supply, Fabric, Log
+from supplies.models import Supply, Product, Fabric, Log
 from contacts.serializers import SupplierSerializer
 
 
@@ -12,15 +12,18 @@ logger = logging.getLogger(__name__)
 
 class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(source='quantity')
-    products = serializers.PrimaryKeyRelatedField(read_only=True)
-    supplier = serializers.PrimaryKeyRelatedField(write_only=True)
     notes = serializers.CharField(required=False)
     type = serializers.CharField(required=False)
     
     class Meta:
         model = Supply
         fields = ('id', 'description', 'width', 'depth', 'height', 'height_units',
-                  'width_units', 'depth_units')
+                  'width_units', 'depth_units', 'type', 'notes')
+                  
+        read_only_fields = ['suppliers']
+        
+    def xfrom_native(self, obj, *args, **kwargs):
+        pass
         
     def to_native(self, obj, *args, **kwargs):
 
@@ -33,7 +36,7 @@ class SupplySerializer(serializers.ModelSerializer):
             pass
             
         if self.init_data:
-            if 'supplier' in self.init_data:
+            if 'suppliers' in self.init_data:
                 obj.supplier = Supplier.objects.get(pk=self.init_data['supplier'])
                 for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_puchasing_units', 
                               'upc']:
@@ -57,6 +60,12 @@ class SupplySerializer(serializers.ModelSerializer):
         #Return the data
         return native_data
         
+    def get_suppliers(self, obj):
+        """
+        Return a list of suppliers with details
+        """
+        logger.debug('test')
+        return 'ok'
  
 class FabricSerializer(SupplySerializer):
     

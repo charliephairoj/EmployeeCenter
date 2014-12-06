@@ -120,8 +120,8 @@ class Supplier(Contact):
 
 class SupplierContact(models.Model):
     name = models.TextField()
-    email = models.TextField()
-    telephone = models.TextField()
+    email = models.TextField(null=True, blank=True)
+    telephone = models.TextField(null=True, blank=True)
     supplier = models.ForeignKey(Supplier, related_name='contacts')
     primary = models.BooleanField(db_column='primary_contact', default=False)
 

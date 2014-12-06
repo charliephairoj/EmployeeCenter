@@ -15,11 +15,11 @@ from administrator.api import UserResource, GroupResource, PermissionResource
 from hr.api import EmployeeResource, AttendanceResource
 
 from contacts.views import CustomerViewSet, SupplierViewSet
-from supplies.views import SupplyList, SupplyDetail, supply_type_list
+from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import FabricViewSet, LogViewSet
 from products.views import ConfigurationViewSet, ModelViewSet
-from products.views import UpholsteryList, UpholsteryDetail
+from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
@@ -64,8 +64,10 @@ router.register(r'api/v1/customer', CustomerViewSet)
 router.register(r'api/v1/supplier', SupplierViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
+router.register(r'api/v1/upholstery', UpholsteryViewSet)
 router.register(r'api/v1/supply/log', LogViewSet)
 router.register(r'api/v1/project', ProjectViewSet)
+router.register(r'api/v1/log', LogViewSet)
 
 
 #primary login and url routing
@@ -86,11 +88,10 @@ urlpatterns = patterns('',
     url(r'^api/v1/supply/type$', supply_type_list),
     url(r'^api/v1/fabric/$', FabricList.as_view()),
     url(r'^api/v1/fabric/(?P<pk>[0-9]+)/$', FabricDetail.as_view()),
-    url(r'^api/v1/upholstery/$', UpholsteryList.as_view()),
-    url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
+    #url(r'^api/v1/upholstery/$', UpholsteryList.as_view()),
+    #url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/table/$', TableList.as_view()),
     url(r'^api/v1/table/(?P<pk>[0-9]+)/$', TableDetail.as_view()),
-    url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/acknowledgement/$', AcknowledgementList.as_view()),
     url(r'^api/v1/acknowledgement/(?P<pk>[0-9]+)/$', AcknowledgementDetail.as_view()),
     url(r'^api/v1/shipping/$', ShippingList.as_view()),

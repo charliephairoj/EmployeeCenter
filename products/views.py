@@ -60,16 +60,18 @@ class UpholsteryMixin(object):
         fields = ['model', 'configuration']
         
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
                     
         return request
-        
                     
 class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
+ 
     def post(self, request, *args, **kwargs):
+        logger.debug(request.data)
         request = self._format_primary_key_data(request)
+        logger.debug(request.data)
         return super(UpholsteryList, self).post(request, *args, **kwargs)
         
     def get_queryset(self):
@@ -91,17 +93,17 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
 class UpholsteryDetail(UpholsteryMixin, generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request = self._format_primary_key_data(request)
-        return super(UpholsteryDetail, self).put(request, *args, **kwargs)
-        
+        return super(UpholsteryDetail, self).put(request, *args, **kwargs) 
+    
     
 class UpholsteryViewSet(viewsets.ModelViewSet):
     """
-    API endpoint to view and edit upholstery
+    API endpoint to view and edit table
     """
     queryset = Upholstery.objects.all()
     serializer_class = UpholsterySerializer
     
-
+    
 class TableMixin(object):
     queryset = Table.objects.all()
     serializer_class = TableSerializer
@@ -114,9 +116,9 @@ class TableMixin(object):
         fields = ['model', 'configuration']
         
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
                     
         return request
         
