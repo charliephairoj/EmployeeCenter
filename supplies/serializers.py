@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 
 from rest_framework import serializers
@@ -10,69 +11,142 @@ from contacts.serializers import SupplierSerializer
 logger = logging.getLogger(__name__)
 
 
+class ProductSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Product
+        read_only_fields = ['supply']
+        
+    def create(self, validated_data):
+        """
+        Override the 'create' method in order to assign the supply passed via context
+        """
+        supply = self.context['supply']
+        
+        instance = self.Meta.model.objects.create(supply=supply, **validated_data)
+
+        return instance
+        
 class SupplySerializer(serializers.ModelSerializer):
-    quantity = serializers.IntegerField(source='quantity')
+    quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
     notes = serializers.CharField(required=False)
     type = serializers.CharField(required=False)
+    #suppliers = ProductSerializer(required=False, many=True)
     
     class Meta:
         model = Supply
-        fields = ('id', 'description', 'width', 'depth', 'height', 'height_units',
-                  'width_units', 'depth_units', 'type', 'notes')
-                  
         read_only_fields = ['suppliers']
+        exclude = ['quantity_th', 'quantity_kh']
         
-    def xfrom_native(self, obj, *args, **kwargs):
-        pass
-        
-    def to_native(self, obj, *args, **kwargs):
-
-        native_data = super(SupplySerializer, self).to_native(obj, *args, **kwargs)
-
-        #Set the quantity
-        try:
-            native_data['quantity'] = obj.quantity
-        except AttributeError:
-            pass
-            
-        if self.init_data:
-            if 'suppliers' in self.init_data:
-                obj.supplier = Supplier.objects.get(pk=self.init_data['supplier'])
-                for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_puchasing_units', 
-                              'upc']:
-                    try:
-                        native_data[field] = getattr(obj, field)
-                    except AttributeError:
-                        pass
-            else:
-                native_data['suppliers'] = []
-                for product in obj.products.all():
-                    product_data = {}
-                    for field in ['cost', 'reference', 'purchasing_units', 
-                                  'quantity_per_puchasing_units', 'upc']:
-                        try:
-                            product_data[field] = getattr(product, field)
-                        except AttributeError:
-                            pass
-                            
-                    native_data['suppliers'].append(product_data)
-            
-        #Return the data
-        return native_data
-        
-    def get_suppliers(self, obj):
+    def to_representation(self, instance):
         """
-        Return a list of suppliers with details
+        Override the 'to_representation' method to allow integration of products into 
+        output data
         """
-        logger.debug('test')
-        return 'ok'
+        ret = super(SupplySerializer, self).to_representation(instance)
+        
+        ret['suppliers'] = [{'id': product.id,
+                             'supplier': {'id': product.supplier.id,
+                                          'name': product.supplier.name},
+                             'cost': product.cost,
+                             'reference': product.reference,
+                             'purchasing_units': product.purchasing_units,
+                             'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
+                             'upc': product.upc} for product in instance.products.all()]
+        
+        ret['quantity'] = instance.quantity
+           
+        return ret
+    def create(self, validated_data):
+        """
+        Override the 'create' method in order to customize creation of products
+        """
+        if 'supplier' in validated_data:
+            suppliers_data = [validated_data.pop('supplier')]
+        elif 'suppliers' in validated_data:
+            suppliers_data = validated_data.pop('suppliers')
+        else:
+
+            data = {}
+            for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_purchasing_units', 'upc']:
+                try:
+                    data[field] = self.context['request'].data[field]
+                except KeyError:
+                    pass
+            data['supplier'] = self.context['request'].data['supplier']
+                    
+            suppliers_data = [data]
+            
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        product_serializer = ProductSerializer(data=suppliers_data, context={'supply':instance}, many=True)
+        if product_serializer.is_valid(raise_exception=True):
+            product_serializer.save()
+            
+        return instance
+    def update(self, instance, validated_data):
+        """
+        Override the 'update' method in order to customize create, update and delete of products
+        """
+        products_data = validated_data.pop('suppliers', None)
+        
+        old_quantity = instance.quantity
+        new_quantity = validated_data['quantity']
+        
+        for field in validated_data.keys():
+            setattr(instance, field, validated_data[field])
+        
+        if products_data:
+            product_serializer = ProductSerializer(data=products_data, many=True)
+            if product_serializer.is_valid(raise_exception=True):
+                product_serializer.save()
+        
+        instance.save()
+        
+        self._log_quantity(instance, old_quantity, new_quantity)
+        
+        return instance
+        
+    def _log_quantity(self, obj, old_quantity, new_quantity):
+        """
+        Internal method to apply the new quantity to the obj and
+        create a log of the quantity change
+        """
+        new_quantity = Decimal(str(new_quantity))
+        
+        #Type change to ensure that calculations are only between Decimals
+        old_quantity = Decimal(str(old_quantity))
+        
+        if new_quantity < 0:
+            raise ValueError('Quantity cannot be negative')
+            
+        if new_quantity != old_quantity:
+            if new_quantity > old_quantity:
+                action = 'ADD'
+                diff = new_quantity - old_quantity
+            elif new_quantity < old_quantity:
+                action = 'SUBTRACT'
+                diff = old_quantity - new_quantity
+            
+            #Create log to track quantity changes
+            log = Log(supply=obj, 
+                      action=action,
+                      quantity=diff,
+                      message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
+                                                             diff,
+                                                             obj.units,
+                                                             "to" if action == "ADD" else "from",
+                                                             obj.description))
+            
+            #Save log                                               
+            log.save()
+        
  
 class FabricSerializer(SupplySerializer):
+    content = serializers.CharField(required=False, allow_null=True)
     
     class Meta:
         model = Fabric
-        fields = ('id', 'description', 'width', 'depth', 'height', 'type', 'height_units',
-                  'width_units', 'depth_units', 'notes', 'color', 'pattern')
         
         
 class LogSerializer(serializers.ModelSerializer):

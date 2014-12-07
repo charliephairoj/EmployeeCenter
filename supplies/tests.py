@@ -189,13 +189,13 @@ class SupplyAPITestCase(APITestCase):
         resp = self.client.post('/api/v1/supply/', format='json',
                                     data=base_supply)
         self.assertEqual(resp.status_code, 201, msg=resp)
-       
+
         #Tests the dat aturned
         obj = resp.data
         self.assertEqual(obj['id'], 3)
-        self.assertEqual(int(obj['width']), 100)
-        self.assertEqual(int(obj['depth']), 200)
-        self.assertEqual(int(obj['height']), 300)
+        self.assertEqual(obj['width'], '100.00')
+        self.assertEqual(obj['depth'], '200.00')
+        self.assertEqual(obj['height'], '300.00')
         self.assertEqual(obj['description'], 'test')
         self.assertEqual(obj['height_units'], 'yd')
         self.assertEqual(obj['width_units'], 'm')
@@ -235,7 +235,7 @@ class SupplyAPITestCase(APITestCase):
         """
         #Testing returned types pre POST
         resp0 = self.client.get('/api/v1/supply/type/', format='json')
-        self.assertEqual(resp0.status_code, 200, msg=resp)
+        self.assertEqual(resp0.status_code, 200, msg=resp0)
         type_list = resp0.data
         self.assertNotIn('egg', type_list)
         self.assertIn('wood', type_list)
@@ -556,14 +556,14 @@ class FabricAPITestCase(APITestCase):
         self.assertEqual(Supply.objects.count(), 2)
         resp = self.client.post('/api/v1/fabric/', format='json',
                                     data=base_fabric)
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
        
         #Tests the dat aturned
         obj = resp.data
         self.assertEqual(obj['id'], 3)
-        self.assertEqual(int(obj['width']), 100)
-        self.assertEqual(int(obj['depth']), 0   )
-        self.assertEqual(int(obj['height']), 300)
+        self.assertEqual(obj['width'], '100.00')
+        self.assertEqual(obj['depth'], '0.00')
+        self.assertEqual(obj['height'], '300.00')
         self.assertEqual(obj['description'], 'test')
         self.assertNotIn('reference', obj)
         self.assertNotIn('cost', obj)
@@ -586,7 +586,7 @@ class FabricAPITestCase(APITestCase):
         resp = self.client.put('/api/v1/fabric/1/', format='json',
                                    data=modified_data)
         
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         self.assertEqual(Supply.objects.count(), 2)
 
         #Tests the returned data
@@ -608,7 +608,7 @@ class FabricAPITestCase(APITestCase):
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
         resp = self.client.put('/api/v1/fabric/1/', format='json',
                                    data=modified_data)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         self.assertEqual(Supply.objects.count(), 2)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('14'))
 
@@ -631,7 +631,7 @@ class FabricAPITestCase(APITestCase):
         resp = self.client.put('/api/v1/fabric/1/', format='json',
                                    data=modified_data)
         
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         self.assertEqual(Supply.objects.count(), 2)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('8'))
 

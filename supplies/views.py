@@ -39,73 +39,7 @@ def shopping_list(request):
 class SupplyMixin(object):
     queryset = Supply.objects.all().order_by('description')
     serializer_class = SupplySerializer
-    
-    def pre_save(self, obj, *args, **kwargs):
-        """
-        Override the 'pre_save' method
-        """
-        try:
-            if obj.pk:
-                self._apply_quantity(obj, self.request.DATA['quantity'])
-        except KeyError:
-            pass
-    
-    def post_save(self, obj, created=False, *args, **kwargs):
-        if "supplier" in self.request.DATA:
-            supplier = Supplier.objects.get(pk=self.request.DATA['supplier'])
-            try:
-                product = Product.objects.get(supply=obj, supplier=supplier)
-            except Product.DoesNotExist:
-                product = Product(supply=obj, supplier=supplier)
-                
-            for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_puchasing_units', 
-                          'upc']:
-                try:
-                    setattr(product, field, self.request.DATA[field])
-                except KeyError:
-                    pass
-                    
-            product.save()
             
-    def _apply_quantity(self, obj, new_quantity):
-        """
-        Internal method to apply the new quantity to the obj and
-        create a log of the quantity change
-        """
-        new_quantity = Decimal(str(new_quantity))
-        
-        #Type change to ensure that calculations are only between Decimals
-        obj.quantity = Decimal(str(obj.quantity))
-        
-        if new_quantity < 0:
-            raise ValueError('Quantity cannot be negative')
-            
-        if new_quantity != obj.quantity:
-            if new_quantity > obj.quantity:
-                action = 'ADD'
-                diff = new_quantity - obj.quantity
-            elif new_quantity < obj.quantity:
-                action = 'SUBTRACT'
-                diff = obj.quantity - new_quantity
-            
-            #Create log to track quantity changes
-            log = Log(supply=obj, 
-                      action=action,
-                      quantity=diff,
-                      message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
-                                                             diff,
-                                                             obj.units,
-                                                             "to" if action == "ADD" else "from",
-                                                             obj.description))
-             
-            #Set new quantity
-            obj.quantity = new_quantity
-            
-            #Save log                                               
-            log.save()
-            
-            
-        
     def _format_primary_key_data(self, request):
         """
         Format fields that are primary key related so that they may 
