@@ -243,7 +243,7 @@ class SupplierResourceTest(APITestCase):
         resp = self.client.post('/api/v1/supplier/', 
                                     format='json',
                                     data=self.supplier_data)
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(Supplier.objects.count(), 2)
         
@@ -298,12 +298,10 @@ class SupplierResourceTest(APITestCase):
         self.assertEqual(Supplier.objects.all()[0].contacts.count(), 1)
         self.assertEqual(len(modified_supplier['contacts']), 2)
         
-        logger.debug(modified_supplier)
-        print '\n'
         resp = self.client.put('/api/v1/supplier/1/',
-                               #format='json',
+                               format='json',
                                data=modified_supplier)
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 200)
         
         #Tests database state
