@@ -204,7 +204,7 @@ class PurchaseOrderTest(APITestCase):
         resp = self.client.post('/api/v1/purchase-order/',
                                 data=base_purchase_order, 
                                 format='json')
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
         #Validate the data returned
         obj = resp.data
@@ -256,7 +256,7 @@ class PurchaseOrderTest(APITestCase):
         resp = self.client.post('/api/v1/purchase-order/',
                                 data=po,
                                 format='json')
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
         #Validate the data returned
         obj = resp.data
@@ -308,7 +308,7 @@ class PurchaseOrderTest(APITestCase):
         resp = self.client.post('/api/v1/purchase-order/',
                                 data=po,
                                 format='json')
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         resp_obj = resp.data
         #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
         
@@ -317,7 +317,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(resp_obj['vat'], 7)
         self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
         item = resp_obj['items'][0]
-        self.assertEqual(item['unit_cost'], Decimal('1.99'))
+        self.assertEqual(Decimal(item['unit_cost']), Decimal('1.99'))
         self.assertEqual(Decimal(item['total']), Decimal('19.90'))
         
         #Verify data in the database
@@ -356,12 +356,12 @@ class PurchaseOrderTest(APITestCase):
                                    data=modified_po_data)
         
         #Verify the response
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         po = resp.data
         self.assertEqual(po['id'], 1)
         self.assertEqual(po['supplier']['id'], 1)
         self.assertEqual(po['vat'], 7)
-        self.assertEqual(po['grand_total'], Decimal('36.93'))
+        self.assertEqual(Decimal(po['grand_total']), Decimal('36.93'))
         self.assertEqual(po['discount'], 0)
         self.assertEqual(po['revision'], 1)
         self.assertEqual(len(po['items']), 1)
@@ -373,8 +373,8 @@ class PurchaseOrderTest(APITestCase):
        
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
-        self.assertEqual(item2['unit_cost'], Decimal('12.11'))
-        self.assertEqual(item2['total'], Decimal('34.51'))
+        self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
+        self.assertEqual(Decimal(item2['total']), Decimal('34.51'))
         
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
@@ -408,12 +408,12 @@ class PurchaseOrderTest(APITestCase):
         modified_po = copy.deepcopy(base_purchase_order)
         modified_po['items'][0]['discount'] = 50
         modified_po['items'][0]['id'] = 1
-
+        self.assertEqual(len(modified_po['items']), 2)
+        
         resp = self.client.put('/api/v1/purchase-order/1/',
                                 format='json',
                                 data=modified_po)
-
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         resp_obj = resp.data
         self.assertEqual(resp_obj['revision'], 1)
         #Check the new pdf
@@ -423,14 +423,14 @@ class PurchaseOrderTest(APITestCase):
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], Decimal('12.11'))
-        self.assertEqual(item1['total'], Decimal('60.55'))
+        self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.11'))
+        self.assertEqual(Decimal(item1['total']), Decimal('60.55'))
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
         self.assertEqual(item2['discount'], 5)
-        self.assertEqual(item2['unit_cost'], Decimal('12.11'))
-        self.assertEqual(item2['total'], Decimal('34.51'))
-        self.assertEqual(resp_obj['grand_total'], Decimal('101.72'))
+        self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
+        self.assertEqual(Decimal(item2['total']), Decimal('34.51'))
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('101.72'))
         
         po = PurchaseOrder.objects.get(pk=1)
         item1 = po.items.order_by('id').all()[0]
@@ -464,7 +464,7 @@ class PurchaseOrderTest(APITestCase):
         resp = self.client.put('/api/v1/purchase-order/1/',
                                 format='json',
                                 data=modified_po)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         resp_obj = resp.data
         self.assertEqual(resp_obj['revision'], 1)
         #Check the new pdf
@@ -475,11 +475,11 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(resp_obj['vat'], 7)
         self.assertEqual(resp_obj['discount'], 0)
         self.assertEqual(resp_obj['revision'], 1)
-        self.assertEqual(resp_obj['grand_total'], Decimal('107.54'))
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('107.54'))
         item1 = resp_obj['items'][0]
         self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], 10)
-        self.assertEqual(item1['unit_cost'], Decimal('10.05'))
+        self.assertEqual(Decimal(item1['unit_cost']), Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
        
         #Confirm cost change for item and supply in the database

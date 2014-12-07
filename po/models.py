@@ -148,7 +148,7 @@ class PurchaseOrder(models.Model):
         if self.items.count() > 0:
             self.subtotal = sum([item.total for item in self.items.all()])
         else:
-            raise ValueError('Missing items')
+            raise ValueError('Purchase Order cannot not have 0 items')
         
         logger.debug("The subtotal is {0:.2f}".format(self.subtotal))
         return self.subtotal

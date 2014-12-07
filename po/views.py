@@ -50,7 +50,6 @@ class PurchaseOrderMixin(object):
 
             try:
                 request.DATA['items'][index]['unit_cost'] = item['cost']
-                logger.debug(item['cost'])
             except KeyError:
                 pass
             
@@ -74,12 +73,6 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         """
         request = self._format_primary_key_data(request)
         return super(PurchaseOrderList, self).post(request, *args, **kwargs)
-        
-    def pre_save(self, obj):
-        
-        obj.employee = self.request.user
-                    
-        return obj
         
     def get_queryset(self):
         """
