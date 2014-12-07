@@ -29,19 +29,14 @@ class ItemSerializer(serializers.ModelSerializer):
         else:
             return self.update(attrs, instance)
                     
-    def create(self, attrs, instance):
-        
-        instance = super(ItemSerializer, self).restore_object(attrs, instance)
-        
-        #Set the description if not already set
-        if not instance.description:
-            instance.description = instance.supply.description
-            
-        instance.supply.supplier = Supplier.objects.get(pk=self.context.get('request').DATA['supplier'])
-        
-        if not instance.unit_cost:
-            logger.debug(instance.supply.supplier)
-            instance.unit_cost = instance.supply.cost
+    def create(self, validated_data):
+        """
+        Override the 'create' method
+        """
+        supply = validated_data['supply']
+        supply.supplier = self.context['supplier']
+        description = validated_data.pop('description', None) or supply.description
+        unit_cost = validated_data.pop('unit_cost', None) or supply.cost
             
         #Change the price of the supply on the fly: will result in permanent price change and log of price change
         try:
@@ -115,44 +110,38 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 'discount', 'status')
         read_only_fields = ('pdf', 'revision')
         
-    def restore_object(self, attrs, instance=None):
+    def create(self, validated_data):
         """
-        Override the 'restore_object' method
+        Override the 'create' method to customize how items are created and pass the supplier instance
+        to the item serializer via context
         """
-        if instance:
-            create = False
-        else:
-            create = True
+        items_data = validated_data.pop('items')
+        for item_data in items_data:
+            try:
+                item_data['supply'] = item_data['supply']['id']
+            except KeyError:
+                item_data['supply'] = item_data['id']
             
-        instance = super(PurchaseOrderSerializer, self).restore_object(attrs, instance)
+        instance = self.Meta.model.objects.create(**validated_data)
         
-        if not create:
-            instance.revision += 1
+        item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier}, many=True)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
             
         return instance
         
-    def transform_supplier(self, obj, value):
+    def update(self, instance, validted_data):
         """
-        Modify how supplier is serialized
+        Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
-        try:
-            return {'id': obj.supplier.id,
-                    'name': obj.supplier.name}
-        except AttributeError:
-            return value
-                
-    def transform_pdf(self, obj, value):
-        """
-        Modify how pdf object is serialized
-        """
-        try:
-            return {'url': obj.pdf.generate_url()}
-        except AttributeError:
-            return {'url': ''}
-            
-    def transform_project(self, obj, value):
-        try:
-            return {'id': obj.project.id,
-                    'codename': obj.project.codename}
-        except AttributeError:
-            return None
+        revision += instance.revision
+        
+        instance.save()
+        
+        return instance
+    
+    
+    
+    
+    
+    

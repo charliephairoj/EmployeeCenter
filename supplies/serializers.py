@@ -79,7 +79,7 @@ class SupplySerializer(serializers.ModelSerializer):
             
         instance = self.Meta.model.objects.create(**validated_data)
         
-        product_serializer = ProductSerializer(data=suppliers_data, context={'supply':instance}, many=True)
+        product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
             product_serializer.save()
             
