@@ -140,7 +140,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.calculate_total()
         
-        #instance.create_and_upload_pdf()
+        instance.create_and_upload_pdf()
         
         instance.save()
         return instance
@@ -167,6 +167,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.status = validated_data.pop('status', None) or instance.status
         
         instance.calculate_total()
+        
+        instance.create_and_upload_pdf()
         
         instance.save()
         

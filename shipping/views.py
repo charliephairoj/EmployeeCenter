@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ShippingMixin(object):
-    queryset = Shipping.objects.all()
+    queryset = Shipping.objects.all().order_by('-id')
     serializer_class = ShippingSerializer
     
     def _format_primary_key_data(self, request):

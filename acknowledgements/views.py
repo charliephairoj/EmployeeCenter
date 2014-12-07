@@ -35,7 +35,7 @@ def acknowledgement_item_image(request):
         
 
 class AcknowledgementMixin(object):
-    queryset = Acknowledgement.objects.all()
+    queryset = Acknowledgement.objects.all().order_by('-id')
     serializer_class = AcknowledgementSerializer
     
     def _condense_pillows(self, request):

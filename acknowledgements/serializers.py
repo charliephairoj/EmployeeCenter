@@ -159,7 +159,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
-        #instance.create_and_upload_pdfs()
+        instance.create_and_upload_pdfs()
         
         return instance
         

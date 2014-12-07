@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class PurchaseOrderMixin(object):
-    queryset = PurchaseOrder.objects.all()
+    queryset = PurchaseOrder.objects.all().order_by('-id')
     serializer_class = PurchaseOrderSerializer
     
     def post_save(self, obj, *args, **kwargs):

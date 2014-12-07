@@ -63,6 +63,8 @@ class ShippingSerializer(serializers.ModelSerializer):
         else:
             instance.acknowledgement.status = 'PARTIALLY SHIPPED'
             
+        instance.create_and_upload_pdf()
+        
         instance.save()
         
         return instance
