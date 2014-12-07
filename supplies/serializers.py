@@ -44,15 +44,22 @@ class SupplySerializer(serializers.ModelSerializer):
         output data
         """
         ret = super(SupplySerializer, self).to_representation(instance)
-        
-        ret['suppliers'] = [{'id': product.id,
-                             'supplier': {'id': product.supplier.id,
-                                          'name': product.supplier.name},
-                             'cost': product.cost,
-                             'reference': product.reference,
-                             'purchasing_units': product.purchasing_units,
-                             'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
-                             'upc': product.upc} for product in instance.products.all()]
+        logger.debug(self.context)
+        if 'supplier_id' in self.context['request'].query_params:
+            instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+            
+            ret['cost'] = instance.cost
+            ret['reference'] = instance.reference
+            
+        else:
+            ret['suppliers'] = [{'id': product.id,
+                                 'supplier': {'id': product.supplier.id,
+                                              'name': product.supplier.name},
+                                 'cost': product.cost,
+                                 'reference': product.reference,
+                                 'purchasing_units': product.purchasing_units,
+                                 'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
+                                 'upc': product.upc} for product in instance.products.all()]
         
         ret['quantity'] = instance.quantity
            
