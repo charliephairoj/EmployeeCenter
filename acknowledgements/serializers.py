@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from rest_framework import serializers
 
@@ -6,6 +7,7 @@ from acknowledgements.models import Acknowledgement, Item, Pillow
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
+from contacts.models import Customer
 from products.models import Product
 from supplies.models import Fabric
 from projects.models import Project
@@ -17,40 +19,31 @@ logger = logging.getLogger(__name__)
 
 
 class PillowSerializer(serializers.ModelSerializer):
-    fabric = serializers.PrimaryKeyRelatedField(required=False, queryset=Fabric.objects.all())
+    fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     
     class Meta:
         model = Pillow
         field = ('type', 'fabric', 'quantity')
-        read_only_fields = ('item',)
-            
-    def from_native(self, data, files):
-        instance = super(PillowSerializer, self).from_native(data, files)
+        exclude = ('item',)
         
-        if "fabric" in data:
-            try:
-                instance.fabric = Fabric.objects.get(pk=data['fabric']['id'])
-            except:
-                pass
-                
+    def create(self, validated_data):
+        """
+        Override the 'create' method in order to assign the item pass via the context
+        """
+        item = self.context['item']
+        
+        instance = self.Meta.model.objects.create(item=item, **validated_data)
+        
         return instance
-        
-    def transform_fabric(self, obj, value):
-        try:
-            return {'id': obj.fabric.id,
-                    'color': obj.fabric.color,
-                    'pattern': obj.fabric.pattern}
-        except AttributeError: 
-            return None
         
         
 class ItemSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False)
     location = serializers.CharField(required=False)
-    fabric = serializers.PrimaryKeyRelatedField(required=False, queryset=Fabric.objects.all())
+    fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
     units = serializers.CharField(required=False)
    
@@ -60,35 +53,23 @@ class ItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('total', 'type')
         exclude = ('acknowledgement', )
         
-    def restore_object(self, attrs, instance):
-        """
-        Overrides the 'ModelSerializer' 'restore_object' method in order
-        to separate the pathways for update and create. The parent method
-        is called later in 'create' or 'update' method
-        """
-        if instance:
-            instance = self.update(attrs, instance)
-        else:
-            instance = self.create(attrs, instance)
-        
-        return instance
-        
-    def create(self, attrs, instance):
+    def create(self, validated_data):
         """
         Populates the instance after the parent 'restore_object' method is 
         called. 
         """
-        instance = super(ItemSerializer, self).restore_object(attrs, instance)
+        acknowledgement = self.context['acknowledgement']
+        pillow_data = validated_data.pop('pillows', None)      
+        product = validated_data['product']
+        unit_price = validated_data.pop('unit_price', None) or product.price
+        width = validated_data.pop('width', None) or product.width
+        depth = validated_data.pop('depth', None) or product.depth
+        height = validated_data.pop('height', None) or product.height
         
-        #Set the unit_price if the instance unit_price is 0
-        if not instance.unit_price:
-            instance.unit_price = instance.product.price
-            
-        #Populate the dimension fields with instance dimensions if they are zero
-        for field in ['width', 'depth', 'height']:
-            if (getattr(instance, field) != getattr(instance.product, field) and 
-                getattr(instance, field) == 0):
-                setattr(instance, field, getattr(instance.product, field))
+        
+        instance = self.Meta.model.objects.create(acknowledgement=acknowledgement, unit_price=unit_price, 
+                                                  width=width, depth=depth, 
+                                                  height=height, **validated_data)
         
         #Calculate the total price of the item
         if instance.is_custom_size:
@@ -96,109 +77,117 @@ class ItemSerializer(serializers.ModelSerializer):
         else:
             instance.total = instance.quantity * instance.unit_price
         
+        instance.save()
+        
+        if pillow_data:
+            pillow_serializer = PillowSerializer(data=pillow_data, context={'item': instance}, many=True)
+        
+            if pillow_serializer.is_valid(raise_exception=True):
+                pillow_serializer.save()
+        
         return instance
         
-    def update(self, attrs, instance):
+    def update(self, instance, validated_data):
         """
         Updates the instance after the parent method is called
         """
-        return super(ItemSerializer, self).restore_object(attrs, instance)
+        return super(ItemSerializer, self).update(instance, validated_data)
         
-    def transform_image(self, obj, value):
+    def to_representation(self, instance):
         """
-        Change the output of image
+        Override the 'to_representation' method to transform the output for related and nested items
         """
+        ret = super(ItemSerializer, self).to_representation(instance)
+        
         try:
-            return {'id': obj.image.id,
-                    'url': obj.image.generate_url()}
+            ret['fabric'] = {'id': instance.fabric.id,
+                             'description': instance.fabric.description}
         except AttributeError:
-            return None
+            pass
             
-    def transform_fabric(self, obj, value):
-        """
-        Change output of fabric
-        """
         try:
-            return {'id': obj.fabric.id,
-                    'color': obj.fabric.color,
-                    'pattern': obj.fabric.pattern}
+            ret['image'] = {'url': instance.image.generate_url()}
         except AttributeError:
-            return None
+            pass
+            
+        return ret
         
         
 class AcknowledgementSerializer(serializers.ModelSerializer):
-    customer = CustomerSerializer()
-    employee = serializers.RelatedField(queryset=User.objects.all())
+    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
+    employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
     project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
-    acknowledgement_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
-    production_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
-    original_acknowledgement_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
-    label_pdf = serializers.RelatedField(required=False, queryset=S3Object.objects.all())
     items = ItemSerializer(many=True)
     remarks = serializers.CharField(required=False)
     shipping_method = serializers.CharField(required=False)
     fob = serializers.CharField(required=False)
-    pdf = serializers.SerializerMethodField('get_pdf')
     
     class Meta:
         model = Acknowledgement
-        field = ('id', 'discount', 'delivery_date', 'status', 'remarks', 'vat')
-        read_only_fields = ('total', 'subtotal', 'time_created')
-        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf',
-                   'label_pdf')
+        read_only_fields = ('total', 'subtotal', 'time_created') 
+        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf')
+       
         
-    def froms_native(self, data, files=None):
+    def create(self, validated_data):
+        """
+        Override the 'create' method in order to create nested items
+        """
         
-        instance = super(AcknowledgementSerializer, self).from_native(data, files)
-        logger.debug(self.errors)
-
-        if "project" in data:
-            try:
-                instance.project = Project.objects.get(codename=data['project']['codename'])
-            except Project.DoesNotExist:
-                instance.project = Project(codename=data['project']['codename'])
-                instance.project.save()
-                
+        items_data = validated_data.pop('items')
+        
+        for item_data in items_data:
+            for field in ['product', 'fabric', 'image']:
+                try:
+                    item_data[field] = item_data[field].id
+                except KeyError:
+                    pass
+        
+        discount = validated_data.pop('discount', None) or validated_data['customer'].discount
+        
+        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
+                                                  **validated_data)
+        
+        item_serializer = ItemSerializer(data=items_data, context={'acknowledgement': instance}, many=True)
+        
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+        
+        instance.calculate_totals()
+        
+        #instance.create_and_upload_pdfs()
+        
         return instance
         
-    def get_pdf(self, obj):
+    def update(self, instance, validated_data):
+        
+        return instance
+        
+    def to_representation(self, instance):
         """
-        Get the url to access the acknowledgement and production
-        pdfs
+        Override the default 'to_representation' method to customize the output data
         """
+        ret = super(AcknowledgementSerializer, self).to_representation(instance)
+        
+        ret['customer'] = {'id': instance.customer.id, 
+                           'name': instance.customer.name}
+                           
+        ret['employee'] = {'id': instance.employee.id,
+                           'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
+                           
         try:
-            return {'acknowledgement': obj.acknowledgement_pdf.generate_url(),
-                    'production': obj.acknowledgement_pdf.generate_url()}
+            ret['project'] = {'id': instance.project.id,
+                              'codename': instance.project.codename}
         except AttributeError:
-            return {'acknowledgement': '',
-                    'production': ''}
-    
-    def transform_customer(self, obj, value):
-        """
-        Transform the customer data before serialization
-        """
+            pass
+            
         try:
-            return {'id': obj.customer.id,
-                    'name': obj.customer.name}
+            ret['pdf'] = {'acknowledgement': instance.acknowledgement_pdf.generate_url(),
+                          'production': instance.production_pdf.generate_url()}
         except AttributeError:
-                return None
-    def transform_employee(self, obj, value):
-        """
-        Transform the employee data before serialization
-        
-        Change from unicode form to dict
-        """
-        return {'id': obj.employee.id}
-
-    def transform_project(self, obj, value):
-        
-        try:
-            return {'id': obj.project.id,
-                    'codename': obj.project.codename}
-        except AttributeError:
-            return None
-        
-        
+            ret['pdf'] = {'acknowledgement': 'test',
+                          'production': 'test'}
+                          
+        return ret
         
         
         

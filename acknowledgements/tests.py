@@ -230,8 +230,8 @@ class AcknowledgementResourceTest(APITestCase):
         Tests getting the list of acknowledgements
         """
         #Get and verify the resp
-        resp = self.client.get('/api/v1/acknowledgement/', format='json')
-        self.assertEqual(resp.status_code, 200)
+        resp = self.client.get('/api/v1/acknowledgement/')
+        self.assertEqual(resp.status_code, 200, msg=resp)
 
         #Verify the data sent
         resp_obj = resp.data
@@ -244,8 +244,8 @@ class AcknowledgementResourceTest(APITestCase):
         Tests getting the acknowledgement
         """
         #Get and verify the resp
-        resp = self.client.get('/api/v1/acknowledgement/1/', format='json')
-        self.assertEqual(resp.status_code, 200)
+        resp = self.client.get('/api/v1/acknowledgement/1/')
+        self.assertEqual(resp.status_code, 200, msg=resp)
 
         #Verify the data sent
         ack = resp.data
@@ -253,7 +253,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['id'], 1)
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['po_id'], '123-213-231')
-        self.assertIsInstance(ack['delivery_date'], datetime)
+        self.assertEqual(dateutil.parser.parse(ack['delivery_date']), base_delivery_date)
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
     
@@ -274,7 +274,7 @@ class AcknowledgementResourceTest(APITestCase):
                                 format='json')
 
         #Verify that http response is appropriate
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -328,7 +328,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -385,7 +385,7 @@ class AcknowledgementResourceTest(APITestCase):
                                 format='json')
 
         #Verify that http response is appropriate
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -439,7 +439,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         self.assertIsNotNone(item3['image'])
         self.assertIn('url', item3['image'])
         
@@ -499,7 +499,7 @@ class AcknowledgementResourceTest(APITestCase):
                                 format='json')
 
         #Verify that http response is appropriate
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Acknowledgement.objects.count(), 2)
@@ -553,7 +553,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -605,7 +605,7 @@ class AcknowledgementResourceTest(APITestCase):
                                     data=base_ack,
                                     authentication=self.get_credentials())
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement
@@ -657,7 +657,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -681,7 +681,9 @@ class AcknowledgementResourceTest(APITestCase):
         resp = self.client.post('/api/v1/acknowledgement/', format='json',
                                     data=ack_data,
                                     authentication=self.get_credentials())
-
+    
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement
@@ -733,7 +735,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -760,7 +762,7 @@ class AcknowledgementResourceTest(APITestCase):
                                     authentication=self.get_credentials())
         
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement
@@ -809,7 +811,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], 0)
+        self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -834,7 +836,7 @@ class AcknowledgementResourceTest(APITestCase):
                                     authentication=self.get_credentials())
         
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement
@@ -883,7 +885,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(item3['unit_price'], Decimal('300'))
+        self.assertEqual(Decimal(item3['unit_price']), Decimal('300'))
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
@@ -907,7 +909,7 @@ class AcknowledgementResourceTest(APITestCase):
                                     authentication=self.get_credentials())
         
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Acknowledgement.objects.count(), 2)
         
         #Verify the resulting acknowledgement

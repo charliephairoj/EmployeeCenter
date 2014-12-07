@@ -390,25 +390,6 @@ class Item(models.Model):
 
         return item
 
-
-    def save(self):
-        """
-        Saves the item to the database.
-        
-        This method will save them item to the database
-        first, and then save the pillows that are created
-        after
-        """
-        super(Item, self).save()
-        
-        #Save pillows
-        try:
-            for pillow in self.pillows.all():
-                pillow.item = self
-                pillow.save()
-        except AttributeError:
-            pass
-
     def _apply_product_data(self):
         """Applies data from the set product
 

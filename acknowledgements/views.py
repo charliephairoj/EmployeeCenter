@@ -43,7 +43,7 @@ class AcknowledgementMixin(object):
         Condense the pillows by combining pillows of the same type and fabric
         """
         #Condense pillow data
-        for item in request.DATA['items']:
+        for item in request.data['items']:
             #Sort pillows
             if "pillows" in item:
                 pillows = {}
@@ -52,7 +52,7 @@ class AcknowledgementMixin(object):
                         fabric_id = pillow['fabric']['id'] if 'id' in pillow['fabric'] else pillow['fabric']
                     except KeyError:
                         fabric_id = None
-                    logger.debug((pillow['type'], fabric_id))
+
                     if (pillow['type'], fabric_id) in pillows:
                         pillows[(pillow['type'], fabric_id)]['quantity'] += 1
                     else: 
@@ -78,34 +78,34 @@ class AcknowledgementMixin(object):
         fields = ['project', 'customer', 'fabric', 'items']
         
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
                     
                 if field == 'items':
-                    for index, item in enumerate(request.DATA['items']):
+                    for index, item in enumerate(request.data['items']):
                         try:
-                            request.DATA['items'][index]['fabric'] = item['fabric']['id']
+                            request.data['items'][index]['fabric'] = item['fabric']['id']
                         except (KeyError, TypeError):
                             pass
                             
                         try:
-                            request.DATA['items'][index]['product'] = item['id']
-                            del request.DATA['items'][index]['id']
+                            request.data['items'][index]['product'] = item['id']
+                            del request.data['items'][index]['id']
                         except KeyError as e:
-                            request.DATA['items'][index]['product'] = 10436
+                            request.data['items'][index]['product'] = 10436
                             
                         try:
-                            request.DATA['items'][index]['image'] = item['image']['id']
+                            request.data['items'][index]['image'] = item['image']['id']
                         except (KeyError, TypeError) as e:
                             pass
                             
                 elif field == 'project':
                     try:
-                        if "codename" in request.DATA['project'] and "id" not in request.DATA['project']:
-                            project = Project(codename=request.DATA['project']['codename'])
+                        if "codename" in request.data['project'] and "id" not in request.data['project']:
+                            project = Project(codename=request.data['project']['codename'])
                             project.save()
-                            request.DATA['project'] = project.id
+                            request.data['project'] = project.id
                     except TypeError:
                         pass
                    
@@ -125,7 +125,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         
         return super(AcknowledgementList, self).post(request, *args, **kwargs)
                     
-    def pre_save(self, obj):
+    def xpre_save(self, obj):
         """
         Override the presave in order to assign the customer to the
         acknowledgement
@@ -133,7 +133,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         
         #Assign the discount
         try:
-            if (obj.customer.discount > 0 and 'discount' not in self.request.DATA) or int(self.request.DATA['discount']) == 0: 
+            if (obj.customer.discount > 0 and 'discount' not in self.request.data) or int(self.request.data['discount']) == 0: 
                 obj.discount = obj.customer.discount
         except KeyError as e:
             obj.discount = obj.customer.discount
@@ -146,7 +146,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         
         return super(AcknowledgementMixin, self).pre_save(obj)
         
-    def post_save(self, obj, *args, **kwargs):
+    def xpost_save(self, obj, *args, **kwargs):
         """
         Override post save in order to create the pdf
         """
@@ -194,9 +194,9 @@ class AcknowledgementViewSet(viewsets.ModelViewSet):
     serializer_class = AcknowledgementSerializer
     
     def create(self, request):
-        data = request.DATA
-        customer = self._get_customer(request.DATA['customer']['id'])
-        serializer = self.get_serializer(data=request.DATA)
+        data = request.data
+        customer = self._get_customer(request.data['customer']['id'])
+        serializer = self.get_serializer(data=request.data)
         
         if serializer.is_valid():
            
