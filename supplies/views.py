@@ -48,9 +48,9 @@ class SupplyMixin(object):
         fields = ['supplier']
         
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
                 
         return request
     

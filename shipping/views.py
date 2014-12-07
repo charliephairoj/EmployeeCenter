@@ -32,15 +32,15 @@ class ShippingMixin(object):
         fields = ['acknowledgement']
         
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
                 
-        for index, item in enumerate(request.DATA['items']):
-            request.DATA['items'][index]['item'] = item['id']
-            del request.DATA['items'][index]['id']
+        for index, item in enumerate(request.data['items']):
+            request.data['items'][index]['item'] = item['id']
+            del request.data['items'][index]['id']
                         
-        request.DATA['customer'] = Acknowledgement.objects.get(pk=request.DATA['acknowledgement']).customer.id
+        request.data['customer'] = Acknowledgement.objects.get(pk=request.data['acknowledgement']).customer.id
         return request
     
     

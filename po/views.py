@@ -36,30 +36,30 @@ class PurchaseOrderMixin(object):
         fields = ['supplier', 'project']
 
         for field in fields:
-            if field in request.DATA:
-                if 'id' in request.DATA[field]:
-                    request.DATA[field] = request.DATA[field]['id']
+            if field in request.data:
+                if 'id' in request.data[field]:
+                    request.data[field] = request.data[field]['id']
 
         #Loop through data in order to prepare for deserialization
-        for index, item in enumerate(request.DATA['items']):
+        for index, item in enumerate(request.data['items']):
             #Only reassign the 'id' if it is post
             try:
-                request.DATA['items'][index]['supply'] = item['supply']['id']
+                request.data['items'][index]['supply'] = item['supply']['id']
             except KeyError:
                 pass
 
             try:
-                request.DATA['items'][index]['unit_cost'] = item['cost']
+                request.data['items'][index]['unit_cost'] = item['cost']
             except KeyError:
                 pass
             
             
             if field == 'project':
                 try:
-                    if "codename" in request.DATA['project'] and "id" not in request.DATA['project']:
-                        project = Project(codename=request.DATA['project']['codename'])
+                    if "codename" in request.data['project'] and "id" not in request.data['project']:
+                        project = Project(codename=request.data['project']['codename'])
                         project.save()
-                        request.DATA['project'] = project.id
+                        request.data['project'] = project.id
                 except (KeyError, TypeError):
                     pass
         
