@@ -202,7 +202,7 @@ class ShippingResourceTest(APITestCase):
                                  {'id': 2}]}
         resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #validate the object returned
@@ -234,7 +234,7 @@ class ShippingResourceTest(APITestCase):
                                   'quantity': 1}]}
         resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #validate the object returned
@@ -264,26 +264,7 @@ class ShippingResourceTest(APITestCase):
                                    authentication=self.get_credentials(),
                                    data={'delivery_date':base_delivery_date,
                                          'comments': 'test'})
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Shipping.objects.count(), 1)
-        
-        #Validate the obj
-        obj = resp.data
-        self.assertEqual(obj['id'], 1)
-        self.assertEqual(obj['customer']['id'], 1)
-        self.assertEqual(obj['comments'], 'test')
-        
-    def test_patch(self):
-        """
-        Tests updating a resoure via the PATCH
-        """
-        self.skipTest('')
-        self.create_shipping()
-        self.assertEqual(Shipping.objects.count(), 1)
-        resp = self.client.patch('/api/v1/shipping/1', format='json',
-                                   authentication=self.get_credentials(),
-                                   data={'comments': 'test'})
-        self.assertHttpAccepted(resp)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         self.assertEqual(Shipping.objects.count(), 1)
         
         #Validate the obj

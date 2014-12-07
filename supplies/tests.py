@@ -188,7 +188,7 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(Supply.objects.count(), 2)
         resp = self.client.post('/api/v1/supply/', format='json',
                                     data=base_supply)
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
        
         #Tests the dat aturned
         obj = resp.data
@@ -235,7 +235,7 @@ class SupplyAPITestCase(APITestCase):
         """
         #Testing returned types pre POST
         resp0 = self.client.get('/api/v1/supply/type/', format='json')
-        self.assertEqual(resp0.status_code, 200)
+        self.assertEqual(resp0.status_code, 200, msg=resp)
         type_list = resp0.data
         self.assertNotIn('egg', type_list)
         self.assertIn('wood', type_list)
