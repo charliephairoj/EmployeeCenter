@@ -12,7 +12,6 @@ from products.models import Product
 from supplies.models import Fabric
 from projects.models import Project
 from media.models import S3Object
-from administrator.models import User
 
 
 logger = logging.getLogger(__name__)

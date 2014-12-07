@@ -91,7 +91,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
-    project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
+    project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
     items = ItemSerializer(many=True)
     
     class Meta:
@@ -113,7 +113,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                               'codename': instance.project.codename}
         except AttributeError:
             pass
-                
+            
+        try:
+            ret['pdf'] = {'url': instance.pdf.generate_url()}
+        except AttributeError:
+            pass
+            
         return ret
         
     def create(self, validated_data):

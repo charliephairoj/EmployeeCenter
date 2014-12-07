@@ -34,18 +34,20 @@ class PurchaseOrderMixin(object):
         work with DRF
         """
         fields = ['supplier', 'project']
-
+        logger.debug(request.data)
         for field in fields:
             if field in request.data:
-                if 'id' in request.data[field]:
+                try:
                     request.data[field] = request.data[field]['id']
+                except (TypeError, KeyError) as e:
+                    logger.warn(e)
 
         #Loop through data in order to prepare for deserialization
         for index, item in enumerate(request.data['items']):
             #Only reassign the 'id' if it is post
             try:
                 request.data['items'][index]['supply'] = item['supply']['id']
-            except KeyError:
+            except (TypeError, KeyError):
                 pass
 
             try:
