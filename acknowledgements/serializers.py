@@ -44,8 +44,11 @@ class ItemSerializer(serializers.ModelSerializer):
     comments = serializers.CharField(required=False)
     location = serializers.CharField(required=False)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
-    image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
-    units = serializers.CharField(required=False)
+    image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
+    units = serializers.CharField(required=False, allow_null=True)
+    width = serializers.IntegerField(required=False, allow_null=True)
+    depth = serializers.IntegerField(required=False, allow_null=True)
+    height = serializers.IntegerField(required=False, allow_null=True)
    
     class Meta:
         model = Item
@@ -140,6 +143,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 try:
                     item_data[field] = item_data[field].id
                 except KeyError:
+                    pass
+                except AttributeError:
                     pass
         
         discount = validated_data.pop('discount', None) or validated_data['customer'].discount
