@@ -70,11 +70,9 @@ class UpholsterySerializer(serializers.ModelSerializer):
         Sets the description by combining the model number and configuration.
         Also sets the configuration and model for the product
         """
-        model_data = validated_data.pop('model')
-        model = Model.objects.get(pk=model_data['id'])
+        model = validated_data.pop('model')
         
-        config_data = validated_data.pop('configuration')
-        config = Configuration.objects.get(pk=config_data['id'])
+        config = validated_data.pop('configuration')
         
         try:    
             image_data = validated_data.pop('image')
@@ -82,7 +80,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
         except (KeyError, S3Object.DoesNotExist):
             image = None
             
-        instance = Table.objects.create(description="{0} {1}".format(model.model, config.configuration),
+        instance = Upholstery.objects.create(description="{0} {1}".format(model.model, config.configuration),
                                              model=model, configuration=config, image=image, **validated_data)
         
         return instance

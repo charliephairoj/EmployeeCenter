@@ -11,10 +11,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    
-    def pre_save(self, instance):
-        instance.is_customer = True
-        return instance
         
     def get_queryset(self):
         """
@@ -39,10 +35,6 @@ class SupplierViewSet(viewsets.ModelViewSet):
     """
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
-    
-    def pre_save(self, instance):
-        instance.is_supplier = True
-        return instance
         
     def get_queryset(self):
         """

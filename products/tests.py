@@ -31,8 +31,7 @@ base_model = {"model": "AC-1",
                           'bucket': 'media.dellarobbiathailand.com'}]}
 base_configuration = {"configuration": "Sofa"}
 base_upholstery = {"model": {"id": 1},
-                   "configuration": {"id": 1},
-                   'category': 'Chair'}
+                   "configuration": {"id": 1}}
 base_upholstery.update(base_product)
 base_table = {"model": {"id": 1},
               "configuration": {"id": 1,
@@ -363,8 +362,7 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(Upholstery.objects.count(), 1)
         resp = self.client.post('/api/v1/upholstery/', 
                                     format='json',
-                                    data=base_upholstery,
-                                    authorization=self.get_credentials())
+                                    data=base_upholstery)
         logger.debug(resp)
         self.assertEqual(Upholstery.objects.count(), 2)
         
@@ -381,8 +379,8 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['width'], 1000)
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
-        self.assertEqual(int(upholstery['manufacture_price']), '50000.00')
-        self.assertEqual(int(upholstery['price']), '250000.00')
+        self.assertEqual(upholstery['manufacture_price'], '50000.00')
+        self.assertEqual(upholstery['price'], '250000.00')
         
     def test_put(self):
         """
@@ -415,8 +413,8 @@ class UpholsteryResourceTest(APITestCase):
         self.assertEqual(upholstery['width'], 1000)
         self.assertEqual(upholstery['depth'], 500)
         self.assertEqual(upholstery['height'], 400)
-        self.assertEqual(int(upholstery['manufacture_price']), 50000)
-        self.assertEqual(int(upholstery['price']), 350000)
+        self.assertEqual(upholstery['manufacture_price'], '50000.00')
+        self.assertEqual(upholstery['price'], '350000.00')
         
     def test_delete(self):
         """

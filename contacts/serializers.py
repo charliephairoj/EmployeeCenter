@@ -16,11 +16,19 @@ class AddressSerializer(serializers.ModelSerializer):
         
 
 class ContactSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     
     class Meta:
         model = SupplierContact
-        fields = ("id", 'name', 'email', 'primary', 'telephone')
         read_only_fields = ('supplier',)
+        
+    def xto_internal_value(self, data):
+        
+        logger.debug(data)
+        
+    def xto_representation(self, instance):
+        
+        logger.debug(self.data)
         
         
 class ContactMixin(object):
@@ -42,13 +50,13 @@ class ContactMixin(object):
         except KeyError:
             contacts_data = []
                 
-        instance = self.Meta.model(**validated_data)
+        instance = self.Meta.model.objects.create(**validated_data)
         
         for address_data in addresses_data:
             Address(contact=instance, **address_data)
             
         for contact_data in contacts_data:
-            SupplierContact(supplier=instance, **contact_data)
+            SupplierContact(supplier=instance, **contact_data)        
         
         setattr(instance, 'is_{0}'.format(instance.__str__().lower()), True)
         
@@ -63,7 +71,6 @@ class ContactMixin(object):
         Calls the parent 'update' method and then updates or creates all the addresses and
         contacts that are nested
         """
-
         try:
             addresses_data = validated_data.pop('addresses')
         except KeyError:
@@ -81,12 +88,14 @@ class ContactMixin(object):
                     settattr(address, field_name, address_data[field_name])
             except KeyError:
                 Address.objects.create(contact=instance, **address_data)
-            
+                    
         for contact_data in contacts_data:
+            del contact_data['supplier']
+            
             try:
                 contact = SupplierContact.objects.get(pk=contact_data['id'])
                 for field_name in contact_data.keys():
-                    settattr(contact, field_name, contact_data[field_name])
+                    setattr(contact, field_name, contact_data[field_name])
             except KeyError:
                 SupplierContact.objects.create(supplier=instance, **contact_data)
         
@@ -94,7 +103,7 @@ class ContactMixin(object):
             setattr(instance, field_name, validated_data[field_name])
         
         instance.save()
-        
+
         return instance
         
         
@@ -104,20 +113,30 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        field = ('name', 'id', 'email', 'fax')
         
         
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
-    addresses = AddressSerializer(required=False, many=True)
+    addresses = AddressSerializer(required=False, many=True, read_only=True)
     #name_th = serializers.CharField(required=False)
-    contacts = ContactSerializer(required=False, many=True)
+    contacts = ContactSerializer(required=False, many=True, partial=True)
     
     class Meta:
         model = Supplier
-        field = ('name', 'id', 'fax', 'telephone')
-        depth = 1    
+        depth = 2
+        
+    def to_internal_value(self, data):
+        data = super(SupplierSerializer, self).to_internal_value(data)
+        return data
+        
+    def to_representation(self, instance):
+        
+        ret = super(SupplierSerializer, self).to_representation(instance)
+        
+        return ret
 
-    def validate_contacts(self, value):
-        logger.debug(self.data)
-        logger.debug(value)
-        return value
+    
+        
+        
+        
+        
+        

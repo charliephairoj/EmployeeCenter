@@ -1,9 +1,13 @@
+import logging
 from rest_framework import viewsets
 from rest_framework import generics
 from django.db.models import Q
 
 from products.models import Upholstery, Table, Model, Configuration
 from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationViewSet(viewsets.ModelViewSet):
@@ -69,9 +73,7 @@ class UpholsteryMixin(object):
 class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
  
     def post(self, request, *args, **kwargs):
-        logger.debug(request.data)
         request = self._format_primary_key_data(request)
-        logger.debug(request.data)
         return super(UpholsteryList, self).post(request, *args, **kwargs)
         
     def get_queryset(self):
