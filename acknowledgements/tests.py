@@ -97,7 +97,7 @@ base_ack = {'customer': base_customer,
                          #item 3:
                          #Custom item with no product
                          {"description": "test custom item",
-                          "unit_price": 0,
+                          "custom_price": 0,
                           'width': 1,
                           'is_custom_item': True,
                           "quantity": 1}]}
@@ -826,9 +826,9 @@ class AcknowledgementResourceTest(APITestCase):
                 
         #POST and verify the response
         ack_data = copy.deepcopy(base_ack)
-        ack_data['items'][0]['unit_price'] = 100
-        ack_data['items'][1]['unit_price'] = 200
-        ack_data['items'][2]['unit_price'] = 300
+        ack_data['items'][0]['custom_price'] = 100
+        ack_data['items'][1]['custom_price'] = 200
+        ack_data['items'][2]['custom_price'] = 300
 
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.client.post('/api/v1/acknowledgement/', format='json',
@@ -847,7 +847,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
-        self.assertEqual(Decimal(ack['total']), Decimal('734.00'))
+        self.assertEqual(Decimal(ack['total']), Decimal('700.00'))
         self.assertEqual(len(ack['items']), 3)
         
         #Test standard sized item 
@@ -876,8 +876,8 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item2['height'], 320)
         self.assertEqual(item2['depth'], 760)
         self.assertEqual(item2['fabric']['id'], 1)
-        self.assertEqual(Decimal(item2['unit_price']), Decimal('234'))
-        self.assertEqual(Decimal(item2['total']), Decimal('234'))
+        self.assertEqual(Decimal(item2['unit_price']), Decimal('200'))
+        self.assertEqual(Decimal(item2['total']), Decimal('200'))
         
         #Test custom item with width
         item3 = ack['items'][2]

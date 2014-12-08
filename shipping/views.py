@@ -51,18 +51,6 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         request = self._format_primary_key_data(request)
         
         return super(ShippingList, self).post(request, *args, **kwargs)
-    
-        
-    def pre_save(self, obj):
-        obj.employee = self.request.user
-        
-        return obj
-        
-    def post_save(self, obj, *args, **kwargs):
-        
-        #obj.create_and_upload_pdf()
-        
-        return obj
         
     def get_queryset(self):
         """
@@ -80,7 +68,7 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         return queryset
         
         
-class ShippingDetail(generics.RetrieveUpdateDestroyAPIView):
+class ShippingDetail(ShippingMixin, generics.RetrieveUpdateDestroyAPIView):
     pass
     
 """

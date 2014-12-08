@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ItemSerializer(serializers.ModelSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=AckItem.objects.all())
-    comments = serializers.CharField(required=False)
+    comments = serializers.CharField(required=False, allow_null=True)
     
     class Meta:
         model = Item
@@ -28,6 +28,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
         if instance.quantity == instance.item.quantity:
             instance.item.status = "SHIPPED"
+            instance.item.save()
         
         return instance
     
@@ -39,7 +40,8 @@ class ShippingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Shipping
-        read_only_fields = ('employee', 'pdf')
+        read_only_fields = ('employee',)
+        exclude = ('pdf',)
     
     def create(self, validated_data):
         """
@@ -58,18 +60,19 @@ class ShippingSerializer(serializers.ModelSerializer):
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
             
-        if instance.items.count() == instance.acknowledgement.items.filter(status='SHIPPED').count():
+        if instance.acknowledgement.items.count() == instance.acknowledgement.items.filter(status='SHIPPED').count():
             instance.acknowledgement.status = 'SHIPPED'
         else:
             instance.acknowledgement.status = 'PARTIALLY SHIPPED'
-            
+        instance.acknowledgement.save()    
+        
         instance.create_and_upload_pdf()
         
         instance.save()
         
         return instance
         
-    def to_represetation(self, instance):
+    def to_representation(self, instance):
         """
         Override the 'to_representation' method in order to customize the output of 
         customer and acknowledgement
@@ -79,6 +82,11 @@ class ShippingSerializer(serializers.ModelSerializer):
         ret['employee'] = {'id': instance.employee.id}
         
         ret['acknowledgement'] = {'id': instance.acknowledgement.id}
+        
+        try:
+            ret['pdf'] = {'url': instance.pdf.generate_url()}
+        except AttributeError:
+            pass
        
         return ret
                          

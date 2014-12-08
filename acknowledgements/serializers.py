@@ -48,7 +48,9 @@ class ItemSerializer(serializers.ModelSerializer):
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
-   
+    custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
+                                            allow_null=True)
+    
     class Meta:
         model = Item
         field = ('description', 'id', 'width', 'depth', 'height')
@@ -63,7 +65,7 @@ class ItemSerializer(serializers.ModelSerializer):
         acknowledgement = self.context['acknowledgement']
         pillow_data = validated_data.pop('pillows', None)      
         product = validated_data['product']
-        unit_price = validated_data.pop('unit_price', None) or product.price
+        unit_price = validated_data.pop('custom_price', None) or product.price
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height
@@ -74,7 +76,7 @@ class ItemSerializer(serializers.ModelSerializer):
                                                   height=height, **validated_data)
         
         #Calculate the total price of the item
-        if instance.is_custom_size:
+        if instance.is_custom_size and product.price == unit_price:
             instance._calculate_custom_price()
         else:
             instance.total = instance.quantity * instance.unit_price
@@ -186,7 +188,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             
         try:
             ret['pdf'] = {'acknowledgement': instance.acknowledgement_pdf.generate_url(),
-                          'production': instance.production_pdf.generate_url()}
+                          'production': instance.production_pdf.generate_url(),
+                          'label': instance.label_pdf.generate_url()}
         except AttributeError:
             ret['pdf'] = {'acknowledgement': 'test',
                           'production': 'test'}
