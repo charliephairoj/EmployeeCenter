@@ -52,7 +52,10 @@ class ContactMixin(object):
         
         try:
             first = validated_data.pop('first_name')
-            last = validated_data.pop('last_name')
+            try:
+                last = validated_data.pop('last_name')
+            except KeyError:
+                last = ''
             name = "{0} {1}".format(first, last)
         except KeyError:
             name = validated_data.pop('name')
