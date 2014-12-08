@@ -1,8 +1,13 @@
+import logging
+
 from django.db.models import Q
 from rest_framework import viewsets
 
 from contacts.models import Customer, Supplier
 from contacts.serializers import CustomerSerializer, SupplierSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -56,6 +61,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
         """
         
         """
+        logger.debug(self.request.query_params)
         if self.request.query_params.get('limit', None) == 0:
             return 1000
             

@@ -45,7 +45,7 @@ class SupplySerializer(serializers.ModelSerializer):
         output data
         """
         ret = super(SupplySerializer, self).to_representation(instance)
-        logger.debug(self.context)
+
         if 'supplier_id' in self.context['request'].query_params:
             instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
             
@@ -64,7 +64,13 @@ class SupplySerializer(serializers.ModelSerializer):
         
         ret['quantity'] = instance.quantity
            
+        try:
+            ret['image'] = {'url': instance.image.generate_url()}
+        except AttributeError: 
+            pass
+            
         return ret
+        
     def create(self, validated_data):
         """
         Override the 'create' method in order to customize creation of products
