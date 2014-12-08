@@ -39,7 +39,8 @@ class ContactSerializer(serializers.ModelSerializer):
         
         
 class ContactMixin(object):
-    
+    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     def create(self, validated_data):
         """
         Override the base method 'create'.
@@ -50,7 +51,14 @@ class ContactMixin(object):
         addresses_data = validated_data.pop('addresses', None)
         contacts_data = validated_data.pop('contacts', None)
         
-        instance = self.Meta.model.objects.create(**validated_data)
+        try:
+            first = validated_data.pop('first_name')
+            last = validated_data.pop('last_name')
+            name = "{0} {1}".format(first, last)
+        except KeyError:
+            name = validated_data.pop('name')
+            
+        instance = self.Meta.model.objects.create(name=name, **validated_data)
         
         if addresses_data:
             address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
@@ -97,7 +105,8 @@ class ContactMixin(object):
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False,  many=True)
-    #name_th = serializers.CharField(required=False)
+    first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Customer
