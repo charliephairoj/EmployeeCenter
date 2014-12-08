@@ -39,7 +39,6 @@ class ContactSerializer(serializers.ModelSerializer):
         
         
 class ContactMixin(object):
-    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     def create(self, validated_data):
         """
@@ -105,9 +104,11 @@ class ContactMixin(object):
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False,  many=True)
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
+    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Customer
         
