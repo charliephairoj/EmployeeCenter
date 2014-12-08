@@ -9,7 +9,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows acknowledgements to be view or editted
     """
-    queryset = Customer.objects.all()
+    queryset = Customer.objects.all().order_by('name')
     serializer_class = CustomerSerializer
         
     def get_queryset(self):
@@ -33,7 +33,7 @@ class SupplierViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows acknowledgements to be view or editted
     """
-    queryset = Supplier.objects.all()
+    queryset = Supplier.objects.all().order_by('name')
     serializer_class = SupplierSerializer
         
     def get_queryset(self):

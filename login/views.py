@@ -53,7 +53,6 @@ def app_login(request):
                 return render(request, 'home.html', {'user_data': jsonStr})
             """
             #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
-            logger.debug(settings.TEMPLATE_DIRS[0])
             return render(request, 'index.html')
 
             #return render(request, 'home.html', {'user_data': jsonStr})
@@ -79,8 +78,6 @@ def app_login(request):
             logger.debug(cleanUsername)
             logger.debug(cleanPassword)
             user = authenticate(username=cleanUsername, password=cleanPassword)
-            logger.debug(user)
-            logger.debug(request)
             #checks whether user authennticated
             if user is not None:
                 #checks if user is still active

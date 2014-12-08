@@ -29,7 +29,8 @@ class ProductSerializer(serializers.ModelSerializer):
         
 class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
-    notes = serializers.CharField(required=False)
+    description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False)
     #suppliers = ProductSerializer(required=False, many=True)
     
