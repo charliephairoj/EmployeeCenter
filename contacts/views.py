@@ -51,3 +51,23 @@ class SupplierViewSet(viewsets.ModelViewSet):
                                        Q(notes__icontains=query))
                                       
         return queryset
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        if self.request.query_params.get('limit', None) == 0:
+            return 1000
+            
+        return 20
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
