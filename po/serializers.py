@@ -17,7 +17,8 @@ class ItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Item
-        read_only_fields = ('description', 'total', 'purchase_order', 'sticker')
+        read_only_fields = ('description', 'total', 'sticker')
+        exclude = ('purchase_order', )
                     
     def create(self, validated_data):
         """
@@ -46,7 +47,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method
         """
-        instance.supply = instance.purchse_order.supplier
+        instance.supply.supplier = self.context['supplier']
         
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = validated_data.get('quantity')
@@ -56,6 +57,9 @@ class ItemSerializer(serializers.ModelSerializer):
         
         instance.save()
         
+        if instance.unit_cost != instance.supply.cost:
+            self._change_supply_cost(instance.supply, instance.unit_cost)
+            
         return instance
     
     def _change_supply_cost(self, supply, cost):
@@ -145,7 +149,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.calculate_total()
         
-        instance.create_and_upload_pdf()
+        #instance.create_and_upload_pdf()
         
         instance.save()
         return instance
@@ -173,7 +177,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         instance.calculate_total()
         
-        instance.create_and_upload_pdf()
+        #instance.create_and_upload_pdf()
         
         instance.save()
         
@@ -189,9 +193,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         #Update or Create Item
         for item_data in items_data:
             try:
+                
                 item = Item.objects.get(pk=item_data['id'])
-                serializer = ItemSerializer(item, data=item_data, partial_update=True)
-                if serializer.is_valid(raise_exception=True)
+                item_data['purchase_order'] = item.id
+                serializer = ItemSerializer(item, context={'supplier': instance.supplier}, data=item_data)
+                if serializer.is_valid(raise_exception=True):
                     item = serializer.save()
                 
                 """
