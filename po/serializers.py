@@ -199,6 +199,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 if item.unit_cost != item.supply.cost:
                     self._change_supply_cost(item.supply, item.unit_cost)
                     
+                item.calculate_total()
                 item.save()
                 
             except KeyError:
