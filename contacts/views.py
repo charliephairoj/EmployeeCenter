@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q
+from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import generics
 
@@ -32,8 +33,22 @@ class CustomerViewSet(viewsets.ModelViewSet):
                                        Q(telephone__icontains=query) |
                                        Q(notes__icontains=query))
                                       
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
-    
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit    
 
 class SupplierMixin(object):
     queryset = Supplier.objects.all().order_by('name')
@@ -48,24 +63,30 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         queryset = self.queryset
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(email__icontains=query) |
                                        Q(telephone__icontains=query) |
                                        Q(notes__icontains=query))
-                                      
+
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
         
     def get_paginate_by(self):
         """
         
         """
-        if int(self.request.query_params.get('limit', 1)) == 0:
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
             return self.queryset.count()
+        else:
+            return limit
             
-        return 20
-
 
 class SupplierDetail(SupplierMixin, generics.RetrieveUpdateDestroyAPIView):
     pass
@@ -98,12 +119,11 @@ class SupplierViewSet(viewsets.ModelViewSet):
         """
         
         """
-        logger.debug(self.request.query_params)
         if self.request.query_params.get('limit', None) == 0:
             return 1000
-            
-        return 20
-        
+        else:
+            return int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+                    
         
         
         

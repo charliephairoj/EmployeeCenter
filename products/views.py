@@ -28,8 +28,24 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
         if query:
             queryset = queryset.filter(Q(configuration__icontains=query))
                                       
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
-
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit
+            
+            
 class ModelViewSet(viewsets.ModelViewSet):
     """
     API endpoint to view and edit models
@@ -50,8 +66,24 @@ class ModelViewSet(viewsets.ModelViewSet):
                                        Q(model__icontains=query) |
                                        Q(collection__icontains=query))
                                       
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
-    
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit
+            
+                
 class UpholsteryMixin(object):
     queryset = Upholstery.objects.all()
     serializer_class = UpholsterySerializer
@@ -90,8 +122,24 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
                                        Q(model__name__icontains=query) |
                                        Q(configuration__configuration__icontains=query))
                                       
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
         
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit
+            
+                    
 class UpholsteryDetail(UpholsteryMixin, generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request = self._format_primary_key_data(request)

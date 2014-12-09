@@ -113,47 +113,6 @@ class AcknowledgementMixin(object):
 
         
 class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
-    
-    def post(self, request, *args, **kwargs):
-        """
-        Override the 'post' method in order 
-        to popular fields
-        """
-        request = self._format_primary_key_data(request)
-        
-        request = self._condense_pillows(request)
-        
-        return super(AcknowledgementList, self).post(request, *args, **kwargs)
-                    
-    def xpre_save(self, obj):
-        """
-        Override the presave in order to assign the customer to the
-        acknowledgement
-        """
-        
-        #Assign the discount
-        try:
-            if (obj.customer.discount > 0 and 'discount' not in self.request.data) or int(self.request.data['discount']) == 0: 
-                obj.discount = obj.customer.discount
-        except KeyError as e:
-            obj.discount = obj.customer.discount
-            
-        #Assign employee
-        obj.employee = self.request.user
-        
-        #Calculate the acknowledgement totals
-        obj.calculate_totals()
-        
-        return super(AcknowledgementMixin, self).pre_save(obj)
-        
-    def xpost_save(self, obj, *args, **kwargs):
-        """
-        Override post save in order to create the pdf
-        """
-        obj.calculate_totals()
-        
-        obj.save()
-        #obj.create_and_upload_pdfs()
         
     def get_queryset(self):
         """
@@ -167,8 +126,22 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(customer__name__icontains=query) | 
                                        Q(pk__icontains=query))
                                       
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
-    
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit    
 
 class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Acknowledgement.objects.all()

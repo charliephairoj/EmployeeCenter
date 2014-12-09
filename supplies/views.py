@@ -86,8 +86,22 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         if upc:
             queryset = queryset.filter(product__upc=upc).distinct('product__upc')
 
-        return queryset.distinct()
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
+        return queryset
         
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit        
     
     
 
