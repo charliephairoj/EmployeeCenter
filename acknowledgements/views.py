@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 from django.db import transaction
 from django.db.models import Q
+from django.conf import settings
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializer

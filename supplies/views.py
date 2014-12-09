@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status

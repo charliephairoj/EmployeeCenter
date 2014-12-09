@@ -2,6 +2,7 @@ import logging
 
 from rest_framework import generics
 from hr.serializers import EmployeeSerializer, AttendanceSerializer
+from django.conf import settings
 
 from hr.models import Employee, Attendance
 
