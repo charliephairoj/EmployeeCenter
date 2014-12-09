@@ -199,6 +199,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 if item.unit_cost != item.supply.cost:
                     self._change_supply_cost(item.supply, item.unit_cost)
                     
+                item.save()
+                
             except KeyError:
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
                 if serializer.is_valid(raise_exception=True):
