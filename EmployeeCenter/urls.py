@@ -25,6 +25,10 @@ from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
 from projects.views import ProjectViewSet
+from hr.views import EmployeeList, EmployeeDetail
+from hr.views import AttendanceList, AttendanceDetail
+
+
 """
 API Section
 
@@ -100,7 +104,10 @@ urlpatterns = patterns('',
     url(r'^api/v1/shipping/(?P<pk>[0-9]+)/$', ShippingDetail.as_view()),
     url(r'^api/v1/purchase-order/$', PurchaseOrderList.as_view()),
     url(r'^api/v1/purchase-order/(?P<pk>[0-9]+)/$', PurchaseOrderDetail.as_view()),
-    
+    url(r'^api/v1/employee/$', EmployeeList.as_view()),
+    url(r'^api/v1/employee/(?P<pk>[0-9]+)/$', EmployeeDetail.as_view()),
+    url(r'^api/v1/attendance/$', AttendanceList.as_view()),
+    url(r'^api/v1/attendance/(?P<pk>[0-9]+)/$', AttendanceDetail.as_view())
 )
 
 
