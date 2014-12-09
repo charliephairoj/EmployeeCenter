@@ -190,6 +190,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             try:
                 item = Item.objects.get(pk=item_data['id'])
+                serializer = ItemSerializer(item, data=item_data, partial_update=True)
+                if serializer.is_valid(raise_exception=True)
+                    item = serializer.save()
+                
+                """
                 item.supply.supplier = instance.supplier
                 item.discount = item_data.get('discount', None) or item.discount
                 item.quantity = item_data.get('quantity', None) or item.quantity
@@ -201,7 +206,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     
                 item.calculate_total()
                 item.save()
-                
+                """
             except KeyError:
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
                 if serializer.is_valid(raise_exception=True):
