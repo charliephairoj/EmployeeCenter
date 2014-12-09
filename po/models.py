@@ -268,7 +268,7 @@ class Item(models.Model):
         unit_cost = Decimal(self.unit_cost)
         discount = unit_cost * (Decimal(self.discount) / Decimal('100'))
         unit_cost = unit_cost - discount
-        self.total =  unit_cost * self.quantity
+        self.total =  unit_cost * Decimal(self.quantity)
 
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
