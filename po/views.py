@@ -34,7 +34,7 @@ class PurchaseOrderMixin(object):
         work with DRF
         """
         fields = ['supplier', 'project']
-        logger.debug(request.data)
+
         for field in fields:
             if field in request.data:
                 try:

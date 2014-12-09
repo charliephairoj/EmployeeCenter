@@ -61,9 +61,8 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         """
         
         """
-        logger.debug(self.request.query_params)
-        if self.request.query_params.get('limit', None) == 0:
-            return 1000
+        if int(self.request.query_params.get('limit', 1)) == 0:
+            return self.queryset.count()
             
         return 20
 

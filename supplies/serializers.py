@@ -49,6 +49,7 @@ class SupplySerializer(serializers.ModelSerializer):
         if 'supplier_id' in self.context['request'].query_params:
             instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
             
+            ret['unit_cost'] = instance.cost
             ret['cost'] = instance.cost
             ret['reference'] = instance.reference
             

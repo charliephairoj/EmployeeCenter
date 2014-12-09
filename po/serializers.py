@@ -17,7 +17,7 @@ class ItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Item
-        read_only_fields = ('description', 'total', 'purchase_order')
+        read_only_fields = ('description', 'total', 'purchase_order', 'sticker')
                     
     def create(self, validated_data):
         """
@@ -200,13 +200,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     self._change_supply_cost(item.supply, item.unit_cost)
                     
             except KeyError:
-                item_data['supply'] = Supply.objects.get(pk=item_data['supply'])
-                item_data['supply'].supplier = instance.supplier
-                item = Item.objects.create(purchase_order=instance, **item_data)
-                id_list.append(item.id)
-                
-            item.calculate_total()
-            item.save()
+                serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
+                if serializer.is_valid(raise_exception=True):
+                    item = serializer.save()
+                    id_list.append(item.id)
 
         #Delete Items
         for item in instance.items.all():

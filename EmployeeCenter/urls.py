@@ -14,7 +14,7 @@ from products.api import ModelResource, ConfigurationResource, UpholsteryResourc
 from administrator.api import UserResource, GroupResource, PermissionResource
 from hr.api import EmployeeResource, AttendanceResource
 
-from contacts.views import CustomerViewSet, SupplierViewSet
+from contacts.views import CustomerViewSet, SupplierViewSet, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import FabricViewSet, LogViewSet
@@ -61,7 +61,7 @@ v1_api.register(TableResource())
 router = DefaultRouter()
 
 router.register(r'api/v1/customer', CustomerViewSet)
-router.register(r'api/v1/supplier', SupplierViewSet)
+#router.register(r'api/v1/supplier', SupplierViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 #router.register(r'api/v1/upholstery', UpholsteryViewSet)
@@ -82,6 +82,8 @@ urlpatterns = patterns('',
     
     url(r'^', include(router.urls)),
     
+    url(r'^api/v1/supplier/$', SupplierList.as_view()),
+    url(r'^api/v1/supplier/(?P<pk>[0-9]+)/$', SupplierDetail.as_view()),
     url(r'^api/v1/supply/$', SupplyList.as_view()),
     url(r'^api/v1/supply/(?P<pk>[0-9]+)/$', SupplyDetail.as_view()),
     url(r'^api/v1/supply/type/$', supply_type_list),
