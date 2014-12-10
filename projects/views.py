@@ -5,27 +5,45 @@ import json
 import time
 
 from django.http import HttpResponse
-from rest_framework import viewsets
+from rest_framework import generics
+from rest_framework.response import Response
 
 from projects.models import Project, Room, Item
-from projects.serializers import ProjectSerializer
+from projects.serializers import ProjectSerializer, RoomSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
+class ProjectMixin(object):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+
+
+class ProjectList(ProjectMixin, generics.ListCreateAPIView):
+    pass
+    
+    
+class ProjectDetail(ProjectMixin, generics.RetrieveUpdateDestroyAPIView):
+    
+    def get(self, request, pk, format=None):
+            project = self.get_object()
+            serializer = ProjectSerializer(project, context={'pk':pk})
+            return Response(serializer.data)
+    
+    
+class RoomMixin(object):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+
+
+class RoomList(RoomMixin, generics.ListCreateAPIView):
+    pass
     
 
-def project(request, project_id=0):
-    return process_api(request, Project, project_id)
-
-
-def room(request, room_id=0):
-    return process_api(request, Room, room_id)
-
-
+class RoomDetail(RoomMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+    
+    
 def room_image(request):
     """
     Uploads the file in the request
@@ -43,10 +61,6 @@ def room_image(request):
                             status=201)
     else:
         return HttpResponse(status=401, mimetype="plain/text")
-
-
-def item(request, item_id=0):
-    return process_api(request, Item, item_id)
 
 
 def item_schematic(request, schematic_id=0):

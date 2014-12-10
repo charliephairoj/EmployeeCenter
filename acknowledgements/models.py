@@ -37,7 +37,7 @@ class Acknowledgement(models.Model):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
-    project = models.ForeignKey(Project, null=True, blank=True)
+    project = models.ForeignKey(Project, null=True, blank=True, related_name='acknowledgements')
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,

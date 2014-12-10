@@ -24,7 +24,8 @@ from products.views import TableList, TableDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
-from projects.views import ProjectViewSet
+from projects.views import ProjectList, ProjectDetail
+from projects.views import RoomList, RoomDetail
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 
@@ -70,7 +71,7 @@ router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 #router.register(r'api/v1/upholstery', UpholsteryViewSet)
 router.register(r'api/v1/supply/log', LogViewSet)
-router.register(r'api/v1/project', ProjectViewSet)
+#router.register(r'api/v1/project', ProjectViewSet)
 router.register(r'api/v1/log', LogViewSet)
 
 
@@ -107,7 +108,11 @@ urlpatterns = patterns('',
     url(r'^api/v1/employee/$', EmployeeList.as_view()),
     url(r'^api/v1/employee/(?P<pk>[0-9]+)/$', EmployeeDetail.as_view()),
     url(r'^api/v1/attendance/$', AttendanceList.as_view()),
-    url(r'^api/v1/attendance/(?P<pk>[0-9]+)/$', AttendanceDetail.as_view())
+    url(r'^api/v1/attendance/(?P<pk>[0-9]+)/$', AttendanceDetail.as_view()),
+    url(r'^api/v1/project/$', ProjectList.as_view()),
+    url(r'^api/v1/project/(?P<pk>[0-9]+)/$', ProjectDetail.as_view()),
+    url(r'^api/v1/room/$', RoomList.as_view()),
+    url(r'^api/v1/room/(?P<pk>[0-9]+)/$', RoomDetail.as_view())
 )
 
 
