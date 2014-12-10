@@ -46,23 +46,26 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         ret = super(SupplySerializer, self).to_representation(instance)
 
-        if 'supplier_id' in self.context['request'].query_params:
-            instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+        try:
+            if 'supplier_id' in self.context['request'].query_params:
+                instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
             
-            ret['unit_cost'] = instance.cost
-            ret['cost'] = instance.cost
-            ret['reference'] = instance.reference
+                ret['unit_cost'] = instance.cost
+                ret['cost'] = instance.cost
+                ret['reference'] = instance.reference
             
-        else:
-            ret['suppliers'] = [{'id': product.id,
-                                 'supplier': {'id': product.supplier.id,
-                                              'name': product.supplier.name},
-                                 'cost': product.cost,
-                                 'reference': product.reference,
-                                 'purchasing_units': product.purchasing_units,
-                                 'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
-                                 'upc': product.upc} for product in instance.products.all()]
-        
+            else:
+                ret['suppliers'] = [{'id': product.id,
+                                     'supplier': {'id': product.supplier.id,
+                                                  'name': product.supplier.name},
+                                     'cost': product.cost,
+                                     'reference': product.reference,
+                                     'purchasing_units': product.purchasing_units,
+                                     'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
+                                     'upc': product.upc} for product in instance.products.all()]
+        except KeyError:
+            pass
+            
         ret['quantity'] = instance.quantity
            
         try:
