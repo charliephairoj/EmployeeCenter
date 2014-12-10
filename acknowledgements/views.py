@@ -114,7 +114,18 @@ class AcknowledgementMixin(object):
 
         
 class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Override the 'put' method in order
+        to populate fields
+        """
+        request = self._format_primary_key_data(request)
         
+        request = self._condense_pillows(request)
+        
+        return super(AcknowledgementList, self).post(request, *args, **kwargs)
+         
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
