@@ -193,22 +193,26 @@ class AcknowledgementPDF(object):
         return Story
 
     def _create_customer_section(self):
-        #extract supplier address
-        address = self.customer.addresses.all()[0]
         #Create data array
         data = []
         #Add supplier name
         data.append(['Customer:', self.customer.name])
-        #Extract address
-        addr = address.address1 if address.address1 != None else ''
-        city = address.city if address.city != None else ''
-        territory = address.territory if address.territory != None else ''
-        country = address.country if address.country != None else ''
-        zipcode = address.zipcode if address.zipcode != None else ''
-        #add supplier address data
-        data.append(['', addr])
-        data.append(['', '%s, %s' % (city, territory)])
-        data.append(['', "%s %s" % (country, zipcode)])
+        try:
+            #extract supplier address
+            address = self.customer.addresses.all()[0]
+            #Extract address
+            addr = address.address1 if address.address1 != None else ''
+            city = address.city if address.city != None else ''
+            territory = address.territory if address.territory != None else ''
+            country = address.country if address.country != None else ''
+            zipcode = address.zipcode if address.zipcode != None else ''
+            #add supplier address data
+            data.append(['', addr])
+            data.append(['', '%s, %s' % (city, territory)])
+            data.append(['', "%s %s" % (country, zipcode)])
+        except IndexError:
+            pass
+            
         #Create Table
         table = Table(data, colWidths=(80, 440))
         #Create and apply Table Style
