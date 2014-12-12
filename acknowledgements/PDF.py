@@ -35,10 +35,16 @@ class AckDocTemplate(BaseDocTemplate):
     id = 0
     top_padding = 150
 
-    def __init__(self, filename, **kw):
-        if "id" in kw:
-            self.id = kw["id"]
-        BaseDocTemplate.__init__(self, filename, **kw)
+    def __init__(self, filename, **kwargs):
+        if "id" in kwargs:
+            self.id = kwargs["id"]
+            
+        try:
+            self.company = kwargs['company']
+        except KeyError:
+            pass
+            
+        BaseDocTemplate.__init__(self, filename, **kwargs)
         self.addPageTemplates(self._create_page_template())
 
     def _create_page_template(self):
@@ -51,7 +57,10 @@ class AckDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        if self.company.lower() == 'pacific carpet':
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/pci-logo.jpg"""
+        else:
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
@@ -87,7 +96,10 @@ class ProductionDocTemplate(AckDocTemplate):
     top_padding = 120
 
     def _create_header(self, canvas, doc):
-        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        if self.company.lower() == 'pacific carpet':
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/pci-logo.jpg"""
+        else:
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
@@ -147,7 +159,7 @@ class AcknowledgementPDF(object):
         self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.ack.id, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()

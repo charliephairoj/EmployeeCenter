@@ -257,6 +257,15 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['vat'], 0)
         self.assertEqual(Decimal(ack['total']), Decimal(0))
     
+    def xtest_post_dr_vs_pci(self):
+        """
+        Test POSTING ack with company as 'Dellarobbia Thailand' vs 'Pacific Carpet'
+        """
+        logger.debug("\n\n Testing creating acknowledgement with diferring companies\n")
+        ack1_data = copy.deepcopy(base_ack)
+        ack1_data['company'] = 'Dellarobbia Thailand'
+        ack
+        
     def test_post_with_discount(self):
         """
         Testing POSTing data to the api
