@@ -159,7 +159,7 @@ class AcknowledgementPDF(object):
         self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -575,7 +575,7 @@ class ProductionPDF(AcknowledgementPDF):
         self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = ProductionDocTemplate(self.location, id=self.ack.id, pagesize=A4,
+        doc = ProductionDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
                                     leftMargin=36, rightMargin=36,
                                     topMargin=36)
         #Build the document with stories
