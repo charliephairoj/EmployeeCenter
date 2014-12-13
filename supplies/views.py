@@ -50,8 +50,11 @@ class SupplyMixin(object):
         
         for field in fields:
             if field in request.data:
-                if 'id' in request.data[field]:
-                    request.data[field] = request.data[field]['id']
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError:
+                    pass
                 
         return request
     
