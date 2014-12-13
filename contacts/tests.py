@@ -203,10 +203,11 @@ class SupplierResourceTest(APITestCase):
     def get_credentials(self):
         return None #self.create_basic(username=self.username, password=self.password)
     
-    def test_get_json_list(self):
+    def test_get_list(self):
         """
         Test GET of list 
         """
+        logger.debug("\n\n Test GET request for a list of suppliers \n")
         #Retrieve and validate GET response
         resp = self.client.get('/api/v1/supplier/', format='json')
         self.assertEqual(resp.status_code, 200)
