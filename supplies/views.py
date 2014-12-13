@@ -46,7 +46,7 @@ class SupplyMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['supplier']
+        fields = ['supplier', 'image']
         
         for field in fields:
             if field in request.data:

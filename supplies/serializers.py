@@ -45,31 +45,34 @@ class SupplySerializer(serializers.ModelSerializer):
         output data
         """
         ret = super(SupplySerializer, self).to_representation(instance)
-
-        try:
-            if 'supplier_id' in self.context['request'].query_params:
-                instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+        
+        view = self.context['view']
+        if view.lookup_field in view.kwargs or self.context['request'].method.lower() in ['put', 'post']:
+            ret['suppliers'] = [{'id': product.id,
+                                 'supplier': {'id': product.supplier.id,
+                                              'name': product.supplier.name},
+                                 'cost': product.cost,
+                                 'reference': product.reference,
+                                 'purchasing_units': product.purchasing_units,
+                                 'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
+                                 'upc': product.upc} for product in instance.products.all()]
+        else:
+            try:
+                if 'supplier_id' in self.context['request'].query_params:
+                    instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
             
-                ret['unit_cost'] = instance.cost
-                ret['cost'] = instance.cost
-                ret['reference'] = instance.reference
+                    ret['unit_cost'] = instance.cost
+                    ret['cost'] = instance.cost
+                    ret['reference'] = instance.reference
             
-            else:
-                ret['suppliers'] = [{'id': product.id,
-                                     'supplier': {'id': product.supplier.id,
-                                                  'name': product.supplier.name},
-                                     'cost': product.cost,
-                                     'reference': product.reference,
-                                     'purchasing_units': product.purchasing_units,
-                                     'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
-                                     'upc': product.upc} for product in instance.products.all()]
-        except KeyError:
-            pass
+            except KeyError:
+                pass
             
         ret['quantity'] = instance.quantity
            
         try:
-            ret['image'] = {'url': instance.image.generate_url()}
+            ret['image'] = {'id': instance.image.id,
+                            'url': instance.image.generate_url()}
         except AttributeError: 
             pass
             
