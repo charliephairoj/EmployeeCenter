@@ -88,7 +88,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         #Filter based on product upc code
         upc = self.request.QUERY_PARAMS.get('upc', None)
         if upc:
-            queryset = queryset.filter(product__upc=upc).distinct('product__upc')
+            queryset = queryset.filter(products__upc=upc).distinct('product__upc')
 
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
