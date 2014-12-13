@@ -224,7 +224,8 @@ class SupplierResourceTest(APITestCase):
         self.assertEqual(supplier["fax"], "0224223423")
         self.assertEqual(supplier['discount'], 20)
         #Tests the contacts
-        self.assertIn('contacts', supplier)
+        self.assertNotIn('contacts', supplier)
+        """
         self.assertEqual(len(supplier['contacts']), 1)
         contact = supplier['contacts'][0]
         self.assertIn('id', contact)
@@ -232,6 +233,7 @@ class SupplierResourceTest(APITestCase):
         self.assertEqual(contact['name'], 'Charlie P')
         self.assertEqual(contact['email'], 'test@yahoo.com')
         self.assertEqual(contact['telephone'], '123456789')
+        """
         
     def test_post(self):
         """

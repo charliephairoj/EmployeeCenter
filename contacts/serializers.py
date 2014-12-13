@@ -51,12 +51,13 @@ class ContactMixin(object):
         contacts_data = validated_data.pop('contacts', None)
         
         try:
-            first = validated_data.pop('first_name')
+            first = validated_data['first_name']
             try:
-                last = validated_data.pop('last_name')
+                last = validated_data['last_name']
             except KeyError:
                 last = ''
             name = u"{0} {1}".format(first, last)
+            validated_data.pop('name', None)
         except KeyError:
             name = validated_data.pop('name')
             
@@ -134,9 +135,9 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
                 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
-    addresses = AddressSerializer(required=False, many=True)
+    addresses = AddressSerializer(required=False, many=True, write_only=True)
     #name_th = serializers.CharField(required=False)
-    contacts = ContactSerializer(required=False, many=True, partial=True)
+    contacts = ContactSerializer(required=False, many=True, write_only=True)
     
     class Meta:
         model = Supplier
@@ -145,6 +146,12 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         
         ret = super(SupplierSerializer, self).to_representation(instance)
         
+        if "pk" in self.context['view'].kwargs or self.context['request'].method.lower() in ['put', 'post']:
+            
+            ret['contacts'] = ContactSerializer(SupplierContact.objects.filter(supplier=instance.id), many=True).data
+            
+            ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
+            
         return ret
         
     def update(self, instance, validated_data):
