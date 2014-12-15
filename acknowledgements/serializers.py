@@ -118,7 +118,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
         
 class AcknowledgementSerializer(serializers.ModelSerializer):
-    company = serializers.CharField()
+    company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
     project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
