@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    upc = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     
     class Meta:
         model = Product
@@ -32,11 +33,11 @@ class SupplySerializer(serializers.ModelSerializer):
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False)
-    #suppliers = ProductSerializer(required=False, many=True)
+    #suppliers = ProductSerializer(source="products", required=False, many=True)
     
     class Meta:
         model = Supply
-        read_only_fields = ['suppliers']
+        #read_only_fields = ['suppliers']
         exclude = ['quantity_th', 'quantity_kh']
         
     def to_representation(self, instance):
@@ -109,16 +110,21 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to customize create, update and delete of products
         """
-        products_data = validated_data.pop('suppliers', None)
-        
+        try:
+            products_data = validated_data.pop('suppliers')
+        except KeyError:
+            products_data = validated_data.pop('products', None)
+            
+        logger.debug(products_data)
         old_quantity = instance.quantity
         new_quantity = validated_data['quantity']
-        
+        logger.debug(validated_data)
+        logger.debug(products_data)
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
         
         if products_data:
-            product_serializer = ProductSerializer(data=products_data, many=True)
+            product_serializer = ProductSerializer(data=products_data, context={'supply': instance}, many=True)
             if product_serializer.is_valid(raise_exception=True):
                 product_serializer.save()
         

@@ -4,6 +4,7 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
+import copy
 from decimal import Decimal
 import logging
 import random
@@ -82,6 +83,7 @@ class SupplyAPITestCase(APITestCase):
         
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()
+        self.supplier2 = Supplier.objects.create(**base_supplier)
         self.supply = Supply.create(**base_supply)
         self.assertIsNotNone(self.supply.pk)
         self.supply2 = Supply.create(**base_supply)
@@ -465,7 +467,29 @@ class SupplyAPITestCase(APITestCase):
         obj = resp.data
         self.assertEqual(float(obj['quantity']), float('8'))
         
-
+    def test_put_to_create_new_product(self):
+        """
+        Tests adding a new supplier/product to the supply
+        """
+        logger.debug("\n\nTest creating a new supply/product via PUT\n")
+        modified_data = copy.deepcopy(base_supply)
+        modified_data['suppliers'] = [{'id': 1,
+                                       'supplier': {'id': 1}},
+                                      {'reference': 'A4',
+                                        'cost': '19.99',
+                                        'purchasing_units': 'ml',
+                                        'quantity_per_purchasing_unit': 4,
+                                        'supplier': {'id': 2}}]
+                                        
+        resp = self.client.put('/api/v1/supply/1/', format='json', data=modified_data)
+        
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        self.assertEqual(Supply.objects.count(), 2)
+        
+        obj = resp.data
+        self.assertIn('suppliers', obj)
+        self.assertEqual(len(obj['suppliers']), 2)
+        
 class FabricAPITestCase(APITestCase):
     
     def setUp(self):

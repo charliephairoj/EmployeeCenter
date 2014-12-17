@@ -46,7 +46,7 @@ class SupplyMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['supplier', 'image']
+        fields = ['supplier', 'image', 'suppliers']
         
         for field in fields:
             if field in request.data:
@@ -55,7 +55,17 @@ class SupplyMixin(object):
                         request.data[field] = request.data[field]['id']
                 except TypeError:
                     pass
-                
+                    
+                #format for supplier in suppliers list
+                if field == 'suppliers':
+                    for index, supplier in enumerate(request.data[field]):
+                        logger.debug(index)
+                        logger.debug(supplier)
+                        try:
+                            request.data[field][index]['supplier'] = supplier['supplier']['id']
+                        except KeyError:
+                            pass
+                logger.debug(request.data)
         return request
     
     
