@@ -99,7 +99,7 @@ class AcknowledgementMixin(object):
                         try:
                             request.data['items'][index]['image'] = item['image']['id']
                         except (KeyError, TypeError) as e:
-                            pass
+                            request.data['items'][index]['image'] = None
                             
                 elif field == 'project':
                     try:
