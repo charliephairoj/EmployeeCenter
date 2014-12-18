@@ -10,30 +10,88 @@ from contacts.serializers import SupplierSerializer
 
 logger = logging.getLogger(__name__)
 
+class ProductListSerializer(serializers.ListSerializer):
+    
+    def create(self, validated_data):
+        """
+        Override the 'create' method
+        
+        We separate the data with ids, which will be used to update existing products. After
+        the existing products are updated or deleted, then new products are created for data
+        without ids
+        """
+        """
+        #Extract data for existing products
+        data_to_update = []
+        for index, product in enumerate(validated_data):
+            if "id" in product:
+                data_to_update.append(validated_data.pop(index))
+        
+        #Update existing products with extracted data
+        self.update(Product.objects.filter(supply=self.context['supply']), data_to_update)
+        
+        #Create new products for data without ids
+        return super(ProductListSerializer, self).create(validated_data)
+        """
+        return self.update(Product.objects.filter(supply=self.context['supply']), validated_data)
+        
+    def update(self, instance, validated_data):
+        """
+        Implement 'update' method
+        
+        This method will both create and update existing products, based on whether there is an
+        id present in the data
+        """
+        # Maps for id->instance and id->data item.
+        product_mapping = {product.id: product for product in instance}
+        data_mapping = {int(item.get('id', 0)): item for item in validated_data}
+        logger.debug(validated_data)
+        logger.debug(data_mapping)
+        logger.debug(product_mapping)
+        # Perform creations and updates.
+        ret = []
+        for product_id, data in data_mapping.items():
+            product = product_mapping.get(product_id, None)
+            logger.debug(product)
+            if product is None:
+                ret.append(self.child.create(data))
+            else:
+                ret.append(self.child.update(product, data))
 
+        # Perform deletions.
+        for product_id, product in product_mapping.items():
+            if product_id not in data_mapping:
+                product.delete()
+
+        return ret
+        
+    
 class ProductSerializer(serializers.ModelSerializer):
     upc = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    id = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = Product
         read_only_fields = ['supply']
+        list_serializer_class = ProductListSerializer
         
     def create(self, validated_data):
         """
         Override the 'create' method in order to assign the supply passed via context
         """
         supply = self.context['supply']
-        
+
         instance = self.Meta.model.objects.create(supply=supply, **validated_data)
 
         return instance
+        
         
 class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False)
-    #suppliers = ProductSerializer(source="products", required=False, many=True)
+    suppliers = ProductSerializer(source="products", required=False, many=True)
     
     class Meta:
         model = Supply
@@ -115,11 +173,9 @@ class SupplySerializer(serializers.ModelSerializer):
         except KeyError:
             products_data = validated_data.pop('products', None)
             
-        logger.debug(products_data)
         old_quantity = instance.quantity
         new_quantity = validated_data['quantity']
-        logger.debug(validated_data)
-        logger.debug(products_data)
+
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
         

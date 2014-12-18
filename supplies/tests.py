@@ -474,7 +474,9 @@ class SupplyAPITestCase(APITestCase):
         logger.debug("\n\nTest creating a new supply/product via PUT\n")
         modified_data = copy.deepcopy(base_supply)
         modified_data['suppliers'] = [{'id': 1,
-                                       'supplier': {'id': 1}},
+                                       'supplier': {'id': 1},
+                                       'reference': 'BOO', 
+                                       'cost': '123.45'},
                                       {'reference': 'A4',
                                         'cost': '19.99',
                                         'purchasing_units': 'ml',
@@ -489,6 +491,17 @@ class SupplyAPITestCase(APITestCase):
         obj = resp.data
         self.assertIn('suppliers', obj)
         self.assertEqual(len(obj['suppliers']), 2)
+        supplier1 = obj['suppliers'][0]
+        self.assertEqual(supplier1['reference'], 'BOO')
+        self.assertEqual(supplier1['cost'], Decimal('123.45'))
+        
+        supplier2 = obj['suppliers'][1]
+        self.assertEqual(supplier2['reference'], 'A4')
+        self.assertEqual(supplier2['cost'], Decimal('19.99'))
+        self.assertEqual(supplier2['purchasing_units'], 'ml')
+        self.assertEqual(supplier2['quantity_per_purchasing_unit'], Decimal('4'))
+        self.assertEqual(supplier2['supplier']['id'], 2)
+        
         
 class FabricAPITestCase(APITestCase):
     

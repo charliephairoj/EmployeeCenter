@@ -59,13 +59,11 @@ class SupplyMixin(object):
                 #format for supplier in suppliers list
                 if field == 'suppliers':
                     for index, supplier in enumerate(request.data[field]):
-                        logger.debug(index)
-                        logger.debug(supplier)
                         try:
                             request.data[field][index]['supplier'] = supplier['supplier']['id']
-                        except KeyError:
+                        except (KeyError, TypeError):
                             pass
-                logger.debug(request.data)
+
         return request
     
     
