@@ -47,7 +47,7 @@ class ProductListSerializer(serializers.ListSerializer):
         try:
             product_mapping = {product.id: product for product in instance}
             data_mapping = {int(item.get('id', 0)): item for item in validated_data}
-        except Exception:
+        except SyntaxError:
             product_mapping = {}
             for product in instance:
                 product_mapping[product.id] = product
