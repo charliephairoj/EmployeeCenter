@@ -42,12 +42,20 @@ class ProductListSerializer(serializers.ListSerializer):
         This method will both create and update existing products, based on whether there is an
         id present in the data
         """
+        
         # Maps for id->instance and id->data item.
-        product_mapping = {product.id: product for product in instance}
-        data_mapping = {int(item.get('id', 0)): item for item in validated_data}
-        logger.debug(validated_data)
-        logger.debug(data_mapping)
-        logger.debug(product_mapping)
+        try:
+            product_mapping = {product.id: product for product in instance}
+            data_mapping = {int(item.get('id', 0)): item for item in validated_data}
+        except Exception:
+            product_mapping = {}
+            for product in instance:
+                product_mapping[product.id] = product
+            
+            data_mapping = {}
+            for item in validated_data:
+                data_mapping[int(item.get('id', 0))] = item
+            
         # Perform creations and updates.
         ret = []
         for product_id, data in data_mapping.items():
