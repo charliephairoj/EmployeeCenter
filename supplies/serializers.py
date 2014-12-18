@@ -44,17 +44,19 @@ class ProductListSerializer(serializers.ListSerializer):
         """
         
         # Maps for id->instance and id->data item.
+        """
         try:
             product_mapping = {product.id: product for product in instance}
             data_mapping = {int(item.get('id', 0)): item for item in validated_data}
-        except SyntaxError:
-            product_mapping = {}
-            for product in instance:
-                product_mapping[product.id] = product
-            
-            data_mapping = {}
-            for item in validated_data:
-                data_mapping[int(item.get('id', 0))] = item
+        except SyntaxError as e:
+            """
+        product_mapping = {}
+        for product in instance:
+            product_mapping[product.id] = product
+    
+        data_mapping = {}
+        for item in validated_data:
+            data_mapping[int(item.get('id', 0))] = item
             
         # Perform creations and updates.
         ret = []
