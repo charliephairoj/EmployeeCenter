@@ -79,6 +79,9 @@ class ProductListSerializer(serializers.ListSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     upc = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     id = serializers.CharField(write_only=True, required=False)
+    reference = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    purchasing_units = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     
     class Meta:
         model = Product
