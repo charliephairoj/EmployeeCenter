@@ -103,7 +103,7 @@ class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    type = serializers.CharField(required=False)
+    type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     suppliers = ProductSerializer(source="products", required=False, many=True)
     
     class Meta:
