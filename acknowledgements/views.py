@@ -39,6 +39,17 @@ class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all().order_by('-id')
     serializer_class = AcknowledgementSerializer
     
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(SupplyMixin, self).handle_exception(exc)
+    
     def _condense_pillows(self, request):
         """
         Condense the pillows by combining pillows of the same type and fabric

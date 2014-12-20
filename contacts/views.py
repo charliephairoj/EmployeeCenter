@@ -56,6 +56,18 @@ class SupplierMixin(object):
     queryset = Supplier.objects.all().order_by('name')
     serializer_class = SupplierSerializer
     
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(SupplyMixin, self).handle_exception(exc)
+    
+    
 class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         
     def get_queryset(self):

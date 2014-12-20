@@ -21,6 +21,17 @@ class PurchaseOrderMixin(object):
     queryset = PurchaseOrder.objects.all().order_by('-id')
     serializer_class = PurchaseOrderSerializer
     
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(SupplyMixin, self).handle_exception(exc)
+    
     def post_save(self, obj, *args, **kwargs):
         
         obj.calculate_total()

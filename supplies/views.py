@@ -40,7 +40,18 @@ def shopping_list(request):
 class SupplyMixin(object):
     queryset = Supply.objects.all().order_by('description')
     serializer_class = SupplySerializer
-            
+    
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(SupplyMixin, self).handle_exception(exc)
+        
     def _format_primary_key_data(self, request):
         """
         Format fields that are primary key related so that they may 
@@ -113,7 +124,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         if limit == 0:
             return self.queryset.count()
         else:
-            return limit        
+            return limit 
     
     
 

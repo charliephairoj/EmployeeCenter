@@ -168,7 +168,7 @@ class PurchaseOrderPDF():
         
         try: 
             #extract supplier address
-            address = self.supplier.address_set.all()[0]
+            address = self.supplier.addresses.all()[0]
             #add supplier address data
             data.append(['', address.address1])
             if address.address2:

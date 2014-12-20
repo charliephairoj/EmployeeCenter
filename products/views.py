@@ -90,6 +90,17 @@ class UpholsteryMixin(object):
     queryset = Upholstery.objects.all()
     serializer_class = UpholsterySerializer
     
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(SupplyMixin, self).handle_exception(exc)
+    
     def _format_primary_key_data(self, request):
         """
         Format fields that are primary key related so that they may 

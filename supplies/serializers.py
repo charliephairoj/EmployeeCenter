@@ -154,10 +154,13 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to customize creation of products
         """
+        logger.debug(validated_data)
         if 'supplier' in validated_data:
             suppliers_data = [validated_data.pop('supplier')]
         elif 'suppliers' in validated_data:
             suppliers_data = validated_data.pop('suppliers')
+        elif 'products' in validated_data:
+            suppliers_data = validated_data.pop('products')
         else:
 
             data = {}
@@ -166,8 +169,12 @@ class SupplySerializer(serializers.ModelSerializer):
                     data[field] = self.context['request'].data[field]
                 except KeyError:
                     pass
-            data['supplier'] = self.context['request'].data['supplier']
                     
+            try:
+                data['supplier'] = self.context['request'].data['supplier']
+            except KeyError:
+                data['supplier'] = self.context['request'].data['suppliers'][0]
+                       
             suppliers_data = [data]
             
         instance = self.Meta.model.objects.create(**validated_data)
