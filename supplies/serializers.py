@@ -131,10 +131,12 @@ class SupplySerializer(serializers.ModelSerializer):
             
             #Add sticker url or create stickers if they do not exists
             try:                     
-                ret['sticker'] = {'url': instance.sticker.generate_url()}
+                ret['sticker'] = {'id': instance.sticker.id, 
+                                  'url': instance.sticker.generate_url()}
             except AttributeError:
                 instance.create_stickers()
-                ret['sticker'] = {'url': instance.sticker.generate_url()}
+                ret['sticker'] = {'id': instance.sticker.id,
+                                  'url': instance.sticker.generate_url()}
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
