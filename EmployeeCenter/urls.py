@@ -124,7 +124,22 @@ urlpatterns += patterns('acknowledgements.views',
     #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
     #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
-    url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image')
+    url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
+    url(r'/api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
+    url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image')
+    
+    #url(r'^acknowledgement/item$', 'item'),
+    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
+)
+
+urlpatterns += patterns('supplies.views',
+    #url(r'^acknowledgement$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
+    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
+    #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
+    url(r'^/api/v1/supply/image/$', 'supply_image'),
+    url(r'^api/v1/supply/image/$', 'supply_image')
     
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')

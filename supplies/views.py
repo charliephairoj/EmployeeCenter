@@ -1,6 +1,9 @@
 from io import BytesIO
 import logging
 from decimal import Decimal
+import json
+import time
+
 
 from rest_framework import viewsets
 from django.db.models import Q
@@ -14,6 +17,7 @@ from rest_framework import status
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Log, Product
 from supplies.PDF import SupplyPDF
+from utilities.http import save_upload
 from auth.models import S3Object
 from supplies.serializers import SupplySerializer, FabricSerializer, LogSerializer
 
@@ -22,6 +26,19 @@ from supplies.serializers import SupplySerializer, FabricSerializer, LogSerializ
 logger = logging.getLogger(__name__)
 
 
+def supply_image(request):
+    if request.method == "POST":
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "supply/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+        
+        
 @login_required
 def shopping_list(request):
     response = HttpResponse(content_type='application/pdf')
