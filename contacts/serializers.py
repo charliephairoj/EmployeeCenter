@@ -138,6 +138,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, write_only=True)
     #name_th = serializers.CharField(required=False)
     contacts = ContactSerializer(required=False, many=True, write_only=True)
+    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Supplier
