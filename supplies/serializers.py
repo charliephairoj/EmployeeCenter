@@ -128,6 +128,13 @@ class SupplySerializer(serializers.ModelSerializer):
                                  'purchasing_units': product.purchasing_units,
                                  'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
                                  'upc': product.upc} for product in instance.products.all()]
+            
+            #Add sticker url or create stickers if they do not exists
+            try:                     
+                ret['sticker'] = {'url': instance.sticker.generate_url()}
+            except AttributeError:
+                instance.create_stickers()
+                ret['sticker'] = {'url': instance.sticker.generate_url()}
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
@@ -178,12 +185,14 @@ class SupplySerializer(serializers.ModelSerializer):
             suppliers_data = [data]
             
         instance = self.Meta.model.objects.create(**validated_data)
+        instance.create_stickers()
         
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
             product_serializer.save()
             
         return instance
+        
     def update(self, instance, validated_data):
         """
         Override the 'update' method in order to customize create, update and delete of products
