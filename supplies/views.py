@@ -73,8 +73,10 @@ class SupplyMixin(object):
                         try:
                             request.data[field][index]['supplier'] = supplier['supplier']['id']
                         except (KeyError, TypeError):
-                            pass
-
+                            try:
+                                request.data[field][index]['supplier'] = supplier['id']
+                            except KeyError:
+                                pass
         return request
     
     
