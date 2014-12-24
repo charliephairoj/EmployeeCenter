@@ -4,7 +4,6 @@ import warnings
 
 import boto
 from django.utils.encoding import force_text
-from django.utils.module_loading import import_string
 from django.views.debug import ExceptionReporter, get_exception_reporter_filter
 
 
