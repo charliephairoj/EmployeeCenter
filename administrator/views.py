@@ -6,12 +6,28 @@ from django.contrib.auth.models import Permission, Group, User
 from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
+from rest_framework import generics
+
+#from administrator.models import User
+from administrator.serializers import UserSerializer
 
 
+logger = logging.getLogger(__name__)
 
-logger = logging.getLogger('EmployeeCenter')
 
+class UserMixin(object):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    
+    
+class UserList(UserMixin, generics.ListCreateAPIView):
+    pass
+    
 
+class UserDetail(UserMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+    
+    
 def get_access_key(iam, user):
     try:
         data = iam.get_all_access_keys(user.username)
