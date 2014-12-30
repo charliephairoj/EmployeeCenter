@@ -29,6 +29,8 @@ from projects.views import RoomList, RoomDetail
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from administrator.views import UserList, UserDetail
+from administrator.views import GroupList, GroupDetail
+from administrator.views import PermissionList, PermissionDetail
 
 
 """
@@ -115,7 +117,11 @@ urlpatterns = patterns('',
     url(r'^api/v1/room/$', RoomList.as_view()),
     url(r'^api/v1/room/(?P<pk>[0-9]+)/$', RoomDetail.as_view()),
     url(r'^api/v1/user/$', UserList.as_view()),
-    url(r'^api/v1/user/(?P<pk>[0-9]+)/$', UserDetail.as_view())
+    url(r'^api/v1/user/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
+    url(r'^api/v1/group/$', GroupList.as_view()),
+    url(r'^api/v1/group/(?P<pk>[0-9]+)/$', GroupDetail.as_view()),
+    url(r'^api/v1/permission/$', PermissionList.as_view()),
+    url(r'^api/v1/permission/(?P<pk>[0-9]+)/$', PermissionDetail.as_view())
 )
 
 

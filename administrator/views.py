@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate
 from rest_framework import generics
 
 #from administrator.models import User
-from administrator.serializers import UserSerializer
+from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,32 @@ class UserList(UserMixin, generics.ListCreateAPIView):
     
 
 class UserDetail(UserMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+    
+
+class GroupMixin(object):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    
+    
+class GroupList(GroupMixin, generics.ListCreateAPIView):
+    pass
+    
+    
+class GroupDetail(GroupMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+    
+    
+class PermissionMixin(object):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+
+
+class PermissionList(PermissionMixin, generics.ListCreateAPIView):
+    pass
+    
+    
+class PermissionDetail(PermissionMixin, generics.RetrieveUpdateDestroyAPIView):
     pass
     
     
