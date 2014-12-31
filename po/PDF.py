@@ -287,8 +287,8 @@ class PurchaseOrderPDF():
             calculated_unit_cost = supply.unit_cost - (supply.unit_cost * (Decimal(supply.discount) / Decimal('100')))
             logger.debug('unit cost: {0}'.format(calculated_unit_cost))
             data.append([i,
-                         supply.supply.reference,
-                         self.__get_description(supply),
+                         self._get_reference(supply),
+                         self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
                          "{0}".format(round(calculated_unit_cost, 3)),
                          supply.quantity,
@@ -388,7 +388,7 @@ class PurchaseOrderPDF():
         #return currency
         return currency
 
-    def __get_description(self, supply):
+    def _get_description(self, supply):
         #Set description
         description = supply.description
         
@@ -406,6 +406,23 @@ class PurchaseOrderPDF():
                                                                supply.supply.cost)
         #return description
         return Paragraph(description, style)
+        
+    def _get_reference(self, supply):
+        #Set reference
+        try:
+            reference = supply.reference
+        except AttributeError:
+            reference = supply.supply.reference or ""
+            
+        #If there is a discount then append
+        # original price string
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=10,
+                               textColor=colors.CMYKColor(black=60))
+     
+        #return description
+        return Paragraph(reference, style)
 
     def _get_shipping(self):
         #set the description

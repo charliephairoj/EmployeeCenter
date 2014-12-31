@@ -30,7 +30,7 @@ class PurchaseOrderMixin(object):
         """
         logger.error(exc)        
         
-        return super(SupplyMixin, self).handle_exception(exc)
+        return super(PurchaseOrderMixin, self).handle_exception(exc)
     
     def post_save(self, obj, *args, **kwargs):
         

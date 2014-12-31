@@ -48,7 +48,7 @@ class AcknowledgementMixin(object):
         """
         logger.error(exc)        
         
-        return super(SupplyMixin, self).handle_exception(exc)
+        return super(AcknowledgementMixin, self).handle_exception(exc)
     
     def _condense_pillows(self, request):
         """
