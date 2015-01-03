@@ -1,9 +1,14 @@
 import logging
+import json
+import time
 
+from django.http import HttpResponseRedirect, HttpResponse
 from rest_framework import generics
-from hr.serializers import EmployeeSerializer, AttendanceSerializer
 from django.conf import settings
 
+from hr.serializers import EmployeeSerializer, AttendanceSerializer
+from utilities.http import save_upload
+from auth.models import S3Object
 from hr.models import Employee, Attendance
 
 
@@ -45,6 +50,12 @@ class EmployeeMixin(object):
     
 class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
     
+    def post(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        response = super(EmployeeList, self).post(request, *args, **kwargs)
+        
+        return response
+        
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
@@ -62,7 +73,11 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
     
     
 class EmployeeDetail(EmployeeMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+    def put(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        response = super(EmployeeDetail, self).put(request, *args, **kwargs)
+        
+        return response
     
     
 class AttendanceMixin(object):
