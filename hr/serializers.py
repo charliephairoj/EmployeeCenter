@@ -9,14 +9,33 @@ logger = logging.getLogger(__name__)
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    social_security_id = serializers.CharField(required=False, allow_null=True)
-    telephone = serializers.CharField(required=False, allow_null=True)
+    social_security_id = serializers.CharField(required=False, 
+                                               allow_null=True)
+    telephone = serializers.CharField(required=False, 
+                                      allow_null=True)
+    image = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(),
+                                               required=False, 
+                                               allow_null=True)
     
     class Meta:
         model = Employee
         exclude = ('shift', )
         
+    def to_representation(self, instance):
+        """
+        Override the 'to_representation' method to allow integration of products into 
+        output data
+        """
+        ret = super(EmployeeSerializer, self).to_representation(instance)
 
+        try:
+            ret['image'] = {'id': instance.image.id,
+                            'url': instance.image.generate_url()}
+        except AttributeError: 
+            pass
+            
+        return ret
+        
 class AttendanceSerializer(serializers.ModelSerializer):
     
     class Meta:

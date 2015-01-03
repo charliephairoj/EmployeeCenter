@@ -10,6 +10,8 @@ import traceback
 from django.db import models
 from pytz import timezone
 
+from media.models import S3Object
+
 
 logger = logging.getLogger(__name__)
             
@@ -31,6 +33,7 @@ class Employee(models.Model):
     employement_date = models.DateField(null=True)
     social_security_id = models.TextField(null=True)
     shift = models.ForeignKey(Shift)
+    image = models.ForeignKey(S3Object, null=True, blank=True)
     
     def log_attendance(self, start_time, end_time):
         """

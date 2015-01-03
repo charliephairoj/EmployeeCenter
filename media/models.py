@@ -130,6 +130,6 @@ class S3Object(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(User)
     telephone = models.TextField(null=True)
-    image = models.ForeignKey(S3Object, null=True)
+    #image = models.ForeignKey(S3Object, null=True)
     
     

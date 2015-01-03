@@ -10,10 +10,38 @@ from hr.models import Employee, Attendance
 logger = logging.getLogger(__name__)
 
 
+def employee_image(request):
+    if request.method == "POST":
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "employee/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+        
 class EmployeeMixin(object):
     queryset = Employee.objects.all().order_by('name')
     serializer_class = EmployeeSerializer
     
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['image']
+        
+        for field in fields:
+            if field in request.data:
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError:
+                    pass
+                                    
+        return request
     
 class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
     
