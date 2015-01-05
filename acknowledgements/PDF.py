@@ -859,7 +859,7 @@ class ConfirmationPDF(object):
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=290)])
+            data.append(['', self.get_image(product.image.generate_url(), height=75, max_width=290)])
         #Create table
         table = Table(data, colWidths=(80, 425, 40))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
@@ -942,8 +942,8 @@ class ConfirmationPDF(object):
         
     def _create_terms_section(self):
         
-        terms_th = u"กรุณาตรวจสอบรายละเอียดข้างต้นให้เรียบร้อยก่อนเซ็นรับทราบเพื่อผลิต มิฉะนั้นถ้าเกิดข้อผิดพลาด ทางบริษัทฯไม่รับผิดชอบ"
-        terms_en = u"""By signing this document, the signator hereby acknowledges that the specified items ordered and their respective dimensions, colors, fabrics, construction details are correct. The signator accepts responsibility for any cost associated with changes after authorizing production."""
+        terms_th = u"กรุณาตรวจสอบรายละเอียดข้างต้นให้เรียบร้อยก่อนเซ็นรับทราบเพื่อผลิต มิฉะนั้นถ้าเกิดข้อผิดพลาด ทางบริษัทฯไม่รับผิดชอบ กรุณาตรวจสอบและยืนยันกลับภายใน 48 ชั่วโมง"
+        terms_en = u"""By signing this document, the signator hereby acknowledges that the specified items ordered and their respective dimensions, colors, fabrics, construction details are correct. The signator accepts responsibility for any cost associated with changes after authorizing production. Please returned a signed copy within 48 hours."""
         
         terms = u"".join([terms_en, "\n\n", terms_th])
         style = ParagraphStyle(name='Normal',
@@ -961,17 +961,25 @@ class ConfirmationPDF(object):
         
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['Name', 'x'],['', ''], ['Authorized Customer Signature', 'x']],
-                          colWidths=(175, 250))
+        signature = Table([['Name:', '', '', ''],
+                           ['', '', '', ''], 
+                           ['Authorized Customer Signature:', '', '', ''],
+                           [u'(ผู้รับผิดชอบ)', '', '', '(Date)']],
+                          colWidths=(155, 250, 15, 100))
                           
-        style = TableStyle([
-                             ('TEXTCOLOR', (0,0), (-1,-1),
-                              colors.CMYKColor(black=60)),
-                             ('LINEBELOW', (-1,0), (-1,0), 1,
-                              colors.CMYKColor(black=60)),
-                              ('LINEBELOW', (-1,-1), (-1,-1), 1,
-                               colors.CMYKColor(black=60)),
-                             ('ALIGNMENT', (0,0), (-1,-1), 'LEFT')])
+        style = TableStyle([('PADDING', (0,0), (-1,-1), 1),
+                            ('TEXTCOLOR', (0,0), (-1,-1),
+                             colors.CMYKColor(black=60)),
+                            ('LINEBELOW', (-3,0), (-3,0), 1,
+                             colors.CMYKColor(black=60)),
+                            ('LINEBELOW', (-3,-2), (-3,-2), 1,
+                             colors.CMYKColor(black=60)),
+                            ('LINEBELOW', (-1,-2), (-1,-2), 1,
+                             colors.CMYKColor(black=60)),
+                            ('ALIGNMENT', (0,0), (-1,-2), 'LEFT'),
+                            #Style for last line
+                            ('FONT', (0,-1), (0,-1), 'Garuda'),
+                            ('ALIGNMENT', (0,-1), (-1,-1), 'CENTER')])
                              
         signature.setStyle(style)
         return signature
