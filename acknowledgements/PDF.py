@@ -945,7 +945,7 @@ class ConfirmationPDF(object):
         terms_th = u"กรุณาตรวจสอบรายละเอียดข้างต้นให้เรียบร้อยก่อนเซ็นรับทราบเพื่อผลิต มิฉะนั้นถ้าเกิดข้อผิดพลาด ทางบริษัทฯไม่รับผิดชอบ"
         terms_en = u"""By signing this document, the signator hereby acknowledges that the specified items ordered and their respective dimensions, colors, fabrics, construction details are correct. The signator accepts responsibility for any cost associated with changes after authorizing production."""
         
-        terms = u"".join([terms_en, "\n", terms_th])
+        terms = u"".join([terms_en, "\n\n", terms_th])
         style = ParagraphStyle(name='Normal',
                                fontName='Garuda',
                                leading=12,
