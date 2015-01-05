@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers
 
 from hr.models import Employee, Attendance
-
+from media.models import S3Object
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
                                                allow_null=True)
     telephone = serializers.CharField(required=False, 
                                       allow_null=True)
-    image = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(),
+    image = serializers.PrimaryKeyRelatedField(queryset=S3Object.objects.all(),
                                                required=False, 
                                                allow_null=True)
     
