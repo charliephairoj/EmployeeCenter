@@ -343,6 +343,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
 
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
@@ -457,7 +458,10 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
-
+        self.assertIsNotNone(ack['pdf']['confirmation'])
+        logger.debug(ack['pdf']['confirmation'])
+        print "\n\n\n"
+        
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
         logger.debug(root_ack.project)
@@ -568,6 +572,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
 
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
@@ -672,6 +677,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
     
     def test_post_with_vat(self):
         """
@@ -750,6 +756,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
     
     def test_post_with_vat_and_discount(self):
         """
@@ -826,6 +833,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
         
     def test_post_with_custom_price(self):
         """
@@ -900,6 +908,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
         
     def test_post_where_first_item_has_no_fabric(self):
         """
@@ -972,6 +981,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
+        self.assertIsNotNone(ack['pdf']['confirmation'])
     
     @unittest.skip('currently not allowed')    
     def test_put(self):

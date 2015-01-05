@@ -16,7 +16,7 @@ from contacts.models import Customer
 from products.models import Product, Upholstery
 from projects.models import Project
 from supplies.models import Fabric
-from acknowledgements.PDF import AcknowledgementPDF, ProductionPDF, ShippingLabelPDF
+from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
 
 
@@ -45,6 +45,10 @@ class Acknowledgement(models.Model):
                                             null=True,
                                             related_name='+',
                                             db_column="acknowledgement_pdf")
+    confirmation_pdf = models.ForeignKey(S3Object, 
+                                        null=True, 
+                                        related_name="+", 
+                                        db_column="confirmation_pdf")
     production_pdf = models.ForeignKey(S3Object,
                                        null=True,
                                        related_name='+',
@@ -170,17 +174,20 @@ class Acknowledgement(models.Model):
             raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdfs(self, delete_original=True):
-        ack_filename, production_filename, label_filename = self.create_pdfs()
+        ack_filename, confirmation_filename, production_filename, label_filename = self.create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
+        confirmation_key = "acknowledgement/Confirmation-{0}.pdf".format(self.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
         label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
+        confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
         prod_pdf = S3Object.create(production_filename, production_key, bucket, delete_original=delete_original)
         label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
 
         self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf
+        self.confirmation_pdf = confirmation_pdf
         self.production_pdf = prod_pdf
 
         self.save()
@@ -194,12 +201,14 @@ class Acknowledgement(models.Model):
         """
         products = self.items.all().order_by('id')
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=products)
+        confirmation_pdf = ConfirmationPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
         label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
         ack_filename = ack_pdf.create()
+        confirmation_filename = confirmation_pdf.create()
         production_filename = production_pdf.create()
         label_filename = label_pdf.create()
-        return ack_filename, production_filename, label_filename
+        return ack_filename, confirmation_filename, production_filename, label_filename
     
     def create_and_upload_shipping_label(self):
         """
