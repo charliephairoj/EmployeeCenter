@@ -129,7 +129,7 @@ class PurchaseOrderPDF():
     #create method
     def create(self):
         self.filename = "%s-%s.pdf" % (self.document_type, self.po.id)
-        self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
+        self.location = "{0}/{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
         doc = PODocTemplate(self.location, id=self.po.id, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36,
