@@ -394,7 +394,7 @@ class PurchaseOrderPDF():
         description = supply.description
         
         if supply.comments:
-            description += "<br/>[Comments: {0}]".format(supply.comments.replace('\n', '<br/>'))
+            description += u"<br/>[Comments: {0}]".format(supply.comments.replace('\n', '<br/>'))
         #If there is a discount then append
         # original price string
         style = ParagraphStyle(name='Normal',
@@ -403,7 +403,7 @@ class PurchaseOrderPDF():
                                    textColor=colors.CMYKColor(black=60))
         if supply.discount > 0:
             supply.supply.supplier = self.po.supplier
-            description += " (discounted {0}% from {1})".format(supply.discount,
+            description += u" (discounted {0}% from {1})".format(supply.discount,
                                                                supply.supply.cost)
         #return description
         return Paragraph(description, style)
@@ -413,7 +413,7 @@ class PurchaseOrderPDF():
         try:
             reference = supply.reference
         except AttributeError:
-            reference = supply.supply.reference or ""
+            reference = supply.supply.reference or u""
             
         #If there is a discount then append
         # original price string

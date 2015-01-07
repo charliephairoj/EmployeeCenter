@@ -60,7 +60,11 @@ class PurchaseOrderMixin(object):
             try:
                 request.data['items'][index]['supply'] = item['supply']['id']
             except (TypeError, KeyError):
-                pass
+                try:
+                    request.data['items'][index]['supply'] = item['id']
+                except (TypeError, KeyError):
+                    pass
+                    
 
             try:
                 request.data['items'][index]['unit_cost'] = item['cost']
