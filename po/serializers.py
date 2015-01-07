@@ -100,7 +100,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PurchaseOrder
-        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 'discount', 'status')
+        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 
+                  'discount', 'status', 'terms')
         read_only_fields = ('pdf', 'revision')
         
     def to_representation(self, instance):
