@@ -65,7 +65,7 @@ class SupplierMixin(object):
         """
         logger.error(exc)        
         
-        return super(SupplyMixin, self).handle_exception(exc)
+        return super(SupplierMixin, self).handle_exception(exc)
     
     
 class SupplierList(SupplierMixin, generics.ListCreateAPIView):
