@@ -115,7 +115,8 @@ class PurchaseOrderTest(APITestCase):
        
         #self.supply.units = "m^2"
         self.supply.save()
-        self.product = Product(supply=self.supply, supplier=self.supplier, cost=base_fabric['unit_cost'])
+        self.product = Product(supply=self.supply, supplier=self.supplier, cost=base_fabric['unit_cost'],
+                               purchasing_units='m')
         self.product.save()
         self.supply2 = Fabric.create(**base_fabric2)
         self.supply2.discount = 5
@@ -164,17 +165,24 @@ class PurchaseOrderTest(APITestCase):
         """
         Tests getting a single resource via GET
         """
-        self.skipTest("")
         #Validate the response
         resp = self.client.get('/api/v1/purchase-order/1/')
         self.assertEqual(resp.status_code, 200)
         
         #Validate the returned data
         obj = resp.data
+        logger.debug(obj)
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
         self.assertNotIn('pdf', obj)
         self.assertEqual(obj['revision'], 0)
+        
+        #Test items
+        self.assertIn('items', obj)
+        self.assertEqual(len(obj['items']), 1)
+        item1 = obj['items'][0]
+        self.assertIn('purchasing_units', item1)
+        self.assertEqual(item1['purchasing_units'], 'm')
     
     def test_get_with_pdf(self):
         """
