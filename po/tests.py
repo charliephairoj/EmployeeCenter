@@ -171,10 +171,8 @@ class PurchaseOrderTest(APITestCase):
         
         #Validate the returned data
         obj = resp.data
-        logger.debug(obj)
         self.assertEqual(obj['id'], 1)
         self.assertEqual(obj['terms'], 30)
-        self.assertNotIn('pdf', obj)
         self.assertEqual(obj['revision'], 0)
         
         #Test items
@@ -397,6 +395,20 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.total, Decimal('34.51'))
     
+    def test_updating_po_items(self):
+        """
+        Test updating properties of items in the purchase order
+        """
+        modified_po_data = copy.deepcopy(base_purchase_order)
+        modified_po_data['items'][0]['purchasing_units'] = 'set'
+        
+        resp = self.client.put('/api/v1/purchase-order/1/', format='json', data=modified_po_data)
+        
+        po = resp.data
+        item1 = po['items'][0]
+        self.assertIn('purchasing_units', item1)
+        self.assertEqual(item1['purchasing_units'], 'set')
+        
     def test_updating_po_with_discount(self):
         """
         """
