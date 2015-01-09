@@ -1022,6 +1022,30 @@ class AcknowledgementResourceTest(APITestCase):
         item2 = items[1]
         self.assertEqual(item2.description, 'F-04 Sofa')
         self.assertTrue(item2.is_custom_item)
+    
+    def test_changing_delivery_date(self):
+        """
+        Test making a PUT call
+        """
+        logger.debug("\n\n Testing updating via put \n")
+        
+        d = datetime.now()
+        
+        ack_data = base_ack.copy()
+       
+        ack_data['delivery_date'] = d
+        self.assertEqual(Acknowledgement.objects.count(), 1)
+        resp = self.client.put('/api/v1/acknowledgement/1/', 
+                                   format='json',
+                                   data=ack_data,
+                                   authentication=self.get_credentials())
+
+        self.assertEqual(resp.status_code, 200)
+        
+        ack = resp.data
+        #logger.debug(ack['delivery_date'])
+        #self.assertEqual(ack['delivery_date'], d.isoformat())
+        
         
     #@unittest.skip('ok')    
     def test_delete(self):

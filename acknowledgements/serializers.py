@@ -167,6 +167,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
     def update(self, instance, validated_data):
         
+        instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        
         return instance
         
     def to_representation(self, instance):
