@@ -40,7 +40,7 @@ class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
-    comments = serializers.CharField(required=False, allow_null=True)
+    comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
