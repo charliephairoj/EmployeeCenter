@@ -40,8 +40,8 @@ class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
-    comments = serializers.CharField(required=False)
-    location = serializers.CharField(required=False)
+    comments = serializers.CharField(required=False, allow_null=True)
+    location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
     units = serializers.CharField(required=False, allow_null=True)
@@ -121,11 +121,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = serializers.PrimaryKeyRelatedField(required=False, queryset=Project.objects.all())
+    project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
     items = ItemSerializer(many=True)
-    remarks = serializers.CharField(required=False)
-    shipping_method = serializers.CharField(required=False)
-    fob = serializers.CharField(required=False)
+    remarks = serializers.CharField(required=False, allow_null=True)
+    shipping_method = serializers.CharField(required=False, allow_null=True)
+    fob = serializers.CharField(required=False, allow_null=True)
     
     class Meta:
         model = Acknowledgement
