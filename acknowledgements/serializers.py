@@ -189,9 +189,18 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             
         try:
             ret['pdf'] = {'acknowledgement': instance.acknowledgement_pdf.generate_url(),
-                          'confirmation': instance.confirmation_pdf.generate_url(),
-                          'production': instance.production_pdf.generate_url(),
-                          'label': instance.label_pdf.generate_url()}
+                          'production': instance.production_pdf.generate_url()}
+                          
+            try:
+                ret['pdf']['confirmation'] = instance.confirmation_pdf.generate_url()
+            except AttributeError:
+                pass
+                
+            try:
+                ret['pdf']['label'] = instance.label_pdf.generate_url()
+            except AttributeError:
+                pass
+                
         except AttributeError:
             pass
             """

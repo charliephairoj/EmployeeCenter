@@ -91,8 +91,11 @@ class AcknowledgementMixin(object):
         
         for field in fields:
             if field in request.data:
-                if 'id' in request.data[field]:
-                    request.data[field] = request.data[field]['id']
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError as e:
+                    logger.warn(e)
                     
                 if field == 'items':
                     for index, item in enumerate(request.data['items']):

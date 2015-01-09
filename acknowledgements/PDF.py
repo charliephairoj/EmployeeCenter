@@ -100,7 +100,7 @@ class ConfirmationDocTemplate(BaseDocTemplate):
             self.id = kwargs["id"]
             
         try:
-            self.company = kwargs['company']
+            self.company = kwargs['company'] or 'dellarobbia thailand'
         except KeyError:
             pass
             
