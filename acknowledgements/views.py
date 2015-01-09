@@ -123,6 +123,44 @@ class AcknowledgementMixin(object):
                         pass
                    
         return request
+        
+    def _format_primary_key_data_for_put(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['project', 'customer', 'fabric', 'items']
+        
+        for field in fields:
+            if field in request.data:
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError:
+                    pass
+                    
+                if field == 'items':
+                    for index, item in enumerate(request.data['items']):
+                        try:
+                            request.data['items'][index]['fabric'] = item['fabric']['id']
+                        except (KeyError, TypeError):
+                            pass
+                            
+                        try:
+                            request.data['items'][index]['image'] = item['image']['id']
+                        except (KeyError, TypeError) as e:
+                            request.data['items'][index]['image'] = None
+                            
+                elif field == 'project':
+                    try:
+                        if "codename" in request.data['project'] and "id" not in request.data['project']:
+                            project = Project(codename=request.data['project']['codename'])
+                            project.save()
+                            request.data['project'] = project.id
+                    except TypeError:
+                        pass
+                   
+        return request
 
         
 class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
@@ -177,9 +215,9 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
         Override the 'put' method in order
         to populate fields
         """
-        request = self._format_primary_key_data(request)
+        request = self._format_primary_key_data_for_put(request)
         
-        request = self._condense_pillows(request)
+        #request = self._condense_pillows(request)
         
         return super(AcknowledgementDetail, self).put(request, *args, **kwargs)
     
