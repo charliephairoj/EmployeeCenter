@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class ItemSerializer(serializers.ModelSerializer):
     supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all())
+    comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Item
