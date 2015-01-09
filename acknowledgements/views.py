@@ -217,8 +217,11 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
         """
         request = self._format_primary_key_data_for_put(request)
         
-        #request = self._condense_pillows(request)
-        
+        try:
+            request = self._condense_pillows(request)
+        except Exception:
+            pass
+            
         return super(AcknowledgementDetail, self).put(request, *args, **kwargs)
     
 class AcknowledgementViewSet(viewsets.ModelViewSet):
