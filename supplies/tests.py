@@ -502,6 +502,12 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(supplier2['quantity_per_purchasing_unit'], Decimal('4'))
         self.assertEqual(supplier2['supplier']['id'], 2)
         
+    def test_updating_multiple_supplies(self):
+        data = [{'id': 1}, {'id':2}]
+        
+        resp = self.client.put('/api/v1/supply/', format='json', data=data)
+        
+        logger.debug(resp)
         
 class FabricAPITestCase(APITestCase):
     

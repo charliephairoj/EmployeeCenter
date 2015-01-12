@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.conf import settings
 from utilities.http import process_api
 from rest_framework import generics
+from rest_framework_bulk import ListBulkCreateUpdateDestroyAPIView
 
 from po.serializers import PurchaseOrderSerializer
 from po.models import PurchaseOrder
@@ -130,7 +131,4 @@ class PurchaseOrderDetail(PurchaseOrderMixin, generics.RetrieveUpdateDestroyAPIV
         """
         request = self._format_primary_key_data(request)
         return super(PurchaseOrderDetail, self).put(request, *args, **kwargs)
-        
-        
-        
         

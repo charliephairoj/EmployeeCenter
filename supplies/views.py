@@ -13,6 +13,7 @@ from django.conf import settings
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_bulk import ListCreateBulkUpdateAPIView
 
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Log, Product
@@ -149,11 +150,12 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
 
 class SupplyDetail(SupplyMixin, generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
+      
         request = self._format_primary_key_data(request)
         response = super(SupplyDetail, self).put(request, *args, **kwargs)
         
         return response
-
+        
 
 class SupplyTypeList(viewsets.ModelViewSet):
     def type(self, request, *args, **kwargs):
