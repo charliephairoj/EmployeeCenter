@@ -23,7 +23,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Employee
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'wage', 'pay_period', 'image', 'telephone', 'nickname', 'social_security')
         
     def to_representation(self, instance):
         """
