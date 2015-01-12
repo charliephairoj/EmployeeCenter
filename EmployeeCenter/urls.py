@@ -1,6 +1,7 @@
 from django.conf.urls import *
 from django.conf import settings
 from tastypie.api import Api
+from rest_framework.routers import DefaultRouter
 
 from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
@@ -66,7 +67,6 @@ v1_api.register(TableResource())
 
 
 router = DefaultRouter()
-bulk_router = BulkRouter()
 
 router.register(r'api/v1/customer', CustomerViewSet)
 #router.register(r'api/v1/supplier', SupplierViewSet)
