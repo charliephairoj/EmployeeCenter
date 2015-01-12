@@ -13,7 +13,6 @@ from django.conf import settings
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_bulk import ListCreateBulkUpdateAPIView
 
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Log, Product

@@ -1,8 +1,6 @@
 from django.conf.urls import *
 from django.conf import settings
 from tastypie.api import Api
-from rest_framework.routers import DefaultRouter
-from rest_framework_bulk.routes import BulkRouter
 
 from contacts.api import SupplierResource, CustomerResource
 from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
