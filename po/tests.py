@@ -520,6 +520,14 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(log.supplier, po.supplier)
         self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
        
+    def test_updating_multiple_items(self):
+        data = [{'id': 1}, {'id': 2}]
+        resp = self.client.put('/api/v1/purchase-order/',
+                               format='json',
+                               data=data)
+                               
+        logger.debug(resp)
+        
     def test_updating_the_po_by_adding_supply(self):
         """
         Tests whether the system can add a new supply to a current puchase order

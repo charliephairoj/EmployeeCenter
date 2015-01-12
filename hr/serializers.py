@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     social_security_id = serializers.CharField(required=False, 
                                                allow_null=True)
     telephone = serializers.CharField(required=False, 

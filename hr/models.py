@@ -25,6 +25,7 @@ class Shift(models.Model):
 class Employee(models.Model):
     
     name = models.TextField()
+    nickname = models.TextField(null=True, default="")
     legal = models.BooleanField(default=True)
     department = models.TextField()
     telephone = models.TextField(null=True)
