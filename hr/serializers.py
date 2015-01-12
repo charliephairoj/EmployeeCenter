@@ -17,10 +17,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     image = serializers.PrimaryKeyRelatedField(queryset=S3Object.objects.all(),
                                                required=False, 
                                                allow_null=True)
+    wage = serializers.DecimalField(required=False, allow_null=True)
+    pay_period = serializers.CharField(required=False, allow_null=True)
+    
     
     class Meta:
         model = Employee
-        exclude = ('shift', )
+        fields = ('id', 'name')
         
     def to_representation(self, instance):
         """
