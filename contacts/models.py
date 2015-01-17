@@ -7,7 +7,7 @@ class Contact(models.Model):
     name_th = models.TextField(null=True, blank=True)
     telephone = models.TextField()
     fax = models.TextField()
-    email = models.CharField(max_length=200, null=True, default=None)
+    email = models.CharField(max_length=200, null=True, blank=True)
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     discount = models.IntegerField(default=0)
