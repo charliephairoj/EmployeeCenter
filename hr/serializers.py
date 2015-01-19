@@ -5,11 +5,15 @@ from rest_framework import serializers
 from hr.models import Employee, Attendance
 from media.models import S3Object
 
+
 logger = logging.getLogger(__name__)
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    nationality = serializers.CharField(required=False, allow_null=True)
     social_security_id = serializers.CharField(required=False, 
                                                allow_null=True)
     telephone = serializers.CharField(required=False, 
@@ -23,7 +27,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Employee
-        fields = ('id', 'name', 'wage', 'pay_period', 'image', 'telephone', 'nickname', 'social_security_id')
+        fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'pay_period', 'image', 'telephone', 'nickname', 'social_security_id')
         
     def to_representation(self, instance):
         """

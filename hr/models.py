@@ -24,8 +24,11 @@ class Shift(models.Model):
     
 class Employee(models.Model):
     
-    name = models.TextField()
+    name = models.TextField(db_column="name", null=True)
+    first_name = models.TextField(null=True, blank=True)
+    last_name = models.TextField(default="", null=True, blank=True)
     nickname = models.TextField(null=True, default="")
+    nationality = models.TextField(default="")
     legal = models.BooleanField(default=True)
     department = models.TextField()
     telephone = models.TextField(null=True)
@@ -36,6 +39,13 @@ class Employee(models.Model):
     shift = models.ForeignKey(Shift)
     image = models.ForeignKey(S3Object, null=True, blank=True)
     
+    @property
+    def xname(self):
+        try:
+            return "{0} {1}".format(self.first_name, self.last_name or "")
+        except Exception:
+            return ""
+            
     def log_attendance(self, start_time, end_time):
         """
         Creates a instance of the attendance class to track

@@ -69,7 +69,12 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
-                  
+        
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
         return queryset
     
     
