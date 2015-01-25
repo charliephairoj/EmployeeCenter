@@ -32,11 +32,11 @@ class Employee(models.Model):
     legal = models.BooleanField(default=True)
     department = models.TextField()
     telephone = models.TextField(null=True)
-    wage = models.DecimalField(decimal_places=2, max_digits=12)
-    pay_period = models.TextField()
+    wage = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    pay_period = models.TextField(default="daily")
     employement_date = models.DateField(null=True)
     social_security_id = models.TextField(null=True)
-    shift = models.ForeignKey(Shift)
+    shift = models.ForeignKey(Shift, null=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
     
     @property

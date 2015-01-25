@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Fabric, Log
+from hr.models import Employee
 from contacts.serializers import SupplierSerializer
 
 
@@ -62,7 +63,7 @@ class ProductListSerializer(serializers.ListSerializer):
         ret = []
         for product_id, data in data_mapping.items():
             product = product_mapping.get(product_id, None)
-            logger.debug(product)
+
             if product is None:
                 ret.append(self.child.create(data))
             else:
@@ -98,16 +99,39 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return instance
         
+      
+class SupplyListSerializer(serializers.ListSerializer):
+    
+    def update(self, instance, validated_data):
+        """
+        Update multiple supplies
         
+        Currently can only update the quantity
+        """
+        ret = []
+        #Update the quantity for each supply
+        for data in validated_data:
+            supply = Supply.objects.get(pk=data['id'])
+    
+            self.child.update(supply, data)
+
+            ret.append(supply)
+
+        return ret
+            
+          
 class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     suppliers = ProductSerializer(source="products", required=False, many=True)
+    employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False)
+    id = serializers.IntegerField(required=False)
     
     class Meta:
         model = Supply
+        list_serializer_class = SupplyListSerializer
         #read_only_fields = ['suppliers']
         exclude = ['quantity_th', 'quantity_kh']
         
@@ -134,9 +158,10 @@ class SupplySerializer(serializers.ModelSerializer):
                 ret['sticker'] = {'id': instance.sticker.id, 
                                   'url': instance.sticker.generate_url()}
             except AttributeError:
-                instance.create_stickers()
-                ret['sticker'] = {'id': instance.sticker.id,
-                                  'url': instance.sticker.generate_url()}
+                pass
+                #instance.create_stickers()
+                #ret['sticker'] = {'id': instance.sticker.id,
+                #                  'url': instance.sticker.generate_url()}
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
@@ -156,14 +181,13 @@ class SupplySerializer(serializers.ModelSerializer):
                             'url': instance.image.generate_url()}
         except AttributeError: 
             pass
-            
+
         return ret
         
     def create(self, validated_data):
         """
         Override the 'create' method in order to customize creation of products
         """
-        logger.debug(validated_data)
         if 'supplier' in validated_data:
             suppliers_data = [validated_data.pop('supplier')]
         elif 'suppliers' in validated_data:
@@ -187,7 +211,7 @@ class SupplySerializer(serializers.ModelSerializer):
             suppliers_data = [data]
             
         instance = self.Meta.model.objects.create(**validated_data)
-        instance.create_stickers()
+        #instance.create_stickers()
         
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
@@ -206,7 +230,8 @@ class SupplySerializer(serializers.ModelSerializer):
             
         old_quantity = instance.quantity
         new_quantity = validated_data['quantity']
-
+        employee = validated_data.pop('employee', None)
+        
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
         
@@ -217,11 +242,11 @@ class SupplySerializer(serializers.ModelSerializer):
         
         instance.save()
         
-        self._log_quantity(instance, old_quantity, new_quantity)
+        self._log_quantity(instance, old_quantity, new_quantity, employee)
         
         return instance
         
-    def _log_quantity(self, obj, old_quantity, new_quantity):
+    def _log_quantity(self, obj, old_quantity, new_quantity, employee=None):
         """
         Internal method to apply the new quantity to the obj and
         create a log of the quantity change
@@ -241,11 +266,12 @@ class SupplySerializer(serializers.ModelSerializer):
             elif new_quantity < old_quantity:
                 action = 'SUBTRACT'
                 diff = old_quantity - new_quantity
-            
+
             #Create log to track quantity changes
             log = Log(supply=obj, 
                       action=action,
                       quantity=diff,
+                      employee=employee,
                       message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
                                                              diff,
                                                              obj.units,

@@ -6,6 +6,7 @@ import time
 
 
 from rest_framework import viewsets
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -65,7 +66,7 @@ class SupplyMixin(object):
         Exceptions are logged as error via logging, 
         which will send an email to the system administrator
         """
-        logger.error(exc)        
+        #logger.error(exc)        
         
         return super(SupplyMixin, self).handle_exception(exc)
         
@@ -74,29 +75,42 @@ class SupplyMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['supplier', 'image', 'suppliers', 'sticker']
+        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
+        
+        if type(request.data) == list:
+            for index, data in enumerate(request.data):
+                request.data[index] = self._format_individual_data(request.data[index])
+        elif type(request.data) == dict:
+            self._format_individual_data(request.data)
+            
+        return request
+        
+    def _format_individual_data(self, data):
+        
+        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
         
         for field in fields:
-            if field in request.data:
+            if field in data:
                 try:
-                    if 'id' in request.data[field]:
-                        request.data[field] = request.data[field]['id']
+                    if 'id' in data[field]:
+                        data[field] = data[field]['id']
                 except TypeError:
                     pass
                     
                 #format for supplier in suppliers list
                 if field == 'suppliers':
-                    for index, supplier in enumerate(request.data[field]):
+                    for index, supplier in enumerate(data[field]):
                         try:
-                            request.data[field][index]['supplier'] = supplier['supplier']['id']
+                            data[field][index]['supplier'] = supplier['supplier']['id']
                         except (KeyError, TypeError):
                             try:
-                                request.data[field][index]['supplier'] = supplier['id']
+                                data[field][index]['supplier'] = supplier['id']
                             except KeyError:
                                 pass
-        return request
-    
-    
+                                
+        return data
+        
+        
 class SupplyList(SupplyMixin, generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
@@ -104,6 +118,10 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         response = super(SupplyList, self).post(request, *args, **kwargs)
         
         return response
+        
+    def put(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        return self.bulk_update(request, *args, **kwargs)
         
     def get_queryset(self):
         """
@@ -145,6 +163,22 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         else:
             return limit 
     
+    def bulk_update(self, request, *args, **kwargs):
+        #partial = kwargs.pop('partial', False)
+
+        # restrict the update to the filtered queryset
+        serializer = SupplySerializer(Supply.objects.filter(id__in=[d['id'] for d in request.data]),
+                                      data=request.data,
+                                      context={'request': request, 'view': self},
+                                      many=True)
+        
+        if serializer.is_valid(raise_exception=True):
+            
+            serializer.save()
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class SupplyDetail(SupplyMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -167,14 +201,17 @@ supply_type_list = SupplyTypeList.as_view({
 })
     
 
-class FabricList(SupplyList):
-    queryset = Fabric.objects.all()
+class FabricMixin(object):
+    queryset = Fabric.objects.all().order_by('description')
     serializer_class = FabricSerializer
+        
+        
+class FabricList(FabricMixin, SupplyList):
+    pass
     
 
-class FabricDetail(SupplyDetail):
-    queryset = Fabric.objects.all()
-    serializer_class = FabricSerializer
+class FabricDetail(FabricMixin, SupplyDetail):
+    pass
             
     
 class FabricViewSet(viewsets.ModelViewSet):
@@ -189,7 +226,7 @@ class LogViewSet(viewsets.ModelViewSet):
     """
     API endpoint to view and edit upholstery
     """
-    queryset = Log.objects.all()
+    queryset = Log.objects.all().order_by('-id')
     serializer_class = LogSerializer
     
     def get_queryset(self):

@@ -16,6 +16,7 @@ from rest_framework.test import APITestCase
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Foam, Log, Product
 from auth.models import S3Object
+from hr.models import Employee
 
 
 logger = logging.getLogger(__name__)
@@ -88,9 +89,16 @@ class SupplyAPITestCase(APITestCase):
         self.assertIsNotNone(self.supply.pk)
         self.supply2 = Supply.create(**base_supply)
         self.assertIsNotNone(self.supply2.pk)
+        self.supply3 = Supply.create(**base_supply)
+        self.assertIsNotNone(self.supply3.pk)
+        self.supply4 = Supply.create(**base_supply)
+        self.assertIsNotNone(self.supply4.pk)
         
         self.product = Product(supplier=self.supplier, supply=self.supply)
         self.product.save()
+        
+        self.employee = Employee(first_name="John", last_name="Smith")
+        self.employee.save()
         
     def create_user(self):
         self.user = User.objects.create_user('test', 'test@yahoo.com', 'test')
@@ -120,7 +128,7 @@ class SupplyAPITestCase(APITestCase):
         #Tests the returned data
         resp_obj = resp.data
         self.assertIn('results', resp_obj)
-        self.assertEqual(len(resp_obj['results']), 2)
+        self.assertEqual(len(resp_obj['results']), 4)
     
     def test_get(self):
         """
@@ -187,14 +195,14 @@ class SupplyAPITestCase(APITestCase):
         Tests posting to the server
         """
         #Test creating an objects. 
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         resp = self.client.post('/api/v1/supply/', format='json',
                                     data=base_supply)
         self.assertEqual(resp.status_code, 201, msg=resp)
 
         #Tests the dat aturned
         obj = resp.data
-        self.assertEqual(obj['id'], 3)
+        self.assertEqual(obj['id'], 5)
         self.assertEqual(obj['width'], '100.00')
         self.assertEqual(obj['depth'], '200.00')
         self.assertEqual(obj['height'], '300.00')
@@ -215,7 +223,7 @@ class SupplyAPITestCase(APITestCase):
         #TEsts the object created
         supply = Supply.objects.order_by('-id').all()[0]
         supply.supplier = supply.suppliers.all()[0]
-        self.assertEqual(supply.id, 3)
+        self.assertEqual(supply.id, 5)
         self.assertEqual(supply.width, 100)
         self.assertEqual(supply.depth, 200)
         self.assertEqual(supply.height, 300)
@@ -283,12 +291,12 @@ class SupplyAPITestCase(APITestCase):
         modified_data['quantity'] = '11'
         
         #Tests the api and the response
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         resp = self.client.put('/api/v1/supply/1/?country=TH', format='json',
                                    data=modified_data)
         
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
 
         #Tests the returned data
         obj = resp.data
@@ -331,12 +339,12 @@ class SupplyAPITestCase(APITestCase):
         modified_data['depth_units'] = 'cm'
         
         #Tests the api and the response
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         resp = self.client.put('/api/v1/supply/1/?country=TH', format='json',
                                    data=modified_data)
         
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
 
         #Tests the returned data
         obj = resp.data
@@ -379,12 +387,12 @@ class SupplyAPITestCase(APITestCase):
         modified_data['quantity'] = '0'
         
         #Tests the api and the response
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         resp = self.client.put('/api/v1/supply/1/?country=TH', format='json',
                                    data=modified_data)
         
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
 
         #Tests the returned data
         obj = resp.data
@@ -432,13 +440,13 @@ class SupplyAPITestCase(APITestCase):
         modified_data['description'] = 'new'
         
         #Tests the api and the response
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
         resp = self.client.put('/api/v1/supply/1/', format='json',
                                    data=modified_data)
         
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('14'))
         self.assertEqual(Supply.objects.get(pk=1).description, 'new')
 
@@ -454,13 +462,13 @@ class SupplyAPITestCase(APITestCase):
         modified_data['quantity'] = '8'
         
         #Tests the api and the response
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('10.8'))
         resp = self.client.put('/api/v1/supply/1/', format='json',
                                    data=modified_data)
         
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         self.assertEqual(Supply.objects.get(pk=1).quantity, float('8'))
 
         #Tests the returned data
@@ -486,7 +494,7 @@ class SupplyAPITestCase(APITestCase):
         resp = self.client.put('/api/v1/supply/1/', format='json', data=modified_data)
         
         self.assertEqual(resp.status_code, 200, msg=resp)
-        self.assertEqual(Supply.objects.count(), 2)
+        self.assertEqual(Supply.objects.count(), 4)
         
         obj = resp.data
         self.assertIn('suppliers', obj)
@@ -503,11 +511,42 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(supplier2['supplier']['id'], 2)
         
     def test_updating_multiple_supplies(self):
-        data = [{'id': 1}, {'id':2}]
+        """
+        Test that we can update the quantities of multiple supplies
+        """
+        data = [{'id': 1, 'description': 'poooo', 'quantity': 9, 'employee': {'id': 1}}, {'id':2, 'quantity': 12.3, 'employee': {'id': 1}}]
         
         resp = self.client.put('/api/v1/supply/', format='json', data=data)
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        supplies = resp.data
+
+        supply1 = supplies[0]
+        self.assertEqual(supply1['quantity'], 9)
+        self.assertEqual(supply1['description'], u'poooo')
+        supply1_obj = Supply.objects.get(pk=1)
+        self.assertEqual(supply1_obj.quantity, 9)
         
-        logger.debug(resp)
+        supply2 = supplies[1]
+        self.assertEqual(supply2['quantity'], Decimal('12.3'))
+        supply2_obj = Supply.objects.get(pk=2)
+        self.assertEqual(supply2_obj.quantity, 12.3)
+                
+        log1 = Log.objects.all()[0]
+        self.assertEqual(log1.action, "SUBTRACT")
+        self.assertEqual(log1.quantity, Decimal('1.8'))
+        self.assertIsNotNone(log1.employee)
+        self.assertEqual(log1.employee.id, 1)
+        self.assertEqual(log1.employee.first_name, "John")
+        self.assertEqual(log1.employee.last_name, "Smith")
+        
+        log2 = Log.objects.all()[1]
+        self.assertEqual(log2.action, "ADD")
+        self.assertEqual(log2.quantity, Decimal('1.5'))
+        self.assertIsNotNone(log2.employee)
+        self.assertEqual(log2.employee.id, 1)
+        self.assertEqual(log2.employee.first_name, "John")
+        self.assertEqual(log2.employee.last_name, "Smith")
+        
         
 class FabricAPITestCase(APITestCase):
     

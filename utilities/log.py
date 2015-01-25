@@ -45,13 +45,15 @@ class SESHandler(logging.Handler):
         message = "%s\n\nRequest repr(): %s" % (self.format(record), request_repr)
         reporter = ExceptionReporter(request, is_email=True, *exc_info)
         html_message = reporter.get_traceback_html() if self.include_html else None
+        """
         conn = self.connection()
         conn.send_email('system@dellarobbiathailand.com', 
                         subject,
                         html_message,
                         ['charliep@dellarobbiathailand.com'],
                         format='html')
-
+        """
+        
     def connection(self):
         return boto.ses.connect_to_region('us-east-1')
 

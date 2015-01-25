@@ -14,6 +14,7 @@ from boto.s3.key import Key
 import boto.ses
 
 from contacts.models import Contact, Supplier
+from hr.models import Employee
 from media.models import S3Object
 from media.stickers import StickerPage
 
@@ -327,6 +328,7 @@ class Log(models.Model):
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    employee = models.ForeignKey(Employee, null=True)
 
     @classmethod
     def create(cls, supply, event, quantity, employee, acknowledgement_id=None):
