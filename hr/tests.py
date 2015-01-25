@@ -51,6 +51,7 @@ employee3_data = {
 }
 
 
+@unittest.skip("Currently not implemented")
 class AttendanceTest(ResourceTestCase):
     """
     Testing class for attendance
@@ -237,7 +238,6 @@ class AttendanceTest(ResourceTestCase):
         resp = self.api_client.get('/api/v1/attendance/1')
     
     
-@unittest.skip("ok")
 class Employee1Test(TestCase):
     """
     Testing class for salaried workers
