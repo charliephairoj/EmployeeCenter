@@ -158,10 +158,9 @@ class SupplySerializer(serializers.ModelSerializer):
                 ret['sticker'] = {'id': instance.sticker.id, 
                                   'url': instance.sticker.generate_url()}
             except AttributeError:
-                pass
-                #instance.create_stickers()
-                #ret['sticker'] = {'id': instance.sticker.id,
-                #                  'url': instance.sticker.generate_url()}
+                instance.create_stickers()
+                ret['sticker'] = {'id': instance.sticker.id,
+                                  'url': instance.sticker.generate_url()}
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
@@ -211,7 +210,7 @@ class SupplySerializer(serializers.ModelSerializer):
             suppliers_data = [data]
             
         instance = self.Meta.model.objects.create(**validated_data)
-        #instance.create_stickers()
+        instance.create_stickers()
         
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
