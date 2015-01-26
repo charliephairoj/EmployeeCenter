@@ -31,6 +31,7 @@ from hr.views import AttendanceList, AttendanceDetail
 from administrator.views import UserList, UserDetail
 from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail
+from equipment.views import EquipmentList, EquipmentDetail
 
 
 """
@@ -121,7 +122,9 @@ urlpatterns = patterns('',
     url(r'^api/v1/group/$', GroupList.as_view()),
     url(r'^api/v1/group/(?P<pk>[0-9]+)/$', GroupDetail.as_view()),
     url(r'^api/v1/permission/$', PermissionList.as_view()),
-    url(r'^api/v1/permission/(?P<pk>[0-9]+)/$', PermissionDetail.as_view())
+    url(r'^api/v1/permission/(?P<pk>[0-9]+)/$', PermissionDetail.as_view()),
+    url(r'^api/v1/equipment/$', EquipmentList.as_view()),
+    url(r'^api/v1/equipment/(?P<pk>[0-9]+)/$', EquipmentDetail.as_view())
 )
 
 

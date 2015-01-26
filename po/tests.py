@@ -150,7 +150,6 @@ class PurchaseOrderTest(APITestCase):
         """
         Tests getting a list of po's via GET
         """
-        self.skipTest("")
         #Validate the response
         resp = self.client.get('/api/v1/purchase-order/', format='json')
         self.assertEqual(resp.status_code, 200)
@@ -158,8 +157,8 @@ class PurchaseOrderTest(APITestCase):
         #Validate the returned data
         resp = resp.data
         self.assertIsInstance(resp, dict)
-        self.assertIsInstance(resp['objects'], list)
-        self.assertEqual(len(resp['objects']), 1)
+        self.assertIsInstance(resp['results'], list)
+        self.assertEqual(len(resp['results']), 1)
     
     def test_get(self):
         """
