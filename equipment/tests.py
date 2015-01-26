@@ -6,6 +6,7 @@ import logging
 from rest_framework.test import APITestCase
 
 from equipment.models import Equipment
+from hr.models import Employee
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,10 @@ class EquipmentTestCase(APITestCase):
         
         self.equipment = Equipment(**base_equipment)
         self.equipment.save()
+        
+        self.employee = Employee(first_name="John",
+                                 last_name="Smith"
+                                 department="Carpentry")
         
     def test_get_list(self):
         """
@@ -115,6 +120,14 @@ class EquipmentTestCase(APITestCase):
         self.assertEqual(obj['brand'], "Maktec")
         self.assertIn('status', obj)
         self.assertEqual(obj['status'], "Checked Out")
+        
+    def test_update_with_employee_checkout(self):
+        """
+        Test updating the equipment checkout with
+        a particular employee
+        """
+        modified_data = base_equipment.copy()
+        modified_data['employee'] = {'id'}
         
             
         
