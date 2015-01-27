@@ -24,8 +24,9 @@ class EquipmentTestCase(APITestCase):
         self.equipment.save()
         
         self.employee = Employee(first_name="John",
-                                 last_name="Smith"
+                                 last_name="Smith",
                                  department="Carpentry")
+        self.employee.save()
         
     def test_get_list(self):
         """
@@ -127,9 +128,112 @@ class EquipmentTestCase(APITestCase):
         a particular employee
         """
         modified_data = base_equipment.copy()
-        modified_data['employee'] = {'id'}
+        modified_data['employee'] = {'id': 1}
+        modified_data['status'] = "Checked Out"
         
-            
+        resp = self.client.put("/api/v1/equipment/1/",
+                               data=modified_data,
+                               format="json")
+        
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        obj = resp.data
+        
+        #Test response
+        self.assertIn('id', obj)
+        self.assertEqual(obj['id'], 1)
+        self.assertIn('description', obj)
+        self.assertEqual(obj['description'], "F-50")
+        self.assertIn('brand', obj)
+        self.assertEqual(obj['brand'], "Red King")
+        self.assertIn('status', obj)
+        self.assertEqual(obj['status'], 'Checked Out')
+        self.assertIn('employee', obj)
+        self.assertIsInstance(obj['employee'], dict)
+        self.assertIn('id', obj['employee'])
+        self.assertEqual(obj['employee']['id'], 1)
+        
+        #Test server response
+        equipment = Equipment.objects.get(pk=1)
+        
+        self.assertEqual(equipment.id, 1)
+        self.assertEqual(equipment.description, "F-50")
+        self.assertEqual(equipment.brand, "Red King")
+        self.assertEqual(equipment.status, "Checked Out")
+        self.assertIsNotNone(equipment.employee)
+        self.assertEqual(equipment.employee.id, 1)
+        self.assertEqual(equipment.employee.first_name, "John")
+        
+    def test_update_bulk_with_employee(self):
+        """
+        Test updating multiple equipments with employee
+        """
+        equipment2 = Equipment(description="Jigsaw",
+                               brand="Makita",
+                               status="Checked Out",
+                               employee=self.employee)
+        equipment2.save()
+        
+        data = [{'id': 1,
+                 'description': "F-50",
+                 'brand': 'Red King',
+                 'status': 'Checked Out',
+                 'employee': {'id': 1}},
+                {'id': 2,
+                 'description': 'Jigsaw',
+                 'brand': 'Makita',
+                 'status': 'Checked In',
+                 'employee': {'id': 1}}]
+                 
+        resp = self.client.put("/api/v1/equipment/",
+                               data=data,
+                               format="json")
+                               
+        self.assertEqual(resp.status_code, 200)
+        
+        #Test the response
+        data = resp.data
+        self.assertIsInstance(data, list)
+        equip1 = data[0]
+        self.assertEqual(equip1['id'], 1)
+        self.assertEqual(equip1['description'], "F-50")
+        self.assertEqual(equip1['brand'], 'Red King')
+        self.assertEqual(equip1['status'], 'Checked Out')
+        self.assertIn('employee', equip1)
+        self.assertIsInstance(equip1['employee'], dict)
+        self.assertIn('id', equip1['employee'])
+        self.assertEqual(equip1['employee']['id'], 1)
+        equip2 = data[1]
+        self.assertEqual(equip2['id'], 2)
+        self.assertEqual(equip2['description'], "Jigsaw")
+        self.assertEqual(equip2['brand'], 'Makita')
+        self.assertEqual(equip2['status'], 'Checked In')
+        self.assertNotIn('employee', equip2)
+        
+        #Test instances in database
+        equip1 = Equipment.objects.get(pk=1)
+        self.assertEqual(equip1.id, 1)
+        self.assertEqual(equip1.description, "F-50")
+        self.assertEqual(equip1.brand, "Red King")
+        self.assertEqual(equip1.status, "Checked Out")
+        self.assertIsNotNone(equip1.employee)
+        self.assertEqual(equip1.employee.id, 1)
+        equip2 = Equipment.objects.get(pk=2)
+        self.assertEqual(equip2.id, 2)
+        self.assertEqual(equip2.description, "Jigsaw")
+        self.assertEqual(equip2.brand, "Makita")
+        self.assertEqual(equip2.status, "Checked In")
+        self.assertIsNone(equip2.employee)
+        
+        
+                               
+                               
+                               
+                               
+                               
+                               
+                               
+                               
         
         
         
