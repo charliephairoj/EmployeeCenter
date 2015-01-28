@@ -1040,12 +1040,16 @@ class AcknowledgementResourceTest(APITestCase):
                                    data=ack_data,
                                    authentication=self.get_credentials())
 
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200, msg=resp)
         
         ack = resp.data
         #logger.debug(ack['delivery_date'])
-        #self.assertEqual(ack['delivery_date'], d.isoformat())
+        d1 = datetime.strptime(ack['delivery_date'])
         
+        self.assertEqual(d1.date(), d.date())
+        
+        ack = Acknowledgement.objects.all()[0]
+        self.assertEqual(ack.delivery_date.date(), d.date())
         
     #@unittest.skip('ok')    
     def test_delete(self):

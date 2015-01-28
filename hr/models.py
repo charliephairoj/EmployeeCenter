@@ -156,7 +156,7 @@ class Employee(models.Model):
         
         -Deductions are currently 5% of the pay
         """
-        return pay - (pay * Decimal('0.05') if pay * Decima('0.05') < 750 else Decimal('750')) if self.legal else pay
+        return pay - (pay * Decimal('0.05') if pay * Decimal('0.05') < 750 else Decimal('750')) if self.legal else pay
         
     def _apply_tax_deduction(self, pay):
         """

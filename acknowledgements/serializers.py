@@ -37,7 +37,7 @@ class PillowSerializer(serializers.ModelSerializer):
         
         
 class ItemSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -168,6 +168,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        instance.save()
         
         return instance
         
