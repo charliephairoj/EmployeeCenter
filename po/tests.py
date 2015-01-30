@@ -136,6 +136,7 @@ class PurchaseOrderTest(APITestCase):
         self.po.supplier = self.supplier
         self.po.terms = self.supplier.terms
         self.po.vat = 7
+        self.po.order_date = datetime.datetime(2014, 3, 2)
         self.po.save()
         #self.po.create_and_upload_pdf()
         
@@ -178,8 +179,8 @@ class PurchaseOrderTest(APITestCase):
         self.assertIn('items', obj)
         self.assertEqual(len(obj['items']), 1)
         item1 = obj['items'][0]
-        self.assertIn('purchasing_units', item1)
-        self.assertEqual(item1['purchasing_units'], 'm')
+        #self.assertIn('purchasing_units', item1)
+        #self.assertEqual(item1['purchasing_units'], 'm')
     
     def test_get_with_pdf(self):
         """
@@ -346,6 +347,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         self.assertEqual(self.po.grand_total, Decimal('129.58'))
+        self.assertEqual(self.po.order_date.date(), datetime.datetime(2014, 3, 2).date())
         item = self.po.items.all()[0]
         self.assertEqual(item.id, 1)
         self.assertEqual(item.quantity, 10)
@@ -353,7 +355,7 @@ class PurchaseOrderTest(APITestCase):
         
         modified_po_data = copy.deepcopy(base_purchase_order)
         del modified_po_data['items'][0]
-        modified_po_data['items'][0]
+        modified_po_data['items'][0]['comments'] = 'test change'
         modified_po_data['status'] = 'PAID'
         
         resp = self.client.put('/api/v1/purchase-order/1/',
@@ -378,13 +380,17 @@ class PurchaseOrderTest(APITestCase):
        
         self.assertEqual(item2['id'], 2)
         self.assertEqual(item2['quantity'], 3)
+        self.assertEqual(item2['comments'], 'test change')
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
         self.assertEqual(Decimal(item2['total']), Decimal('34.51'))
         
         #Verify database record
         po = PurchaseOrder.objects.get(pk=1)
+        
         self.assertEqual(po.supplier.id, 1)
         self.assertEqual(po.status, 'PAID')
+        logger.debug(po.order_date.date())
+        self.assertEqual(po.order_date.date(), datetime.datetime.now().date())
         self.assertEqual(po.vat, 7)
         self.assertEqual(po.grand_total, Decimal('36.93'))
         self.assertEqual(po.items.count(), 1)
@@ -405,8 +411,8 @@ class PurchaseOrderTest(APITestCase):
         
         po = resp.data
         item1 = po['items'][0]
-        self.assertIn('purchasing_units', item1)
-        self.assertEqual(item1['purchasing_units'], 'set')
+        #self.assertIn('purchasing_units', item1)
+        #self.assertEqual(item1['purchasing_units'], 'set')
         
     def test_updating_po_with_discount(self):
         """

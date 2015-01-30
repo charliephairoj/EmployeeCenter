@@ -1,5 +1,7 @@
 import logging
 import decimal
+from datetime import datetime
+from pytz import timezone
 
 from rest_framework import serializers
 
@@ -53,7 +55,7 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = validated_data.get('quantity')
         instance.discount = validated_data.get('discount', None) or instance.discount
-            
+        instance.comments = validated_data.get('comments', None) or instance.comments
         instance.calculate_total()
         
         instance.save()
@@ -173,6 +175,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     
         self._update_items(instance, items_data)
         
+        instance.order_date = datetime.now(timezone('Asia/Bangkok'))
         instance.revision += 1
         instance.discount = validated_data.pop('discount', None) or instance.discount
         instance.status = validated_data.pop('status', None) or instance.status
