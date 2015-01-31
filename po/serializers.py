@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 class ItemSerializer(serializers.ModelSerializer):
     supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all())
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     class Meta:
         model = Item
-        read_only_fields = ('description', 'total', 'sticker')
+        read_only_fields = ('total', 'sticker')
         exclude = ('purchase_order', )
                     
     def create(self, validated_data):
@@ -36,7 +36,6 @@ class ItemSerializer(serializers.ModelSerializer):
         
         instance = self.Meta.model.objects.create(description=description, purchase_order=purchase_order,
                                                   unit_cost=unit_cost, **validated_data)
-            
         instance.calculate_total()
         
         instance.save()
@@ -51,13 +50,12 @@ class ItemSerializer(serializers.ModelSerializer):
         Override the 'update' method
         """
         instance.supply.supplier = self.context['supplier']
-        
+        instance.description = validated_data.pop('description', None) or instance.description
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = validated_data.get('quantity')
         instance.discount = validated_data.get('discount', None) or instance.discount
         instance.comments = validated_data.get('comments', None) or instance.comments
         instance.calculate_total()
-        
         instance.save()
         
         if instance.unit_cost != instance.supply.cost:
