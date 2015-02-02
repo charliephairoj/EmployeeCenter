@@ -124,9 +124,11 @@ class UpholsteryMixin(object):
         work with DRF
         """
         fields = ['model', 'configuration', 'image']
-        
-        del request.data['pillows']
-        
+        try:
+            del request.data['pillows']
+        except KeyError:
+            pass
+            
         for field in fields:
             if field in request.data:
                 if 'id' in request.data[field]:
