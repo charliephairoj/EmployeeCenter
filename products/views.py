@@ -1,17 +1,34 @@
 import logging
+import time
+import json
 
 from rest_framework import viewsets
 from rest_framework import generics
 from django.db.models import Q
 from django.conf import settings
+from django.http import HttpResponse
 
 from products.models import Upholstery, Table, Model, Configuration
 from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer
-
+from media.models import S3Object
+from utilities.http import save_upload
 
 logger = logging.getLogger(__name__)
 
 
+def product_image(request):
+    if request.method == "POST":
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+        
+        
 class ConfigurationViewSet(viewsets.ModelViewSet):
     """
     API endpoint to view and edit configurations
