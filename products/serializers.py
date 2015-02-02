@@ -40,7 +40,12 @@ class UpholsterySerializer(serializers.ModelSerializer):
     configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
-
+    collection = serializers.CharField(required=False, allow_null=True)
+    width = serializers.IntegerField(required=False, allow_null=True)
+    depth = serializers.IntegerField(required=False, allow_null=True)
+    height = serializers.IntegerField(required=False, allow_null=True)
+    units = serializers.CharField(required=False, allow_null=True)
+    
     class Meta:
         model = Upholstery
         read_only_fields = ('description', 'type')
@@ -108,11 +113,13 @@ class UpholsterySerializer(serializers.ModelSerializer):
 class TableSerializer(serializers.ModelSerializer):
     model = serializers.PrimaryKeyRelatedField(queryset=Model.objects.all())
     configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
-    
+    collection = serializers.CharField(required=False, allow_null=True)
+    units = serializers.CharField(required=False, allow_null=True)
+
     class Meta:
         model = Table
         read_only_fields = ('description', 'type', 'color', 'finish')
-        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
+        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url', 'export_price')
         
     def to_representation(self, instance):
         """
@@ -128,7 +135,12 @@ class TableSerializer(serializers.ModelSerializer):
                         
         ret['configuration'] = {'id': instance.configuration.id,
                                 'configuration': instance.configuration.configuration}
-                                
+              
+        try:
+            ret['image'] = {'url': instance.image.generate_url()}
+        except AttributeError:
+            pass
+            
         return ret
         
     def create(self, validated_data):

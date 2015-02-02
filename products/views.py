@@ -116,14 +116,16 @@ class UpholsteryMixin(object):
         """
         logger.error(exc)        
         
-        return super(SupplyMixin, self).handle_exception(exc)
+        return super(UpholsteryMixin, self).handle_exception(exc)
     
     def _format_primary_key_data(self, request):
         """
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['model', 'configuration']
+        fields = ['model', 'configuration', 'image']
+        
+        del request.data['pillows']
         
         for field in fields:
             if field in request.data:
@@ -193,12 +195,15 @@ class TableMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['model', 'configuration']
+        fields = ['model', 'configuration', 'image']
         
         for field in fields:
-            if field in request.data:
-                if 'id' in request.data[field]:
-                    request.data[field] = request.data[field]['id']
+            try:
+                if field in request.data:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+            except TypeError:
+                pass
                     
         return request
         
