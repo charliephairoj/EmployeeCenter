@@ -3,6 +3,7 @@ Project views
 """
 import json
 import time
+import logging
 
 from django.http import HttpResponse
 from django.conf import settings
@@ -13,6 +14,9 @@ from projects.models import Project, Room, Item
 from projects.serializers import ProjectSerializer, RoomSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectMixin(object):
@@ -26,7 +30,7 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = Project.objects.all()
         
         #Filter based on query
         query = self.request.QUERY_PARAMS.get('q', None)
@@ -38,7 +42,7 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
-            
+
         return queryset
     
     

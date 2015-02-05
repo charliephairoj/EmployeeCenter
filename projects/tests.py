@@ -13,6 +13,7 @@ from django.contrib.auth.models import User, Permission, ContentType
 from django.conf import settings
 from django.test import TestCase
 from tastypie.test import ResourceTestCase
+from rest_framework.test import APITestCase
 
 from contacts.models import Customer
 from supplies.models import Supply
@@ -57,7 +58,7 @@ base_item = {"room": {"id": 1},
              "description": "TV Cabinet"}
 
 
-class ProjectResourceTestCase(ResourceTestCase):
+class ProjectResourceTestCase(APITestCase):
     def setUp(self):
         """
         Sets up for tests
@@ -65,7 +66,7 @@ class ProjectResourceTestCase(ResourceTestCase):
         super(ProjectResourceTestCase, self).setUp()
         
         self.create_user()
-        self.api_client.client.login(username='test', password='test')
+        #self.api_client.client.login(username='test', password='test')
         
         #self.customer = Customer.create(**base_customer)
         #self.project = Project.create(**base_project)
@@ -127,6 +128,21 @@ class ProjectResourceTestCase(ResourceTestCase):
         self.assertEqual(supply['description'], 'Grommet')
         self.assertEqual(int(supply['quantity']), 2)
         
+    def test_get_all_projects(self):
+        """
+        Test retrieving full list of projects over 100"""
+        for i in xrange(0, 100):
+            project = Project(codename=i)
+            project.save()
+
+        self.assertEqual(Project.objects.all().count(), 101)
+        
+        resp = self.client.get('/api/v1/project/?page_size=99999', format='json')
+        
+        self.assertEqual(resp.status_code, 200)
+
+        data = resp.data['results']
+        self.assertEqual(len(data), 101)
         
     @unittest.skip('')
     def test_create_project(self):
