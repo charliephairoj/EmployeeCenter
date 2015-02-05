@@ -1,5 +1,6 @@
 import logging
 import decimal
+from decimal import Decimal
 from datetime import datetime
 from pytz import timezone
 
@@ -58,6 +59,16 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.calculate_total()
         instance.save()
         
+        #Check status change
+        new_status = validated_data.get('status', instance.status)
+        if new_status != instance.status and instance.status.lower() == "ordered":
+            instance.status = new_status
+            old_quantity = instance.supply.quantity
+            instance.supply.quantity += instance.quantity
+            new_quantity = instance.supply.quantity
+            instance.supply.save()
+            self._log_quantity_change(instance.supply, old_quantity, new_quantity)
+            
         if instance.unit_cost != instance.supply.cost:
             self._change_supply_cost(instance.supply, instance.unit_cost)
             
@@ -92,6 +103,41 @@ class ItemSerializer(serializers.ModelSerializer):
                                                                                               supply.description,
                                                                                               supply.supplier.name))
         log.save()
+        
+    def _log_quantity_change(self, obj, old_quantity, new_quantity, employee=None):
+        """
+        Internal method to apply the new quantity to the obj and
+        create a log of the quantity change
+        """
+        new_quantity = Decimal(str(new_quantity))
+        
+        #Type change to ensure that calculations are only between Decimals
+        old_quantity = Decimal(str(old_quantity))
+        
+        if new_quantity < 0:
+            raise ValueError('Quantity cannot be negative')
+            
+        if new_quantity != old_quantity:
+            if new_quantity > old_quantity:
+                action = 'ADD'
+                diff = new_quantity - old_quantity
+            elif new_quantity < old_quantity:
+                action = 'SUBTRACT'
+                diff = old_quantity - new_quantity
+
+            #Create log to track quantity changes
+            log = Log(supply=obj, 
+                      action=action,
+                      quantity=diff,
+                      employee=employee,
+                      message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
+                                                             diff,
+                                                             obj.units,
+                                                             "to" if action == "ADD" else "from",
+                                                             obj.description))
+            
+            #Save log                                               
+            log.save()
         
         
 class PurchaseOrderSerializer(serializers.ModelSerializer):
@@ -180,7 +226,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         instance.calculate_total()
         
-        instance.create_and_upload_pdf()
+        #instance.create_and_upload_pdf()
         
         instance.save()
         

@@ -5,6 +5,7 @@ import json
 import time
 
 from django.http import HttpResponse
+from django.conf import settings
 from rest_framework import generics
 from rest_framework.response import Response
 
@@ -20,7 +21,25 @@ class ProjectMixin(object):
 
 
 class ProjectList(ProjectMixin, generics.ListCreateAPIView):
-    pass
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(codename__icontains=query) | 
+                                       Q(pk__icontains=query))
+                                      
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
+        return queryset
     
     
 class ProjectDetail(ProjectMixin, generics.RetrieveUpdateDestroyAPIView):

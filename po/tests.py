@@ -115,6 +115,8 @@ class PurchaseOrderTest(APITestCase):
        
         #self.supply.units = "m^2"
         self.supply.save()
+        self.supply1 = self.supply
+        
         self.product = Product(supply=self.supply, supplier=self.supplier, cost=base_fabric['unit_cost'],
                                purchasing_units='m')
         self.product.save()
@@ -295,7 +297,9 @@ class PurchaseOrderTest(APITestCase):
         #self.assertEqual(self.item2.unit_cost, Decimal('11.50'))
         self.assertEqual(self.item2.quantity, 3)
         self.assertEqual(self.item2.total, Decimal('34.51'))
+        
         project = po.project
+        self.assertEqual(Project.objects.all().count(), 2)
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 2)
         self.assertEqual(project.codename, 'Ladawan')
@@ -531,6 +535,31 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(log.supplier, po.supplier)
         self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
        
+    def test_updating_item_status(self):
+        """
+        Test updating the status of supplies and automatically checking in supplies 
+        """
+        #test original quantity
+        self.assertEqual(self.supply1.quantity, 10)
+        self.assertEqual(self.supply2.quantity, 10)
+        
+        modified_po = copy.deepcopy(base_purchase_order)
+        modified_po['status'] = 'Received'
+        modified_po['items'][0]['id'] = 1
+        modified_po['items'][0]['status'] = 'Receieved'
+            
+        resp = self.client.put('/api/v1/purchase-order/1/',
+                               format='json',
+                               data=modified_po)
+                               
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        po = resp.data
+        
+        self.assertEqual(Supply.objects.get(pk=1).quantity, 20)
+        
+        
+        
         
         
         
