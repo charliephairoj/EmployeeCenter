@@ -34,7 +34,7 @@ class ShippingMixin(object):
         """
         logger.error(exc)        
         
-        return super(SupplyMixin, self).handle_exception(exc)
+        return super(ShippingMixin, self).handle_exception(exc)
     
     def _format_primary_key_data(self, request):
         """
@@ -73,9 +73,8 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         #Filter based on query
         query = self.request.QUERY_PARAMS.get('q', None)
         if query:
-            queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
-                                       Q(description__icontains=query) |
-                                       Q(products__reference__icontains=query))
+            queryset = queryset.filter(Q(pk__icontains=query) | 
+                                       Q(customer__name__icontains=query))
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
