@@ -245,7 +245,9 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(self.item2.unit_cost, Decimal('12.11'))
         self.assertEqual(self.item2.quantity, 3)
         self.assertEqual(self.item2.total, Decimal('34.51'))
-        project = po.project
+        
+        self.assertEqual(Project.objects.count(), 1)
+        project = Project.objects.all()[0]
         self.assertIsInstance(project, Project)
         self.assertEqual(project.id, 1)
         self.assertEqual(project.codename, 'MC House')
