@@ -186,7 +186,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         query = self.request.QUERY_PARAMS.get('q', None)
         if query:
             queryset = queryset.filter(Q(customer__name__icontains=query) | 
-                                       Q(pk__icontains=query))
+                                       Q(pk__icontains=query)).distinct('id')
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
