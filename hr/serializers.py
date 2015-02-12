@@ -15,9 +15,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     nationality = serializers.CharField(required=False, allow_null=True)
     social_security_id = serializers.CharField(required=False, 
-                                               allow_null=True)
+                                               allow_null=True,
+                                               allow_blank=True)
     telephone = serializers.CharField(required=False, 
-                                      allow_null=True)
+                                      allow_null=True,
+                                      allow_blank=True)
     image = serializers.PrimaryKeyRelatedField(queryset=S3Object.objects.all(),
                                                required=False, 
                                                allow_null=True)
