@@ -134,7 +134,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         if query:
             queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
                                        Q(description__icontains=query) |
-                                       Q(products__reference__icontains=query)).distinct('id')
+                                       Q(products__reference__icontains=query))
         
         #Filter based on supplier
         s_id = self.request.QUERY_PARAMS.get('supplier_id', None)

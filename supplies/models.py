@@ -345,7 +345,10 @@ class Fabric(Supply):
     pattern = models.TextField()
     color = models.TextField()
     content = models.TextField()
-
+    grade = models.TextField()
+    handling = models.TextField()
+    repeat = models.TextField()
+    
     @classmethod
     def create(cls, **kwargs):
         """
