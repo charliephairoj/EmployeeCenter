@@ -84,6 +84,12 @@ class ShippingSerializer(serializers.ModelSerializer):
         ret['acknowledgement'] = {'id': instance.acknowledgement.id}
         
         try:
+            ret['acknowledgement']['project'] = {'id': instance.acknowledgement.project.id,
+                                                 'codename': instance.acknowledgement.project.codename}
+        except AttributeError:
+            pass
+            
+        try:
             ret['pdf'] = {'url': instance.pdf.generate_url()}
         except AttributeError:
             pass

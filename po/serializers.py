@@ -144,20 +144,21 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
     project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
     items = ItemSerializer(many=True)
+    order_date = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = PurchaseOrder
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 
-                  'discount', 'status', 'terms')
+                  'discount', 'status', 'terms', 'order_date')
                  
-        read_only_fields = ('pdf', 'revision', 'order_date', 'received_date')
+        read_only_fields = ('pdf', 'revision')
         
     def to_representation(self, instance):
         """
         Override the 'to_representation' in order to customize output for supplier
         """
         ret = super(PurchaseOrderSerializer, self).to_representation(instance)
-        
+
         ret['supplier'] = {'id': instance.supplier.id, 
                            'name': instance.supplier.name}
         
