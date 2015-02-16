@@ -18,7 +18,7 @@ from django.contrib.auth.models import User, Permission, Group, ContentType
 from rest_framework.test import APIRequestFactory, APITestCase, APIClient
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
-from supplies.models import Fabric, Reservation
+from supplies.models import Fabric, Reservation, Log
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
 from media.models import S3Object
@@ -75,6 +75,7 @@ base_ack = {'customer': base_customer,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
                        'fabric': {'id':1},
+                       'fabric_quantity': 10,
                        'pillows':[{"type": "back",
                                    "fabric": {'id': 1}},
                                   {"type": "back",
@@ -93,7 +94,8 @@ base_ack = {'customer': base_customer,
                           'width': 1500,
                           'depth': 760,
                           'height': 320,
-                          "fabric": 1},
+                          'fabric_quantity': 5,
+                          "fabric": {'id': 1}},
                          #item 3:
                          #Custom item with no product
                          {"description": "test custom item",
@@ -340,11 +342,13 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
+        """
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
         self.assertIsNotNone(ack['pdf']['confirmation'])
-
+        """
+        
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
         logger.debug(root_ack.project)
@@ -377,6 +381,14 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3.width, 1)
         self.assertTrue(item3.is_custom_item)
         self.assertEqual(item3.quantity, 1)
+        
+        #Test Fabric Log
+        self.assertEqual(Log.objects.filter(acknowledgement_id=root_ack.id).count(), 1)
+        log = Log.objects.get(acknowledgement_id=root_ack.id)
+        self.assertEqual(log.quantity, Decimal('15'))
+        self.assertEqual(log.action, 'RESERVE')
+        self.assertEqual(log.acknowledgement_id, '2')
+        self.assertEqual(log.message, 'Reserve 15m of Pattern: Max, Col: charcoal for Ack#2')
         
     def test_post_with_custom_image(self):
         """
@@ -462,118 +474,6 @@ class AcknowledgementResourceTest(APITestCase):
         logger.debug(ack['pdf']['confirmation'])
         print "\n\n\n"
         
-        #Tests the acknowledgement in the database
-        root_ack = Acknowledgement.objects.get(pk=2)
-        logger.debug(root_ack.project)
-        self.assertEqual(root_ack.id, 2)
-        self.assertEqual(root_ack.items.count(), 3)
-        self.assertIsInstance(root_ack.project, Project)
-        self.assertEqual(root_ack.project.id, 1)
-        self.assertEqual(root_ack.project.codename, "Ladawan1")
-        root_ack_items = root_ack.items.all()
-        item1 = root_ack_items[0]
-        item2 = root_ack_items[1]
-        item3 = root_ack_items[2]
-        self.assertEqual(item1.acknowledgement.id, 2)
-        self.assertEqual(item1.description, 'Test Sofa Max')
-        self.assertEqual(item1.quantity, 2)
-        self.assertEqual(item1.width, 1000)
-        self.assertEqual(item1.height, 320)
-        self.assertEqual(item1.depth, 760)
-        self.assertFalse(item1.is_custom_item)
-        self.assertFalse(item1.is_custom_size)
-        self.assertEqual(item2.acknowledgement.id, 2)
-        self.assertEqual(item2.description, 'High Gloss Table')
-        self.assertEqual(item2.width, 1500)
-        self.assertEqual(item2.height, 320)
-        self.assertEqual(item2.depth, 760)
-        self.assertTrue(item2.is_custom_size)
-        self.assertFalse(item2.is_custom_item)
-        self.assertEqual(item3.acknowledgement.id, 2)
-        self.assertEqual(item3.description, 'test custom item')
-        self.assertEqual(item3.width, 1)
-        self.assertTrue(item3.is_custom_item)
-        self.assertEqual(item3.quantity, 1)
-        
-    def test_post_with_discount(self):
-        """
-        Testing POSTing data to the api
-        """
-        
-        logger.debug("\n\n Testing creating acknowledgement with a discount \n")
-        #Apply a discount to the customer
-        self.customer.discount = 50
-        self.customer.save()
-                
-        #POST and verify the response
-        self.assertEqual(Acknowledgement.objects.count(), 1)
-        resp = self.client.post('/api/v1/acknowledgement/',  
-                                data=base_ack,
-                                format='json')
-
-        #Verify that http response is appropriate
-        self.assertEqual(resp.status_code, 201, msg=resp)
-        
-        #Verify that an acknowledgement is created in the system
-        self.assertEqual(Acknowledgement.objects.count(), 2)
-        
-        #Verify the resulting acknowledgement
-        #that is returned from the post data
-        ack = resp.data
-        self.assertIsNotNone(ack)
-        self.assertEqual(ack['id'], 2)
-        self.assertEqual(ack['customer']['id'], 1)
-        self.assertEqual(ack['employee']['id'], 1)
-        self.assertEqual(ack['vat'], 0)
-        self.assertEqual(Decimal(ack['total']), Decimal(158500))
-        self.assertEqual(len(ack['items']), 3)
-        self.assertIn('project', ack)
-        self.assertEqual(ack['project']['id'], 1)
-        self.assertEqual(ack['project']['codename'], 'Ladawan1')
-        
-        #Test standard sized item 
-        item1 = ack['items'][0]
-        self.assertEqual(item1['id'], 3)
-        self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
-        self.assertFalse(item1['is_custom_size'])
-        self.assertFalse(item1['is_custom_item'])
-        self.assertEqual(item1['width'], 1000)
-        self.assertEqual(item1['height'], 320)
-        self.assertEqual(item1['depth'], 760)
-        self.assertEqual(item1['fabric']['id'], 1)
-        self.assertEqual(len(item1['pillows']), 4)
-        self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
-        self.assertEqual(Decimal(item1['total']), Decimal(200000))
-        
-        #Test custom sized item
-        item2 = ack['items'][1]
-        self.assertEqual(item2['id'], 4)
-        self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
-        self.assertTrue(item2['is_custom_size'])
-        self.assertFalse(item2['is_custom_item'])
-        self.assertEqual(item2['width'], 1500)
-        self.assertEqual(item2['height'], 320)
-        self.assertEqual(item2['depth'], 760)
-        self.assertEqual(item2['fabric']['id'], 1)
-        self.assertEqual(Decimal(item2['unit_price']), Decimal(117000))
-        self.assertEqual(Decimal(item2['total']), Decimal(117000))
-        
-        #Test custom item with width
-        item3 = ack['items'][2]
-        self.assertEqual(item3['width'], 1)
-        self.assertEqual(item3['description'], 'test custom item')
-        self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
-        self.assertEqual(Decimal(item3['unit_price']), 0)
-        
-        #Tests links to document
-        self.assertIsNotNone(ack['pdf'])
-        self.assertIsNotNone(ack['pdf']['acknowledgement'])
-        self.assertIsNotNone(ack['pdf']['production'])
-        self.assertIsNotNone(ack['pdf']['confirmation'])
-
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
         logger.debug(root_ack.project)

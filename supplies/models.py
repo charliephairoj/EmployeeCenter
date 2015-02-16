@@ -329,6 +329,7 @@ class Log(models.Model):
     cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
     employee = models.ForeignKey(Employee, null=True)
+    acknowledgement_id = models.TextField(null=True)
 
     @classmethod
     def create(cls, supply, event, quantity, employee, acknowledgement_id=None):

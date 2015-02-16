@@ -9,7 +9,7 @@ from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
 from contacts.models import Customer
 from products.models import Product
-from supplies.models import Fabric
+from supplies.models import Fabric, Log
 from projects.models import Project
 from media.models import S3Object
 
@@ -50,7 +50,10 @@ class ItemSerializer(serializers.ModelSerializer):
     height = serializers.IntegerField(required=False, allow_null=True)
     custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
                                             allow_null=True)
-    
+    fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, 
+                                               write_only=True, required=False,
+                                               allow_null=True)
+                                               
     class Meta:
         model = Item
         field = ('description', 'id', 'width', 'depth', 'height')
@@ -69,11 +72,14 @@ class ItemSerializer(serializers.ModelSerializer):
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height
-        
+        fabric_quantity = validated_data.pop('fabric_quantity', None)
         
         instance = self.Meta.model.objects.create(acknowledgement=acknowledgement, unit_price=unit_price, 
                                                   width=width, depth=depth, 
                                                   height=height, **validated_data)
+        
+        #attach fabric quantity
+        instance.fabric_quantity = fabric_quantity
         
         #Calculate the total price of the item
         if instance.is_custom_size and product.price == unit_price:
@@ -148,7 +154,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                     pass
                 except AttributeError:
                     pass
-        
+
         discount = validated_data.pop('discount', None) or validated_data['customer'].discount
         
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
@@ -161,7 +167,21 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
-        instance.create_and_upload_pdfs()
+        #instance.create_and_upload_pdfs()
+        
+        #Extract fabric quantities
+        fabrics = {}
+       
+        for item in item_serializer.instance:
+            if item.fabric:
+                if item.fabric in fabrics:
+                    fabrics[item.fabric] += item.fabric_quantity
+                else:
+                    fabrics[item.fabric] = item.fabric_quantity
+        
+        #Log Fabric Reservations
+        for fabric in fabrics:
+            self.reserve_fabric(fabric, fabrics[fabric], instance.id)
         
         return instance
         
@@ -213,6 +233,29 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             """
             
         return ret
+        
+    def reserve_fabric(self, fabric, quantity, acknowledgement_id, employee=None):
+        """
+        Internal method to apply the new quantity to the obj and
+        create a log of the quantity change
+        """
+
+
+        #Create log to track quantity changes
+        log = Log(supply=fabric, 
+                  action="RESERVE",
+                  quantity=quantity,
+                  employee=employee,
+                  acknowledgement_id=acknowledgement_id,
+                  message="Reserve {0}{1} of {2} for Ack#{3}".format(quantity, 
+                                                                     fabric.units,
+                                                                     fabric.description,
+                                                                     acknowledgement_id))
+        
+        #Save log                                               
+        log.save()
+        
+        assert Log.objects.filter(acknowledgement_id=acknowledgement_id).count() == 1, acknowledgement_id
         
         
         
