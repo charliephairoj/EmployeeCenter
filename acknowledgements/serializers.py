@@ -175,9 +175,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         for item in item_serializer.instance:
             if item.fabric:
                 if item.fabric in fabrics:
-                    fabrics[item.fabric] += item.fabric_quantity
+                    fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
                 else:
-                    fabrics[item.fabric] = item.fabric_quantity
+                    fabrics[item.fabric] = Decimal(str(item.quantity)) * item.fabric_quantity
         
         #Log Fabric Reservations
         for fabric in fabrics:

@@ -385,10 +385,10 @@ class AcknowledgementResourceTest(APITestCase):
         #Test Fabric Log
         self.assertEqual(Log.objects.filter(acknowledgement_id=root_ack.id).count(), 1)
         log = Log.objects.get(acknowledgement_id=root_ack.id)
-        self.assertEqual(log.quantity, Decimal('15'))
+        self.assertEqual(log.quantity, Decimal('25'))
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
-        self.assertEqual(log.message, 'Reserve 15m of Pattern: Max, Col: charcoal for Ack#2')
+        self.assertEqual(log.message, 'Reserve 25m of Pattern: Max, Col: charcoal for Ack#2')
         
     def test_post_with_custom_image(self):
         """
