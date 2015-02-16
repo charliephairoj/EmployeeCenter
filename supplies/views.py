@@ -234,13 +234,14 @@ class LogViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         
         supply_id = self.request.QUERY_PARAMS.get('supply', None)
+        supply_id = self.request.QUERY_PARAMS.get('supply_id', None) or supply_id     
 
         if supply_id:
             queryset = queryset.filter(supply_id=supply_id)
             
         action = self.request.QUERY_PARAMS.get('action', None)
 
-        if supply_id:
+        if action:
             queryset = queryset.filter(action=action)
             
         return queryset

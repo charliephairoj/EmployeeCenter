@@ -104,6 +104,11 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(supplier__name__icontains=query) | 
                                        Q(pk__icontains=query) |
                                        Q(items__description__icontains=query)).distinct('id')
+                                       
+        #Filter by project
+        project_id = self.request.QUERY_PARAMS.get('project_id', None)
+        if project_id:
+            queryset = queryset.filter(project_id=project_id)
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
