@@ -761,3 +761,46 @@ class FabricAPITestCase(APITestCase):
         obj = resp.data
         self.assertEqual(float(obj['quantity']), float('10.8'))
         
+        
+class LogTestCase(APITestCase):
+    
+    def setUp(self):
+        """
+        Set up for log tests
+        """
+        self.fabric = Fabric(pattern="Max", color="Grey", quantity="12", units='yd',
+                             description="Max Col: Grey")
+        self.fabric.save()
+        self.log = Log.objects.create(message="Reserved 5yd", acknowledgement_id=1002, 
+                                      action="RESERVE", quantity=10, supply=self.fabric)
+                                      
+    def test_cut_fabric(self):
+        
+        data = {'id': 1, 'message': 'Reserve 5yd', 'action': "CUT", 'quantity': 8,
+                'supply': {'id': 1}}
+        resp = self.client.put('/api/v1/log/1/', data=data, format='json')
+        
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        log_data = resp.data
+        
+        self.assertEqual(log_data['id'], 1)
+        self.assertEqual(log_data['message'], "8yd of Max Col: Grey cut for Ack #1002")
+        self.assertEqual(Decimal(log_data['quantity']), Decimal('8'))
+        self.assertEqual(log_data['acknowledgement_id'], '1002')
+        self.assertEqual(log_data['action'], "SUBTRACT")
+        
+        fabric = Fabric.objects.get(pk=1)
+        self.assertEqual(fabric.quantity, 14)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

@@ -17,7 +17,7 @@ from hr.api import EmployeeResource, AttendanceResource
 from contacts.views import CustomerViewSet, SupplierViewSet, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
-from supplies.views import FabricViewSet, LogViewSet
+from supplies.views import LogList, LogDetail
 from products.views import ConfigurationViewSet, ModelViewSet
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
@@ -40,43 +40,15 @@ API Section
 This area deals with the registration of the 
 resources with the api 
 """
-v1_api = Api(api_name='v1')
-v1_api.register(SupplierResource())
-v1_api.register(CustomerResource())
-v1_api.register(AckItemResource())
-v1_api.register(PurchaseOrderResource())
-v1_api.register(POItemResource())
-v1_api.register(ShippingResource())
-v1_api.register(ProjectResource())
-v1_api.register(RoomResource())
-v1_api.register(SupplyResource())
-v1_api.register(FabricResource())
-v1_api.register(LogResource())
-v1_api.register(SupplyReservationResource())
-v1_api.register(EquipmentResource())
-v1_api.register(UserResource())
-v1_api.register(GroupResource())
-v1_api.register(PermissionResource())
-v1_api.register(EmployeeResource())
-v1_api.register(AttendanceResource())
 
-#Products Category
-v1_api.register(ModelResource())
-v1_api.register(ConfigurationResource())
-v1_api.register(UpholsteryResource())
-v1_api.register(TableResource())
 
 
 router = DefaultRouter()
 
 router.register(r'api/v1/customer', CustomerViewSet)
-#router.register(r'api/v1/supplier', SupplierViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
-#router.register(r'api/v1/upholstery', UpholsteryViewSet)
-router.register(r'api/v1/supply/log', LogViewSet)
-#router.register(r'api/v1/project', ProjectViewSet)
-router.register(r'api/v1/log', LogViewSet)
+
 
 
 #primary login and url routing
@@ -124,7 +96,9 @@ urlpatterns = patterns('',
     url(r'^api/v1/permission/$', PermissionList.as_view()),
     url(r'^api/v1/permission/(?P<pk>[0-9]+)/$', PermissionDetail.as_view()),
     url(r'^api/v1/equipment/$', EquipmentList.as_view()),
-    url(r'^api/v1/equipment/(?P<pk>[0-9]+)/$', EquipmentDetail.as_view())
+    url(r'^api/v1/equipment/(?P<pk>[0-9]+)/$', EquipmentDetail.as_view()),
+    url(r'^api/v1/log/$', LogList.as_view()),
+    url(r'^api/v1/log/(?P<pk>[0-9]+)/$', LogDetail.as_view())
 )
 
 

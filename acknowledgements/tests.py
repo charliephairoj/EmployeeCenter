@@ -185,6 +185,9 @@ class AcknowledgementResourceTest(APITestCase):
         self.custom_product.save()
         
         self.fabric = Fabric.create(**base_fabric)
+        self.fabric.quantity = 26
+        self.fabric.save()
+        
         f_data = base_fabric.copy()
         f_data["pattern"] = "Stripe"
         self.fabric2 = Fabric.create(**f_data)
@@ -389,6 +392,8 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, 'Reserve 25m of Pattern: Max, Col: charcoal for Ack#2')
+        
+        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('1'))
         
     def test_post_with_custom_image(self):
         """

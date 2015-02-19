@@ -167,7 +167,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
-        #instance.create_and_upload_pdfs()
+        instance.create_and_upload_pdfs()
         
         #Extract fabric quantities
         fabrics = {}
@@ -182,6 +182,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         #Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
+           
         
         return instance
         
@@ -239,7 +240,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         Internal method to apply the new quantity to the obj and
         create a log of the quantity change
         """
-
+        
+        #Cut fabric from stock
+        fabric.quantity -= float(quantity)
+        fabric.save()
 
         #Create log to track quantity changes
         log = Log(supply=fabric, 
@@ -254,9 +258,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         #Save log                                               
         log.save()
-        
-        assert Log.objects.filter(acknowledgement_id=acknowledgement_id).count() == 1, acknowledgement_id
-        
+                
         
         
         

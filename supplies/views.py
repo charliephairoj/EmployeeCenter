@@ -245,3 +245,38 @@ class LogViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(action=action)
             
         return queryset
+        
+    def update(self, request, *args, **kwargs):
+        
+        logger.debug(request)
+        
+
+class LogList(generics.ListAPIView):
+    
+    queryset = Log.objects.all().order_by('-id')
+    serializer_class = LogSerializer
+    
+    def get_queryset(self):
+        
+        queryset = self.queryset
+        
+        supply_id = self.request.QUERY_PARAMS.get('supply', None)
+        supply_id = self.request.QUERY_PARAMS.get('supply_id', None) or supply_id     
+
+        if supply_id:
+            queryset = queryset.filter(supply_id=supply_id)
+            
+        action = self.request.QUERY_PARAMS.get('action', None)
+
+        if action:
+            queryset = queryset.filter(action=action)
+            
+        return queryset
+        
+class LogDetail(generics.RetrieveUpdateAPIView):
+    
+    queryset = Log.objects.all().order_by('-id')
+    serializer_class = LogSerializer
+    
+    
+    

@@ -293,3 +293,27 @@ class LogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Log
+        
+    def update(self, instance, validated_data):
+        
+        quantity = Decimal(str(validated_data.pop('quantity', instance.quantity)))
+        action = validated_data.pop('action', instance.action)
+        
+        #Determine if should update or not
+        if quantity != instance.quantity and action.lower() == 'cut':
+            quantity_difference = instance.quantity - quantity
+
+            #Adjust fabric stock based on cut quantity
+            instance.supply.quantity += float(quantity_difference)
+            instance.supply.save()
+
+            #Adjust log 
+            instance.action = "SUBTRACT"
+            instance.quantity = quantity
+            instance.message = "{0}{1} of {2} cut for Ack #{3}".format(instance.quantity,
+                                                                       instance.supply.units,
+                                                                       instance.supply.description,
+                                                                       instance.acknowledgement_id)
+            instance.save()
+            
+        return instance
