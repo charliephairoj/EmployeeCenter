@@ -289,7 +289,7 @@ class FabricSerializer(SupplySerializer):
         
         
 class LogSerializer(serializers.ModelSerializer):
-    supply = SupplySerializer()
+    supply = SupplySerializer(required=False, allow_null=True)
     
     class Meta:
         model = Log
@@ -301,10 +301,14 @@ class LogSerializer(serializers.ModelSerializer):
         
         #Determine if should update or not
         if quantity != instance.quantity and action.lower() == 'cut':
-            quantity_difference = instance.quantity - quantity
+            quantity_difference = Decimal(str(instance.quantity)) - quantity
 
             #Adjust fabric stock based on cut quantity
-            instance.supply.quantity += float(quantity_difference)
+            try:
+                instance.supply.quantity += Decimal(str(quantity_difference))
+            except TypeError:
+                instance.supply.quantity += float(quantity_difference)
+                
             instance.supply.save()
 
             #Adjust log 

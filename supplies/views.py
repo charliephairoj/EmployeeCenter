@@ -278,5 +278,15 @@ class LogDetail(generics.RetrieveUpdateAPIView):
     queryset = Log.objects.all().order_by('-id')
     serializer_class = LogSerializer
     
+    def put(self, request, *args, **kwargs):
+        del request.data['supply']
+        response = super(LogDetail, self).put(request, *args, **kwargs)
+        
+        return response
+        
+        
+        
+        
+        
     
     

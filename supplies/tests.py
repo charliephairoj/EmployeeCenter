@@ -777,7 +777,7 @@ class LogTestCase(APITestCase):
     def test_cut_fabric(self):
         
         data = {'id': 1, 'message': 'Reserve 5yd', 'action': "CUT", 'quantity': 8,
-                'supply': {'id': 1}}
+                'supply': {'id': 1, 'image': {'id': 100}}}
         resp = self.client.put('/api/v1/log/1/', data=data, format='json')
         
         self.assertEqual(resp.status_code, 200, msg=resp)
