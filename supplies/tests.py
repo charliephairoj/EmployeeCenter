@@ -793,6 +793,25 @@ class LogTestCase(APITestCase):
         fabric = Fabric.objects.get(pk=1)
         self.assertEqual(fabric.quantity, 14)
         
+    def test_cancel_fabric_reservation(self):
+        
+        data = {'id': 1, 'message': 'Reserve 5yd', 'action': "CANCEL", 'quantity': 10,
+                'supply': {'id': 1, 'image': {'id': 100}}}
+        resp = self.client.put('/api/v1/log/1/', data=data, format='json')
+        
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        log_data = resp.data
+        
+        self.assertEqual(log_data['id'], 1)
+        self.assertEqual(log_data['message'], "Cancelled reservation of Max Col: Grey for Ack #1002")
+        self.assertEqual(Decimal(log_data['quantity']), Decimal('10'))
+        self.assertEqual(log_data['acknowledgement_id'], '1002')
+        self.assertEqual(log_data['action'], "CANCELLED")
+        
+        fabric = Fabric.objects.get(pk=1)
+        self.assertEqual(fabric.quantity, 22)
+        
         
         
         

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import datetime
 import logging
 
 from rest_framework import serializers
@@ -282,7 +283,10 @@ class SupplySerializer(serializers.ModelSerializer):
         
  
 class FabricSerializer(SupplySerializer):
-    content = serializers.CharField(required=False, allow_null=True)
+    content = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    grade = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    handling = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    repeat = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Fabric
@@ -314,10 +318,26 @@ class LogSerializer(serializers.ModelSerializer):
             #Adjust log 
             instance.action = "SUBTRACT"
             instance.quantity = quantity
+            instance.timestamp = datetime.now()
             instance.message = "{0}{1} of {2} cut for Ack #{3}".format(instance.quantity,
                                                                        instance.supply.units,
                                                                        instance.supply.description,
                                                                        instance.acknowledgement_id)
+            instance.save()
+        
+        elif action.lower() == 'cancel':
+            #Adjust fabric stock
+            try:
+                instance.supply.quantity += Decimal(str(instance.quantity))
+            except TypeError:
+                instance.supply.quantity += float(instance.quantity)
+            
+            instance.supply.save()
+            
+            instance.timestamp = datetime.now()
+            instance.action = "CANCELLED"
+            instance.message = "Cancelled reservation of {0} for Ack #{1}".format(instance.supply.description,
+                                                                                  instance.acknowledgement_id)
             instance.save()
             
         return instance
