@@ -242,7 +242,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         
         #Cut fabric from stock
-        fabric.quantity -= float(quantity)
+        try:
+            fabric.quantity -= float(quantity)
+        except TypeError:
+            fabric.quantity -= Decimal(quantity)
         fabric.save()
 
         #Create log to track quantity changes

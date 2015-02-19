@@ -280,11 +280,16 @@ class AcknowledgementResourceTest(APITestCase):
         #Apply a discount to the customer
         self.customer.discount = 50
         self.customer.save()
-                
+        
+        modified_data = copy.deepcopy(base_ack)
+        modified_data['items'][-1]['fabric'] = {'id': 1,
+                                                'image': {'id': 1}}
+        modified_data['items'][-1]['fabric_quantity'] = 8
+        
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.client.post('/api/v1/acknowledgement/',  
-                                data=base_ack,
+                                data=modified_data,
                                 format='json')
 
         #Verify that http response is appropriate
@@ -343,6 +348,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertTrue(item3['is_custom_item'])
         self.assertEqual(item3['quantity'], 1)
         self.assertEqual(Decimal(item3['unit_price']), 0)
+        self.assertEqual(item3['fabric']['id'], 1)
         
         #Tests links to document
         """
@@ -388,12 +394,12 @@ class AcknowledgementResourceTest(APITestCase):
         #Test Fabric Log
         self.assertEqual(Log.objects.filter(acknowledgement_id=root_ack.id).count(), 1)
         log = Log.objects.get(acknowledgement_id=root_ack.id)
-        self.assertEqual(log.quantity, Decimal('25'))
+        self.assertEqual(log.quantity, Decimal('33'))
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
-        self.assertEqual(log.message, 'Reserve 25m of Pattern: Max, Col: charcoal for Ack#2')
+        self.assertEqual(log.message, 'Reserve 33m of Pattern: Max, Col: charcoal for Ack#2')
         
-        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('1'))
+        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-7'))
         
     def test_post_with_custom_image(self):
         """
