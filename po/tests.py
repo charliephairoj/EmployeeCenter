@@ -560,6 +560,41 @@ class PurchaseOrderTest(APITestCase):
         
         self.assertEqual(Supply.objects.get(pk=1).quantity, 20)
         
+    def test_updating_to_receive_items(self):
+        """
+        Test updating the status of the po in order to to receive it
+        
+        When a purchase order is received, the items received should automatically be added to the 
+        supply inventory quantity
+        """
+        modified_po = copy.deepcopy(base_purchase_order)
+        modified_po['items'][0]['id'] = 1
+        modified_po['items'][0]['status'] = 'RECEIVED'
+        modified_po['status'] = ['RECEIVED']
+        
+        resp = self.client.put('/api/v1/purchase-order/1/', format='json', data=modified_po)
+        
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        po_data = resp.data
+        self.assertEqual(po_data['id'], 1)
+        self.assertEqual(po_data['status'], 'RECEIVED')
+        
+        item1 = po_data['items'][0]
+        self.assertEqual(item1['id'], 1)
+        self.assertEqual(item1['status'], 'RECEIVED')
+        
+        #Test database values
+        po = PurchaseOrder.objects.get(pk=1)
+        self.assertEqual(po.id, 1)
+        self.assertEqual(po.status, 'RECEIVED')
+        for item in po.items.all():
+            self.assertEqual(item.status, "RECEIVED")
+            
+        
+            
+        
+        
         
         
         
