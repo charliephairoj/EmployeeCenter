@@ -186,7 +186,7 @@ class PurchaseOrder(models.Model):
 class Item(models.Model):
     
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='items')
-    supply = models.ForeignKey(Supply, db_column="supply_id", related_name="+")
+    supply = models.ForeignKey(Supply, db_column="supply_id", related_name="po_item")
     description = models.TextField()
     quantity = models.DecimalField(decimal_places=2, max_digits=12)
     status = models.TextField(default="Ordered")
