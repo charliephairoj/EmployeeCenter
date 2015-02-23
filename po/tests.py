@@ -388,7 +388,7 @@ class PurchaseOrderTest(APITestCase):
         item2 = po['items'][0]
        
         self.assertEqual(item2['id'], 1)
-        self.assertEqual(item2['quantity'], 3)
+        self.assertEqual(item2['quantity'], '3.00')
         self.assertEqual(item2['comments'], 'test change')
         self.assertEqual(item2['description'], 'test description change')
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
@@ -459,11 +459,11 @@ class PurchaseOrderTest(APITestCase):
         item1 = resp_obj['items'][0]
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
-        self.assertEqual(item1['quantity'], 10)
+        self.assertEqual(item1['quantity'], '10.00')
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.11'))
         self.assertEqual(Decimal(item1['total']), Decimal('60.55'))
         self.assertEqual(item2['id'], 2)
-        self.assertEqual(item2['quantity'], 3)
+        self.assertEqual(item2['quantity'], '3.00')
         self.assertEqual(item2['discount'], 5)
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
         self.assertEqual(Decimal(item2['total']), Decimal('34.51'))
@@ -472,13 +472,13 @@ class PurchaseOrderTest(APITestCase):
         po = PurchaseOrder.objects.get(pk=1)
         item1 = po.items.order_by('id').all()[0]
         self.assertEqual(item1.id, 1)
-        self.assertEqual(item1.quantity, 10)
+        self.assertEqual(item1.quantity, Decimal('10.00'))
         self.assertEqual(item1.discount, 50)
         self.assertEqual(item1.unit_cost, Decimal('12.11'))
         self.assertEqual(item1.total, Decimal('60.55'))
         item2 = po.items.order_by('id').all()[1]
         self.assertEqual(item2.id, 2)
-        self.assertEqual(item2.quantity, 3)
+        self.assertEqual(item2.quantity, Decimal('3.00'))
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.discount, 5)
         self.assertEqual(item2.total, Decimal('34.51'))
@@ -515,7 +515,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('107.54'))
         item1 = resp_obj['items'][0]
         self.assertEqual(item1['id'], 1)
-        self.assertEqual(item1['quantity'], 10)
+        self.assertEqual(item1['quantity'], '10.00')
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
        

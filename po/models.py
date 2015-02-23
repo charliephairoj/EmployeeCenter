@@ -188,7 +188,7 @@ class Item(models.Model):
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='items')
     supply = models.ForeignKey(Supply, db_column="supply_id", related_name="+")
     description = models.TextField()
-    quantity = models.IntegerField()
+    quantity = models.DecimalField(decimal_places=2, max_digits=12)
     status = models.TextField(default="Ordered")
     discount = models.IntegerField(default=0)
     unit_cost = models.DecimalField(decimal_places=3, max_digits=12, default=0)

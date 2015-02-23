@@ -53,7 +53,7 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.supply.supplier = self.context['supplier']
         instance.description = validated_data.pop('description', None) or instance.description
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
-        instance.quantity = validated_data.get('quantity')
+        instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
         instance.comments = validated_data.get('comments', None) or instance.comments
         instance.calculate_total()
@@ -64,7 +64,7 @@ class ItemSerializer(serializers.ModelSerializer):
         if new_status != instance.status and instance.status.lower() == "ordered":
             instance.status = new_status
             old_quantity = instance.supply.quantity
-            instance.supply.quantity += instance.quantity
+            instance.supply.quantity += float(str(instance.quantity))
             new_quantity = instance.supply.quantity
             instance.supply.save()
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
