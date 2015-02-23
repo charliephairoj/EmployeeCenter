@@ -218,10 +218,9 @@ class Supply(models.Model):
                 raise ValueError("Product does not exist.")
                 
             except Product.MultipleObjectsReturned:
-                logger.debug(self.id)
-                logger.debug(supplier.id)
+                
                 for p in Product.objects.filter(supply=self, supplier=supplier):
-                    logger.debug('{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
+                    logger.error(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
                 raise ValueError("Too many products return for this supply and supplier combo")
 
         return self.product
