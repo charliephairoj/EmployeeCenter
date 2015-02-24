@@ -570,7 +570,7 @@ class PurchaseOrderTest(APITestCase):
         modified_po = copy.deepcopy(base_purchase_order)
         modified_po['items'][0]['id'] = 1
         modified_po['items'][0]['status'] = 'RECEIVED'
-        modified_po['status'] = ['RECEIVED']
+        modified_po['status'] = 'RECEIVED'
         
         resp = self.client.put('/api/v1/purchase-order/1/', format='json', data=modified_po)
         

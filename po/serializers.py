@@ -208,6 +208,17 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
+        
+        status = validated_data.pop('status', None)
+        logger.debug(status)
+        logger.debug(instance.status)
+        if status.lower() == "received" and instance.status.lower() != "received":
+            logger.debug('ok')
+            self.receive_order(instance, validated_data)
+            
+            for i in instance.items.all():
+                logger.debug(i.status)
+            
         items_data = validated_data.pop('items')
         items_data = self.context['request'].data['items']
         for item_data in items_data:
@@ -230,6 +241,22 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         instance.create_and_upload_pdf()
         
+        instance.save()
+        
+        return instance
+    
+    def receive_order(self, instance, validated_data):
+        """
+        Will received the order and then process the items and the corresponding supplies.
+        The quantities for the supplies will automatically increase based on the supplies received
+        """
+        for item in instance.items.all():
+            item.status = "RECEIVED"
+            item.supply.quantity = Decimal(str(item.quantity))
+            item.supply.save()
+            item.save()
+            logger.debug(item.status)
+        instance.status = "RECEIVED"
         instance.save()
         
         return instance
