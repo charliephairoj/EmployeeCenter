@@ -94,7 +94,13 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
             return limit        
         
 class ShippingDetail(ShippingMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+    
+    def put(self, request, *args, **kwargs):
+        
+        request = self._format_primary_key_data(request)
+        
+        return super(ShippingDetail, self).put(request, *args, **kwargs)
+    
     
 """
 @login_required

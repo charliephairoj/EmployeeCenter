@@ -262,8 +262,7 @@ class ShippingResourceTest(APITestCase):
         self.assertEqual(Shipping.objects.count(), 1)
         resp = self.client.put('/api/v1/shipping/1/', format='json',
                                    authentication=self.get_credentials(),
-                                   data={'delivery_date':base_delivery_date,
-                                         'comments': 'test'})
+                                   data={'delivery_date':base_delivery_date, 'acknowledgement': {'id': 1}})
         self.assertEqual(resp.status_code, 200, msg=resp)
         self.assertEqual(Shipping.objects.count(), 1)
         

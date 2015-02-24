@@ -36,7 +36,7 @@ class ShippingSerializer(serializers.ModelSerializer):
     items = ItemSerializer(many=True)
     customer = CustomerSerializer(read_only=True)
     acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all())
-    comments = serializers.CharField(required=False)
+    comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Shipping
@@ -72,6 +72,20 @@ class ShippingSerializer(serializers.ModelSerializer):
         
         return instance
         
+    def update(self, instance, validated_data):
+        """
+        Override the 'update' method
+        """
+        delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        
+        if instance.delivery_date != delivery_date:
+            instance.delivery_date = delivery_date
+            instance.acknowledgement.delivery_date = delivery_date
+            instance.create_and_upload_pdf()
+            instance.save()
+        
+        return instance
+        
     def to_representation(self, instance):
         """
         Override the 'to_representation' method in order to customize the output of 
@@ -79,8 +93,12 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         ret = super(ShippingSerializer, self).to_representation(instance)
         
-        ret['employee'] = {'id': instance.employee.id}
-        
+        try:
+            ret['employee'] = {'id': instance.employee.id,
+                               'name': instance.employee.name}
+        except:
+            pass
+            
         ret['acknowledgement'] = {'id': instance.acknowledgement.id}
         
         try:
