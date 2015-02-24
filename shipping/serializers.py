@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ItemSerializer(serializers.ModelSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=AckItem.objects.all())
-    comments = serializers.CharField(required=False, allow_null=True)
+    comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Item
