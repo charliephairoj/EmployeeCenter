@@ -97,7 +97,7 @@ class ShippingDetail(ShippingMixin, generics.RetrieveUpdateDestroyAPIView):
     
     def put(self, request, *args, **kwargs):
         
-        request = self._format_primary_key_data(request)
+        request.data['acknowledgement'] = request.data['acknowledgement']['id']
         
         return super(ShippingDetail, self).put(request, *args, **kwargs)
     
