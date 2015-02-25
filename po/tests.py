@@ -96,7 +96,7 @@ class PurchaseOrderTest(APITestCase):
         #Create the user
         self.username = 'tester'
         self.password = 'pass'
-        self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
+        self.user = User.objects.create_user(self.username, 'charliep@dellarobbiathailand.com', self.password)
         self.user.save()
         self.user.user_permissions.add(self.p)
         self.user.user_permissions.add(self.p2)
@@ -384,7 +384,6 @@ class PurchaseOrderTest(APITestCase):
         #Check the new pdf
         #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
         
-        logger.debug(po['items'])
         item2 = po['items'][0]
        
         self.assertEqual(item2['id'], 1)
@@ -571,6 +570,7 @@ class PurchaseOrderTest(APITestCase):
         modified_po['items'][0]['id'] = 1
         modified_po['items'][0]['status'] = 'RECEIVED'
         modified_po['status'] = 'RECEIVED'
+        self.assertEqual(Supply.objects.get(pk=1).quantity, 10)
         
         resp = self.client.put('/api/v1/purchase-order/1/', format='json', data=modified_po)
         
@@ -591,14 +591,14 @@ class PurchaseOrderTest(APITestCase):
         for item in po.items.all():
             self.assertEqual(item.status, "RECEIVED")
             
-        
+        supply = Supply.objects.get(pk=1)
+        self.assertEqual(supply.quantity, 20)
+        log = Log.objects.all().order_by('-id')[0]
+        self.assertEqual(log.action, "ADD")
+        self.assertEqual(log.quantity, 10)
+        self.assertEqual(log.supplier.id, 1)
+        self.assertEqual(log.message, "Received 10m of Pattern: Maxx, Col: Blue from Zipper World")
             
-        
-        
-        
-        
-        
-        
         
 class ItemTest(TestCase):
     """

@@ -5,6 +5,7 @@ from datetime import datetime
 from pytz import timezone
 
 from rest_framework import serializers
+import boto.ses
 
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
@@ -209,39 +210,35 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
         
-        status = validated_data.pop('status', None)
-        logger.debug(status)
-        logger.debug(instance.status)
+        status = validated_data.pop('status', "")
+        
         if status.lower() == "received" and instance.status.lower() != "received":
-            logger.debug('ok')
             self.receive_order(instance, validated_data)
-            
-            for i in instance.items.all():
-                logger.debug(i.status)
-            
-        items_data = validated_data.pop('items')
-        items_data = self.context['request'].data['items']
-        for item_data in items_data:
-            try:
-                item_data['supply'] = item_data['supply'].id
-            except AttributeError:
+          
+        else:  
+            items_data = validated_data.pop('items')
+            items_data = self.context['request'].data['items']
+            for item_data in items_data:
                 try:
-                    item_data['supply'] = item_data['supply']['id']
-                except TypeError:
-                    pass
+                    item_data['supply'] = item_data['supply'].id
+                except AttributeError:
+                    try:
+                        item_data['supply'] = item_data['supply']['id']
+                    except TypeError:
+                        pass
                     
-        self._update_items(instance, items_data)
+            self._update_items(instance, items_data)
         
-        instance.order_date = datetime.now(timezone('Asia/Bangkok'))
-        instance.revision += 1
-        instance.discount = validated_data.pop('discount', None) or instance.discount
-        instance.status = validated_data.pop('status', None) or instance.status
+            instance.order_date = datetime.now(timezone('Asia/Bangkok'))
+            instance.revision += 1
+            instance.discount = validated_data.pop('discount', None) or instance.discount
+            instance.status = status
         
-        instance.calculate_total()
+            instance.calculate_total()
         
-        instance.create_and_upload_pdf()
+            instance.create_and_upload_pdf()
         
-        instance.save()
+            instance.save()
         
         return instance
     
@@ -252,12 +249,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         for item in instance.items.all():
             item.status = "RECEIVED"
-            item.supply.quantity = Decimal(str(item.quantity))
+            item.supply.quantity += float(str(item.quantity))
             item.supply.save()
             item.save()
-            logger.debug(item.status)
+            self._log_receiving_item(item)
+            
         instance.status = "RECEIVED"
         instance.save()
+        
+        self._email_purchaser(instance)
         
         return instance
         
@@ -331,6 +331,54 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                                                               supply.description,
                                                                                               supply.supplier.name))
         log.save()
+        
+    def _log_receiving_item(self, item):
+        supply = item.supply
+        supply.supplier = item.purchase_order.supplier
+        
+        log = Log(supply=item.supply,
+                  supplier=item.purchase_order.supplier,
+                  action="ADD",
+                  quantity=item.quantity,
+                  message="Received {0}{1} of {2} from {3}".format(item.quantity,
+                                                                   supply.purchasing_units,
+                                                                   supply.description,
+                                                                   item.purchase_order.supplier.name))
+        log.save()
+        
+    def _email_purchaser(self, purchase_order):
+        logger.debug(purchase_order.employee)
+        if purchase_order.employee.email:
+            conn = boto.ses.connect_to_region('us-east-1')
+            recipients = [purchase_order.employee.email]
+            
+            #Build the email body
+            body = """<table><tr><td><h1>Purchase Order Received</h1></td><td></td><td></td></tr>
+                             <tr><td>Purchase Order #</td><td>{0}</td><td></td></tr>
+                             <tr><td>Supplier</td><td>{1}</td><td></td></tr>
+                             <tr><td><h3>Description</h3></td><td><h3>Quantity</h3></td><td><h3>Status</h3></td</tr>
+                   """.format(purchase_order.id,
+                              purchase_order.supplier.name)
+            #Loop through all items to add to the body
+            for item in purchase_order.items.all():
+                supply = item.supply
+                color = "green" if item.status.lower() == "received" else "red"
+                supply.supplier = purchase_order.supplier
+                body += """<tr><td>{0}</td><td>{1}{2}</td><td style="color:{3}">{4}</td></tr>
+                        """.format(item.description,
+                                   item.quantity,
+                                   supply.purchasing_units,
+                                   color,
+                                   item.status)
+            #Closing table tag
+            body += "</table>"                
+                    
+            #Send email    
+            conn.send_email('inventory@dellarobbiathailand.com',
+                            'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
+                            body,
+                            recipients,
+                            format='html')
     
     
     
