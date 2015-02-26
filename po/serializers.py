@@ -249,7 +249,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         for item in instance.items.all():
             item.status = "RECEIVED"
-            item.supply.quantity += float(str(item.quantity))
+            try:
+                item.supply.quantity += Decimal(str(item.quantity))
+            except TypeError:
+                item.supply.quantity += float(str(item.quantity))
+                
             item.supply.save()
             item.save()
             self._log_receiving_item(item)
