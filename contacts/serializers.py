@@ -165,13 +165,19 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         addresses_data = self.context['request'].data.get('addresses', None)
         contacts_data = validated_data.pop('contacts', None)
         contacts_data = self.context['request'].data.get('contacts', None)
-
-        if contacts_data:
-            self._update_contacts(instance, contacts_data)
         
-        if addresses_data:
-            self._update_addresses(instance, addresses_data)
-        
+        try:
+            if contacts_data:
+                self._update_contacts(instance, contacts_data)
+        except Exception as e:
+            logger.error(e)
+            
+        try:
+            if addresses_data:
+                self._update_addresses(instance, addresses_data)
+        except Exception as e:
+            logger.error(e)
+            
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
             
