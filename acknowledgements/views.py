@@ -34,6 +34,26 @@ def acknowledgement_item_image(request):
         response.status_code = 201
         return response
         
+def acknowledgement_file(request):
+    logger.debug(request.FILES['file']);
+    print request.FILES['file']
+    print dir(request.FILES['file'])
+    
+    response = HttpResponse(json.dumps({'id': 888, 'url': 'test'}), content_type="application/json")
+    response.status_code = 201
+    return response
+    """
+    if request.method == "POST":
+        filename = save_upload(request)
+        obj = S3Object.create(filename,
+                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        'media.dellarobbiathailand.com')
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url()}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+    """
 
 class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all().order_by('-id')

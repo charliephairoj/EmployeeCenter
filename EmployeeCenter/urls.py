@@ -112,7 +112,8 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
     url(r'/api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
-    url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image')
+    url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
+    url(r'^api/v1/acknowledgement/file/$', 'acknowledgement_file')
     
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
