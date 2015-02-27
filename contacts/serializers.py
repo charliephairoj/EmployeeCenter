@@ -214,7 +214,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         #Create and update 
         for address_data in addresses_data:
             try:
-                address = Adress.objects.get(pk=address_data['id'])
+                address = Address.objects.get(pk=address_data['id'])
             except KeyError:
                 address = Adress.objects.create()
                 id_list.append(address.id)

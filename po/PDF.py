@@ -371,7 +371,7 @@ class PurchaseOrderPDF():
         #determine Terms String
         # based on term length
         if self.supplier.terms == 0:
-            terms = "Payment Before Delivery"
+            terms = "Payment On Delivery"
         else:
             terms = "{0} Days".format(self.supplier.terms)
         #return term

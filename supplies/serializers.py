@@ -71,10 +71,12 @@ class ProductListSerializer(serializers.ListSerializer):
                 ret.append(self.child.update(product, data))
 
         # Perform deletions.
+        """
         for product_id, product in product_mapping.items():
             if product_id not in data_mapping:
                 product.delete()
-
+        """
+        
         return ret
         
     
