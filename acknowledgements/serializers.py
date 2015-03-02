@@ -154,7 +154,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         
         items_data = validated_data.pop('items')
-        files = validated_data.pop('files')
+        files = validated_data.pop('files', [])
 
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:

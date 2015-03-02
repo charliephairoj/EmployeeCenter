@@ -150,7 +150,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 
-                  'discount', 'status', 'terms', 'order_date')
+                  'discount', 'status', 'terms', 'order_date', 'currency')
                  
         read_only_fields = ('pdf', 'revision')
         
@@ -192,6 +192,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
                                                   **validated_data)
+        instance.currency = instance.supplier.currency
         
         item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance}, 
                                          many=True)

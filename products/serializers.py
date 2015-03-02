@@ -39,7 +39,8 @@ class UpholsterySerializer(serializers.ModelSerializer):
     model = serializers.PrimaryKeyRelatedField(queryset=Model.objects.all())
     configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
     pillows = PillowSerializer(required=False, many=True)
-    image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all())
+    image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all(),
+                                               allow_null=True)
     collection = serializers.CharField(required=False, allow_null=True)
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)

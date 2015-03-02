@@ -32,7 +32,7 @@ base_address = {'address1': '22471 Sunbrook',
 
 base_supplier = {'name': 'Zipper World',
                  'id': 1,
-                 'currency': 'THB',
+                 'currency': 'USD',
                  #'address': base_address,
                  'terms': 30}
 
@@ -220,6 +220,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertIsNotNone(obj['items'])
         self.assertIsInstance(obj['items'], list)
         self.assertEqual(len(obj['items']), 2)
+        self.assertEqual(obj['currency'], 'USD')
         self.assertIn('project', obj)
         self.assertIsInstance(obj['project'], dict)
         self.assertEqual(obj['project']['id'], 1)
@@ -338,7 +339,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(supply.cost, Decimal('1.99'))
         self.assertEqual(Log.objects.all().count(), 1)
         log = Log.objects.all()[0]
-        self.assertEqual(log.message, "Price change from 12.11THB to 1.99THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
+        self.assertEqual(log.message, "Price change from 12.11USD to 1.99USD for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
         
     def test_updating_the_po(self):
         """
@@ -534,7 +535,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(log.cost, Decimal('10.05'))
         self.assertEqual(log.supply, supply)
         self.assertEqual(log.supplier, po.supplier)
-        self.assertEqual(log.message, "Price change from 12.11THB to 10.05THB for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
+        self.assertEqual(log.message, "Price change from 12.11USD to 10.05USD for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
        
     def test_updating_item_status(self):
         """
