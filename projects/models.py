@@ -20,7 +20,7 @@ class Project(models.Model):
     due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
-    supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
+    #supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
     """
     @property
     def due_date(self):
