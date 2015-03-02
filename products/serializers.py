@@ -68,7 +68,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
                                 'configuration': instance.configuration.configuration}
                                 
         try:
-            ret['image'] = {'id', instance.id,
+            ret['image'] = {'id': instance.id,
                             'url': instance.image.generate_url()}
         except AttributeError:
             pass
