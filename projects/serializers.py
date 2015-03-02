@@ -6,7 +6,7 @@ from projects.models import Project, Room
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    supplies = SupplySerializer(read_only=True, many=True)
+    #supplies = SupplySerializer(read_only=True, many=True)
     
     class Meta:
         model = Project
