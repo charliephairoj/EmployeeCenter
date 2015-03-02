@@ -109,6 +109,8 @@ class UpholsterySerializer(serializers.ModelSerializer):
         for field_name in validated_data.keys():
             setattr(instance, field_name, validated_data[field_name])
             
+        instance.save()
+        
         return instance
         
         
