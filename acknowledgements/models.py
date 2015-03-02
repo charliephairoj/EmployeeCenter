@@ -61,7 +61,8 @@ class Acknowledgement(models.Model):
                                                      null=True,
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
-                                                    
+    files = models.ManyToManyField(S3Object, through="File", related_name="acknowledgement")
+              
     """
     @property
     def delivery_date(self):
@@ -341,6 +342,11 @@ class Acknowledgement(models.Model):
         self._email(self.acknowledgement_pdf, ['sales@decoroom.com'])
 
 
+class File(models.Model):
+    acknowledgement = models.ForeignKey(Acknowledgement)
+    file = models.ForeignKey(S3Object)
+    
+    
 class Item(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)

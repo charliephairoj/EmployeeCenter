@@ -225,7 +225,13 @@ class AcknowledgementResourceTest(APITestCase):
                      'quantity': 3}
         self.item2 = Item.create(acknowledgement=self.ack, **item_data)
         self.client.login(username="tester", password="pass")
-
+        
+        #Create fake S3Objects to test files attached to acknowledgements
+        self.file1 = S3Object(key='test1', bucket='test')
+        self.file2 = S3Object(key='test2', bucket='test')
+        self.file1.save()
+        self.file2.save()
+        
     def get_credentials(self):
         return None#self.create_basic(username=self.username, password=self.password)
         
@@ -285,6 +291,7 @@ class AcknowledgementResourceTest(APITestCase):
         modified_data['items'][-1]['fabric'] = {'id': 1,
                                                 'image': {'id': 1}}
         modified_data['items'][-1]['fabric_quantity'] = 8
+        modified_data['files'] = [{'id': 1}, {'id': 2}]
         
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
@@ -311,6 +318,9 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIn('project', ack)
         self.assertEqual(ack['project']['id'], 1)
         self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        self.assertIn('files', ack)
+        self.assertIsInstance(ack['files'], list)
+        self.assertEqual(len(ack['files']), 2)
         
         #Test standard sized item 
         item1 = ack['items'][0]
@@ -391,6 +401,13 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertTrue(item3.is_custom_item)
         self.assertEqual(item3.quantity, 1)
         
+        #Tests files attached to acknowledgements
+        self.assertEqual(root_ack.files.all().count(), 2)
+        file1 = root_ack.files.all()[0]
+        self.assertEqual(file1.id, 1)
+        file2 = root_ack.files.all()[1]
+        self.assertEqual(file2.id, 2)
+        
         #Test Fabric Log
         self.assertEqual(Log.objects.filter(acknowledgement_id=root_ack.id).count(), 1)
         log = Log.objects.get(acknowledgement_id=root_ack.id)
@@ -398,9 +415,8 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, 'Reserve 33m of Pattern: Max, Col: charcoal for Ack#2')
-        
         self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-7'))
-        
+                
     def test_post_with_custom_image(self):
         """
         Testing POSTing data to the api with custom item with custom image

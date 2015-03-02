@@ -2,8 +2,9 @@ import logging
 from decimal import Decimal
 
 from rest_framework import serializers
+from rest_framework.fields import DictField
 
-from acknowledgements.models import Acknowledgement, Item, Pillow
+from acknowledgements.models import Acknowledgement, Item, Pillow, File
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -122,6 +123,12 @@ class ItemSerializer(serializers.ModelSerializer):
             
         return ret
         
+class FileSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = File
+        read_only_fields = ('acknowledgement', 'file')
+        
         
 class AcknowledgementSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -132,6 +139,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     remarks = serializers.CharField(required=False, allow_null=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
+    files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
+                                  allow_null=True)
     
     class Meta:
         model = Acknowledgement
@@ -145,7 +154,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         
         items_data = validated_data.pop('items')
-        
+        files = validated_data.pop('files')
+
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
                 try:
@@ -169,6 +179,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.create_and_upload_pdfs()
         
+        #Assign files
+        for file in files:
+            File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                acknowledgement=instance)
+                    
         #Extract fabric quantities
         fabrics = {}
        
@@ -189,6 +204,16 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        
+        #Update attached files
+        files = validated_data.pop('files', [])
+        for file in files:
+            try: 
+                File.objects.get(file_id=file['id'], acknowledgement=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                    acknowledgement=instance)
+                                    
         instance.save()
         
         return instance
@@ -232,6 +257,14 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                           'confirmation': 'test',
                           'production': 'test'}
             """
+            
+        try:
+            ret['files'] = [{'id': file.id,
+                             'filename': file.key.split('/')[-1],
+                             'type': file.key.split('.')[-1],
+                             'url': file.generate_url()} for file in instance.files.all()]
+        except AttributeError:
+            pass
             
         return ret
         
