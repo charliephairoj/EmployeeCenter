@@ -16,7 +16,7 @@ class PermissionSerializer(serializers.ModelSerializer):
     
         
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, required=False, read_only=True)
+    permissions = PermissionSerializer(many=True, required=False)
     name = serializers.CharField(required=False)
     id = serializers.IntegerField(required=False)
     
@@ -32,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id']
+        depth = 1
     
     def update(self, instance, validated_data):
         
