@@ -16,11 +16,13 @@ class PermissionSerializer(serializers.ModelSerializer):
     
         
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, required=False)
+    permissions = PermissionSerializer(many=True, required=False, read_only=True)
     name = serializers.CharField(required=False)
+    id = serializers.IntegerField(required=False)
     
     class Meta:
         model = Group
+        fields = ['id', 'permissions', 'name']
         
              
 class UserSerializer(serializers.ModelSerializer):
@@ -29,15 +31,22 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        read_only_fields = ['user_permissions']
+        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id']
     
     def update(self, instance, validated_data):
         
         client_groups = validated_data.pop('groups', [])
         server_groups = instance.groups.all()
+        id_list = [group['id'] for group in client_groups]
         
-        logger.debug(client_groups)
-        logger.debug(server_groups)
+        #Add new groups
+        for client_group in client_groups:
+            instance.groups.add(Group.objects.get(pk=client_group['id']))
+            
+        #Delete groups
+        for group in server_groups:
+            if group.id not in id_list:
+                instance.groups.remove(group)
         
         return instance
         

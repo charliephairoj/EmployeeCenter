@@ -48,7 +48,6 @@ class UserResourceTest(APITestCase):
         self.assertEqual(resp.status_code, 200, msg=resp)
         
         #Validate the obj
-        logger.debug(resp)
         user = resp.data['results'][0]
         self.assertIsNotNone(user)
         self.assertEqual(user['id'], 1)
@@ -159,7 +158,8 @@ class UserResourceTest(APITestCase):
                                          'email': 'test@yahoo.com',
                                          'first_name': 'Charlie',
                                          'last_name': 'P',
-                                         'groups': [{'id': 1}]})
+                                         'groups': [{'id': 1, 'name': 'Testing'}]})
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.user.groups.count(), 1)
         self.assertEqual(self.user.groups.all()[0].name, 'Testing')
         
@@ -167,7 +167,7 @@ class UserResourceTest(APITestCase):
         user = resp.data
         self.assertEqual(len(user['groups']), 1)
         self.assertIn('id', user['groups'][0])
-        self.assertIn('description', user['groups'][0])
+        self.assertIn('name', user['groups'][0])
         
     def test_change_password(self):
         """
