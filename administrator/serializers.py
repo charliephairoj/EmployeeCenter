@@ -16,7 +16,7 @@ class PermissionSerializer(serializers.ModelSerializer):
     
         
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, required=False)
+    permissions = PermissionSerializer(many=True, required=False, read_only=True)
     name = serializers.CharField(required=False)
     id = serializers.IntegerField(required=False)
     
