@@ -34,6 +34,15 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id']
         depth = 1
     
+    def create(self, validated_data):
+        groups = validated_data.pop('groups')
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        for group_data in groups:
+            instance.groups.add(Group.objects.get(pk=group_data['id']))
+            
+        return instance
+        
     def update(self, instance, validated_data):
         
         client_groups = validated_data.pop('groups', [])
