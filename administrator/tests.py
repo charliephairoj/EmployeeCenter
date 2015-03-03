@@ -100,6 +100,8 @@ class UserResourceTest(APITestCase):
         self.assertEqual(user.username, 'test')
         self.assertEqual(user.first_name, 'Charlie')
         self.assertEqual(user.last_name, 'P')
+        self.assertTrue(user.check_password('yay'))
+        self.assertTrue(user.has_usable_password())
         #self.assertIsNotNone(user.employee)
         #self.assertIsNotNone(user.employee.image)
         #self.assertIsInstance(user.employee.image, S3Object)

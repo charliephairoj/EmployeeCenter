@@ -31,12 +31,19 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id']
+        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id', 'last_login']
         depth = 1
     
     def create(self, validated_data):
-        groups = validated_data.pop('groups')
+        groups = validated_data.pop('groups', [])
+        password = validated_data.pop('password')
+        
         instance = self.Meta.model.objects.create(**validated_data)
+        instance.set_password(password)
+        instance.save()
+        
+        assert instance.check_password(password)
+        assert instance.has_usable_password()
         
         for group_data in groups:
             instance.groups.add(Group.objects.get(pk=group_data['id']))
