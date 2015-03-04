@@ -21,6 +21,7 @@ from supplies.views import LogList, LogDetail
 from products.views import ConfigurationViewSet, ModelViewSet
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
+from estimates.views import EstimateList, EstimateDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
@@ -75,6 +76,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/table/$', TableList.as_view()),
     url(r'^api/v1/table/(?P<pk>[0-9]+)/$', TableDetail.as_view()),
+    url(r'^api/v1/estimate/$', EstimateList.as_view()),
+    url(r'^api/v1/estimate/(?P<pk>[0-9]+)/$', EstimateDetail.as_view()),
     url(r'^api/v1/acknowledgement/$', AcknowledgementList.as_view()),
     url(r'^api/v1/acknowledgement/(?P<pk>[0-9]+)/$', AcknowledgementDetail.as_view()),
     url(r'^api/v1/shipping/$', ShippingList.as_view()),

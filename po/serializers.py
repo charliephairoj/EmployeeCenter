@@ -189,10 +189,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item_data['supply'] = item_data['supply']['id']
                 
         discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
-            
+        terms = validated_data.pop('terms', validated_data['supplier'].terms)
+        
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
                                                   **validated_data)
         instance.currency = instance.supplier.currency
+        instance.terms = terms
         
         item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance}, 
                                          many=True)
