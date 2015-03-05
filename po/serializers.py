@@ -347,7 +347,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                   supplier=item.purchase_order.supplier,
                   action="ADD",
                   quantity=item.quantity,
-                  message="Received {0}{1} of {2} from {3}".format(item.quantity,
+                  message=u"Received {0}{1} of {2} from {3}".format(item.quantity,
                                                                    supply.purchasing_units,
                                                                    supply.description,
                                                                    item.purchase_order.supplier.name))
@@ -382,7 +382,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     
             #Send email    
             conn.send_email('inventory@dellarobbiathailand.com',
-                            'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
+                            u'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
                             body,
                             recipients,
                             format='html')

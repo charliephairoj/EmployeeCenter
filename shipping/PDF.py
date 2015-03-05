@@ -81,7 +81,7 @@ class ShippingDocTemplate(BaseDocTemplate):
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
         code = "S-{0}".format(self.id)
-        barcode = code128.Code128(code, barHeight=20)
+        barcode = code128.Code128(code, barHeight=20, barWidth=0.5 * mm)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas,x_position,740)

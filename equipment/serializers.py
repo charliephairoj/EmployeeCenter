@@ -26,7 +26,7 @@ class EquipmentListSerializer(serializers.ListSerializer):
         
         
 class EquipmentSerializer(serializers.ModelSerializer):
-    cost = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    cost = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
     employee = serializers.PrimaryKeyRelatedField(required=False,
                                                   queryset=Employee.objects.all())
     id = serializers.IntegerField(required=False)
