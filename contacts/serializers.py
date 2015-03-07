@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class AddressSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
+    address1 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    address2 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    city = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    region = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    zipcode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
     class Meta:
         model = Address
         field = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode')
@@ -86,13 +94,12 @@ class ContactMixin(object):
         """
         #Get list of ids
         id_list = [address_data.get('id', None) for address_data in addresses_data]
-        
         #Create and update 
         for address_data in addresses_data:
             try:
-                address = Adress.objects.get(pk=address_data['id'])
+                address = Address.objects.get(pk=address_data['id'])
             except KeyError:
-                address = Adress.objects.create()
+                address = Address.objects.create()
                 id_list.append(address.id)
                 
             for field in address_data.keys():
@@ -162,18 +169,15 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         Override 'update' method
         """
         addresses_data = validated_data.pop('addresses', None)
-        addresses_data = self.context['request'].data.get('addresses', None)
         contacts_data = validated_data.pop('contacts', None)
-        contacts_data = self.context['request'].data.get('contacts', None)
-        
         try:
-            if contacts_data:
+            if contacts_data is not None:
                 self._update_contacts(instance, contacts_data)
         except Exception as e:
             logger.error(e)
             
         try:
-            if addresses_data:
+            if addresses_data is not None:
                 self._update_addresses(instance, addresses_data)
         except Exception as e:
             logger.error(e)
@@ -191,7 +195,6 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         """
         #Get list of ids
         id_list = [contact_data.get('id', None) for contact_data in contacts_data]
-
         #Create and update 
         for contact_data in contacts_data:
             try:
@@ -202,7 +205,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
                 
             for field in contact_data.keys():
                 setattr(contact, field, contact_data[field])
-                
+            contact.supplier = instance
             contact.save()
             
         #Delete contacts
@@ -216,18 +219,17 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         """
         #Get list of ids
         id_list = [address_data.get('id', None) for address_data in addresses_data]
-        
         #Create and update 
         for address_data in addresses_data:
+            address_data.pop('contact')
             try:
                 address = Address.objects.get(pk=address_data['id'])
             except KeyError:
-                address = Adress.objects.create()
+                address = Addressobjects.create(contact=instance)
                 id_list.append(address.id)
-                
             for field in address_data.keys():
                 setattr(address, field, address_data[field])
-                
+            address.contact = instance
             address.save()
             
         #Delete contacts
