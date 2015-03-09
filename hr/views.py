@@ -66,7 +66,9 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         #Filter based on query
         query = self.request.QUERY_PARAMS.get('q', None)
         if query:
-            queryset = queryset.filter(Q(name__icontains=query) |
+            queryset = queryset.filter(Q(first_name__icontains=query) |
+                                       Q(last_name__icontains=query) |
+                                       Q(nickname__icontains=query) |
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
         
