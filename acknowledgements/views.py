@@ -6,7 +6,7 @@ from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.response import Response
 from django.http import HttpResponse
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import Q
 from django.conf import settings
 
@@ -22,6 +22,41 @@ from media.models import S3Object
 logger = logging.getLogger(__name__)
 
 
+def acknowledgement_stats(request):
+    cursor = connection.cursor()
+    query = """
+    SELECT (SELECT COUNT(id) 
+            FROM acknowledgements_acknowledgement where lower(status) = 'acknowledged'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'acknowledged'),
+           (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'shipped'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'shipped'),
+           (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'partially shipped'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'partially shipped'),
+           COUNT(id),
+           SUM(total)
+    FROM acknowledgements_acknowledgement
+    WHERE lower(status) != 'cancelled';
+    """
+    
+    cursor.execute(query)
+    row = cursor.fetchone()
+
+    data = {'acknowledged': {'count': row[0], 'amount': str(row[1])},
+            'shipped': {'count':row[2], 'amount': str(row[3])},
+            'partially_shipped': {'count':row[4], 'amount': str(row[5])},
+            'total': {'count': row[-2], 'amount': str(row[-1])}}
+            
+    response = HttpResponse(json.dumps(data),
+                            content_type="application/json")
+    response.status_code = 200
+    return response
+    
+    
 def acknowledgement_item_image(request):
     if request.method == "POST":
         filename = save_upload(request)
