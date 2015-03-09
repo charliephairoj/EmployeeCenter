@@ -123,43 +123,23 @@ urlpatterns += patterns('acknowledgements.views',
 )
 
 urlpatterns += patterns('products.views',
-    #url(r'^acknowledgement$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
-    #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'/api/v1/upholstery/image$', 'product_image'),
     url(r'^api/v1/upholstery/image/$', 'product_image')
-   
-    
-    #url(r'^acknowledgement/item$', 'item'),
-    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
 
 urlpatterns += patterns('supplies.views',
-    #url(r'^acknowledgement$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
-    #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'^/api/v1/supply/image/$', 'supply_image'),
     url(r'^api/v1/supply/image/$', 'supply_image')
-    
-    #url(r'^acknowledgement/item$', 'item'),
-    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
+)
+
+urlpatterns += patterns('po.views',
+    url(r'api/v1/purchase-order/stats$', 'purchase_order_stats'),
+    url(r'api/v1/purchase-order/stats/$', 'purchase_order_stats')
 )
 
 urlpatterns += patterns('hr.views',
-    #url(r'^acknowledgement$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
-    #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'^/api/v1/employee/image/$', 'employee_image'),
     url(r'^api/v1/employee/image/$', 'employee_image')
-    
-    #url(r'^acknowledgement/item$', 'item'),
-    #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
 
 
@@ -167,7 +147,6 @@ urlpatterns += patterns('',
     url(r'^(?P<path>.*)$', 'django.views.static.serve',
         {'document_root': settings.STATIC_ROOT})
 )
-
 
 """
 #Public views

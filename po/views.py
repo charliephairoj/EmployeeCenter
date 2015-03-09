@@ -4,6 +4,7 @@ import json
 import logging
 
 from django.http import HttpResponse
+from django.db import connection
 from django.db.models import Q
 from django.conf import settings
 from utilities.http import process_api
@@ -17,6 +18,41 @@ from projects.models import Project
 logger = logging.getLogger(__name__)
 
 
+def purchase_order_stats(request):
+    cursor = connection.cursor()
+    query = """
+    SELECT (SELECT COUNT(id) 
+            FROM po_purchaseorder where lower(status) = 'processed') AS processed_count,
+           (SELECT SUM(total) 
+                       FROM po_purchaseorder where lower(status) = 'processed') AS processed_sum,
+           (SELECT COUNT(id) 
+                       FROM po_purchaseorder where lower(status) = 'received') AS received_count,
+           (SELECT SUM(total) 
+                       FROM po_purchaseorder where lower(status) = 'received') AS received_sum,
+           (SELECT COUNT(id) 
+                       FROM po_purchaseorder where lower(status) = 'paid') AS paid_count,
+           (SELECT SUM(total) 
+                       FROM po_purchaseorder where lower(status) = 'paid') AS paid_sum,
+           COUNT(id) AS total_count,
+           SUM(total) AS total_sum
+    FROM po_purchaseorder
+    WHERE lower(status) != 'cancelled';
+    """
+    
+    cursor.execute(query)
+    row = cursor.fetchone()
+
+    data = {'processed': {'count': row[0], 'amount': str(row[1])},
+            'received': {'count':row[2], 'amount': str(row[3])},
+            'paid': {'count':row[4], 'amount': str(row[5])},
+            'total': {'count': row[6], 'amount': str(row[7])}}
+            
+    response = HttpResponse(json.dumps(data),
+                            content_type="application/json")
+    response.status_code = 200
+    return response
+    
+    
 class PurchaseOrderMixin(object):
     queryset = PurchaseOrder.objects.all().order_by('-id')
     serializer_class = PurchaseOrderSerializer
