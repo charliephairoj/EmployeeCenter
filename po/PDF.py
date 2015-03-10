@@ -391,7 +391,7 @@ class PurchaseOrderPDF():
 
     def _get_description(self, supply):
         #Set description
-        description = supply.description
+        description = supply.description.replace('\n', '<br/>')
         
         if supply.comments:
             description += u"<br/>[Comments: {0}]".format(supply.comments.replace('\n', '<br/>'))
