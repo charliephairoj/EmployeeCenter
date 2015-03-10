@@ -99,8 +99,7 @@ class PurchaseOrderMixin(object):
                 try:
                     request.data['items'][index]['supply'] = item['id']
                 except (TypeError, KeyError):
-                    pass
-                    
+                    logger.error(item)
 
             try:
                 request.data['items'][index]['unit_cost'] = item['cost']
