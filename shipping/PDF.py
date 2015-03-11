@@ -408,7 +408,7 @@ class ShippingPDF(object):
         code = "DRAI-{0}".format(product.item.id)
         barcode = code128.Code128(code, barHeight=20)
         try:
-            project = "Project: {0}".format(self.ack.project.codename)
+            project = u"Project: {0}".format(self.ack.project.codename)
         except AttributeError:
             project = ""
             

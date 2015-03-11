@@ -1304,10 +1304,17 @@ class ShippingLabelPDF(object):
                                leading=16,
                                textColor=colors.CMYKColor(black=60))
         customer_paragraph = Paragraph(u"Customer: {0}".format(self.ack.customer.name), style)
+        
+        try:
+            project = u"Project: {0}".format(self.ack.project.codename)
+        except AttributeError:
+            project = ""
+            
         code_data = [[barcode],
                      [code],
                      ["Ack#: {0}".format(self.ack.id)],
                      [customer_paragraph],
+                     [project],
                      ["Qty: {0}".format(1)]]
         
         code_table = Table(code_data, colWidths=(150))
