@@ -280,7 +280,7 @@ class PurchaseOrderPDF():
         data = []
         #Add Column titles
         data = [['Item No.', 'Ref', 'Description', 'Units',
-                 'Unit Price', 'Qty', 'Total']]
+                 'Qty', 'Unit Price', 'Total']]
         i = 1
         #iterate through the array
         for supply in self.supplies:
@@ -291,8 +291,8 @@ class PurchaseOrderPDF():
                          self._get_reference(supply),
                          self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
-                         "{0}".format(round(calculated_unit_cost, 3)),
                          "{0}".format(round(supply.quantity, 2)),
+                         "{0}".format(round(calculated_unit_cost, 3)),
                          "%.2f" % float(supply.total)])
             #increase the item number
             i += 1
@@ -326,7 +326,7 @@ class PurchaseOrderPDF():
                      deposit]]
             
         #Create Table
-        table = Table(data, colWidths=(40, 84, 230, 55, 50, 40, 65))
+        table = Table(data, colWidths=(40, 84, 230, 55, 40, 50, 65))
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                       ('LINEABOVE', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
