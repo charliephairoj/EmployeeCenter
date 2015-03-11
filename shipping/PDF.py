@@ -407,6 +407,11 @@ class ShippingPDF(object):
         
         code = "DRAI-{0}".format(product.item.id)
         barcode = code128.Code128(code, barHeight=20)
+        try:
+            project = "Project: {0}".format(self.ack.project.codename)
+        except AttributeError:
+            project = ""
+            
         style = ParagraphStyle(name='Normal',
                                fontName='Garuda',
                                fontSize=12,
@@ -417,6 +422,7 @@ class ShippingPDF(object):
                      [code],
                      ["Ack#: {0}".format(self.ack.id)],
                      [customer_paragraph],
+                     [project],
                      ["Qty: {0}".format(product.quantity)]]
         
         code_table = Table(code_data, colWidths=(150))
