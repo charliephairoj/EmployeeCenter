@@ -320,7 +320,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(ack['project']['codename'], 'Ladawan1')
         self.assertIn('files', ack)
         self.assertIsInstance(ack['files'], list)
-        self.assertEqual(len(ack['files']), 2)
+        self.assertEqual(len(ack['files']), 6)
         
         #Test standard sized item 
         item1 = ack['items'][0]
@@ -402,11 +402,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3.quantity, 1)
         
         #Tests files attached to acknowledgements
-        self.assertEqual(root_ack.files.all().count(), 2)
-        file1 = root_ack.files.all()[0]
-        self.assertEqual(file1.id, 1)
-        file2 = root_ack.files.all()[1]
-        self.assertEqual(file2.id, 2)
+        self.assertEqual(root_ack.files.all().count(), 6)
         
         #Test Fabric Log
         self.assertEqual(Log.objects.filter(acknowledgement_id=root_ack.id).count(), 1)

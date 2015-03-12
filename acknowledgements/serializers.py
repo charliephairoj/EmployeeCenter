@@ -179,6 +179,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.create_and_upload_pdfs()
         
+        #Add pdfs to files list
+        File.objects.create(file=instance.acknowledgement_pdf, acknowledgement=instance)
+        File.objects.create(file=instance.production_pdf, acknowledgement=instance)
+        File.objects.create(file=instance.confirmation_pdf, acknowledgement=instance)
+        File.objects.create(file=instance.label_pdf, acknowledgement=instance)
+
         #Assign files
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']),
