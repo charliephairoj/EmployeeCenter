@@ -12,7 +12,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from projects.models import Project, Room, Item
-from projects.serializers import ProjectSerializer, RoomSerializer
+from projects.serializers import ProjectSerializer, RoomSerializer, ItemSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
@@ -59,13 +59,76 @@ class RoomMixin(object):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['project']
+
+        for field in fields:
+            if field in request.data:
+                try:
+                    request.data[field] = request.data[field]['id']
+                except (TypeError, KeyError) as e:
+                    logger.warn(e)
+        
+        return request
+        
 
 class RoomList(RoomMixin, generics.ListCreateAPIView):
-    pass
+    
+    def post(self, request, *args, **kwargs):
+        
+        request = self._format_primary_key_data(request)
+        
+        return super(RoomList, self).post(request, *args, **kwargs)
     
 
 class RoomDetail(RoomMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+    
+    def put(self, request, *args, **kwargs):
+        
+        request = self._format_primary_key_data(request)
+        
+        return super(RoomDetail, self).put(request, *args, **kwargs)
+    
+
+class RoomItemMixin(object):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['room']
+        for field in fields:
+            if field in request.data:
+                try:
+                    request.data[field] = request.data[field]['id']
+                except (TypeError, KeyError) as e:
+                    logger.warn(e)
+        
+        return request
+        
+
+class RoomItemList(RoomItemMixin, generics.ListCreateAPIView):
+    
+    def post(self, request, *args, **kwargs):
+                
+        request = self._format_primary_key_data(request)
+        return super(RoomItemList, self).post(request, *args, **kwargs)
+        
+        
+class RoomItemDetail(RoomItemMixin, generics.RetrieveUpdateDestroyAPIView):
+    
+    def put(self, request, *args, **kwargs):
+                
+        request = self._format_primary_key_data(request)
+        
+        return super(RoomItemDetail, self).put(request, *args, **kwargs)
     
     
 def room_image(request):

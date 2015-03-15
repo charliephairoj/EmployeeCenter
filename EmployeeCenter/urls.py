@@ -27,6 +27,7 @@ from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
 from projects.views import ProjectList, ProjectDetail
 from projects.views import RoomList, RoomDetail
+from projects.views import RoomItemList, RoomItemDetail
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from administrator.views import UserList, UserDetail
@@ -92,6 +93,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/project/(?P<pk>[0-9]+)/$', ProjectDetail.as_view()),
     url(r'^api/v1/room/$', RoomList.as_view()),
     url(r'^api/v1/room/(?P<pk>[0-9]+)/$', RoomDetail.as_view()),
+    url(r'^api/v1/room-item/$', RoomItemList.as_view()),
+    url(r'^api/v1/room-item/(?P<pk>[0-9]+)/$', RoomItemDetail.as_view()),
     url(r'^api/v1/user/$', UserList.as_view()),
     url(r'^api/v1/user/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
     url(r'^api/v1/group/$', GroupList.as_view()),

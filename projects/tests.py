@@ -8,6 +8,8 @@ import datetime
 import dateutil
 import unittest
 import logging
+import copy
+from decimal import Decimal
 
 from django.contrib.auth.models import User, Permission, ContentType
 from django.conf import settings
@@ -18,8 +20,8 @@ from rest_framework.test import APITestCase
 from contacts.models import Customer
 from supplies.models import Supply
 from products.models import Product, Model, Configuration, Upholstery
-from projects.models import Project, Room, Item, ProjectSupply
-from auth.models import S3Object
+from projects.models import Project, Room, Item, ProjectSupply, ItemSupply
+from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
@@ -29,11 +31,11 @@ base_customer = {"first_name": "John",
                  "currency": "THB",
                  "email": "test@yahoo.com",
                  "telephone": "ok",
-                 "address": {"address1": "ok",
+                 "addresses": [{"address1": "ok",
                              "city": "ok",
                              "territory": "ok",
                              "country": "thailand",
-                             "zipcode": "9823-333"}}
+                             "zipcode": "9823-333"}]}
 product_data = {"width": 100,
                 "depth": 100,
                 "height": 100,
@@ -228,173 +230,158 @@ class ProjectResourceTestCase(APITestCase):
         self.assertEqual(self.project.due_date, due_date2.date())
 
 
-@unittest.skip('')
-class RoomTest(TestCase):
+class RoomResourceTestCase(APITestCase):
     def setUp(self):
         """
         Sets up for tests
         """
-        self.customer = Customer.create(**base_customer)
-        self.project = Project.create(**base_project)
-        self.room = Room.create(**base_room)
-
+        customer_data = copy.deepcopy(base_customer)
+        del customer_data['addresses']
+        self.customer = Customer.objects.create(**customer_data)
+        self.customer.save()
+        self.project = Project.objects.create(codename="Ladawan")
+        self.room = Room.objects.create(description="Living Room", project=self.project)
+        self.file1 = S3Object(key='test', bucket='test')
+        self.file1.save()
+        
     def test_create_room(self):
         """
         Tests creating a room
         """
-        self.assertIsNotNone(self.room)
-        self.assertIsInstance(self.room, Room)
-        self.assertIsInstance(self.room.project, Project)
-        self.assertEqual(self.room.project, self.project)
+        room = {'description':'family room', 'project':{'id': 1}, 'files':[{'id': 1}]}
+        
+        resp = self.client.post('/api/v1/room/', data=room, format='json')
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        
+        data = resp.data
+        self.assertIn('files', data)
+        self.assertEqual(data['id'], 2)
+        self.assertEqual(len(data['files']), 1)
+        self.assertEqual(data['files'][0]['id'], 1)
+    
+    def test_update_room(self):
+        """
+        Tests updating a room
+        """
+        file2 = S3Object.objects.create(key='file2', bucket='file2')
+        file2 = S3Object.objects.create(key='file2', bucket='file2')
 
+        room = {'description': 'Living Room', 'project': {'id': 1}, 'files':[{'id':2}, {'id':3}]}
+        self.assertEqual(self.room.files.count(), 0)
+        
+        resp = self.client.put('/api/v1/room/1/', data=room, format='json')
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        data = resp.data
+        self.assertEqual(data['id'], 1)
+        self.assertIn('files', data)
+        self.assertEqual(len(data['files']), 2)
+        self.assertEqual(data['files'][0]['id'], 2)
+        self.assertEqual(data['files'][1]['id'], 3)
+        
 
-@unittest.skip('')
-class ItemTest(TestCase):
+class ItemResourceTestCase(APITestCase):
     def setUp(self):
         """
         Sets up for tests
         """
-        self.customer = Customer.create(**base_customer)
-        self.project = Project.create(**base_project)
-        self.room = Room.create(**base_room)
-        self.model = Model.create(model="AC-2010",
-                                  name="Gloria",
-                                  collection="Dellarobbia Thailand")
-        self.configuration = Configuration.create(configuration="Sofa")
-        uphol_data = product_data.copy()
-        uphol_data["configuration"] = {"id": 1}
-        uphol_data["model"] = {"id": 1}
-        self.product = Upholstery.create(**uphol_data)
+        customer_data = copy.deepcopy(base_customer)
+        del customer_data['addresses']
+        self.customer = Customer.objects.create(**customer_data)
+        self.customer.save()
+        self.project = Project.objects.create(codename="Ladawan")
+        self.room = Room.objects.create(description="Living Room", project=self.project)
+        self.file1 = S3Object(key='test', bucket='test')
+        self.file1.save()
+        
+        self.item = Item.objects.create(description='Table', room=self.room)
+        self.supply1 = Supply.objects.create(description='screw')
+        
+    def test_post_create_new_item_with_supply(self):
+        """
+        Test createing a new item, attached with various supplies
+        """
+        item_data = {'description': 'Kitchen', 
+                     'room': {'id': 1},
+                     'supplies': [{'id': 1, 
+                                   'description': 'screw', 
+                                   'quantity': 2}]}
 
-        #Regular item
-        self.item = Item.create(**base_item)
+        resp = self.client.post('/api/v1/room-item/', data=item_data, format='json')
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        
+        data = resp.data
+        self.assertEqual(data['id'], 2)
+        self.assertIn('supplies', data)
+        self.assertEqual(len(data['supplies']), 1)
+        self.assertEqual(data['supplies'][0]['id'], 1)
+        self.assertEqual(data['supplies'][0]['description'], 'screw')
+        self.assertEqual(data['supplies'][0]['quantity'], Decimal('2'))
+        
+    def test_put_add_supplies(self):
+        supply2 = Supply.objects.create(description='hinge')
+        supply3 = Supply.objects.create(description='handle')
+        
+        item_data = {'id': 1,
+                     'description': 'Living Room',
+                     'room': {'id': 1},
+                     'supplies': [{'id': 2,
+                                   'description': 'hinge',
+                                   'quantity': 5},
+                                  {'id': 3,
+                                   'description': 'handle',
+                                   'quantity': 3.99}]}
+                                   
+        resp = self.client.put('/api/v1/room-item/1/', data=item_data, format='json')
+        self.assertEqual(resp.status_code, 200)
+        
+        data = resp.data
+        self.assertEqual(data['id'], 1)
+        self.assertIn('supplies', data)
+        self.assertEqual(len(data['supplies']), 2)
+        self.assertEqual(data['supplies'][0]['id'], 2)
+        self.assertEqual(data['supplies'][0]['description'], 'hinge')
+        self.assertEqual(data['supplies'][0]['quantity'], Decimal('5'))
+        self.assertIn('url', data['supplies'][1])
+        self.assertEqual(data['supplies'][1]['id'], 3)
+        self.assertEqual(data['supplies'][1]['description'], 'handle')
+        self.assertEqual(data['supplies'][1]['quantity'], Decimal('3.99'))
+        self.assertIn('url', data['supplies'][1])
+        
+    def test_put_remove_supplies(self):
+        """
+        Test disassociating a supply from an item
+        """
+        ItemSupply.objects.create(item=self.item, supply=self.supply1)
+        
+        self.assertEqual(self.item.supplies.all().count(), 1)
+        self.assertEqual(self.item.supplies.all()[0].id, 1)
+        
+        item_data = {'description': 'Table',
+                     'room': {'id': 1},
+                     'supplies': []}
+                     
+        resp = self.client.put('/api/v1/room-item/1/', data=item_data, format='json')
+        self.assertEqual(resp.status_code, 200)
+        
+        #Test resp
+        data = resp.data
+        self.assertEqual(data['id'], 1)
+        self.assertEqual(data['description'], 'Table')
+        self.assertIn('supplies', data)
+        self.assertEqual(len(data['supplies']), 0)
+        
+        #Test database resource
+        self.assertEqual(self.item.supplies.all().count(), 0)
+        
+        
 
-        #Creates custom item
-        custom_item_data = base_item.copy()
-        custom_item_data["type"] = "Custom"
-        custom_item_data["description"] = "Custom Product"
-        custom_item_data["product"] = {"type": "upholstery",
-                                "width": 100,
-                                "depth": 200,
-                                "height": 300,
-                                "back_pillow": 1,
-                                "model": {"id": 1},
-                                "configuration": {"id": 1}}
-        custom_item_data["reference"] = "F-02"
-        self.custom_item = Item.create(**custom_item_data)
 
-        #Creates product item
-        product_item_data = base_item.copy()
-        product_item_data["type"] = "Product"
-        product_item_data["product"] = {"id": 1}
-        product_item_data["reference"] = "F-01"
-        self.product_item = Item.create(**product_item_data)
 
-        #Creates build-in item
-        filename = "{0}test.jpg".format(settings.MEDIA_ROOT)
-        self.schematic = S3Object.create(filename,
-                                         "test_schematic.jpg",
-                                         "media.dellarobbiathailand.com",
-                                         False)
-        self.schematic2 = S3Object.create(filename,
-                                          'test_schematic2.jpg',
-                                          'media.dellarobbiathailand.com',
-                                          False)
-        item_data = base_item.copy()
-        item_data["type"] = "Build-In"
-        item_data["description"] = "TV Console"
-        item_data["reference"] = "B-10"
-        item_data["schematic"] = {'id': 1}
 
-        self.build_in_item = Item.create(**item_data)
 
-    def test_create_item(self):
-        """
-        Tests creating an item
-        """
-        self._create_build_in_item()
-        self._create_custom_item()
-        self._create_product_item()
 
-    def test_update_item(self):
-        """
-        Tests updating an item
-        """
-        #Due Date
-        new_due_date = base_due_date + datetime.timedelta(days=3)
-        self.item.update(due_date=new_due_date)
-        self.assertEqual(self.item.due_date, new_due_date.date())
 
-        #Delivery Date
-        new_dd = base_due_date + datetime.timedelta(days=10)
-        self.item.update(delivery_date=new_dd)
-        self.assertEqual(self.item.delivery_date, new_dd.date())
 
-    def test_invalid_update_custom_item(self):
-        """
-        Tests that an update fails with data
-        """
-        product_data = {"product": {"id": 1}}
-        self.custom_item.update(product=product_data)
-        self.assertEqual(self.custom_item.product.id, 2)
-        self.assertNotEqual(self.custom_item, self.product)
 
-    def _create_build_in_item(self):
-        """
-        Creates a build in item
-        """
-        self.assertIsInstance(self.build_in_item, Item)
-        self.assertEqual(self.build_in_item.type, "Build-In")
-        self.assertEqual(self.build_in_item.description, "TV Console")
-        self.assertEqual(self.build_in_item.reference, "B-10")
-        self.assertIsNotNone(self.build_in_item.schematic)
-
-    def _create_product_item(self):
-        """
-        Tests creating a product item
-        """
-        self.assertIsInstance(self.product_item, Item)
-        self.assertEqual(self.product_item.type, "Product")
-        self.assertEqual(self.product_item.description, "AC-2010 Sofa")
-        self.assertIsInstance(self.product_item.product, Product)
-        self.assertEqual(self.product_item.reference, "F-01")
-
-    def _create_custom_item(self):
-        """
-        Tests Creates a custom item and the accompanying
-        """
-        #Test item
-        self.assertIsInstance(self.custom_item, Item)
-        self.assertEqual(self.custom_item.type, "Custom")
-        self.assertEqual(self.custom_item.description, "S5 Sofa")
-        self.assertEqual(self.custom_item.reference, "F-02")
-
-        #Test item product
-        self.assertIsInstance(self.custom_item.product, Product)
-        self.assertEqual(self.custom_item.product.id, 2)
-        self.assertEqual(self.custom_item.product.type.lower(), "upholstery")
-        self.assertEqual(self.custom_item.product.width, 100)
-        self.assertEqual(self.custom_item.product.depth, 200)
-        self.assertEqual(self.custom_item.product.height, 300)
-        pillows = self.custom_item.product.pillow_set.filter(type="back")
-        self.assertEqual(len(pillows), 1)
-
-    def _update_custom_item(self):
-        """
-        Tests Updating a custom item
-        """
-        product_data = {"width": 1100,
-                        "depth": 1200,
-                        "height": 1300}
-        self.custom_item.update(product=product_data)
-        self.assertEqual(self.custom_item.width, 1100)
-        self.assertEqual(self.custom_item.depth, 1200)
-        self.assertEqual(self.custom_item.height, 1300)
-
-    def tearDown(self):
-        """
-        Clean up after tests
-        """
-        self.schematic.delete()
-        self.schematic2.delete()
 

@@ -21,6 +21,7 @@ class Project(models.Model):
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
     #supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
+    files = models.ManyToManyField(S3Object, through='File', related_name='project')
     """
     @property
     def due_date(self):
@@ -80,7 +81,8 @@ class Room(models.Model):
     schematic = models.ForeignKey(S3Object, null=True, related_name="+")
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
-
+    files = models.ManyToManyField(S3Object, through='File', related_name='room')
+    
     @classmethod
     def create(cls, **kwargs):
         """
@@ -154,212 +156,39 @@ class Room(models.Model):
 
 
 class Item(models.Model):
-    _due_date = models.DateField(db_column='due_date')
-    _delivery_date = models.DateField(db_column='delivery_date', null=True)
+    due_date = models.DateField(db_column='due_date', null=True)
+    delivery_date = models.DateField(db_column='delivery_date', null=True)
     room = models.ForeignKey(Room)
     status = models.TextField(default="Planning")
     description = models.TextField()
-    reference = models.TextField()
-    image = models.ForeignKey(S3Object, null=True, related_name="+")
-    schematic = models.ForeignKey(S3Object, db_column="schematic_id", null=True, related_name="+")
-    #schematic_last_modified = models.DateTimeField()
-    type = models.TextField()
-    product = models.ForeignKey(Product, null=True, related_name="+")
+    reference = models.TextField(null=True)
+    type = models.TextField(null=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    #files = models.ManyToManyField(S3Object, through='File', related_name='room_item')
+    supplies = models.ManyToManyField(Supply, through='ItemSupply', related_name='room_item')
+    
 
-    """
-    @property
-    def schematic(self):
-        return {'url': self._schematic.generate_url(),
-                'last_modified': self.schematic_last_modified()}"""
-    @property
-    def due_date(self):
-        return self._due_date
-
-    @due_date.setter
-    def due_date(self, date):
-        if isinstance(date, datetime.datetime):
-            self._due_date = date.date()
-        elif isinstance(date, datetime.date):
-            self._due_date = date
-        else:
-            self._due_date = dateutil.parser.parse(date).date()
-
-    @property
-    def delivery_date(self):
-        return self._delivery_date
-
-    @delivery_date.setter
-    def delivery_date(self, date):
-        if isinstance(date, datetime.datetime):
-            self._delivery_date = date.date()
-        elif isinstance(date, datetime.date):
-            self._delivery_date = date
-        else:
-            self._delivery_date = dateutil.parser.parse(date).date()
-
-    @classmethod
-    def create(cls, user=None, **kwargs):
-        """
-        Creates and returns a new item
-        """
-        item = cls()
-
-        try:
-            item.room = Room.objects.get(pk=kwargs["room"]["id"])
-        except KeyError:
-            raise ValueError("Missing room ID")
-
-        try:
-            item.type = kwargs["type"]
-        except:
-            raise ValueError("Missing item type.")
-
-        try:
-            item.reference = kwargs["reference"]
-        except:
-            raise ValueError("Missing item reference")
-
-        try:
-            item.due_date = kwargs["due_date"]
-        except KeyError:
-            item.due_date = item.room.project.due_date
-        try:
-            item.delivery_date = kwargs["delivery_date"]
-        except KeyError:
-            item.delivery_date = item.due_date
-
-        #Build custom product
-        if item.type.lower() == "custom":
-            if kwargs["product"]["type"].lower() == "upholstery":
-                item.product = item._create_new_upholstery(kwargs["product"])
-                item.description = item.product.description
-
-        #Add regular product
-        elif item.type.lower() == "product":
-            try:
-                item.product = Product.objects.get(pk=kwargs["product"]["id"])
-                item.description = item.product.description
-                if item.product.image:
-                    item.image = item.product.image
-            except KeyError:
-                raise ValueError("Missing product ID")
-
-        #Add build-in
-        elif item.type.lower() == "build-in":
-            try:
-                item.description = kwargs["description"]
-            except KeyError:
-                raise ValueError("Missing build-in description")
-            if "schematic" in kwargs:
-                try:
-                    obj_id = kwargs["schematic"]["id"]
-                    item.schematic = S3Object.objects.get(pk=obj_id)
-                except KeyError:
-                    raise ValueError("Expecting id for the schematic object")
-            if "image" in kwargs:
-                try:
-                    obj_id = kwargs["image"]["id"]
-                    item.schematic = S3Object.objects.get(pk=obj_id)
-                except KeyError:
-                    raise ValueError("Expecting an id for the image object")
-        else:
-            raise ValueError("Type must be 'Custom, Product, or Build-In")
-
-        item.save()
-        return item
-
-    def update(self, **kwargs):
-        """
-        Updates the item
-        """
-        if "room" in kwargs:
-            try:
-                self.room = Room.objects.get(pk=kwargs["room"]["id"])
-            except KeyError:
-                raise ValueError("Missing room ID")
-
-        if "due_date" in kwargs:
-            self.due_date = kwargs["due_date"]
-        if "delivery_date" in kwargs:
-            self.delivery_date = kwargs["delivery_date"]
-        if "product" in kwargs:
-            if self.type.lower() == "custom":
-                if "id" in kwargs["product"]:
-                    if self.product.id != kwargs["product"]["id"]:
-                        raise TypeError("Unable to change product for a custom item.")
-                self.product.update(**kwargs["product"])
-            elif self.type.lower() == "product":
-                self.product.update(**kwargs["product"])
-
-        if "schematic" in kwargs:
-            try:
-                if kwargs["schematic"]["id"] != self.schematic.id:
-                    old_schematic = self.schematic
-                    self.schematic = S3Object.objects.get(pk=kwargs["schematic"]["id"])
-                    old_schematic.delete()
-                    if self.type.lower() == "custom":
-                        self.product.update(schematic=kwargs["schematic"])
-            except KeyError:
-                raise ValueError("Missing schematic ID.")
-            except S3Object.DoesNotExist:
-                raise ValueError("Schematic not found.")
-
-        if "image" in kwargs:
-            try:
-                if kwargs["image"]["id"] != self.image.id:
-                    old_img = self.image
-                    self.image = S3Object.objects.get(pk=kwargs["image"]["id"])
-                    old_img.delete()
-                    if self.type.lower() == "custom":
-                        self.product.update(image=kwargs["image"]["id"])
-
-            except KeyError:
-                raise ValueError("Missing image ID.")
-            except S3Object.DoesNotExist:
-                raise ValueError("Schematic not found")
-
-    def to_dict(self, user=None):
-        data = {"id": self.id,
-                "reference": self.reference,
-                "due_date": self.due_date.isoformat(),
-                "delivery_date": self.delivery_date.isoformat(),
-                "description": self.description,
-                "type": self.type,
-                "last_modified": self.last_modified.isoformat()}
-
-        if self.image:
-            data["image"] = {"id": self.image.id,
-                             "url": self.image.generate_url(),
-                             'last_modified': self.image.last_modified.isoformat()}
-        if self.schematic:
-            data["schematic"] = {"id": self.schematic.id,
-                                 "url": self.schematic.generate_url(),
-                                 'last_modified': self.schematic.las_modified.isoformat()}
-        if self.product:
-            data["product"] = self.product.to_dict()
-
-        return data
-
-    def _create_new_upholstery(self, product_data):
-        """
-        Creates a corresponding custom upholstery item
-        """
-        try:
-            model = Model.objects.get(model=self.room.project.reference,
-                                      name=self.room.project.codename)
-        except Model.DoesNotExist:
-            model = Model.create(model=self.room.project.reference,
-                             name=self.room.project.codename,
-                             collection="Dellarobbia Thailand")
-            model.save()
-
-        product_data["model"] = {"id": model.id}
-        return Upholstery.create(**product_data)
-
+class File(models.Model):
+    room = models.ForeignKey(Room, null=True)
+    file = models.ForeignKey(S3Object, related_name="project_files")
+    project = models.ForeignKey(Project, null=True)
+    item = models.ForeignKey(Item, null=True)
+    
 
 class ProjectSupply(models.Model):
     supply = models.ForeignKey(Supply)
     project = models.ForeignKey(Project)
     quantity = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    
+    
+class ItemSupply(models.Model):
+    supply = models.ForeignKey(Supply)
+    item = models.ForeignKey(Item)
+    quantity = models.DecimalField(decimal_places=10, max_digits=24, default=0)
+    
+    
+    
+    
+    
+    
 
