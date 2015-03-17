@@ -361,7 +361,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             recipients = [purchase_order.employee.email]
             
             #Build the email body
-            body = """<table><tr><td><h1>Purchase Order Received</h1></td><td></td><td></td></tr>
+            body = u"""<table><tr><td><h1>Purchase Order Received</h1></td><td></td><td></td></tr>
                              <tr><td>Purchase Order #</td><td>{0}</td><td></td></tr>
                              <tr><td>Supplier</td><td>{1}</td><td></td></tr>
                              <tr><td><h3>Description</h3></td><td><h3>Quantity</h3></td><td><h3>Status</h3></td</tr>
@@ -370,16 +370,16 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             #Loop through all items to add to the body
             for item in purchase_order.items.all():
                 supply = item.supply
-                color = "green" if item.status.lower() == "received" else "red"
+                color = u"green" if item.status.lower() == "received" else "red"
                 supply.supplier = purchase_order.supplier
-                body += """<tr><td>{0}</td><td>{1}{2}</td><td style="color:{3}">{4}</td></tr>
+                body += u"""<tr><td>{0}</td><td>{1}{2}</td><td style="color:{3}">{4}</td></tr>
                         """.format(item.description,
                                    item.quantity,
                                    supply.purchasing_units,
                                    color,
                                    item.status)
             #Closing table tag
-            body += "</table>"                
+            body += u"</table>"                
                     
             #Send email    
             conn.send_email('inventory@dellarobbiathailand.com',
