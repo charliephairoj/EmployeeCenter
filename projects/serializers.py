@@ -49,7 +49,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ('id', 'description', 'reference', 'files', 'project', 'items')
-        depth = 1
+        depth = 2
         
     def create(self, validated_data):
         """
@@ -93,6 +93,10 @@ class RoomSerializer(serializers.ModelSerializer):
         """
         ret = super(RoomSerializer, self).to_representation(instance)
         
+        ret['items'] = [ItemSerializer(item).data for item in instance.items.all()]
+        
+        logger.debug('ok')
+        
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
@@ -100,7 +104,7 @@ class RoomSerializer(serializers.ModelSerializer):
                              'url': file.generate_url()} for file in instance.files.all()]
         except AttributeError:
             pass
-            
+
         return ret
         
         
