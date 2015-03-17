@@ -56,6 +56,7 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
+        instance.vat = validated_data.get('vat', instance.vat)
         instance.comments = validated_data.get('comments', None) or instance.comments
         instance.calculate_total()
         instance.save()
