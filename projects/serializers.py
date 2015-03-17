@@ -48,7 +48,8 @@ class RoomSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Room
-        fields = ('id', 'description', 'reference', 'files', 'project')
+        fields = ('id', 'description', 'reference', 'files', 'project', 'items')
+        depth = 1
         
     def create(self, validated_data):
         """
@@ -107,20 +108,26 @@ class ItemSerializer(serializers.ModelSerializer):
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
     supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
                                      required=False)
+    files = serializers.ListField(child=serializers.DictField(), required=False, write_only=True,
+                                  allow_null=True)
     
     class Meta:
         model = Item
-        fields = ('id', 'room', 'supplies', 'description')
+        fields = ('id', 'room', 'supplies', 'description', 'reference', 'quantity', 'status', 'files')
         
     def create(self, validated_data):
         
         supplies = validated_data.pop('supplies', [])
+        files = validated_data.pop('files', []);
         
         instance = self.Meta.model.objects.create(**validated_data)
         
         for supply in supplies:
             ItemSupply.objects.create(supply=Supply.objects.get(pk=supply['id']),
                                       item=instance, quantity=supply['quantity'])
+                                      
+        for file in files:
+            File.objects.create(file=S3Object.objects.get(pk=file['id']), item=instance)
                                       
         return instance
         
@@ -133,6 +140,7 @@ class ItemSerializer(serializers.ModelSerializer):
         that the user provided. From this we determine which supply to disassociate
         """
         supplies = validated_data.pop('supplies', [])
+        files = validated_data.pop('files', [])
         
         #List of ids not to delete
         id_list = [supply['id'] for supply in supplies]
@@ -155,6 +163,14 @@ class ItemSerializer(serializers.ModelSerializer):
             if supply.id not in id_list:
                 ItemSupply.objects.get(supply=supply, item=instance).delete()
         
+        #Add Files
+        for file in files:
+            try: 
+                file = File.objects.get(file_id=file['id'], room=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                    room=instance)
+        
         return instance
         
     def to_representation(self, instance):
@@ -166,6 +182,14 @@ class ItemSerializer(serializers.ModelSerializer):
                             'quantity': ItemSupply.objects.get(item=instance, supply=supply).quantity,
                             'url': self._get_image_from_supply(supply)}
                            for supply in instance.supplies.all()]
+                           
+        try:
+            ret['files'] = [{'id': file.id,
+                             'filename': file.key.split('/')[-1],
+                             'type': file.key.split('.')[-1],
+                             'url': file.generate_url()} for file in instance.files.all()]
+        except AttributeError:
+            pass
                            
         return ret
             
