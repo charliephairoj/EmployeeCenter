@@ -159,7 +159,7 @@ class ItemSerializer(serializers.ModelSerializer):
                                                         item=instance)
                 id_list.append(item_supply.supply.id)
                 
-            item_supply.quantity = supply_data['quantity']
+            item_supply.quantity = supply_data.get('quantity', item_supply.quantity)
             item_supply.save()
             
         #Remove delete supplies
@@ -170,10 +170,10 @@ class ItemSerializer(serializers.ModelSerializer):
         #Add Files
         for file in files:
             try: 
-                file = File.objects.get(file_id=file['id'], room=instance)
+                file = File.objects.get(file_id=file['id'], item=instance)
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
-                                    room=instance)
+                                    item=instance)
         
         return instance
         
