@@ -56,7 +56,6 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
-        instance.vat = validated_data.get('vat', instance.vat)
         instance.comments = validated_data.get('comments', None) or instance.comments
         instance.calculate_total()
         instance.save()
@@ -235,7 +234,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
             instance.order_date = datetime.now(timezone('Asia/Bangkok'))
             instance.revision += 1
-            instance.discount = validated_data.pop('discount', None) or instance.discount
+            instance.vat = validated_data.pop('vat', instance.vat)
+            instance.discount = validated_data.pop('discount', instance.discount)
             instance.status = status
         
             instance.calculate_total()

@@ -286,14 +286,14 @@ class PurchaseOrderPDF():
         for supply in self.supplies:
             #add the data
             calculated_unit_cost = supply.unit_cost - (supply.unit_cost * (Decimal(supply.discount) / Decimal('100')))
-            logger.debug('unit cost: {0}'.format(calculated_unit_cost))
+            logger.debug('unit cost: {0:,}'.format(calculated_unit_cost))
             data.append([i,
                          self._get_reference(supply),
                          self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
-                         "{0}".format(round(supply.quantity, 2)),
-                         "{0}".format(round(calculated_unit_cost, 3)),
-                         "%.2f" % float(supply.total)])
+                         "{0:,.2f}".format(supply.quantity),
+                         "{0:,.3f}".format(calculated_unit_cost),
+                         "{0:,.2f}".format(supply.total)])
             #increase the item number
             i += 1
         #add a shipping line item if there is a shipping charge
@@ -302,7 +302,7 @@ class PurchaseOrderPDF():
             #Add to data
             data.append(['', '', shipping_description,
                          '', '', '',
-                         "%.2f" % float(self.po.shipping_amount)])
+                         "{0:,}".format(round(self.po.shipping_amount, 2))])
         #Get totals data and style
         totals_data, totals_style = self._get_totals()
         #merge data
@@ -314,7 +314,7 @@ class PurchaseOrderPDF():
                 deposit = Decimal(str(round((Decimal(self.po.deposit) / Decimal('100')) * self.po.grand_total, 2)))
                 deposit_title = "{0}%".format(self.po.deposit)
             elif self.po.deposit_type == "amount":
-                deposit = "{0}".format(self.po.deposit)
+                deposit = "{0:,.2f}".format(self.po.deposit)
                 deposit_title = ""
                 
             data += [['',
@@ -445,23 +445,23 @@ class PurchaseOrderPDF():
         if self.po.vat != 0 or self.po.discount != 0:
             #get subtotal and add to pdf
             subtotal = Decimal(self.po.subtotal)
-            data.append(['', '', '', '', '', 'Subtotal', "{0:.2f}".format(subtotal)])
+            data.append(['', '', '', '', '', 'Subtotal', "{0:,.2f}".format(subtotal)])
             #add discount area if discount greater than 0
             if self.po.discount != 0:
                 discount = subtotal * (Decimal(self.po.discount) / Decimal('100'))
                 dis_title = 'Discount {0}%'.format(self.po.discount)
-                dis_str = "{0:.2f}".format(discount)
+                dis_str = "{0:,.2f}".format(discount)
                 data.append(['', '', '', '', '', dis_title, dis_str])
                 
             #add vat if vat is greater than 0
             if self.po.vat != 0:
                 if self.po.discount != 0:
                     #append total to pdf
-                    data.append(['', '', '', '', '', 'Total', "{0:.2f}".format(self.po.total)])
+                    data.append(['', '', '', '', '', 'Total', "{0:,.2f}".format(self.po.total)])
                 #calculate vat and add to pdf
                 vat = Decimal(self.po.total) * (Decimal(self.po.vat) / Decimal('100'))
-                data.append(['', '', '', '', '', 'Vat {0}%'.format(self.po.vat), "{0:.2f}".format(vat)])
-        data.append(['', '', '', '', '', 'Grand Total', "{0:.2f}".format(self.po.grand_total)]) 
+                data.append(['', '', '', '', '', 'Vat {0}%'.format(self.po.vat), "{0:,.2f}".format(vat)])
+        data.append(['', '', '', '', '', 'Grand Total', "{0:,.2f}".format(self.po.grand_total)]) 
         
         #adjust the style based on vat and discount
         #if there is either vat or discount
