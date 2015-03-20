@@ -160,8 +160,8 @@ class PropsPDF(object):
         return Image(path, width=newWidth, height=newHeight)
 
 
-pdfdoc.PDFCatalog.OpenAction = """<</S/JavaScript/JS(this.print\({bUI:false,bSilent:true,bShrinkToFit:true}\);
-this.close(SaveOptions.DONOTSAVECHANGES);)>>"""
+#pdfdoc.PDFCatalog.OpenAction = """<</S/JavaScript/JS(this.print\({bUI:false,bSilent:true,bShrinkToFit:true}\);
+#this.close(SaveOptions.DONOTSAVECHANGES);)>>"""
 
 class SupplyPDF():
     name_map = {'id': 'id',
