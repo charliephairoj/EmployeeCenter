@@ -174,6 +174,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
+        try:
+            ret['auto_print_pdf'] = {'url': instance.auto_print_pdf.generate_url()}
+        except AttributeError:
+            pass
+            
         return ret
         
     def create(self, validated_data):

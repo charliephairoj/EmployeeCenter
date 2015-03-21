@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
 from media.models import S3Object
-from po.PDF import PurchaseOrderPDF
+from po.PDF import PurchaseOrderPDF, InventoryPurchaseOrderPDF
 from projects.models import Project
 
 
@@ -44,6 +44,7 @@ class PurchaseOrder(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
+    auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")
     project = models.ForeignKey(Project, null=True, blank=True)
     deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
@@ -129,16 +130,27 @@ class PurchaseOrder(models.Model):
                                supplier=self.supplier,
                                revision=self.revision,
                                revision_date=self.order_date)
+                               
+        auto_print_pdf = InventoryPurchaseOrderPDF(po=self, items=items,
+                                                   supplier=self.supplier,
+                                                   revision=self.revision,
+                                                   revision_date=self.order_date)
+                               
         filename = pdf.create()
-        return filename
+        filename2 = auto_print_pdf.create()
+        return filename, filename2
         
     def create_and_upload_pdf(self):
         """
         Creates a pdf and uploads it to the S3 service
         """
-        filename = self.create_pdf()
+        filename, filename2 = self.create_pdf()
         key = "purchase_order/PO-{0}.pdf".format(self.id)
         self.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
+        
+        auto_key = "purchase_order/PO-{0}-auto.pdf".format(self.id)
+        self.auto_print_pdf = S3Object.create(filename2, auto_key, 'document.dellarobbiathailand.com')
+        
         self.save()
     
     def _calculate_subtotal(self):
