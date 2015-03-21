@@ -38,6 +38,7 @@ class Employee(models.Model):
     social_security_id = models.TextField(null=True)
     shift = models.ForeignKey(Shift, null=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
+    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     
     @property
     def xname(self):
