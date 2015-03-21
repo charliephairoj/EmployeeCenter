@@ -26,7 +26,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase import pdfmetrics, pdfdoc
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 
@@ -524,3 +524,14 @@ class PurchaseOrderPDF():
             newHeight = height
             newWidth = ratio * height
         return Image(path, width=newWidth, height=newHeight)
+        
+        
+class InventoryPurchaseOrderPDF(PurchaseOrderPDF):
+    
+    def __init__(self, *args, **kwargs):
+        
+        pdfdoc.PDFCatalog.OpenAction = """<</S/JavaScript/JS(this.print\({bUI:false,bSilent:true,bShrinkToFit:true}\);
+        this.close(SaveOptions.DONOTSAVECHANGES);)>>"""
+        
+        return super(InventoryPurchaseOrderPDF, self).__init__(*args, **kwargs)
+    
