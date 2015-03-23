@@ -14,6 +14,8 @@ production
 from decimal import *
 import logging
 import re
+import pytz
+from pytz import timezone
 
 from django.conf import settings
 from django.db import models
@@ -252,13 +254,15 @@ class PurchaseOrderPDF():
         return contact
 
     def __create_po_section(self):
+        order_date, odObj = self.outputBKKTime(self.po.order_date, '%B %d, %Y')
+        
         #Create data array
         data = []
         #Add Data
         data.append(['Terms:', self._get_payment_terms()])
         data.append(['Currency:', self._get_currency()])
-        data.append(['Order Date:', self.po.order_date.strftime('%B %d, %Y')])
-        logger.debug(self.po.project)
+        data.append(['Order Date:', order_date])
+
         if self.po.project:
             data.append(['Project:', self.po.project.codename])
         #data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
@@ -524,6 +528,24 @@ class PurchaseOrderPDF():
             newHeight = height
             newWidth = ratio * height
         return Image(path, width=newWidth, height=newHeight)
+        
+    def outputBKKTime(self, dateTimeObj, fmt):
+        """
+        The function accepts the datetime object
+        and the preferred output str format to return
+        the datetime as. This function then converts
+        from the current utc(preferred) to the 'Asia/Bangkok'
+        timezone
+        """
+        bkkTz = timezone('Asia/Bangkok')
+        
+        try:
+            bkkDateTime = dateTimeObj.astimezone(bkkTz)
+        except ValueError:
+            temp_datetime = pytz.utc.localize(dateTimeObj)
+            bkkDateTime = temp_datetime.astimezone(bkkTz)
+            
+        return bkkDateTime.strftime(fmt), bkkDateTime
         
         
 class InventoryPurchaseOrderPDF(PurchaseOrderPDF):
