@@ -84,8 +84,8 @@ def acknowledgement_file(request):
     
     
     obj = S3Object.create(filename,
-                          "acknowledgement/files/{0}".format(filename),
-                          "media.dellarobbiathailand.com")
+                          u"acknowledgement/files/{0}".format(filename),
+                          u"media.dellarobbiathailand.com")
     
     response = HttpResponse(json.dumps({'id': obj.id,
                                         'filename': filename,
