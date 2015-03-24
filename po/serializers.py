@@ -268,6 +268,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             self._log_receiving_item(item)
             
         instance.status = "RECEIVED"
+        instance.receive_date = datetime.now()
         instance.save()
         
         self._email_purchaser(instance)
