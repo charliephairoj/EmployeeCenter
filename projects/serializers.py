@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from supplies.serializers import SupplySerializer
 from acknowledgements.serializers import ItemSerializer as AckItemSerializer
-from projects.models import Project, Room, Item, File, ItemSupply
+from projects.models import Project, Phase, Room, Item, File, ItemSupply
 from media.models import S3Object
 from supplies.models import Supply
 
@@ -17,13 +17,22 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         
+        
+class PhaseSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Phase
+        fields = ('id', 'project', 'quantity', 'description', 'due_date')
+        depth = 0
+        
 
 class ProjectSerializer(serializers.ModelSerializer):
     #supplies = SupplySerializer(read_only=True, many=True)
+    #phases = PhaseSerializer(many=True)
     
     class Meta:
         model = Project
-        fields = ('id', 'codename', 'rooms')
+        fields = ('id', 'codename', 'rooms', 'quantity', 'phases')
         depth = 1
         
     def to_representation(self, instance):
@@ -184,7 +193,8 @@ class ItemSerializer(serializers.ModelSerializer):
         ret['supplies'] = [{'id': supply.id,
                             'description': supply.description,
                             'quantity': ItemSupply.objects.get(item=instance, supply=supply).quantity,
-                            'url': self._get_image_from_supply(supply)}
+                            'url': self._get_image_from_supply(supply),
+                            'units': supply.units}
                            for supply in instance.supplies.all()]
                            
         try:

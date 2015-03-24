@@ -8,11 +8,12 @@ import logging
 from django.http import HttpResponse
 from django.db.models import Q
 from django.conf import settings
+from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.response import Response
 
-from projects.models import Project, Room, Item
-from projects.serializers import ProjectSerializer, RoomSerializer, ItemSerializer
+from projects.models import Project, Room, Item, Phase
+from projects.serializers import ProjectSerializer, PhaseSerializer, RoomSerializer, ItemSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
@@ -53,6 +54,11 @@ class ProjectDetail(ProjectMixin, generics.RetrieveUpdateDestroyAPIView):
             project = self.get_object()
             serializer = ProjectSerializer(project, context={'pk':pk})
             return Response(serializer.data)
+    
+
+class PhaseViewSet(viewsets.ModelViewSet):
+    queryset = Phase.objects.all()
+    serializer_class = PhaseSerializer
     
     
 class RoomMixin(object):

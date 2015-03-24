@@ -26,6 +26,7 @@ from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
 from projects.views import ProjectList, ProjectDetail
+from projects.views import PhaseViewSet
 from projects.views import RoomList, RoomDetail
 from projects.views import RoomItemList, RoomItemDetail
 from hr.views import EmployeeList, EmployeeDetail
@@ -50,6 +51,7 @@ router = DefaultRouter()
 router.register(r'api/v1/customer', CustomerViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
+router.register(r'api/v1/phase', PhaseViewSet)
 
 
 

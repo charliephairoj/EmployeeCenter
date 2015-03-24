@@ -217,7 +217,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)
-          
+        
+        elif status.lower() != instance.status.lower():
+            
+            instance.status = status
+            instance.save()
+             
         else:  
             items_data = validated_data.pop('items')
             items_data = self.context['request'].data['items']

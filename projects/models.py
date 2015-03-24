@@ -22,6 +22,8 @@ class Project(models.Model):
     deleted = models.BooleanField(default=False)
     #supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
     files = models.ManyToManyField(S3Object, through='File', related_name='project')
+    quantity = models.IntegerField(default=0)
+    
     """
     @property
     def due_date(self):
@@ -72,7 +74,13 @@ class Project(models.Model):
         return project
 
 
-
+class Phase(models.Model):
+    description = models.TextField()
+    quantity = models.IntegerField(default=1)
+    project = models.ForeignKey(Project, related_name="phases")
+    due_date = models.DateTimeField(null=True)
+    
+    
 class Room(models.Model):
     description = models.TextField()
     project = models.ForeignKey(Project, related_name="rooms")
