@@ -29,6 +29,7 @@ from projects.views import ProjectList, ProjectDetail
 from projects.views import PhaseViewSet
 from projects.views import RoomList, RoomDetail
 from projects.views import RoomItemList, RoomItemDetail
+from projects.views import PartViewSet
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from administrator.views import UserList, UserDetail
@@ -52,6 +53,7 @@ router.register(r'api/v1/customer', CustomerViewSet)
 router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 router.register(r'api/v1/phase', PhaseViewSet)
+router.register(r'api/v1/project-part', PartViewSet)
 
 
 

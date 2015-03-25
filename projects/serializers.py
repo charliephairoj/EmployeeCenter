@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from supplies.serializers import SupplySerializer
 from acknowledgements.serializers import ItemSerializer as AckItemSerializer
-from projects.models import Project, Phase, Room, Item, File, ItemSupply
+from projects.models import Project, Phase, Room, Item, File, ItemSupply, Part
 from media.models import S3Object
 from supplies.models import Supply
 
@@ -103,9 +103,7 @@ class RoomSerializer(serializers.ModelSerializer):
         ret = super(RoomSerializer, self).to_representation(instance)
         
         ret['items'] = [ItemSerializer(item).data for item in instance.items.all()]
-        
-        logger.debug('ok')
-        
+                
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
@@ -122,16 +120,20 @@ class ItemSerializer(serializers.ModelSerializer):
     supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
                                      required=False)
     files = serializers.ListField(child=serializers.DictField(), required=False, write_only=True,
+                                  allow_null=True) 
+    parts = serializers.ListField(child=serializers.DictField(), required=False, write_only=True,
                                   allow_null=True)
-    
+                                  
     class Meta:
         model = Item
-        fields = ('id', 'room', 'supplies', 'description', 'reference', 'quantity', 'status', 'files')
-        
+        fields = ('id', 'room', 'supplies', 'description', 'reference', 'quantity', 'status', 'files',
+                  'parts')
+    
     def create(self, validated_data):
         
         supplies = validated_data.pop('supplies', [])
-        files = validated_data.pop('files', []);
+        files = validated_data.pop('files', [])
+        parts = validated_data.pop('parts', [])
         
         instance = self.Meta.model.objects.create(**validated_data)
         
@@ -141,6 +143,10 @@ class ItemSerializer(serializers.ModelSerializer):
                                       
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']), item=instance)
+            
+        for part in parts:
+            del part['item']
+            Part.objects.create(item=instance, **part)
                                       
         return instance
         
@@ -154,6 +160,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         supplies = validated_data.pop('supplies', [])
         files = validated_data.pop('files', [])
+        parts = validated_data.pop('parts', [])
         
         #List of ids not to delete
         id_list = [supply['id'] for supply in supplies]
@@ -183,7 +190,16 @@ class ItemSerializer(serializers.ModelSerializer):
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                     item=instance)
-        
+        logger.debug(parts)                 
+        #Add a Part
+        for part_data in parts:
+            try:
+                part = Part.objects.get(pk=part_data['id'])
+                part.quantity = part_data['quantity']
+            except (KeyError, Part.DoesNotExist):
+                del part_data['item']
+                part = Part.objects.create(**part_data)
+                        
         return instance
         
     def to_representation(self, instance):
@@ -204,6 +220,13 @@ class ItemSerializer(serializers.ModelSerializer):
                              'url': file.generate_url()} for file in instance.files.all()]
         except AttributeError:
             pass
+            
+        try:
+            ret['parts'] = [{'id': part.id,
+                             'description': part.description,
+                             'quantity': part.quantity} for part in instance.parts.all()]
+        except AttributeError:
+            pass
                            
         return ret
             
@@ -216,7 +239,14 @@ class ItemSerializer(serializers.ModelSerializer):
         except AttributeError:
             return None
             
-            
+
+class PartSerializer(serializers.ModelSerializer):
+    #item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    
+    class Meta:
+        model = Part
+        fields = ('id', 'description', 'item', 'quantity')
+        depth = 0
     
         
         

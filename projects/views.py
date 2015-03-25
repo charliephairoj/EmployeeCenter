@@ -12,8 +12,8 @@ from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.response import Response
 
-from projects.models import Project, Room, Item, Phase
-from projects.serializers import ProjectSerializer, PhaseSerializer, RoomSerializer, ItemSerializer
+from projects.models import Project, Room, Item, Phase, Part
+from projects.serializers import ProjectSerializer, PhaseSerializer, RoomSerializer, ItemSerializer, PartSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
 
@@ -135,6 +135,11 @@ class RoomItemDetail(RoomItemMixin, generics.RetrieveUpdateDestroyAPIView):
         request = self._format_primary_key_data(request)
         
         return super(RoomItemDetail, self).put(request, *args, **kwargs)
+    
+
+class PartViewSet(viewsets.ModelViewSet):
+    queryset = Part.objects.all()
+    serializer_class = PartSerializer
     
     
 def room_image(request):

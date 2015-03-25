@@ -177,6 +177,11 @@ class Item(models.Model):
     supplies = models.ManyToManyField(Supply, through='ItemSupply', related_name='room_item')
     files = models.ManyToManyField(S3Object, through='File', related_name='room_item')
     
+
+class Part(models.Model):
+    description = models.TextField()
+    item = models.ForeignKey(Item, related_name='parts')
+    quantity = models.IntegerField(default=1)
     
 
 class File(models.Model):
