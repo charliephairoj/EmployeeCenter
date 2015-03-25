@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from products.models import Product, Configuration, Model, Upholstery, Pillow, Table
+from products.models import Product, Configuration, Model, Upholstery, Pillow, Table, ModelImage
 from media.models import S3Object
 from contacts.serializers import CustomerSerializer
 
@@ -17,11 +17,67 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
         
 class ModelSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    image = serializers.DictField(required=False, write_only=True)
     class Meta:
         model = Model
-        field = ('id', 'name', 'model')
+        field = ('id', 'name', 'model', 'images')
         exclude = ('image_url', 'bucket', 'image_key')
-
+        
+    def create(self, validated_data):
+        images = validated_data.pop('images', [])
+        image = validated_data.pop('image', None)
+        
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        for image_data in images:
+            try:
+                ModelImage.objects.get(image=S3Object.objects.get(pk=image_data['id']), model=instance)
+            except ModelImage.DoesNotExist:
+                ModelImage.objects.create(image=S3Object.objects.get(pk=image_data['id']), model=instance)
+            
+        if image:
+            try:
+                ModelImage.objects.get(image=S3Object.objects.get(pk=image['id']), model=instance)
+            except ModelImage.DoesNotExist:
+                ModelImage.objects.create(image=S3Object.objects.get(pk=image['id']), model=instance)
+            
+        return instance
+        
+    def update(self, instance, validated_data):
+        
+        images = validated_data.pop('images', [])
+        image = validated_data.pop('image', None)
+        
+        instance = super(ModelSerializer, self).update(instance, validated_data)
+        
+        for image_data in images:
+            try:
+                ModelImage.objects.get(image=S3Object.objects.get(pk=image_data['id']), model=instance)
+            except ModelImage.DoesNotExist:
+                ModelImage.objects.create(image=S3Object.objects.get(pk=image_data['id']), model=instance)
+            
+        if image:
+            try:
+                ModelImage.objects.get(image=S3Object.objects.get(pk=image['id']), model=instance)
+            except ModelImage.DoesNotExist:
+                ModelImage.objects.create(image=S3Object.objects.get(pk=image['id']), model=instance)
+            
+        return instance
+        
+    def to_representation(self, instance):
+        
+        ret = super(ModelSerializer, self).to_representation(instance)
+        
+        try:
+            image = instance.images.all()[0]
+            ret['image'] = {'id': image.id,
+                            'url': image.generate_url()}
+        except (AttributeError, IndexError):
+            pass
+            
+        return ret
+        
 
 class PillowSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,7 +124,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
                                 'configuration': instance.configuration.configuration}
                                 
         try:
-            ret['image'] = {'id': instance.id,
+            ret['image'] = {'id': instance.image.id,
                             'url': instance.image.generate_url()}
         except AttributeError:
             pass
