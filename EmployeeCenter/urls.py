@@ -134,7 +134,11 @@ urlpatterns += patterns('products.views',
     url(r'/api/v1/upholstery/image$', 'product_image'),
     url(r'^api/v1/upholstery/image$', 'product_image'),
     url(r'^api/v1/upholstery/image/$', 'product_image'),
-    url(r'^/api/v1/upholstery/image/$', 'product_image')
+    url(r'^/api/v1/upholstery/image/$', 'product_image'),
+    url(r'/api/v1/model/image$', 'product_image'),
+    url(r'^api/v1/model/image$', 'product_image'),
+    url(r'^api/v1/model/image/$', 'product_image'),
+    url(r'^/api/v1/model/image/$', 'product_image')
     
 )
 
