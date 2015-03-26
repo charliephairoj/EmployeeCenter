@@ -1,5 +1,4 @@
-<<<<<<< Local Changes
-<<<<<<< Local Changes
+
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -28,6 +27,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics, pdfdoc
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
@@ -107,7 +107,7 @@ class PODocTemplate(BaseDocTemplate):
             canvas.setFillColorCMYK(0, 0, 0, 1)
             canvas.setFont("Helvetica", 12)
             canvas.drawRightString(550, 730, revision_str)
-            
+
 
 class PurchaseOrderPDF():
     """Class to create PO PDF"""
@@ -530,18 +530,31 @@ class PurchaseOrderPDF():
         return Image(path, width=newWidth, height=newHeight)
         
         
-
-class InventoryPurchaseOrderPDF(PurchaseOrderPDF):
+class TestCanvas(canvas.Canvas):
     
     def __init__(self, *args, **kwargs):
-        instance = PurchaseOrderPDF.__init__(self, *args, **kwargs)
-        self.filename = "%s-%s-auto.pdf" % (self.document_type, self.po.id)
-
-        return instance
-
-        pdfdoc.PDFCatalog.OpenAction = """<</S/JavaScript/JS(this.print\({bUI:false,bSilent:true,bShrinkToFit:true}\);
-        this.close(SaveOptions.DONOTSAVECHANGES);)>>"""
         
-        return super(InventoryPurchaseOrderPDF, self).__init__(*args, **kwargs)
+        canvas.Canvas.__init__(self, *args, **kwargs)
+        
+        self._doc.Catalog.OpenAction = '<</S/JavaScript/JS(this.print\({bUI:true,bSilent:false,bShrinkToFit:true}\);)>>'
+        
+        
+        
+class InventoryPurchaseOrderPDF(PurchaseOrderPDF):
+        
+    #create method
+    def create(self):
+        self.filename = "%s-%s-auto.pdf" % (self.document_type, self.po.id)
+        
+        self.location = "{0}/{1}".format(settings.MEDIA_ROOT, self.filename)
+        #create the doc template
+        doc = PODocTemplate(self.location, id=self.po.id, pagesize=A4,
+                                   leftMargin=36, rightMargin=36, topMargin=36,
+                                   revision=self.revision, revision_date=self.revision_date)
+                             
+        #Build the document with stories
+        doc.build(self._get_stories(), canvasmaker=TestCanvas)
+        #return the filename
+        return self.location
 
         

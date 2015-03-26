@@ -28,6 +28,7 @@ class PurchaseOrder(models.Model):
     order_date = models.DateTimeField(default=datetime.datetime.today())
     created = models.DateTimeField(auto_now_add=True)
     receive_date = models.DateTimeField(null=True)
+    paid_date = models.DateTimeField(null=True)
     terms = models.IntegerField(default=0)
     vat = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)

@@ -219,13 +219,17 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         
         status = validated_data.pop('status', "")
-        
+        logger.debug("{0} : {1}".format(status.lower(), instance.status.lower()))
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)
         
         elif status.lower() != instance.status.lower():
             
             instance.status = status
+            
+            if instance.status.lower() == 'paid':
+                instance.paid_date = datetime.now()
+            
             instance.save()
              
         else:  
