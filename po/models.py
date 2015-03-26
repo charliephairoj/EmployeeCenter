@@ -1,14 +1,12 @@
 """
 Models for the Purchase Orders App
 """
-import sys, os
+import sys
 import datetime
 import logging
 import math
-import decimal
-from decimal import *
+from decimal import Decimal
 
-from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -22,7 +20,6 @@ from projects.models import Project
 logger = logging.getLogger(__name__)
 
 
-# Create your models here.
 class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier)
     order_date = models.DateTimeField(default=datetime.datetime.today())
@@ -35,11 +32,14 @@ class PurchaseOrder(models.Model):
     shipping_type = models.CharField(max_length=10, default="none")
     shipping_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=10, default="THB")
-    #refers to the total of all items
+    
+    # refers to the total of all items
     subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
-    #refers to total after discount
+    
+    # refers to total after discount
     total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
-    #refers to the todal after vat
+    
+    # refers to the todal after vat
     grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     employee = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
@@ -56,10 +56,10 @@ class PurchaseOrder(models.Model):
         """
         Creates a purchase order
         
-        This method creates the order details first, then 
-        creates the supplies. The totals of the supplies are 
-        then added and applied to the purchase order. The 
-        order and supplies are then saved
+        This method creates the order details first, then
+        creates the supplies. The totals of the supplies are
+        then added and applied to the purchase order.
+        The order and supplies are then saved
         """
         order = cls()
         
@@ -68,7 +68,7 @@ class PurchaseOrder(models.Model):
             order.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
             order.currency = order.supplier.currency
             order.terms = order.supplier.terms
-        except KeyError: 
+        except KeyError:
             raise ValueError("Expecting supplier ID")
         try:
             order.vat = int(kwargs["vat"])
@@ -89,18 +89,18 @@ class PurchaseOrder(models.Model):
             pass
        
         order.subtotal = sum([supply.total for supply in order.temporary_supplies])
-        order.total = order.subtotal - ((Decimal(order.discount)/100) * order.subtotal)
-        order.grand_total = Decimal(order.total) * (Decimal(1) + Decimal(order.vat)/100)
+        order.total = order.subtotal - ((Decimal(order.discount) / 100) * order.subtotal)
+        order.grand_total = Decimal(order.total) * (Decimal(1) + Decimal(order.vat) / 100)
         
-        #Save the order
+        # Save the order
         order.save()
         
-        #Save all the items in the order
+        # Save all the items in the order
         for supply in order.temporary_supplies:
             supply.purchase_order = order
             supply.save()
            
-        #Create and upload pdf 
+        # Create and upload pdf
         """
         pdf = PurchaseOrderPDF(po=order, items=order.items.all(),
                                supplier=order.supplier)
@@ -126,7 +126,8 @@ class PurchaseOrder(models.Model):
         items = self.items.all().order_by('id')
         for item in items:
             item.supply.supplier = item.purchase_order.supplier
-        #Create and upload pdf 
+        
+        # Create and upload pdf
         pdf = PurchaseOrderPDF(po=self, items=items,
                                supplier=self.supplier,
                                revision=self.revision,
@@ -147,10 +148,14 @@ class PurchaseOrder(models.Model):
         """
         filename, filename2 = self.create_pdf()
         key = "purchase_order/PO-{0}.pdf".format(self.id)
-        self.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
+        self.pdf = S3Object.create(filename,
+                                   key,
+                                   'document.dellarobbiathailand.com')
         
         auto_key = "purchase_order/PO-{0}-auto.pdf".format(self.id)
-        self.auto_print_pdf = S3Object.create(filename2, auto_key, 'document.dellarobbiathailand.com')
+        self.auto_print_pdf = S3Object.create(filename2,
+                                              auto_key,
+                                              'document.dellarobbiathailand.com')
         
         self.save()
     
@@ -191,10 +196,11 @@ class PurchaseOrder(models.Model):
         else:
             self.grand_total = total
         
-        #convert to 2 decimal places
+        # Convert to 2 decimal places
         self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
         logger.debug("The grand total is {0:.2f}".format(self.grand_total))
         return self.grand_total
+        
         
 class Item(models.Model):
     
@@ -219,7 +225,7 @@ class Item(models.Model):
         item.supply.supplier = supplier
         item.description = item.supply.description
         
-        #Apply costs
+        # Apply costs
         if "cost" in kwargs:
             if Decimal(kwargs['cost']) != item.supply.cost:
                 item.unit_cost = Decimal(kwargs['cost'])
@@ -227,16 +233,18 @@ class Item(models.Model):
                 old_price = product.cost
                 product.cost = Decimal(kwargs['cost'])
                 product.save()
+                
+                message = u"Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]"
                 log = Log(supply=item.supply,
                           supplier=supplier,
                           action="PRICE CHANGE",
                           quantity=None,
                           cost=product.cost,
-                          message=u"Price change from {0}{2} to {1}{2} for {3} [Supplier: {4}]".format(old_price,
-                                                                                                      product.cost,
-                                                                                                      supplier.currency,
-                                                                                                      item.supply.description,
-                                                                                                      supplier.name))
+                          message=message.format(old_price,
+                                                 product.cost,
+                                                 supplier.currency,
+                                                 item.supply.description,
+                                                 supplier.name))
                 log.save()
         else:
             item.unit_cost = item.supply.cost
@@ -258,7 +266,7 @@ class Item(models.Model):
         Calculate the totals based on the unit_cost, quantity
         and the discount provied
         """
-        #Calculate late the unit_cost based on discount if available
+        # Calculate late the unit_cost based on discount if available
 
         if not self.unit_cost:
             self.unit_cost = self.supply.cost
@@ -268,22 +276,26 @@ class Item(models.Model):
         else:
             logger.debug(u"{0} discount is {1}%".format(self.description, self.discount))
             if sys.version_info[:2] == (2, 6):
-                discount_amount = Decimal(str(self.unit_cost)) * (Decimal(str(self.discount)) / Decimal('100'))
+                discount_percent = (Decimal(str(self.discount)) / Decimal('100'))
+                discount_amount = Decimal(str(self.unit_cost)) * discount_percent
             elif sys.version_info[:2] == (2, 7):
-                discount_amount = Decimal(self.unit_cost) * (Decimal(self.discount) / Decimal('100'))
-            #self.unit_cost = round(Decimal(str(self.supply.cost)) - discount_amount, 2)
-            logger.debug(u"{0} discounted unit cost is {1}".format(self.description, self.unit_cost - discount_amount))
+                discount_percent = (Decimal(self.discount) / Decimal('100'))
+                discount_amount = Decimal(self.unit_cost) * discount_percent
+            
+            # Debuggin message
+            message = u"{0} discounted unit cost is {1}"
+            logger.debug(message.format(self.description,
+                                        self.unit_cost - discount_amount))
         
-        #Set the discount to be used.
-        #Note: ENTER DISCOUNT OVERRULES SAVED DISCOUNT
+        # Set the discount to be used.
+        # Note: ENTER DISCOUNT OVERRULES SAVED DISCOUNT
         self.discount = self.discount or self.supply.discount
         
         unit_cost = Decimal(self.unit_cost)
         discount = unit_cost * (Decimal(self.discount) / Decimal('100'))
         unit_cost = unit_cost - discount
-        self.total =  unit_cost * Decimal(self.quantity)
+        self.total = unit_cost * Decimal(self.quantity)
 
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
         
-    
