@@ -65,7 +65,13 @@ class ItemSerializer(serializers.ModelSerializer):
         if new_status != instance.status and instance.status.lower() == "ordered":
             instance.status = new_status
             old_quantity = instance.supply.quantity
-            instance.supply.quantity += float(str(instance.quantity))
+            
+            #Fix for if adding decimal and supply together
+            try:
+                instance.supply.quantity += float(str(instance.quantity))
+            except TypeError:
+                instance.supply.quantity += Decimal(str(instance.quantity))
+                
             new_quantity = instance.supply.quantity
             instance.supply.save()
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
