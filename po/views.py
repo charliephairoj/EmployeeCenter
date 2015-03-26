@@ -144,6 +144,12 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         project_id = self.request.QUERY_PARAMS.get('project_id', None)
         if project_id:
             queryset = queryset.filter(project_id=project_id)
+            
+        #Last modified
+        last_modified = self.request.QUERY_PARAMS.get('last_modified', None)
+        if last_modified:
+            logger.debug(last_modified)
+            queryset = queryset.filter(last_modified__gte=last_modified)
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
