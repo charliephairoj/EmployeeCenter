@@ -131,8 +131,12 @@ class UpholsteryMixin(object):
             
         for field in fields:
             if field in request.data:
-                if 'id' in request.data[field]:
-                    request.data[field] = request.data[field]['id']
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError as e:
+                    logger.warn(e)
+                        
                     
         return request
                     
