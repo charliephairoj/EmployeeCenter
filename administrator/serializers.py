@@ -10,19 +10,48 @@ logger = logging.getLogger(__name__)
 
 
 class PermissionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
     
     class Meta:
         model = Permission
+        fields = ('id', 'codename', 'name')
+        
+    def to_representation(self, instance):
+        
+        ret = super(PermissionSerializer, self).to_representation(instance)
+        
+        ret['content_type'] = instance.content_type.app_label
+        
+        return ret
     
         
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, required=False, read_only=True)
+    permissions = PermissionSerializer(many=True, required=False)
     name = serializers.CharField(required=False)
     id = serializers.IntegerField(required=False)
     
     class Meta:
         model = Group
         fields = ['id', 'permissions', 'name']
+        
+    def update(self, instance, validated_data):
+        client_permissions = validated_data.pop('permissions', [])
+        logger.debug(client_permissions)
+        server_permissions = instance.permissions.all()
+        id_list = [perm['id'] for perm in client_permissions]
+        logger.debug(id_list)
+        
+        #Add New permissions
+        for client_perm in client_permissions:
+            instance.permissions.add(Permission.objects.get(pk=client_perm['id']))
+            id_list.append(client_perm['id'])
+            
+        #Remove 
+        for perm in server_permissions:
+            if perm.id not in id_list:
+                instance.permissions.remove(perm)
+                
+        return instance
         
              
 class UserSerializer(serializers.ModelSerializer):

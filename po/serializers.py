@@ -162,7 +162,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total',
                   'subtotal', 'total', 'revision', 'pdf', 'discount', 'status',
-                  'terms', 'order_date', 'currency')
+                  'terms', 'order_date', 'currency', 'receive_date', 'paid_date')
                  
         read_only_fields = ('pdf', 'revision')
         
@@ -286,10 +286,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         for item in instance.items.all():
             item.status = "RECEIVED"
-            try:
-                item.supply.quantity += Decimal(str(item.quantity))
-            except TypeError:
-                item.supply.quantity += float(str(item.quantity))
+            
+            item = self._apply_new_quantity(item, instance)
                 
             item.supply.save()
             item.save()
@@ -302,6 +300,23 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         self._email_purchaser(instance)
         
         return instance
+        
+    def _apply_new_quantity(self, item, po):
+        
+        product = Product.objects.get(supply=item.supply, 
+                                      supplier=po.supplier)
+        
+        try:
+            qty_to_add = Decimal(str(item.quantity)) * product.quantity_per_purchasing_unit
+        except TypeError:
+            qty_to_add = float(str(item.quantity)) * product.quantity_per_purchasing_unit
+            
+        try:
+            item.supply.quantity += Decimal(str(qty_to_add))
+        except TypeError:
+            item.supply.quantity += float(str(qty_to_add))
+                
+        return item
         
     def _update_items(self, instance, items_data):
         """
