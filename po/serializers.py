@@ -156,7 +156,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PurchaseOrder
-        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'subtotal', 'total', 'revision', 'pdf', 
+        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 
+                  'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date',
                   'discount', 'status', 'terms', 'order_date', 'currency')
                  
         read_only_fields = ('pdf', 'revision')
@@ -230,7 +231,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)
         
-        elif status.lower() != instance.status.lower():
+        elif status.lower() != instance.status.lower() and status.lower():
             
             instance.status = status
             
