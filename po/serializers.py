@@ -21,6 +21,7 @@ class ItemSerializer(serializers.ModelSerializer):
     supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all())
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
     class Meta:
         model = Item
         read_only_fields = ('total', 'sticker')
@@ -82,6 +83,23 @@ class ItemSerializer(serializers.ModelSerializer):
             
         return instance
     
+    def to_representation(self, instance):
+        
+        ret = super(ItemSerializer, self).to_representation(instance)
+        
+        try:
+            product = Product.objects.get(supply=instance.supply,
+                                          supplier=instance.purchase_order.supplier)
+                                          
+            ret['units'] = product.purchasing_units
+            
+        except Product.DoesNotExist as e:
+            logger.warn(e)
+            logger.debug("{0} : {1}".format(instance.supply.id, instance.description))
+                                      
+        
+        return ret
+        
     def _change_supply_cost(self, supply, cost):
         """
         Method to change the cost of a supply
@@ -412,7 +430,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 supply = item.supply
                 color = u"green" if item.status.lower() == "received" else "red"
                 supply.supplier = purchase_order.supplier
-                body += u"""<tr><td>{0}</td><td>{1}{2}</td><td style="color:{3}">{4}</td></tr>
+                body += u"""<tr><td>{0}</td><td>{1:,.2f}{2}</td><td style="color:{3}">{4}</td></tr>
                         """.format(item.description,
                                    item.quantity,
                                    supply.purchasing_units,
