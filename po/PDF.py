@@ -261,7 +261,15 @@ class PurchaseOrderPDF():
         data.append(['Order Date:', self.po.order_date.strftime('%B %d, %Y')])
         logger.debug(self.po.project)
         if self.po.project:
-            data.append(['Project:', self.po.project.codename])
+            project = self.po.project.codename
+            
+            if self.po.room:
+                project += u", {0}".format(self.po.room.description)
+                
+            if self.po.phase:
+                project += u", {0}".format(self.po.phase.description)
+                
+            data.append(['Project:', project])
         # data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
         # Create table
         table = Table(data, colWidths=(60, 200))

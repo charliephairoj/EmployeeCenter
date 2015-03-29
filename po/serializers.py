@@ -11,7 +11,8 @@ import boto.ses
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item
-from projects.models import Project
+from projects.models import Project, Room, Phase
+from projects.serializers import RoomSerializer, PhaseSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ class ItemSerializer(serializers.ModelSerializer):
             
         except Product.DoesNotExist as e:
             logger.warn(e)
-            logger.debug("{0} : {1}".format(instance.supply.id, instance.description))
+            logger.debug(u"{0} : {1}".format(instance.supply.id, instance.description))
                                       
         
         return ret
@@ -169,14 +170,20 @@ class ItemSerializer(serializers.ModelSerializer):
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
     project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
+                                              allow_null=True,
+                                              required=False)
+    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
+                                               allow_null=True,
+                                               required=False)
     items = ItemSerializer(many=True)
     order_date = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = PurchaseOrder
-        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 
+        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date',
-                  'discount', 'status', 'terms', 'order_date', 'currency')
+                  'discount', 'status', 'terms', 'order_date', 'currency', 'phase')
                  
         read_only_fields = ('pdf', 'revision')
         
@@ -192,6 +199,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             ret['project'] = {'id': instance.project.id,
                               'codename': instance.project.codename}
+        except AttributeError:
+            pass
+            
+        try:
+            ret['phase'] = {'id': instance.phase.id,
+                            'description': instance.phase.description}
+        except AttributeError:
+            pass
+            
+        try:
+            ret['room'] = {'id': instance.room.id,
+                           'description': instance.room.description}
         except AttributeError:
             pass
             

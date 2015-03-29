@@ -80,7 +80,7 @@ class PurchaseOrderMixin(object):
         Format fields that are primary key related so that they may
         work with DRF
         """
-        fields = ['supplier', 'project']
+        fields = ['supplier', 'project', 'room', 'phase']
 
         for field in fields:
             if field in request.data:

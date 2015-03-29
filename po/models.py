@@ -14,7 +14,7 @@ from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
 from media.models import S3Object
 from po.PDF import PurchaseOrderPDF, InventoryPurchaseOrderPDF
-from projects.models import Project
+from projects.models import Project, Room, Phase
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,8 @@ class PurchaseOrder(models.Model):
     pdf = models.ForeignKey(S3Object, null=True)
     auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")
     project = models.ForeignKey(Project, null=True, blank=True)
+    room = models.ForeignKey(Room, null=True)
+    phase = models.ForeignKey(Phase, null=True)
     deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
