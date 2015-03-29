@@ -10,6 +10,7 @@ import subprocess
 from decimal import Decimal
 import webbrowser
 import unittest
+from pytz import timezone
 
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission, ContentType
@@ -399,7 +400,7 @@ class PurchaseOrderTest(APITestCase):
         
         self.assertEqual(po.supplier.id, 1)
         self.assertEqual(po.status, 'PROCESSED')
-        self.assertEqual(po.order_date.date(), datetime.datetime.now().date())
+        self.assertEqual(po.order_date.date(), datetime.datetime.now(timezone('Asia/Bangkok')).date())
         self.assertEqual(po.vat, 7)
         self.assertEqual(po.grand_total, Decimal('38.88'))
         self.assertEqual(po.items.count(), 1)

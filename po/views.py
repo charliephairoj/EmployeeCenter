@@ -88,6 +88,16 @@ class PurchaseOrderMixin(object):
                     request.data[field] = request.data[field]['id']
                 except (TypeError, KeyError) as e:
                     logger.warn(e)
+                    
+            if field == 'project':
+                try:
+                    if "id" not in request.data['project']:
+                        codename = request.data['project']['codename']
+                        project = Project(codename=codename)
+                        project.save()
+                        request.data['project'] = project.id
+                except (KeyError, TypeError) as e:
+                    logger.warn(e)
 
         # Loop through data in order to prepare for deserialization
         for index, item in enumerate(request.data['items']):
@@ -105,15 +115,6 @@ class PurchaseOrderMixin(object):
             except KeyError:
                 pass
             
-            if field == 'project':
-                try:
-                    if "id" not in request.data['project']:
-                        codename = request.data['project']['codename']
-                        project = Project(codename=codename)
-                        project.save()
-                        request.data['project'] = project.id
-                except (KeyError, TypeError):
-                    pass
         
         return request
         
