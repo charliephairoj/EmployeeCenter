@@ -99,7 +99,7 @@ class CustomerResourceTest(APITestCase):
                                     format='json',
                                     data=customer_data,
                                     authentication=self.get_credentials())
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Customer.objects.count(), 2)
         
         #Validated response to resource creation
@@ -183,7 +183,9 @@ class SupplierResourceTest(APITestCase):
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         
         self.supplier_data = supplier_data
+        self.supplier_data['addresses'] = [base_address]
         self.mod_supplier_data = self.supplier_data.copy()
+        del self.mod_supplier_data['addresses']
         try:
             del self.mod_supplier_data['contacts']
         except KeyError:
@@ -247,7 +249,7 @@ class SupplierResourceTest(APITestCase):
                                     format='json',
                                     data=self.supplier_data)
 
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         self.assertEqual(Supplier.objects.count(), 2)
         
         #Validated response to resource creation
@@ -270,6 +272,59 @@ class SupplierResourceTest(APITestCase):
         self.assertEqual(contact['email'], 'test@yahoo.com')
         self.assertEqual(contact['telephone'], '123456789')
         self.assertTrue(contact['primary'])
+        #Verify address
+        self.assertIn('addresses', supplier)
+        self.assertEqual(len(supplier['addresses']), 1)
+        
+        #Validate the created supplier instance
+        supp = Supplier.objects.order_by('-id').all()[0]
+        self.assertEqual(supp.notes, 'woohoo')
+        self.assertEqual(supp.telephone, "08348229383")
+        self.assertEqual(supp.fax, "0224223423")
+        self.assertEqual(supp.name, "Zipper World Co., Ltd.")
+        self.assertEqual(supp.discount, 20)
+        
+    def test_post_with_single_address(self):
+        """
+        Test creating supplier via POST
+        """
+        logger.debug("\n\nTesting POST for Supply \n\n")
+
+        #Validate resource creation
+        self.assertEqual(Supplier.objects.count(), 1)
+        mod_data = copy.deepcopy(self.supplier_data)
+        del mod_data['addresses']
+        mod_data['address'] = base_address
+        resp = self.client.post('/api/v1/supplier/', 
+                                    format='json',
+                                    data=self.supplier_data)
+
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        self.assertEqual(Supplier.objects.count(), 2)
+        
+        #Validated response to resource creation
+        supplier = resp.data
+        self.assertEqual(supplier['id'], 2)
+        self.assertEqual(supplier["name"], 'Zipper World Co., Ltd.')
+        self.assertEqual(supplier["currency"], 'USD')
+        self.assertTrue(supplier["is_supplier"])
+        self.assertEqual(supplier["email"], "charliep@dellarobbiathailand.com")
+        self.assertEqual(supplier["telephone"], "08348229383")
+        self.assertEqual(supplier["fax"], "0224223423")
+        self.assertEqual(supplier['notes'], "woohoo")
+        self.assertEqual(supplier['discount'], 20)
+        #Validate the the supplier contact was created
+        self.assertIn("contacts", supplier)
+        self.assertEqual(len(supplier['contacts']), 1)
+        contact = supplier['contacts'][0]
+        self.assertEqual(contact['id'], 2)
+        self.assertEqual(contact['name'], 'Charlie P')
+        self.assertEqual(contact['email'], 'test@yahoo.com')
+        self.assertEqual(contact['telephone'], '123456789')
+        self.assertTrue(contact['primary'])
+        #Verify address
+        self.assertIn('addresses', supplier)
+        self.assertEqual(len(supplier['addresses']), 1)
         
         #Validate the created supplier instance
         supp = Supplier.objects.order_by('-id').all()[0]

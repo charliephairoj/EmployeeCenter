@@ -16,10 +16,10 @@ class AddressSerializer(serializers.ModelSerializer):
     region = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     zipcode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
+
     class Meta:
         model = Address
-        field = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode')
+        fields = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode')
         
     def create(self, validated_data):
         """
@@ -116,7 +116,7 @@ class ContactMixin(object):
         
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
-    addresses = AddressSerializer(required=False,  many=True)
+    addresses = AddressSerializer(required=False,  many=True, allow_null=True)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -144,10 +144,11 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
                 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
-    addresses = AddressSerializer(required=False, many=True, write_only=True)
+    addresses = AddressSerializer(required=False, many=True, write_only=True, allow_null=True)
+    address = AddressSerializer(required=False, write_only=True, allow_null=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #name_th = serializers.CharField(required=False)
-    contacts = ContactSerializer(required=False, many=True, write_only=True)
+    contacts = ContactSerializer(required=False, many=True, write_only=True, allow_null=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
@@ -223,11 +224,11 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         id_list = [address_data.get('id', None) for address_data in addresses_data]
         #Create and update 
         for address_data in addresses_data:
-            address_data.pop('contact')
+            address_data.pop('contact', None)
             try:
                 address = Address.objects.get(pk=address_data['id'])
             except KeyError:
-                address = Addressobjects.create(contact=instance)
+                address = Address.objects.create(contact=instance)
                 id_list.append(address.id)
             for field in address_data.keys():
                 setattr(address, field, address_data[field])
