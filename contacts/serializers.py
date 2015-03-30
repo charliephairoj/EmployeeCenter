@@ -56,6 +56,8 @@ class ContactMixin(object):
         contacts that are nested
         """
         addresses_data = validated_data.pop('addresses', None)
+        if addresses_data is None:
+            addresses_data = [validated_data.pop('address', None)]
         contacts_data = validated_data.pop('contacts', None)
         
         try:

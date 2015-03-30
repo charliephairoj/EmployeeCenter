@@ -318,7 +318,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             item.save()
             self._log_receiving_item(item)
             
-        instance.status = "RECEIVED"
+        if instance.status.lower() != 'paid':
+            instance.status = "RECEIVED"
         instance.receive_date = datetime.now()
         instance.save()
         

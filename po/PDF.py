@@ -392,10 +392,12 @@ class PurchaseOrderPDF():
     def _get_payment_terms(self):
         # determine Terms String
         # based on term length
-        if self.supplier.terms == 0:
+        if self.po.terms == 0:
             terms = "Payment On Delivery"
+        elif self.po.terms < 0:
+            terms = "Credit"
         else:
-            terms = "{0} Days".format(self.supplier.terms)
+            terms = "{0} Days".format(self.po.terms)
         # return term
         return terms
 
