@@ -149,7 +149,6 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         # Last modified
         last_modified = self.request.QUERY_PARAMS.get('last_modified', None)
         if last_modified:
-            logger.debug(last_modified)
             queryset = queryset.filter(last_modified__gte=last_modified)
                                       
         offset = int(self.request.query_params.get('offset', 0))
