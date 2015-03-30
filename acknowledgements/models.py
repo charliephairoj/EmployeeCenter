@@ -14,7 +14,7 @@ import boto.ses
 
 from contacts.models import Customer
 from products.models import Product, Upholstery
-from projects.models import Project
+from projects.models import Project, Room, Phase
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
@@ -39,6 +39,8 @@ class Acknowledgement(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     project = models.ForeignKey(Project, null=True, blank=True, related_name='acknowledgements')
+    room = models.ForeignKey(Room, null=True, blank=True, related_name='acknowledgements')
+    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='acknowledgements')
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,

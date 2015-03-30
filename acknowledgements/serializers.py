@@ -11,7 +11,7 @@ from products.serializers import ProductSerializer
 from contacts.models import Customer
 from products.models import Product
 from supplies.models import Fabric, Log
-from projects.models import Project
+from projects.models import Project, Phase, Room
 from media.models import S3Object
 
 
@@ -135,6 +135,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
     project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
+                                              allow_null=True,
+                                              required=False)
+    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
+                                               allow_null=True,
+                                               required=False)
     items = ItemSerializer(many=True)
     remarks = serializers.CharField(required=False, allow_null=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
@@ -240,6 +246,18 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         try:
             ret['project'] = {'id': instance.project.id,
                               'codename': instance.project.codename}
+        except AttributeError:
+            pass
+            
+        try:
+            ret['phase'] = {'id': instance.phase.id,
+                            'description': instance.phase.description}
+        except AttributeError:
+            pass
+            
+        try:
+            ret['room'] = {'id': instance.room.id,
+                           'description': instance.room.description}
         except AttributeError:
             pass
             
