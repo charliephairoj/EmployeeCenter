@@ -13,6 +13,8 @@ production
 from decimal import Decimal
 import logging
 import re
+import pytz
+from pytz import timezone
 
 from django.conf import settings
 from reportlab.lib import colors, utils
@@ -258,8 +260,12 @@ class PurchaseOrderPDF():
         # Add Data
         data.append(['Terms:', self._get_payment_terms()])
         data.append(['Currency:', self._get_currency()])
-        data.append(['Order Date:', self.po.order_date.strftime('%B %d, %Y')])
-        logger.debug(self.po.project)
+        order_date = self._outputBKKTime(self.po.order_date, '%B %d, %Y')
+        data.append(['Order Date:', order_date])
+        if self.po.receive_date:
+            delivery_date = self._outputBKKTime(self.po.receive_date, '%B %d, %Y')
+            data.append(['Delivery Date:', delivery_date])
+
         if self.po.project:
             project = self.po.project.codename
             
@@ -564,6 +570,23 @@ class PurchaseOrderPDF():
             newHeight = height
             newWidth = ratio * height
         return Image(path, width=newWidth, height=newHeight)
+    
+    def _outputBKKTime(self, dateTimeObj, fmt):
+        """
+        The function accepts the datetime object
+        and the preferred output str format to return
+        the datetime as. This function then converts
+        from the current utc(preferred) to the 'Asia/Bangkok'
+        timezone
+        """
+        bkkTz = timezone('Asia/Bangkok')
+        try:
+            bkkDateTime = dateTimeObj.astimezone(bkkTz)
+        except ValueError:
+            utctime = bkkTz.localize(dateTimeObj)
+            bkkDateTime = utctime.astimezone(bkkTz)
+            
+        return bkkDateTime.strftime(fmt)
         
         
 class AutoPrintCanvas(canvas.Canvas):
