@@ -46,7 +46,7 @@ class PurchaseOrder(models.Model):
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
     auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")
-    project = models.ForeignKey(Project, null=True, blank=True)
+    project = models.ForeignKey(Project, null=True, blank=True, related_name="purchase_orders")
     room = models.ForeignKey(Room, null=True)
     phase = models.ForeignKey(Phase, null=True)
     deposit = models.IntegerField(default=0)
