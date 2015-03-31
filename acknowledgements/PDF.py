@@ -252,7 +252,7 @@ class AcknowledgementPDF(object):
         Story.append(self._create_contact_section())
         Story.append(Spacer(0, 20))
         #Create table for po data
-        Story.append(self._create_ack_section())
+        Story.append(self._create_order_section())
         Story.append(Spacer(0, 40))
         #Alignes the header and supplier to the left
         for a_story in Story:
@@ -310,6 +310,14 @@ class AcknowledgementPDF(object):
         #Return table
         return contact
 
+    def _create_order_section(self):
+        data = [[self._create_ack_section(), self._create_project_section()]]
+        table = Table(data, colWidths=(290, 285))
+        style = TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')])
+        table.setStyle(style)
+        
+        return table
+        
     def _create_ack_section(self):
         #Create data array
         data = []
@@ -323,9 +331,6 @@ class AcknowledgementPDF(object):
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
             
-        if self.ack.project:
-            data.append(['Project:', self.ack.project.codename])
-            
         if self.ack.remarks is not None and self.ack.remarks != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
@@ -335,7 +340,7 @@ class AcknowledgementPDF(object):
                                   style)
             data.append(['Remarks', paragraph])
         #Create table
-        table = Table(data, colWidths=(80, 440))
+        table = Table(data, colWidths=(80, 200))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -346,7 +351,43 @@ class AcknowledgementPDF(object):
         table.setStyle(style)
         #Return Table
         return table
-
+        
+    def _create_project_section(self):
+        
+        if self.ack.project:
+            #Create data array
+            data = []
+            #Add Data
+            project = self.ack.project.codename
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   fontSize=10,
+                                   textColor=colors.CMYKColor(black=60))
+            project_paragraph = Paragraph(project, style)
+            data.append(['Project:', project_paragraph])
+           
+            if self.ack.room:
+                data.append(['Room:', self.ack.room.description])
+                
+            if self.ack.phase:
+                data.append(['Phase:', self.ack.phase.description])
+            
+            #Create table
+            table = Table(data, colWidths=(50, 225))
+            #Create and set table style
+            style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
+                                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                ('TOPPADDING', (0,0), (-1,-1), 1),
+                                ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                                ('FONT', (0,0), (-1, -1), 'Garuda')])
+                                #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+            table.setStyle(style)
+            #Return Table
+            return table
+        
+        else:
+            return u""
+            
     def _create_products_section(self):
         #Create data and index array
         data = []

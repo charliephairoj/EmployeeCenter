@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 This file demonstrates writing tests using the unittest module. These will pass
 when you run "manage.py test".
@@ -22,7 +24,7 @@ from supplies.models import Fabric, Reservation, Log
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
 from media.models import S3Object
-from projects.models import Project
+from projects.models import Project, Phase, Room
 
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
@@ -232,6 +234,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.file1.save()
         self.file2.save()
         
+        codename = u"MC House"
+        self.project = Project.objects.create(codename=codename)
+        self.room = Room.objects.create(description="Kitchen", project=self.project)
+        self.phase = Phase.objects.create(description="Phase 1", quantity=1, project=self.project) 
+        
     def get_credentials(self):
         return None#self.create_basic(username=self.username, password=self.password)
         
@@ -292,6 +299,9 @@ class AcknowledgementResourceTest(APITestCase):
                                                 'image': {'id': 1}}
         modified_data['items'][-1]['fabric_quantity'] = 8
         modified_data['files'] = [{'id': 1}, {'id': 2}]
+        modified_data['project'] = {'id': 1}
+        modified_data['phase'] = {'id': 1}
+        modified_data['room'] = {'id': 1}
         
         #POST and verify the response
         self.assertEqual(Acknowledgement.objects.count(), 1)
@@ -304,7 +314,6 @@ class AcknowledgementResourceTest(APITestCase):
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Acknowledgement.objects.count(), 2)
-        
         #Verify the resulting acknowledgement
         #that is returned from the post data
         ack = resp.data
@@ -317,7 +326,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(len(ack['items']), 3)
         self.assertIn('project', ack)
         self.assertEqual(ack['project']['id'], 1)
-        self.assertEqual(ack['project']['codename'], 'Ladawan1')
+        self.assertEqual(ack['project']['codename'], 'MC House')
+        self.assertEqual(ack['room']['id'], 1)
+        self.assertEqual(ack['room']['description'], 'Kitchen')
+        self.assertEqual(ack['phase']['id'], 1)
+        self.assertEqual(ack['phase']['description'], 'Phase 1')
         self.assertIn('files', ack)
         self.assertIsInstance(ack['files'], list)
         self.assertEqual(len(ack['files']), 6)
@@ -361,21 +374,18 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(item3['fabric']['id'], 1)
         
         #Tests links to document
-        """
         self.assertIsNotNone(ack['pdf'])
         self.assertIsNotNone(ack['pdf']['acknowledgement'])
         self.assertIsNotNone(ack['pdf']['production'])
         self.assertIsNotNone(ack['pdf']['confirmation'])
-        """
         
         #Tests the acknowledgement in the database
         root_ack = Acknowledgement.objects.get(pk=2)
-        logger.debug(root_ack.project)
         self.assertEqual(root_ack.id, 2)
         self.assertEqual(root_ack.items.count(), 3)
         self.assertIsInstance(root_ack.project, Project)
         self.assertEqual(root_ack.project.id, 1)
-        self.assertEqual(root_ack.project.codename, "Ladawan1")
+        self.assertEqual(root_ack.project.codename, "MC House")
         root_ack_items = root_ack.items.all()
         item1 = root_ack_items[0]
         item2 = root_ack_items[1]
