@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from django.conf.urls import *
 from django.conf import settings
 from tastypie.api import Api
@@ -150,6 +152,13 @@ urlpatterns += patterns('supplies.views',
 urlpatterns += patterns('po.views',
     url(r'api/v1/purchase-order/stats$', 'purchase_order_stats'),
     url(r'api/v1/purchase-order/stats/$', 'purchase_order_stats')
+)
+
+urlpatterns += patterns('projects.views',
+    url(r'api/v1/project/(?P<pk>\d+)/report$', 'report'),
+    url(r'api/v1/project/(?P<pk>\d+)/report/$', 'report'),
+    url(r'api/v1/phase/(?P<pk>\d+)/report$', 'phase_report'),
+    url(r'api/v1/phase/(?P<pk>\d+)/report/$', 'phase_report')
 )
 
 urlpatterns += patterns('hr.views',

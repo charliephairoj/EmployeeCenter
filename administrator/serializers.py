@@ -34,6 +34,13 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'permissions', 'name']
         
+    def create(self, validated_data):
+        perms = validated_data.pop('permissions', [])
+        
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        return instance
+        
     def update(self, instance, validated_data):
         client_permissions = validated_data.pop('permissions', [])
         logger.debug(client_permissions)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Project views
 """
@@ -8,6 +10,7 @@ import logging
 from django.http import HttpResponse
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.auth.decorators import permission_required
 from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.response import Response
@@ -16,11 +19,34 @@ from projects.models import Project, Room, Item, Phase, Part
 from projects.serializers import ProjectSerializer, PhaseSerializer, RoomSerializer, ItemSerializer, PartSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
+from projects.PDF import ProjectPDF, PhasePDF
 
 
 logger = logging.getLogger(__name__)
 
 
+@permission_required('projects.view_project_report')
+def report(request, pk):
+    
+    response = HttpResponse(content_type='application/pdf; charset=utf-8')
+    
+    pdf = ProjectPDF(project=Project.objects.get(pk=pk), user=request.user)
+    pdf.create(response)
+    
+    return response
+    
+
+@permission_required('projects.view_phase_report')
+def phase_report(request, pk):
+    
+    response = HttpResponse(content_type='application/pdf; charset=utf-8')
+    
+    pdf = PhasePDF(phase=Phase.objects.get(pk=pk), user=request.user)
+    pdf.create(response)
+    
+    return response
+    
+    
 class ProjectMixin(object):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer

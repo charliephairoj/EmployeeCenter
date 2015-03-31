@@ -24,6 +24,13 @@ class Project(models.Model):
     files = models.ManyToManyField(S3Object, through='File', related_name='project')
     quantity = models.IntegerField(default=0)
     
+    class Meta:
+        permissions = (
+            ("view_project_supplies", "Can view a project's supplies"),
+            ("view_project_costs", "Can view costs associated with a project"),
+            ("view_project_report", "Can view overall project report")
+        )
+    
     """
     @property
     def due_date(self):
@@ -80,6 +87,10 @@ class Phase(models.Model):
     project = models.ForeignKey(Project, related_name="phases")
     due_date = models.DateTimeField(null=True)
     
+    class Meta:
+        permissions = (
+            ("view_phase_report", "Can view phase report"),
+        )
     
 class Room(models.Model):
     description = models.TextField()
