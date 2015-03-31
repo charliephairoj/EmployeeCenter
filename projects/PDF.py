@@ -501,13 +501,13 @@ class ProjectPDF(object):
         
         
 class PhasePDF(object):
-    project = phase.project
     user = AnonymousUser()
     
     def __init__(self, phase=None, user=None, *args, **kwargs):
         
         if phase:
             self.phase = phase
+            self.project = self.phase.project
             
         if user:
             self.user = user
