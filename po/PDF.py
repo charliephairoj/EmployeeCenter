@@ -276,7 +276,10 @@ class PurchaseOrderPDF():
                 project += u", {0}".format(self.po.phase.description)
                 
             data.append(['Project:', project])
-        # data.append(['Delivery Date:', self.po.receive_date.strftime('%B %d, %Y')])
+        
+        if self.po.comments:
+            data.append(['Comments:', self._format_string_to_paragraph(self.po.comments)])
+
         # Create table
         table = Table(data, colWidths=(60, 200))
         # Create and set table style

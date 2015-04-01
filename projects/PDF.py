@@ -304,7 +304,7 @@ class ProjectPDF(object):
         
         # Add Items (Loose Furniture) from the acknowledgements
         init_index = room.items.count()
-        for index, item in enumerate(AckItem.objects.filter(acknowledgement__project=self.project)):
+        for index, item in enumerate(AckItem.objects.filter(acknowledgement__room=self.project)):
             data.append([index + init_index + 1, item.description, item.quantity, '', ''])
         
         if len(data) == 1:
@@ -459,7 +459,7 @@ class ProjectPDF(object):
         
         # Add Items (Loose Furniture) from the acknowledgements
         init_index = Item.objects.filter(room__project=self.project).count()
-        for index, item in enumerate(AckItem.objects.filter(acknowledgement__project=self.project)):
+        for index, item in enumerate(AckItem.objects.filter(acknowledgement__phase=self.phase)):
             data.append([index + init_index + 1, item.description, item.quantity, '', ''])
         
         # Create the table
@@ -674,7 +674,7 @@ class PhasePDF(object):
               
         # Add Items (Loose Furniture) from the acknowledgements
         init_index = Item.objects.filter(room__project=self.project).count()
-        for index, item in enumerate(AckItem.objects.filter(acknowledgement__project=self.project)):
+        for index, item in enumerate(AckItem.objects.filter(acknowledgement__phase=self.phase)):
             data.append([index + init_index + 1, item.description, item.quantity])
         
         #Determine column widths based on user permission

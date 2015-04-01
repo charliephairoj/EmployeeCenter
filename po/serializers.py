@@ -183,7 +183,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date',
-                  'discount', 'status', 'terms', 'order_date', 'currency', 'phase')
+                  'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments')
                  
         read_only_fields = ('pdf', 'revision')
         

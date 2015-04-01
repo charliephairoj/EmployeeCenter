@@ -52,6 +52,7 @@ class PurchaseOrder(models.Model):
     deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
+    comments = models.TextField(null=True)
     
     @classmethod
     def create(cls, user=None, **kwargs):
