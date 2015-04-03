@@ -182,7 +182,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
-                  'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date',
+                  'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments')
                  
         read_only_fields = ('pdf', 'revision')
@@ -237,7 +237,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item_data['supply'] = item_data['supply'].id
             except AttributeError:
                 item_data['supply'] = item_data['supply']['id']
-        logger.debug('testss')
+
         discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
         terms = validated_data.pop('terms', validated_data['supplier'].terms)
         
@@ -264,7 +264,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         
         status = validated_data.pop('status', "")
-        logger.debug("{0} : {1}".format(status.lower(), instance.status.lower()))
+        logger.debug(status)
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)
         
@@ -295,8 +295,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             instance.revision += 1
             instance.vat = validated_data.pop('vat', instance.vat)
             instance.discount = validated_data.pop('discount', instance.discount)
+            instance.deposit = validated_data.pop('deposit', instance.deposit)
             instance.status = status
-        
             instance.calculate_total()
         
             instance.create_and_upload_pdf()
