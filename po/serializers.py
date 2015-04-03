@@ -59,10 +59,10 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
-        instance.comments = validated_data.get('comments', None) or instance.comments
+        instance.comments = validated_data.get('comments', instance.comments)
         instance.calculate_total()
         instance.save()
-        
+
         #Check status change
         new_status = validated_data.get('status', instance.status)
         if new_status != instance.status and instance.status.lower() == "ordered":
@@ -237,7 +237,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item_data['supply'] = item_data['supply'].id
             except AttributeError:
                 item_data['supply'] = item_data['supply']['id']
-                
+        logger.debug('testss')
         discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
         terms = validated_data.pop('terms', validated_data['supplier'].terms)
         

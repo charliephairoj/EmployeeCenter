@@ -266,6 +266,9 @@ class PurchaseOrderPDF():
             delivery_date = self._outputBKKTime(self.po.receive_date, '%B %d, %Y')
             data.append(['Delivery Date:', delivery_date])
 
+        if self.po.deposit:
+            data.append(['Deposit:', u"{0}%".format(self.po.deposit)])
+            
         if self.po.project:
             project = self.po.project.codename
             
