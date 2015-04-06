@@ -459,7 +459,7 @@ class ProjectPDF(object):
         
         # Add Items (Loose Furniture) from the acknowledgements
         init_index = Item.objects.filter(room__project=self.project).count()
-        for index, item in enumerate(AckItem.objects.filter(acknowledgement__phase=self.phase)):
+        for index, item in enumerate(AckItem.objects.filter(acknowledgement__phase=phase)):
             data.append([index + init_index + 1, item.description, item.quantity, '', ''])
         
         # Create the table
