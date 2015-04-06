@@ -117,6 +117,7 @@ class ContactMixin(object):
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False,  many=True, allow_null=True)
+    address = AddressSerializer(required=False, allow_null=True, write_only=True)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -130,6 +131,9 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         Override 'update' method
         """
         addresses_data = validated_data.pop('addresses', None)
+        if addresses_data is None:
+            addresses_data = [validated_data.pop('addresss', None)]
+            
         addresses_data = self.context['request'].data.get('addresses', None)
         
         if addresses_data:

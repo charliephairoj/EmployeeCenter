@@ -144,7 +144,7 @@ class EmployeeStickerPage(object):
         Creates the contents for a single cell
         """
         code = "DREM-{0}".format(employee.id)
-        
+        logger.debug(employee.id)
         if employee.first_name and employee.last_name:
             description = u"{0} {1}".format(employee.first_name, employee.last_name)
         elif employee.first_name and not employee.last_name:

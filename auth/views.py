@@ -48,25 +48,26 @@ def current_user(request):
 @login_required
 def change_password(request):
     user = request.user
-    data = json.loads(request.POST.get('data'))
-    logger.debug(user.password)
+
+    data = json.loads(request.body)
+
     #Check if correct old password supplied
     if check_password(data['old'], user.password):
         if data['newPass'] == data['repeatPass']:
             user.set_password(data['newPass'])
             user.save()
             response = HttpResponse(json.dumps({"status": "Password Changed"}),
-                                    mimetype="application/json")
+                                    content_type="application/json")
             response.status_code = 200
             return response
         else:
             response = HttpResponse(json.dumps({"status": "New Passwords do not match"}),
-                                    mimetype="application/json")
+                                    content_type="application/json")
             response.status_code = 400
             return response
     else:
         response = HttpResponse(json.dumps({"status": "Incorrect Password"}),
-                                mimetype="application/json")
+                                content_type="application/json")
         response.status_code = 400
         return response
 
