@@ -38,6 +38,10 @@ def current_user(request):
         modules.append('accounting')
     if user.has_module_perms('projects'):
         modules.append('projects')
+    if user.has_module_perms('hr'):
+        modules.append('hr')
+    if user.has_module_perms('equipment'):
+        modules.append('equipment')
     if user.is_superuser:
         modules.append('administrator')
     user_data['modules'] = modules

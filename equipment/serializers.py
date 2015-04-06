@@ -55,7 +55,14 @@ class EquipmentSerializer(serializers.ModelSerializer):
         try:
             ret['employee'] = {'id': instance.employee.id,
                                'first_name': instance.employee.first_name,
-                               'last_name': instance.employee.last_name}
+                               'last_name': instance.employee.last_name, 
+                               'nickname': instance.employee.nickname}
+        except AttributeError as e:
+            pass
+            
+        try:
+            ret['employee']['image'] = {'id': instance.employee.image.id,
+                                        'url': instance.employee.image.generate_url()}
         except AttributeError as e:
             pass
             
