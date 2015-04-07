@@ -129,7 +129,10 @@ class ProjectPDF(object):
         data.append(['Purchase Orders:', self.project.purchase_orders.all().count()])
         total_dict = self.project.purchase_orders.aggregate(Sum('grand_total'))
         total = total_dict['grand_total__sum']
-        data.append(['', "{0:,.2f}".format(total)])
+        try:
+            data.append(['', "{0:,.2f}".format(total)])
+        except Exception:
+            pass
         
         table = Table(data, colWidths=(200, 000))
         
