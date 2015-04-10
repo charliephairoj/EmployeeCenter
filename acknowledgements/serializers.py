@@ -204,8 +204,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 if item.fabric in fabrics:
                     fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
                 else:
-                    fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
-        
+                    try:
+                        fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
+                    except TypeError:
+                        fabrics[item.fabric] = Decimal('0')
+                        
         #Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
