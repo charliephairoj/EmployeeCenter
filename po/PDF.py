@@ -410,12 +410,14 @@ class PurchaseOrderPDF():
     def _get_currency(self):
         # Determine currency string
         # based on currency
-        if self.po.currency == "EUR":
+        if self.po.currency.lower() == "eur":
             currency = "Euro(EUR)"
-        elif self.po.currency == "THB":
+        elif self.po.currency.lower() == "thb":
             currency = "Thai Baht(THB)"
-        elif self.po.currency == "USD":
+        elif self.po.currency.lower() == "usd":
             currency = "US Dollar(USD)"
+        elif self.po.currency.lower() == "rmb":
+            currency = "Renminbi(RMB)"
         # return currency
         return currency
 
