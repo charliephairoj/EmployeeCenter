@@ -41,25 +41,32 @@ class ShippingMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['acknowledgement']
+        fields = ['acknowledgement', 'project', 'phase']
         
         for field in fields:
             if field in request.data:
                 if 'id' in request.data[field]:
                     request.data[field] = request.data[field]['id']
-                
+                    
+        logger.debug(request.data)
+        
+        
         for index, item in enumerate(request.data['items']):
             request.data['items'][index]['item'] = item['id']
             del request.data['items'][index]['id']
-                        
-        request.data['customer'] = Acknowledgement.objects.get(pk=request.data['acknowledgement']).customer.id
+        
+        try:                
+            request.data['customer'] = Acknowledgement.objects.get(pk=request.data['acknowledgement']).customer.id
+        except Exception:
+            pass
+            
         return request
     
     
 class ShippingList(ShippingMixin, generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
-
+        print request.data
         request = self._format_primary_key_data(request)
         
         return super(ShippingList, self).post(request, *args, **kwargs)

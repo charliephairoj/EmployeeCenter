@@ -182,11 +182,11 @@ class PurchaseOrderPDF():
             logger.warn(e)
             
         if self.supplier.telephone:
-            data.append(['', "T: {0}".format(self.supplier.telephone)])
+            data.append(['', u"T: {0}".format(self.supplier.telephone)])
         if self.supplier.fax:
-            data.append(['', "F: {0}".format(self.supplier.fax)])
+            data.append(['', u"F: {0}".format(self.supplier.fax)])
         if self.supplier.email:
-            data.append(['', "E: {0}".format(self.supplier.email)])
+            data.append(['', u"E: {0}".format(self.supplier.email)])
         try:
             contact = self.supplier.contacts.get(primary=True)
             data.append(['Contact:', u"{0}".format(contact.name)])
@@ -214,9 +214,9 @@ class PurchaseOrderPDF():
         ship_str = u"Dellarobbia Thailand"
         data.append(['Ship To:', ship_str])
         # Add Company Data
-        data.append(['', '8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
-        data.append(['', 'Lam Luk Ka, Pathum Thani'])
-        data.append(['', 'Thailand 12150'])
+        data.append(['', u'8/10 Moo 4 Lam Luk Ka Rd. Soi 65'])
+        data.append(['', u'Lam Luk Ka, Pathum Thani'])
+        data.append(['', u'Thailand 12150'])
         data.append(['', u'C: {0} {1}'.format(self.employee.first_name,
                                               self.employee.last_name)])
         data.append(['', u'E: {0}'.format(self.employee.email)])
@@ -308,14 +308,14 @@ class PurchaseOrderPDF():
             # add the data
             discount_perc = (Decimal(supply.discount) / Decimal('100'))
             calculated_unit_cost = supply.unit_cost - (supply.unit_cost * discount_perc)
-            logger.debug('unit cost: {0:,}'.format(calculated_unit_cost))
+            logger.debug(u'unit cost: {0:,}'.format(calculated_unit_cost))
             data.append([i,
                          self._get_reference(supply),
                          self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
-                         "{0:,.2f}".format(supply.quantity),
-                         "{0:,.3f}".format(calculated_unit_cost),
-                         "{0:,.2f}".format(supply.total)])
+                         u"{0:,.2f}".format(supply.quantity),
+                         u"{0:,.3f}".format(calculated_unit_cost),
+                         u"{0:,.2f}".format(supply.total)])
                          
             # increase the item number
             i += 1
@@ -326,7 +326,7 @@ class PurchaseOrderPDF():
             # Add to data
             data.append(['', '', shipping_description,
                          '', '', '',
-                         "{0:,}".format(round(self.po.shipping_amount, 2))])
+                         u"{0:,}".format(round(self.po.shipping_amount, 2))])
         # Get totals data and style
         totals_data, totals_style = self._get_totals()
         # merge data

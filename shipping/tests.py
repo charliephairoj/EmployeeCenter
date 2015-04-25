@@ -22,6 +22,7 @@ from shipping.models import Shipping
 from supplies.models import Fabric
 from products.models import Product
 from contacts.models import Customer, Supplier, Address
+from projects.models import Project, Phase
 
 
 logger = logging.getLogger(__name__)
@@ -111,6 +112,12 @@ class ShippingResourceTest(APITestCase):
         self.address = Address(address1="Jiggle", contact=self.customer)
         self.address.save()
         
+        #Create project
+        self.project = Project.objects.create(codename="Ladawan")
+        
+        #Create phase
+        self.phase = Phase.objects.create(description="Phase 1/6", project=self.project)
+        
         #Create a product to add
         self.product = Product.create(self.user, **base_product)
         self.product.save()
@@ -188,6 +195,21 @@ class ShippingResourceTest(APITestCase):
         self.assertIn("customer", obj)
         self.assertEqual(obj['customer']['id'], 1)
     
+    def test_post_project_shipping(self):
+        """
+        Test creating a project packing list via POST
+        """
+        data = {'project': {'id': 1},
+                'phase': {'id': 1},
+                'items': [
+                    {'description': 'TK 1/2'}
+                ]}
+                
+        resp = self.client.post('/api/v1/shipping/', format='json', data=data)
+        
+        # Test client response
+        self.assertEqual(resp.status_code, 201)
+        
     def test_post_with_one_item(self):
         """
         Tests creating a resource via POST

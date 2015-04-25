@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class PurchaseOrder(models.Model):
     supplier = models.ForeignKey(Supplier)
-    order_date = models.DateTimeField(default=datetime.datetime.now())
+    order_date = models.DateTimeField(auto_now_add=True)
     created = models.DateTimeField(auto_now_add=True)
     receive_date = models.DateTimeField(null=True)
     paid_date = models.DateTimeField(null=True)

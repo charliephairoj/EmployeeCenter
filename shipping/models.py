@@ -16,18 +16,21 @@ from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
 from media.models import S3Object
+from projects.models import Project, Phase
 
 
 class Shipping(models.Model):
     delivery_date = models.DateTimeField()
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
-    acknowledgement = models.ForeignKey(Acknowledgement,
+    acknowledgement = models.ForeignKey(Acknowledgement, null=True,
                                         on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)
     time_created = models.DateTimeField(auto_now_add=True)
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
     comments = models.TextField(null=True, blank=True)
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    #project = models.ForeignKey(Project, null=True)
+    #phase = models.ForeignKey(Phase, null=True)
 
     def get_data(self):
 
@@ -151,7 +154,7 @@ class Shipping(models.Model):
 
 class Item(models.Model):
     shipping = models.ForeignKey(Shipping, related_name='items')
-    item = models.ForeignKey(acknowledgements.models.Item)
+    item = models.ForeignKey(acknowledgements.models.Item, null=True)
     description = models.TextField()
     quantity = models.IntegerField()
     comments = models.TextField(blank=True, null=True)
