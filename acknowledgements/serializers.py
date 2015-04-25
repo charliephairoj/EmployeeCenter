@@ -221,6 +221,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.project = validated_data.pop('project', instance.project)
         
+        instance.create_and_upload_pdfs()
+        
         #Update attached files
         files = validated_data.pop('files', [])
         for file in files:
