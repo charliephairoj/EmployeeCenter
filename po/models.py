@@ -213,7 +213,7 @@ class Item(models.Model):
     quantity = models.DecimalField(decimal_places=10, max_digits=24)
     status = models.TextField(default="Ordered")
     discount = models.IntegerField(default=0)
-    unit_cost = models.DecimalField(decimal_places=3, max_digits=12, default=0)
+    unit_cost = models.DecimalField(decimal_places=4, max_digits=15, default=0)
     total = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     comments = models.TextField(null=True)
         
