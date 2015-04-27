@@ -265,6 +265,7 @@ class PurchaseOrderTest(APITestCase):
         #validate the response
         po = base_purchase_order.copy()
         po['project'] = {'codename': 'Ladawan'}
+        po['currency'] = 'RMB'
         resp = self.client.post('/api/v1/purchase-order/',
                                 data=po,
                                 format='json')
@@ -280,6 +281,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertIsInstance(obj['project'], dict)
         self.assertEqual(obj['project']['id'], 2)
         self.assertEqual(obj['project']['codename'], 'Ladawan')
+        self.assertEqual(obj['currency'], 'RMB')
         
         #validate the resource in the database
         po = PurchaseOrder.objects.get(pk=2)
