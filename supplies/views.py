@@ -207,7 +207,38 @@ class FabricMixin(object):
         
         
 class FabricList(FabricMixin, SupplyList):
-    pass
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        query = self.request.QUERY_PARAMS.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
+                                       Q(description__icontains=query) |
+                                       Q(products__reference__icontains=query) |
+                                       Q(pattern__icontains=query) |
+                                       Q(color_icontains=query))
+        
+        #Filter based on supplier
+        s_id = self.request.QUERY_PARAMS.get('supplier_id', None)
+        if s_id:
+            queryset = queryset.filter(products__supplier_id=s_id)
+        
+        #Filter based on product upc code
+        upc = self.request.QUERY_PARAMS.get('upc', None)
+        if upc:
+            queryset = queryset.filter(products__upc=upc)
+
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
+        return queryset
     
 
 class FabricDetail(FabricMixin, SupplyDetail):

@@ -293,6 +293,42 @@ class FabricSerializer(SupplySerializer):
     class Meta:
         model = Fabric
         
+    def create(self, validated_data):
+        """
+        Override the 'create' method in order to customize creation of products
+        """
+        if 'supplier' in validated_data:
+            suppliers_data = [validated_data.pop('supplier')]
+        elif 'suppliers' in validated_data:
+            suppliers_data = validated_data.pop('suppliers')
+        elif 'products' in validated_data:
+            suppliers_data = validated_data.pop('products')
+        else:
+
+            data = {}
+            for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_purchasing_units', 'upc']:
+                try:
+                    data[field] = self.context['request'].data[field]
+                except KeyError:
+                    pass
+                    
+            try:
+                data['supplier'] = self.context['request'].data['supplier']
+            except KeyError:
+                data['supplier'] = self.context['request'].data['suppliers'][0]
+                       
+            suppliers_data = [data]
+            
+        instance = self.Meta.model.objects.create(**validated_data)
+        instance.description = u"{0} Col: {1}".format(instance.pattern, instance.color)
+        instance.create_stickers()
+        
+        product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
+        if product_serializer.is_valid(raise_exception=True):
+            product_serializer.save()
+            
+        return instance
+        
         
 class LogSerializer(serializers.ModelSerializer):
     supply = SupplySerializer(required=False, allow_null=True)
