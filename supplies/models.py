@@ -352,6 +352,10 @@ class Fabric(Supply):
     grade = models.TextField()
     handling = models.TextField()
     repeat = models.TextField()
+    red = models.IntegerField(null=True)
+    green = models.IntegerField(null=True)
+    blue = models.IntegerField(null=True)
+    
     
     @classmethod
     def create(cls, **kwargs):
