@@ -221,7 +221,7 @@ class FabricList(FabricMixin, SupplyList):
                                        Q(description__icontains=query) |
                                        Q(products__reference__icontains=query) |
                                        Q(pattern__icontains=query) |
-                                       Q(color_icontains=query))
+                                       Q(color__icontains=query))
         
         #Filter based on supplier
         s_id = self.request.QUERY_PARAMS.get('supplier_id', None)
