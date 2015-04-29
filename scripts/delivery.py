@@ -72,8 +72,7 @@ if __name__ == "__main__":
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["charliep@dellarobbiathailand.com"],
-                      #["deliveries@dellarobbiathailand.com"],
+                      ["deliveries@dellarobbiathailand.com"],
                       format='html')
 
 
