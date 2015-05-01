@@ -11,12 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
     item = serializers.PrimaryKeyRelatedField(queryset=AckItem.objects.all(), required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Item
         read_only_fields = ('shipping',)
+        fields = ('description', 'quantity', 'comments', 'gross_weight', 'net_weight', 'item', 'id')
         
     def create(self, validated_data):
         """
@@ -92,6 +94,21 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         
+        items_data = validated_data.pop('items', [])
+        
+        for item_data in items_data:
+            try:
+                item_data['item'] = item_data['item']['id']
+            except KeyError:
+                pass
+            except TypeError:
+                item_data['item'] = item_data['item'].id
+                
+            item = Item.objects.get(pk=item_data['id'])
+            item_serializer = ItemSerializer(item, data=item_data, context={'shipping': instance})
+            if item_serializer.is_valid(raise_exception=True):
+                item_serializer.save()
+                
         if instance.delivery_date != delivery_date:
             instance.delivery_date = delivery_date
             instance.acknowledgement.delivery_date = delivery_date

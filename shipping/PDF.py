@@ -248,11 +248,11 @@ class ShippingPDF(object):
         return table
     
     def _create_products_title_section(self):
-        table = Table([['Product ID', 'Description', 'Qty']], colWidths=(65, 425, 40))
+        table = Table([['Product ID', 'Description', 'Qty', 'Net Weight', 'Gross Weight']], colWidths=(65, 240, 40, 90, 90))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                       ('GRID', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
                       #General alignment
-                      ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
+                      ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                       #Align description
                       ('ALIGNMENT', (1,0), (1,-1), 'LEFT')]
         style = TableStyle(style_data)
@@ -264,7 +264,9 @@ class ShippingPDF(object):
         #add the data
         data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
                      product.description, 
-                     product.quantity])
+                     product.quantity,
+                     u"{0} kg".format(product.net_weight),
+                     u"{0} kg".format(product.gross_weight)])
         try:
             data.append(['', self._get_fabric_table(product.item.fabric, "   Fabric:")])
         except:
@@ -299,7 +301,7 @@ class ShippingPDF(object):
             image_url = product.item.image.generate_url(time=3600)
             data.append(['', self.get_image(image_url, height=100)])
         #Create table
-        table = Table(data, colWidths=(65, 425, 40))
+        table = Table(data, colWidths=(65, 240, 40, 90, 90))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (0,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
@@ -309,7 +311,8 @@ class ShippingPDF(object):
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
                             #Align description
-                            ('ALIGNMENT', (1,0), (1,-1), 'LEFT')]
+                            ('ALIGNMENT', (1,0), (1,-1), 'LEFT'),
+                            ('ALIGNMENT', (3, 0), (-1, -1), 'RIGHT')]
         style = TableStyle(style_data)
         table.setStyle(style)
         return table
