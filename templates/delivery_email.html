@@ -152,7 +152,7 @@
     <table class="content" width="100%" bgcolor="#f6f8f1" border="1" cellpadding="0" cellspacing="0">
 		<thead>
 			<tr>
-				<td colspan="7">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
+				<td colspan="8">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
 			</tr>
 			<tr>
 				<th style="{{header_style}}">#</th>
@@ -160,8 +160,9 @@
 				<th style="{{header_style}}">Comments</th>
 				<th style="{{header_style}}">Status</th>
 				<th style="{{header_style}}">Delivery Date</th>
-				<th style="{{header_style}}">Description</th>
-				<th style="{{header_style}} width:5em;">Qty</th>
+				<th style="{{header_style}} width:10em">Description</th>
+				<th style="{{header_style}} width:2em;">Qty</th>
+				<th style="{{header_style}} width:6em">Fabric</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -172,14 +173,30 @@
 				<td style="{{cell_style}} max-width:20%;">{{ack.remarks}}</td>
 				<td style="{{cell_style}}">{{ack.status}}</td>
 				<td style="{{cell_style}} white-space:nowrap;">{{ack.delivery_date|date:"d-m-Y"}}</td>
-				<td colspan="2">
+				<td colspan="3">
 					<table width="100%" border="0" cellpadding="0" cellspacing="0">
 						<tbody>
 							{% for item in ack.items.all %}
 							<tr>
-								<td style="{{item_cell_style}}">{{item.description}}</td>
-								<td style="{{item_cell_style}} width:5em; padding:0.75em 1em; text-align:center;">{{item.quantity}}</td>
+								<td style="{{item_cell_style}} width:10em;">{{item.description}}</td>
+								<td style="{{item_cell_style}} width:2em; padding:0.75em 1em; text-align:center;">{{item.quantity}}</td>
+								<td style="{{item_cell_style}} width:6em;">{% if item.fabric %}{{item.fabric.description}}{% endif %}</td>
 							</tr>
+							{% for pillow in item.pillows.all %}
+							<tr>
+								<td style="{{item_cell_style}} padding-left:2em; width:10em;">-{{pillow.type}} pillow</td>
+								<td style="{{item_cell_style}} width:2em; text-align:center;">{{pillow.quantity}}</td>
+								<td style="{{item_cell_style}} width:6em;">
+									{% if pillow.fabric %}
+									
+									{{pillow.fabric.description}}
+									
+									{% endif %}
+								</td>
+									
+							</tr>
+							{% endfor %}
+									
 							{% endfor %}
 						</tbody>
 					</table>
