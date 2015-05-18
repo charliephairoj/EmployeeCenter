@@ -72,7 +72,7 @@ class StickerDocTemplate(BaseDocTemplate):
 class EmployeeStickerPage(object):
     queryset = Employee.objects.raw("""
     SELECT * FROM hr_employee 
-    WHERE last_modified > date('2015-3-24')
+    WHERE last_modified > date('2015-4-15')
     ORDER BY image_id is null, nationality, first_name, last_name
     """)
     sticker_width = 55 * mm

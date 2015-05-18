@@ -142,7 +142,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                                                allow_null=True,
                                                required=False)
     items = ItemSerializer(many=True)
-    remarks = serializers.CharField(required=False, allow_null=True)
+    remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
