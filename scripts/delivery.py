@@ -37,83 +37,6 @@ from acknowledgements.models import Acknowledgement
 
 
 django.setup()
-
-
-class DeliveryPDF(object):
-    queryset = Acknowledgement.objects.all()
-    
-    def __init__(self, *args, **kwargs):
-        #super(self, AcknowledgementEmail).__init__(*args, **kwargs)
-        
-        self.start_date = datetime.today()
-        self.end_date = self.start_date + timedelta(days=31)
-        self.queryset = self.queryset.filter(delivery_date__range=[self.start_date,
-                                                                   self.end_date])
-        self.queryset = self.queryset.order_by('delivery_date')
-        
-    def create(self):
-        doc = SimpleDocTemplate('delivery.pdf', 
-                                pagesize=landscape(A4), 
-                                leftMargin=12, 
-                                rightMargin=12, 
-                                topMargin=12, 
-                                bottomMargin=12)
-        stories = []
-        
-        stories.append(self._create_main_table())
-        doc.build(stories)
-        
-    def _create_main_table(self):
-        
-        # Create the headings
-        data = [["#", "Customer", "Comments", "Status", "Delivery Date", "Description", "Fabric", "Qty"]]
-        
-        for ack in self.queryset:
-            data.append([ack.id,
-                         ack.customer.name,
-                         u"{0}".format(ack.remarks),
-                         ack.status,
-                         ack.delivery_date,
-                         ""])#self._create_items_table(ack)])
-                         
-        table = Table(data, colWidths=(50, 100, 100, 75, 100, 100, 100, 50))
-        table.setStyle(TableStyle([('SPAN', (-2, 1), (-1, -1))]))
-        return table
-                         
-    def _create_items_table(self, ack):
-        
-        data = []
-        
-        if ack.items.count() < 5:
-            for item in ack.items.all():
-                item_array = [item.description]
-            
-                if item.fabric:    
-                    item_array.append(item.fabric.description)
-                else:
-                    item_array.append("")
-                
-                item_array.append(item.quantity)
-            
-                data.append(item_array)
-                """
-                for pillow in item.pillows.all():
-                    pillow_array = [u"    -{0} pillow".format(pillow.type)]
-                
-                    if pillow.fabric:
-                        pillow_array.append("{0}, Col: {1}".format(pillow.fabric.pattern, pillow.fabric.color))  
-                    else:
-                        pillow_array.append("")     
-        
-                    pillow_array.append(pillow.quantity)
-                
-                    data.append(pillow_array)
-                """
-        else:
-            data.append(["", "", ""])
-        table = Table(data, colWidths=(100, 100, 50))
-
-        return table
         
         
 class AcknowledgementEmail(object):
@@ -159,7 +82,6 @@ class AcknowledgementEmail(object):
             
             
 if __name__ == "__main__":
-    """
     email = AcknowledgementEmail()
     message = email.get_message()
     e_conn = boto.ses.connect_to_region('us-east-1')
@@ -168,10 +90,7 @@ if __name__ == "__main__":
                       message,
                       ["deliveries@dellarobbiathailand.com"],
                       format='html')
-    """
-    pdf = DeliveryPDF()
-    pdf.create()
-
+   
 
 
 

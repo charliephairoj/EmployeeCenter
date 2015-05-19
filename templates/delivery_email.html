@@ -157,6 +157,7 @@
 			<tr>
 				<th style="{{header_style}}">#</th>
 				<th style="{{header_style}}">Customer</th>
+				<th style="{{header_style}}">PO</th>
 				<th style="{{header_style}}">Comments</th>
 				<th style="{{header_style}}">Status</th>
 				<th style="{{header_style}}">Delivery Date</th>
@@ -170,6 +171,7 @@
 			<tr>
 				<td style="{{cell_style}} min-width:5em;">{{ack.id}}</td>
 				<td style="{{cell_style}}">{{ack.customer.name}}</td>
+				<td style="{{cell_style}}">{{ack.po_id}}</td>
 				<td style="{{cell_style}} max-width:20%;">{{ack.remarks}}</td>
 				<td style="{{cell_style}}">{{ack.status}}</td>
 				<td style="{{cell_style}} white-space:nowrap;">{{ack.delivery_date|date:"d-m-Y"}}</td>
