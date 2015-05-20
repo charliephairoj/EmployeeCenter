@@ -103,7 +103,8 @@ class PurchaseOrderMixin(object):
         for index, item in enumerate(request.data['items']):
             # Only reassign the 'id' if it is post
             try:
-                request.data['items'][index]['supply'] = item['supply']['id']
+                if not isinstance(request.data['items'][index]['supply'], (int, long)):
+                    request.data['items'][index]['supply'] = item['supply']['id']
             except (TypeError, KeyError):
                 try:
                     request.data['items'][index]['supply'] = item['id']
