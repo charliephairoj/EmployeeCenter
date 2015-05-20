@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(required=False)
     item = serializers.PrimaryKeyRelatedField(queryset=AckItem.objects.all(), required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
@@ -130,8 +130,11 @@ class ShippingSerializer(serializers.ModelSerializer):
         except:
             pass
             
-        ret['acknowledgement'] = {'id': instance.acknowledgement.id}
-        
+        try:
+            ret['acknowledgement'] = {'id': instance.acknowledgement.id}
+        except AttributeError:
+            pass
+            
         try:
             ret['acknowledgement']['project'] = {'id': instance.acknowledgement.project.id,
                                                  'codename': instance.acknowledgement.project.codename}
