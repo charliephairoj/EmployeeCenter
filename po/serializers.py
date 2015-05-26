@@ -99,7 +99,7 @@ class ItemSerializer(serializers.ModelSerializer):
             logger.debug(u"{0} : {1}".format(instance.supply.id, instance.description))
         
         except Product.MultipleObjectsReturned:
-            product = Product.objects.get(supply=instance.supply,
+            product = Product.objects.filter(supply=instance.supply,
                                           supplier=instance.purchase_order.supplier).order_by('id')[0]     
             ret['units'] = product.purchasing_units
             
