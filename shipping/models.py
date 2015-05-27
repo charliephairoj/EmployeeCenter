@@ -156,7 +156,7 @@ class Item(models.Model):
     shipping = models.ForeignKey(Shipping, related_name='items')
     item = models.ForeignKey(acknowledgements.models.Item, null=True)
     description = models.TextField()
-    quantity = models.IntegerField()
+    quantity = models.DecimalField(decimal_places=2, max_digits=12)
     comments = models.TextField(blank=True, null=True)
     net_weight = models.DecimalField(decimal_places=2, max_digits=12, null=True)
     gross_weight = models.DecimalField(decimal_places=2, max_digits=12, null=True)
