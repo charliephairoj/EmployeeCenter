@@ -220,8 +220,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.project = validated_data.pop('project', instance.project)
+        instance.status = validated_data.pop('status', instance.status)
         
-        instance.create_and_upload_pdfs()
+        if instance.status.lower() in ['acknowledged', 'shipped']:
+            instance.create_and_upload_pdfs()
         
         #Update attached files
         files = validated_data.pop('files', [])
