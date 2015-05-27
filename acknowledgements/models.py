@@ -353,7 +353,7 @@ class Item(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)
     type = models.CharField(max_length=20, null=True)
-    quantity = models.IntegerField(null=False)
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     width = models.IntegerField(db_column='width', default=0)
