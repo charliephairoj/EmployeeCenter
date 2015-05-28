@@ -56,7 +56,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         instance.supply.supplier = self.context['supplier']
         instance.description = validated_data.pop('description', None) or instance.description
-        instance.unit_cost = validated_data.pop('unit_cost', None) or instance.supply.cost
+        instance.unit_cost = validated_data.pop('unit_cost', None)
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
         instance.comments = validated_data.get('comments', instance.comments)
@@ -283,8 +283,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             instance.save()
              
         else:  
-            items_data = validated_data.pop('items')
-            items_data = self.context['request'].data['items']
+            items_data = validated_data.pop('items', self.context['request'].data['items'])
+
             for item_data in items_data:
                 try:
                     item_data['supply'] = item_data['supply'].id
