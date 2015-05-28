@@ -221,7 +221,7 @@ class Supply(models.Model):
                 
                 for p in Product.objects.filter(supply=self, supplier=supplier):
                     logger.debug(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
-                logger.debut("Too many products returned")
+                logger.debug("Too many products returned")
                 
                 self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
                 #raise ValueError("Too many products return for this supply and supplier combo")
