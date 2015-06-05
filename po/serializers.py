@@ -60,9 +60,14 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
         instance.comments = validated_data.get('comments', instance.comments)
+        
+        print instance.unit_cost
+        
+        
         instance.calculate_total()
         instance.save()
-
+        
+        
         #Check status change
         new_status = validated_data.get('status', instance.status)
         if new_status != instance.status and instance.status.lower() == "ordered":

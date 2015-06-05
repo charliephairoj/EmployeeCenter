@@ -71,6 +71,12 @@ class AcknowledgementEmail(object):
                                                                    self.end_date])
         self.queryset = self.queryset.order_by('delivery_date')
         
+        self.queryset = Acknowledgement.objects.raw("""
+        SELECT id, delivery_date, status from acknowledgements_acknowledgement
+        where (delivery_date <= now() + interval '31 days' AND delivery_date >= now())
+        OR (delivery_date > now() - interval '14 days' and (lower(status) = 'acknowledged' OR lower(status) = 'in production'))
+        ORDER BY delivery_date""")
+        
     def get_message(self):
         #return self.message
         return render_to_string('delivery_email.html', {'acknowledgements': self.queryset,

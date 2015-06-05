@@ -364,7 +364,7 @@ class Item(models.Model):
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
-    status = models.CharField(max_length=50, default="ACKNOWLEDGED")
+    status = models.CharField(max_length=50, default="acknowledged")
     comments = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
