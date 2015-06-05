@@ -54,6 +54,7 @@ class ItemSerializer(serializers.ModelSerializer):
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, 
                                                write_only=True, required=False,
                                                allow_null=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
                                                
     class Meta:
         model = Item
@@ -222,9 +223,27 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
         instance.status = validated_data.pop('status', instance.status)
         
-        if instance.status.lower() in ['acknowledged', 'shipped']:
-            instance.create_and_upload_pdfs()
-        
+        #Update the items
+        items_data = validated_data.pop('items')
+
+        for item_data in items_data:
+            item = Item.objects.get(pk=item_data['id'])
+            if not item.fabric:
+                try:
+                    item.fabric = item_data['fabric']
+                    item.save()
+                except KeyError:
+                    pass
+                
+            for pillow_data in item_data['pillows']:
+                pillow = item.pillows.get(type=pillow_data['type'], quantity=pillow_data['quantity'])
+                try:
+                    pillow.fabric = pillow_data['fabric']
+                    pillow.save()
+                except KeyError:
+                    pass
+                
+                
         #Update attached files
         files = validated_data.pop('files', [])
         for file in files:
@@ -233,6 +252,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                     acknowledgement=instance)
+                                    
+        if instance.status.lower() in ['acknowledged', 'shipped']:
+            instance.create_and_upload_pdfs()
                                     
         instance.save()
         
