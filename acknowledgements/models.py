@@ -638,7 +638,7 @@ class Log(models.Model):
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
     delivery_date = models.DateField(null=True)
-    acknowledgement = models.ForeignKey(Acknowledgement)
+    acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs')
 
     @classmethod
     def create(cls, message, acknowledgement, employee=None):

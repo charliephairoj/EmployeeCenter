@@ -309,6 +309,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except AttributeError:
                 pass
                 
+        # Retrieve and serialize logs for the acknowledgements
+        try:
+            ret['logs'] = [{'message': log.message,
+                            'timestamp': log.timestamp} for log in instance.logs.all()]
+        except (AttributeError):
+            pass
+                
         except AttributeError:
             pass
             """
