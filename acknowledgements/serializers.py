@@ -226,7 +226,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         if status.lower() != instance.status.lower():
             employee = self.context['request'].user
             message = "Order #{0} is {1}.".format(instance.id, status.lower())
-            log = AckLog.objects.create(message=message, acknowledgement=instance, employee=)
+            log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
             instance.status = status
             
         #Update the items
