@@ -4,7 +4,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
-from acknowledgements.models import Acknowledgement, Item, Pillow, File
+from acknowledgements.models import Acknowledgement, Item, Pillow, File, Log
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -221,8 +221,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.project = validated_data.pop('project', instance.project)
-        instance.status = validated_data.pop('status', instance.status)
+        status = validated_data.pop('status', instance.status)
         
+        if status.lower() != instance.status.lower():
+            message = "Order #{0} is {1}.".format(instance.id, status.lower())
+            log = Log.create(message=message, acknowledgement=instance)
+            instance.status = status
+            
         #Update the items
         items_data = validated_data.pop('items')
 

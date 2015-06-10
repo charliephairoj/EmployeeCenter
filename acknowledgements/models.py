@@ -641,10 +641,9 @@ class Log(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)
 
     @classmethod
-    def create(cls, event, acknowledgement, employee):
+    def create(cls, message, acknowledgement, employee=None):
         """Creates an acknowlegement log"""
-        log = cls(event=event, acknowledgement=acknowledgement,
-                  employee=employee)
+        log = cls(message=message, acknowledgement=acknowledgement)
         log.save()
         return log
 
