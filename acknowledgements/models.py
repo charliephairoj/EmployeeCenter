@@ -31,7 +31,7 @@ class Acknowledgement(models.Model):
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
-    status = models.TextField(default='ACKNOWLEDGED')
+    status = models.TextField(default='acknowledged')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)

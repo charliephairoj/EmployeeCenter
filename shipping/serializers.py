@@ -75,12 +75,14 @@ class ShippingSerializer(serializers.ModelSerializer):
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
             
+        """    
         if instance.acknowledgement:
             if instance.acknowledgement.items.count() == instance.acknowledgement.items.filter(status='SHIPPED').count():
                 instance.acknowledgement.status = 'SHIPPED'
             else:
                 instance.acknowledgement.status = 'PARTIALLY SHIPPED'
             instance.acknowledgement.save()    
+        """
         
         instance.create_and_upload_pdf()
         
