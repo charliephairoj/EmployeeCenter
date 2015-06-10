@@ -4,7 +4,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
-from acknowledgements.models import Acknowledgement, Item, Pillow, File, Log
+from acknowledgements.models import Acknowledgement, Item, Pillow, File, Log as AckLog
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -224,8 +224,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         status = validated_data.pop('status', instance.status)
         
         if status.lower() != instance.status.lower():
+            employee = self.context['request'].user
             message = "Order #{0} is {1}.".format(instance.id, status.lower())
-            log = Log.create(message=message, acknowledgement=instance)
+            log = AckLog.objects.create(message=message, acknowledgement=instance, employee=)
             instance.status = status
             
         #Update the items
@@ -258,7 +259,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                     acknowledgement=instance)
                                     
-        if instance.status.lower() in ['acknowledged', 'shipped']:
+        if instance.status.lower() in ['acknowledged', 'in production']:
             instance.create_and_upload_pdfs()
                                     
         instance.save()
@@ -319,11 +320,18 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             """
             
         # Retrieve and serialize logs for the acknowledgements
+        def get_employee(log):
+            try:
+                return "{0} {1}".format(log.employee.first_name, log.employee.last_name)
+            except Exception as e:
+                return "NA"
+                
         try:
             ret['logs'] = [{'message': log.message,
+                            'employee': get_employee(log),
                             'timestamp': log.timestamp} for log in instance.logs.all()]
-        except (AttributeError):
-            pass
+        except Exception as e:
+            logger.debug(e)
             
         try:
             ret['files'] = [{'id': file.id,
