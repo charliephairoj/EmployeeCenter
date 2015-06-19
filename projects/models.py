@@ -20,7 +20,7 @@ class Project(models.Model):
     due_date = models.DateField(db_column="due_date", null=True)
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
-    #supplies = models.ManyToManyField(Supply, through='ProjectSupply', related_name='supplies')
+    supplies = models.ManyToManyField(Supply, through='ProjectSupply')
     files = models.ManyToManyField(S3Object, through='File', related_name='project')
     quantity = models.IntegerField(default=0)
     

@@ -46,6 +46,8 @@ class ProjectSerializer(serializers.ModelSerializer):
             ret['items'] = []
             for acknowledgement in instance.acknowledgements.all():
                 ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
+                
+        ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
         
         return ret
         
@@ -71,8 +73,10 @@ class ProjectSerializer(serializers.ModelSerializer):
         
         return super(ProjectSerializer, self).update(instance, validated_data)
         
-    def _create_or_update_supplies(supplies, project):
+    def _create_or_update_supplies(self, supplies, project):
         #Create or update new supplies
+        id_list = [supply['id'] for supply in supplies]
+        
         for supply_data in supplies:
             try:
                 project_supply = ProjectSupply.objects.get(supply=Supply.objects.get(pk=supply_data['id']),
@@ -86,10 +90,23 @@ class ProjectSerializer(serializers.ModelSerializer):
             project_supply.save()
             
         #Remove delete supplies
-        for supply in instance.supplies.all():
+        for supply in project.supplies.all():
             if supply.id not in id_list:
                 ProjectSupply.objects.get(supply=supply, project=project).delete()
                 
+    def _serialize_supply(self, supply, project):
+        ret = {'id': supply.id,
+               'description': supply.description}
+               
+        ret['quantity'] = ProjectSupply.objects.get(supply=supply, project=project).quantity
+        
+        try:
+            ret['image'] = {'url': supply.image.generate_url()}
+        except AttributeError:
+            pass
+            
+        return ret
+        
                 
 class RoomSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
