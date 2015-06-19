@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from supplies.serializers import SupplySerializer
 from acknowledgements.serializers import ItemSerializer as AckItemSerializer
-from projects.models import Project, Phase, Room, Item, File, ItemSupply, Part
+from projects.models import Project, Phase, Room, Item, File, ItemSupply, Part, ProjectSupply
 from media.models import S3Object
 from supplies.models import Supply
 
@@ -27,12 +27,13 @@ class PhaseSerializer(serializers.ModelSerializer):
         
 
 class ProjectSerializer(serializers.ModelSerializer):
-    supplies = SupplySerializer(read_only=True, many=True)
+    supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
+                                     required=False)
     #phases = PhaseSerializer(many=True)
     
     class Meta:
         model = Project
-        fields = ('id', 'codename', 'rooms', 'quantity', 'phases')
+        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies')
         depth = 1
         
     def to_representation(self, instance):
@@ -48,7 +49,48 @@ class ProjectSerializer(serializers.ModelSerializer):
         
         return ret
         
-    
+    def create(self, validated_data):
+        """
+        Create
+        """
+        supplies = validated_data.pop('supplies', [])
+        
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        self._create_or_update_supplies(supplies, instance)
+        
+        return instance
+        
+    def update(self, instance, validated_data):
+        """
+        Update
+        """
+        supplies = validated_data.pop('supplies', [])
+        
+        self._create_or_update_supplies(supplies, instance)
+        
+        return super(ProjectSerializer, self).update(instance, validated_data)
+        
+    def _create_or_update_supplies(supplies, project):
+        #Create or update new supplies
+        for supply_data in supplies:
+            try:
+                project_supply = ProjectSupply.objects.get(supply=Supply.objects.get(pk=supply_data['id']),
+                                                project=project)
+            except ProjectSupply.DoesNotExist:
+                project_supply = ProjectSupply.objects.create(supply=Supply.objects.get(pk=supply_data['id']),
+                                                        project=project)
+                id_list.append(project_supply.supply.id)
+                
+            project_supply.quantity = supply_data.get('quantity', project_supply.quantity)
+            project_supply.save()
+            
+        #Remove delete supplies
+        for supply in instance.supplies.all():
+            if supply.id not in id_list:
+                ProjectSupply.objects.get(supply=supply, project=project).delete()
+                
+                
 class RoomSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
     reference = serializers.CharField(required=False, allow_null=True, allow_blank=True)
