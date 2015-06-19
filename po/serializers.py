@@ -340,8 +340,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     def _apply_new_quantity(self, item, po):
         # Retrieve product responding to this item and supplier
-        product = Product.objects.get(supply=item.supply, 
-                                      supplier=po.supplier)
+        try:
+            product = Product.objects.get(supply=item.supply, 
+                                          supplier=po.supplier)
+        except Product.MultipleObjectsReturned as e:
+            logger.warn(e)
+            product = Product.objects.filter(supply=item.supply, supplier=po.supplier)
+            
         
         #Calculate the quantity to add to current supply qty
         try:

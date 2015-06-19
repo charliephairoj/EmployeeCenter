@@ -361,6 +361,7 @@ class Item(models.Model):
     height = models.IntegerField(db_column='height', default=0)
     units = models.CharField(max_length=20, default='mm', blank=True)
     fabric = models.ForeignKey(Fabric, null=True, blank=True)
+    fabric_quantity = models.DecimalField(null=True, max_digits=12, decimal_places=2)
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
@@ -625,6 +626,7 @@ class Pillow(models.Model):
     type = models.CharField(db_column="type", max_length=10)
     quantity = models.IntegerField(default=1)
     fabric = models.ForeignKey(Fabric, null=True, blank=True)
+    fabric_quantity = models.DecimalField(null=True, max_digits=12, decimal_places=2)
 
     @classmethod
     def create(cls, **kwargs):

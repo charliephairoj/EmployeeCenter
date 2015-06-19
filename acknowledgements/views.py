@@ -129,8 +129,12 @@ class AcknowledgementMixin(object):
 
                     if (pillow['type'], fabric_id) in pillows:
                         pillows[(pillow['type'], fabric_id)]['quantity'] += 1
+                        pillows[(pillow['type'], fabric_id)]['fabric_quantity'] += pillow['fabric_quantity']
                     else: 
-                        pillows[(pillow['type'], fabric_id)] = {'quantity': 1}
+                        try:
+                            pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': pillow['fabric_quantity']}
+                        except KeyError:
+                            pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': 0}
                 
                 item['pillows'] = []
                 for pillow in pillows:
@@ -139,6 +143,11 @@ class AcknowledgementMixin(object):
                                    
                     if pillows[pillow]['quantity']:
                         pillow_data['quantity'] = pillows[pillow]['quantity']
+                    
+                    try:
+                        pillow_data['fabric_quantity'] = pillows[pillow]['fabric_quantity']
+                    except KeyError:
+                        pass
                         
                     item['pillows'].append(pillow_data)
                     
@@ -235,7 +244,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         request = self._format_primary_key_data(request)
         
         request = self._condense_pillows(request)
-        
+
         return super(AcknowledgementList, self).post(request, *args, **kwargs)
          
     def get_queryset(self):
@@ -284,11 +293,8 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
         """
         request = self._format_primary_key_data_for_put(request)
         
-        try:
-            request = self._condense_pillows(request)
-        except Exception:
-            pass
-            
+        request = self._condense_pillows(request)
+       
         return super(AcknowledgementDetail, self).put(request, *args, **kwargs)
     
 class AcknowledgementViewSet(viewsets.ModelViewSet):

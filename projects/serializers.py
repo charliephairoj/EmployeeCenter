@@ -27,7 +27,7 @@ class PhaseSerializer(serializers.ModelSerializer):
         
 
 class ProjectSerializer(serializers.ModelSerializer):
-    #supplies = SupplySerializer(read_only=True, many=True)
+    supplies = SupplySerializer(read_only=True, many=True)
     #phases = PhaseSerializer(many=True)
     
     class Meta:

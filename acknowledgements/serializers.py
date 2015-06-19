@@ -16,20 +16,21 @@ from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class PillowSerializer(serializers.ModelSerializer):
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
+    fabric_quantity = serializers.DecimalField(required=False, allow_null=True, decimal_places=2, max_digits=12)
     
     class Meta:
         model = Pillow
-        field = ('type', 'fabric', 'quantity')
-        exclude = ('item',)
+        fields = ('type', 'fabric', 'quantity', 'fabric_quantity')
         
     def create(self, validated_data):
         """
         Override the 'create' method in order to assign the item pass via the context
-        """
+        """        
         item = self.context['item']
         
         instance = self.Meta.model.objects.create(item=item, **validated_data)
@@ -103,7 +104,11 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Updates the instance after the parent method is called
         """
-        return super(ItemSerializer, self).update(instance, validated_data)
+        print "Item Update: {0}".format(instance.quantity)
+        instance.fabric = validated_data.pop('fabric', None)
+        instance.fabric_quantity = validated_data.pop('fabric_quantity', 0)
+        
+        return instance
         
     def to_representation(self, instance):
         """
@@ -153,6 +158,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created') 
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf')
+        depth = 3
        
         
     def create(self, validated_data):
@@ -186,34 +192,55 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.create_and_upload_pdfs()
         
-        #Add pdfs to files list
+        # Add pdfs to files list
         File.objects.create(file=instance.acknowledgement_pdf, acknowledgement=instance)
         File.objects.create(file=instance.production_pdf, acknowledgement=instance)
         File.objects.create(file=instance.confirmation_pdf, acknowledgement=instance)
         File.objects.create(file=instance.label_pdf, acknowledgement=instance)
 
-        #Assign files
+        # Assign files
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                 acknowledgement=instance)
                     
-        #Extract fabric quantities
+        # Extract fabric quantities
         fabrics = {}
-       
+        
         for item in item_serializer.instance:
             if item.fabric:
                 if item.fabric in fabrics:
-                    fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
+                    fabrics[item.fabric] += Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
                 else:
                     try:
                         fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
                     except TypeError:
                         fabrics[item.fabric] = Decimal('0')
+            
+            #Extract fabric from the pillows
+            for pillow in item.pillows.all():
+                if pillow.fabric:
+                    if pillow.fabric in fabrics:
                         
-        #Log Fabric Reservations
+                        # There is no need to multiple by pillow quantity. The fabric quantity for the pillow already includes the fabric quantity 
+                        # for the total pillows of that particular type
+                        try:
+                            fabrics[pillow.fabric] += Decimal(str(item.quantity)) * pillow.fabric_quantity
+                        except TypeError:
+                            pass
+                            
+                    else:
+                        try:
+                            fabrics[pillow.fabric] = Decimal(str(item.quantity)) * (pillow.fabric_quantity or Decimal('0'))
+                        except TypeError:
+                            fabrics[pillow.fabric] = Decimal('0')
+                        
+        # Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
            
+        # Log Opening of an order
+        message = "Order #{0} was open.".format(instance.id)
+        log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
         
         return instance
         
@@ -231,25 +258,81 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             
         #Update the items
         items_data = validated_data.pop('items')
+        fabrics = {}
 
         for item_data in items_data:
             item = Item.objects.get(pk=item_data['id'])
+            serializer = ItemSerializer(item, item_data, context={'acknowledgement': instance})
+            
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                
+            try:
+                print serializer.instance.description, serializer.instance.fabric.id, serializer.instance.fabric_quantity
+            except Exception:
+                pass
+                
             if not item.fabric:
                 try:
                     item.fabric = item_data['fabric']
                     item.save()
                 except KeyError:
                     pass
+            
+            try: 
+                for pillow_data in item_data['pillows']:
+                        pillow = item.pillows.get(type=pillow_data['type'], quantity=pillow_data['quantity'])
+                        pillow.fabric = pillow_data['fabric']
+                        pillow.fabric_quantity = pillow_data['fabric_quantity']
+                        pillow.save()
+            except KeyError:
+                pass
+            except Pillow.DoesNotExist as e:
+                logger.debug(e)
+                logger.debug(pillow_data)
                 
-            for pillow_data in item_data['pillows']:
-                pillow = item.pillows.get(type=pillow_data['type'], quantity=pillow_data['quantity'])
-                try:
-                    pillow.fabric = pillow_data['fabric']
-                    pillow.save()
-                except KeyError:
-                    pass
-                
-                
+            
+            # Extract fabric quantities from items
+            if item.fabric:
+                print fabrics
+                print item.quantity, item.fabric_quantity
+                if item.fabric in fabrics:
+                    try:
+                        fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
+                    except TypeError:
+                        fabrics[item.fabric] += 0
+                        
+                else:
+                    try:
+                        fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
+                    except TypeError:
+                        fabrics[item.fabric] = Decimal('0')
+                print fabrics
+                #Extract fabric from the pillows
+                for pillow in item.pillows.all():
+                    if pillow.fabric:
+                        if pillow.fabric in fabrics:
+                        
+                            # There is no need to multiple by pillow quantity. The fabric quantity for the pillow already includes the fabric quantity 
+                            # for the total pillows of that particular type
+                            try:
+                                fabrics[pillow.fabric] += Decimal(str(item.quantity)) * pillow.fabric_quantity
+                            except TypeError:
+                                pass
+                            
+                        else:
+                            try:
+                                fabrics[pillow.fabric] = Decimal(str(item.quantity)) * (pillow.fabric_quantity or Decimal('0'))
+                            except TypeError:
+                                fabrics[pillow.fabric] = Decimal('0')
+                    
+            print fabrics
+            print '\n\n'
+                                                                    
+        # Log Fabric Reservations
+        for fabric in fabrics:
+            self.reserve_fabric(fabric, fabrics[fabric], instance.id)
+            
         #Update attached files
         files = validated_data.pop('files', [])
         for file in files:
@@ -346,31 +429,50 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     def reserve_fabric(self, fabric, quantity, acknowledgement_id, employee=None):
         """
         Internal method to apply the new quantity to the obj and
-        create a log of the quantity change
+        create or update a log of the quantity change
         """
         
-        #Cut fabric from stock
-        try:
-            fabric.quantity -= float(quantity)
-        except TypeError:
-            fabric.quantity -= Decimal(quantity)
-        fabric.save()
+       
 
         #Create log to track quantity changes
-        log = Log(supply=fabric, 
-                  action="RESERVE",
-                  quantity=quantity,
-                  employee=employee,
-                  acknowledgement_id=acknowledgement_id,
-                  message="Reserve {0}{1} of {2} for Ack#{3}".format(quantity, 
-                                                                     fabric.units,
-                                                                     fabric.description,
-                                                                     acknowledgement_id))
+        try:
+            log = Log.objects.get(acknowledgement_id=acknowledgement_id, supply_id=fabric.id)
+        except Log.DoesNotExist:
+            log = Log(supply=fabric, acknowledgement_id=acknowledgement_id)
+            
+        # Get log quantity for fabric cut later
+        original_qty = log.quantity or 0
         
-        #Save log                                               
+        # Set log attributes
+        log.action = "RESERVE"
+        log.quantity = quantity
+        log.employee = employee
+        log.message = "Reserve {0}{1} of {2} for Ack#{3}".format(quantity, 
+                                                                 fabric.units,
+                                                                 fabric.description,
+                                                                 acknowledgement_id)
+        
+        # Save log                                               
         log.save()
-                
         
+        # Determine how much to cut
+        if log.quantity > original_qty:
+            #Cut fabric from stock
+            qty = log.quantity - original_qty
+            try:
+                fabric.quantity -= float(qty)
+            except TypeError:
+                fabric.quantity -= Decimal(qty)
+                
+        elif log.quantity < original_qty:
+            # Cut fabric from stock
+            qty = original_qty - log.quantity
+            try:
+                fabric.quantity += float(qty)
+            except TypeError:
+                fabric.quantity += Decimal(qty)
+        
+        fabric.save()
         
         
         
