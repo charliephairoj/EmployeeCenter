@@ -329,6 +329,13 @@ class FabricSerializer(SupplySerializer):
             
         return instance
         
+    def to_representation(self, instance):
+        ret = super(FabricSerializer, self).to_representation(instance)
+        
+        ret['reserved'] = sum([log.quantity or 0 for log in instance.logs.filter(action__icontains='reserve')])
+        
+        return ret
+        
         
 class LogSerializer(serializers.ModelSerializer):
     supply = SupplySerializer(required=False, allow_null=True)
@@ -342,15 +349,10 @@ class LogSerializer(serializers.ModelSerializer):
         action = validated_data.pop('action', instance.action)
         
         #Determine if should update or not
-        if quantity != instance.quantity and action.lower() == 'cut':
-            quantity_difference = Decimal(str(instance.quantity)) - quantity
-
-            #Adjust fabric stock based on cut quantity
-            try:
-                instance.supply.quantity += Decimal(str(quantity_difference))
-            except TypeError:
-                instance.supply.quantity += float(quantity_difference)
-                
+        if action.lower() == 'cut':
+            old_qty = instance.supply.quantity
+            instance.supply.quantity -= quantity
+            assert instance.supply.quantity != old_qty, "The quantities are wrong: {0} : {1} : {2}".format(instance.supply.quantity, old_qty, quantity)
             instance.supply.save()
 
             #Adjust log 
@@ -364,11 +366,6 @@ class LogSerializer(serializers.ModelSerializer):
             instance.save()
         
         elif action.lower() == 'cancel':
-            #Adjust fabric stock
-            try:
-                instance.supply.quantity += Decimal(str(instance.quantity))
-            except TypeError:
-                instance.supply.quantity += float(instance.quantity)
             
             instance.supply.save()
             

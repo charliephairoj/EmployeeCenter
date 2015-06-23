@@ -324,7 +324,7 @@ class Log(models.Model):
     current_quantity = the quantity remaining after the action
     """
     
-    supply = models.ForeignKey(Supply)
+    supply = models.ForeignKey(Supply, related_name='logs')
     supplier = models.ForeignKey(Supplier, null=True)
     message = models.TextField()
     action = models.TextField(default=None)

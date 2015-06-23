@@ -646,7 +646,7 @@ class FabricAPITestCase(APITestCase):
         self.assertEqual(obj['width'], '100.00')
         self.assertEqual(obj['depth'], '0.00')
         self.assertEqual(obj['height'], '300.00')
-        self.assertEqual(obj['description'], 'test')
+        self.assertEqual(obj['description'], u'Max Col: Hot Pink')
         self.assertNotIn('reference', obj)
         self.assertNotIn('cost', obj)
         self.assertIn('suppliers', obj)
