@@ -16,7 +16,6 @@ from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class PillowSerializer(serializers.ModelSerializer):
@@ -103,11 +102,28 @@ class ItemSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Updates the instance after the parent method is called
-        """
-        print "Item Update: {0}".format(instance.quantity)
+        """ 
+        # Update attributes from client side details
+        instance.quantity = validated_data.pop('quantity', instance.quantity)
+        instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
         instance.fabric = validated_data.pop('fabric', None)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', 0)
         
+        # Set the price of the total for this item
+        instance.total = instance.quantity * instance.unit_price
+        instance.save()
+                    
+        pillows = validated_data.pop('pillows', [])
+        for pillow_data in pillows:
+            try:
+                pillow = Pillow.objects.get(type=pillow_data['type'], item=instance, fabric=pillow_data['fabric'])
+                serializer = PillowSerializer(pillow, data=pillow_data)
+            except Pillow.DoesNotExist as e:
+                serializer = PillowSerializer(data=pillow_data, context={'item': instance})
+                
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+            
         return instance
         
     def to_representation(self, instance):
@@ -245,7 +261,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         return instance
         
     def update(self, instance, validated_data):
-        
+            
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.project = validated_data.pop('project', instance.project)
         status = validated_data.pop('status', instance.status)
@@ -256,46 +272,49 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
             instance.status = status
             
-        #Update the items
+        # Extract items data
         items_data = validated_data.pop('items')
         fabrics = {}
-
+                    
+        #Update items individually
         for item_data in items_data:
+                
+            try:
+                item_data['product'] = item_data['product'].id
+            except KeyError as e:
+                pass
+                
             item = Item.objects.get(pk=item_data['id'])
-            serializer = ItemSerializer(item, item_data, context={'acknowledgement': instance})
-            
+            serializer = ItemSerializer(item, data=item_data, context={'acknowledgement': instance})
+                        
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 
+            #Update the fabric for this item
             try:
-                print serializer.instance.description, serializer.instance.fabric.id, serializer.instance.fabric_quantity
-            except Exception:
-                pass
-                
-            if not item.fabric:
-                try:
-                    item.fabric = item_data['fabric']
-                    item.save()
-                except KeyError:
-                    pass
+                item.fabric = item_data['fabric']
+                item.save()
+            except KeyError as e:
+                logger.warn(e)
             
             try: 
                 for pillow_data in item_data['pillows']:
-                        pillow = item.pillows.get(type=pillow_data['type'], quantity=pillow_data['quantity'])
+                        try:
+                            pillow = item.pillows.get(type=pillow_data['type'], fabric=pillow_data['fabric'])
+                        except Pillow.DoesNotExist:
+                            pillow = Pillow(type=pillow_data['type'], fabric=pillow_data['fabric'], item=item)
+                            
                         pillow.fabric = pillow_data['fabric']
                         pillow.fabric_quantity = pillow_data['fabric_quantity']
+                        pillow.quantity = pillow_data['quantity']
                         pillow.save()
             except KeyError:
                 pass
-            except Pillow.DoesNotExist as e:
-                logger.debug(e)
-                logger.debug(pillow_data)
                 
-            
+
             # Extract fabric quantities from items
             if item.fabric:
-                print fabrics
-                print item.quantity, item.fabric_quantity
+                    
                 if item.fabric in fabrics:
                     try:
                         fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
@@ -307,12 +326,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                         fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
                     except TypeError:
                         fabrics[item.fabric] = Decimal('0')
-                print fabrics
+                        
                 #Extract fabric from the pillows
                 for pillow in item.pillows.all():
                     if pillow.fabric:
                         if pillow.fabric in fabrics:
-                        
+                            
                             # There is no need to multiple by pillow quantity. The fabric quantity for the pillow already includes the fabric quantity 
                             # for the total pillows of that particular type
                             try:
@@ -325,14 +344,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                                 fabrics[pillow.fabric] = Decimal(str(item.quantity)) * (pillow.fabric_quantity or Decimal('0'))
                             except TypeError:
                                 fabrics[pillow.fabric] = Decimal('0')
-                    
-            print fabrics
-            print '\n\n'
-                                                                    
+                                           
         # Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
-            
+    
         #Update attached files
         files = validated_data.pop('files', [])
         for file in files:
@@ -341,8 +357,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                     acknowledgement=instance)
-                                    
+                   
         if instance.status.lower() in ['acknowledged', 'in production']:
+            instance.calculate_totals()
             instance.create_and_upload_pdfs()
                                     
         instance.save()

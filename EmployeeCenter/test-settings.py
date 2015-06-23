@@ -11,10 +11,10 @@ DATABASES = {
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
-"""
+
 LOGGING = {
     'version': 1,
-    #'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'formatters': {
         'standard': {
             'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
@@ -52,4 +52,4 @@ LOGGING = {
             'level':'DEBUG',
         },
     }
-}"""
+}

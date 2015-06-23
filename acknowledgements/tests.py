@@ -110,10 +110,7 @@ base_ack = {'customer': base_customer,
                           "quantity": 1}]}
                           
                          
-
-
 logger = logging.getLogger(__name__)   
-logger.setLevel(logging.DEBUG)             
     
 
 class AcknowledgementResourceTest(APITestCase):
@@ -1050,9 +1047,12 @@ class AcknowledgementResourceTest(APITestCase):
         
         # Data to be use for PUT request
         put_data = copy.deepcopy(modified_data)
-        put_data['items'][0]['id'] = 2
-        put_data['items'][1]['id'] = 3
-        put_data['items'][2]['id'] = 4
+        put_data['items'][0]['id'] = 3
+        self.assertEqual(put_data['items'][0]['quantity'], 2)
+        put_data['items'][1]['id'] = 4
+        self.assertEqual(put_data['items'][1]['quantity'], 1)
+        put_data['items'][2]['id'] = 5
+        self.assertEqual(put_data['items'][2]['quantity'], 1)
         put_data['items'][0]['fabric'] = {'id': 2}
         
         # Perform the request
@@ -1064,9 +1064,9 @@ class AcknowledgementResourceTest(APITestCase):
         ack = put_resp.data
         self.assertIsNotNone(ack)
         self.assertEqual(ack['id'], 2)
-        self.assertEqual(ack['items'][0]['quantity'], '2.00')
-        self.assertEqual(ack['items'][1]['quantity'], '1.00')
-        self.assertEqual(ack['items'][2]['quantity'], '1.00')
+        self.assertEqual(ack['items'][0]['quantity'], '2.00', msg="{0}: {1}".format(ack['items'][0]['description'], ack['items'][0]['quantity']))
+        self.assertEqual(ack['items'][1]['quantity'], '1.00', msg="{0}: {1}".format(ack['items'][1]['description'], ack['items'][1]['quantity']))
+        self.assertEqual(ack['items'][2]['quantity'], '1.00', msg="{0}: {1}".format(ack['items'][2]['description'], ack['items'][2]['quantity']))
         
         # Test changed log for fabric 1
         log = Log.objects.get(acknowledgement_id=2, supply_id=1)
@@ -1079,12 +1079,12 @@ class AcknowledgementResourceTest(APITestCase):
         
         # Test changed log for fabric 1
         log = Log.objects.get(acknowledgement_id=2, supply_id=2)
-        self.assertEqual(log.quantity, Decimal('20'))
+        self.assertEqual(log.quantity, Decimal('23'))
         self.assertEqual(log.supply.id, 2)
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
-        self.assertEqual(log.message, 'Reserve 20m of Pattern: Stripe, Col: charcoal for Ack#2')
-        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-20'))
+        self.assertEqual(log.message, 'Reserve 23.0m of Pattern: Stripe, Col: charcoal for Ack#2')
+        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-18'))
         
         
     #@unittest.skip('ok')    
