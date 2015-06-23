@@ -472,6 +472,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Save log                                               
         log.save()
         
+        """
         # Determine how much to cut
         if log.quantity > original_qty:
             #Cut fabric from stock
@@ -490,6 +491,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 fabric.quantity += Decimal(qty)
         
         fabric.save()
+        """
         
         
         
