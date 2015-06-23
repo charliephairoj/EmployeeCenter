@@ -1034,7 +1034,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, 'Reserve 64m of Pattern: Max, Col: charcoal for Ack#2')
-        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-38'))
+        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('26'))
         
         # Test Fabric 2
         log = Log.objects.get(acknowledgement_id=2, supply_id=2)
@@ -1043,7 +1043,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, u'Reserve 3.0m of Pattern: Stripe, Col: charcoal for Ack#2')
-        self.assertEqual(Fabric.objects.get(id=2).quantity, Decimal('-3'))
+        self.assertEqual(Fabric.objects.get(id=2).quantity, Decimal('0'))
         
         # Data to be use for PUT request
         put_data = copy.deepcopy(modified_data)
@@ -1075,7 +1075,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, 'Reserve 44m of Pattern: Max, Col: charcoal for Ack#2')
-        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-18'))
+        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('26'))
         
         # Test changed log for fabric 1
         log = Log.objects.get(acknowledgement_id=2, supply_id=2)
@@ -1084,7 +1084,7 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.action, 'RESERVE')
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, 'Reserve 23.0m of Pattern: Stripe, Col: charcoal for Ack#2')
-        self.assertEqual(Fabric.objects.get(id=1).quantity, Decimal('-18'))
+        self.assertEqual(Fabric.objects.get(id=2).quantity, Decimal('0'))
         
         
     #@unittest.skip('ok')    
