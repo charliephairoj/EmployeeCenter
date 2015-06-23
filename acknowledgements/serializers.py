@@ -36,13 +36,24 @@ class PillowSerializer(serializers.ModelSerializer):
         
         return instance
         
+    def to_representation(self, instance):
+        ret = super(PillowSerializer, self).to_representation(instance)
+        
+        try:
+            ret['fabric'] = {'id': instance.fabric.id,
+                             'description': instance.fabric.description}
+        except AttributeError:
+            pass
+            
+        return ret
+        
         
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    location = serializers.CharField(required=False, allow_null=True)
+    #location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
     units = serializers.CharField(required=False, allow_null=True)
@@ -51,16 +62,15 @@ class ItemSerializer(serializers.ModelSerializer):
     height = serializers.IntegerField(required=False, allow_null=True)
     custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
                                             allow_null=True)
-    fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, 
-                                               write_only=True, required=False,
+    fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False,
                                                allow_null=True)
     id = serializers.IntegerField(required=False, allow_null=True)
                                                
     class Meta:
         model = Item
-        field = ('description', 'id', 'width', 'depth', 'height')
+        fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product', 
+                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity')
         read_only_fields = ('total', 'type')
-        exclude = ('acknowledgement', )
         
     def create(self, validated_data):
         """
@@ -107,7 +117,7 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.quantity = validated_data.pop('quantity', instance.quantity)
         instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
         instance.fabric = validated_data.pop('fabric', None)
-        instance.fabric_quantity = validated_data.pop('fabric_quantity', 0)
+        instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         
         # Set the price of the total for this item
         instance.total = instance.quantity * instance.unit_price
