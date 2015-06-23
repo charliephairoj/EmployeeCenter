@@ -791,7 +791,7 @@ class LogTestCase(APITestCase):
         self.assertEqual(log_data['action'], "SUBTRACT")
         
         fabric = Fabric.objects.get(pk=1)
-        self.assertEqual(fabric.quantity, 14)
+        self.assertEqual(fabric.quantity, 4)
         
     def test_cancel_fabric_reservation(self):
         
@@ -810,7 +810,7 @@ class LogTestCase(APITestCase):
         self.assertEqual(log_data['action'], "CANCELLED")
         
         fabric = Fabric.objects.get(pk=1)
-        self.assertEqual(fabric.quantity, 22)
+        self.assertEqual(fabric.quantity, 12)
         
         
         

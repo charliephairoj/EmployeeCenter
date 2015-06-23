@@ -351,8 +351,13 @@ class LogSerializer(serializers.ModelSerializer):
         #Determine if should update or not
         if action.lower() == 'cut':
             old_qty = instance.supply.quantity
-            instance.supply.quantity -= quantity
+            try:
+                instance.supply.quantity -= quantity
+            except TypeError:
+                instance.supply.quantity -= float(quantity)
+                
             assert instance.supply.quantity != old_qty, "The quantities are wrong: {0} : {1} : {2}".format(instance.supply.quantity, old_qty, quantity)
+            
             instance.supply.save()
 
             #Adjust log 
