@@ -30,13 +30,29 @@ def acknowledgement_stats(request):
            (SELECT SUM(total) 
                        FROM acknowledgements_acknowledgement where lower(status) = 'acknowledged'),
            (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'in production'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'in production'),
+           (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'ready to ship'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'ready to ship'),
+           (SELECT COUNT(id) 
                        FROM acknowledgements_acknowledgement where lower(status) = 'shipped'),
            (SELECT SUM(total) 
                        FROM acknowledgements_acknowledgement where lower(status) = 'shipped'),
            (SELECT COUNT(id) 
-                       FROM acknowledgements_acknowledgement where lower(status) = 'partially shipped'),
+                       FROM acknowledgements_acknowledgement where lower(status) = 'invoiced'),
            (SELECT SUM(total) 
-                       FROM acknowledgements_acknowledgement where lower(status) = 'partially shipped'),
+                       FROM acknowledgements_acknowledgement where lower(status) = 'invoiced'),
+           (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'paid'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'paid'),
+           (SELECT COUNT(id) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'deposit received'),
+           (SELECT SUM(total) 
+                       FROM acknowledgements_acknowledgement where lower(status) = 'deposit received'),
            COUNT(id),
            SUM(total)
     FROM acknowledgements_acknowledgement AS a
@@ -47,8 +63,12 @@ def acknowledgement_stats(request):
     row = cursor.fetchone()
     
     data = {'acknowledged': {'count': row[0], 'amount': str(row[1])},
-            'shipped': {'count':row[2], 'amount': str(row[3])},
-            'partially_shipped': {'count':row[4], 'amount': str(row[5])},
+            'in_production': {'count':row[2], 'amount': str(row[3])},
+            'ready_to_ship': {'count': row[4], 'amount': str(row[5])},
+            'shipped': {'count':row[6], 'amount': str(row[7])},
+            'invoiced': {'count': row[8], 'amount': str(row[9])},
+            'paid': {'count': row[10], 'amount': str(row[11])},
+            'deposit_received': {'count': row[12], 'amount': str(row[13])},
             'total': {'count': row[-2], 'amount': str(row[-1])}}
             
     response = HttpResponse(json.dumps(data),

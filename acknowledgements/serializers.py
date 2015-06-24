@@ -277,10 +277,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         status = validated_data.pop('status', instance.status)
         
         if status.lower() != instance.status.lower():
+            
             employee = self.context['request'].user
             message = "Order #{0} is {1}.".format(instance.id, status.lower())
             log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
             instance.status = status
+            
+            assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
             
         # Extract items data
         items_data = validated_data.pop('items')
