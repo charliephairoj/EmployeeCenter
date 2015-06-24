@@ -22,6 +22,15 @@ from media.stickers import StickerPage
 logger = logging.getLogger(__name__)
 
 
+class Tower(models.Model):
+    name = models.TextField()
+    
+    
+class Shelf(models.Model):
+    name = models.TextField()
+    tower = models.ForeignKey(Tower)
+    
+    
 #Creates the main supplies class
 class Supply(models.Model):
     suppliers = models.ManyToManyField(Supplier, through='Product', related_name='supplies')
@@ -48,6 +57,8 @@ class Supply(models.Model):
     sticker = models.ForeignKey(S3Object, null=True, blank=True, related_name="supply_sticker")
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
+    shelf = models.ForeignKey(Shelf, related_name='fabrics')
+    
     _check_quantity = False
 
     class Meta:
@@ -355,7 +366,6 @@ class Fabric(Supply):
     red = models.IntegerField(null=True)
     green = models.IntegerField(null=True)
     blue = models.IntegerField(null=True)
-    
     
     @classmethod
     def create(cls, **kwargs):
@@ -686,4 +696,10 @@ class Zipper(Supply):
         #save model
         self.save()    
 
+    
+    
+    
+    
+    
+    
         
