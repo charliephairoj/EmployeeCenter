@@ -39,13 +39,13 @@ def acknowledgement_stats(request):
                        FROM acknowledgements_acknowledgement where lower(status) = 'partially shipped'),
            COUNT(id),
            SUM(total)
-    FROM acknowledgements_acknowledgement
+    FROM acknowledgements_acknowledgement AS a
     WHERE lower(status) != 'cancelled';
     """
     
     cursor.execute(query)
     row = cursor.fetchone()
-
+    
     data = {'acknowledged': {'count': row[0], 'amount': str(row[1])},
             'shipped': {'count':row[2], 'amount': str(row[3])},
             'partially_shipped': {'count':row[4], 'amount': str(row[5])},
@@ -263,11 +263,20 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         project_id = self.request.QUERY_PARAMS.get('project_id', None)
         if project_id:
             queryset = queryset.filter(project_id=project_id)
-                          
+        
+        #Filter if decoroom
+        user = self.request.user
+        if user.groups.filter(name__icontains='decoroom').count() > 0:
+            queryset = queryset.filter(Q(customer__name__icontains="decoroom") |
+                                       Q(customer__id=420) |
+                                       Q(customer__id=257))
+            
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        
+        
             
         return queryset
         
