@@ -19,7 +19,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group, ContentType
 from rest_framework.test import APIRequestFactory, APITestCase, APIClient
 
-from acknowledgements.models import Acknowledgement, Item, Pillow
+from acknowledgements.models import Acknowledgement, Item, Pillow, Log as AckLog
 from supplies.models import Fabric, Reservation, Log
 from contacts.models import Customer, Address, Supplier
 from products.models import Product
@@ -434,6 +434,11 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertEqual(log.acknowledgement_id, '2')
         self.assertEqual(log.message, u'Reserve 3.0m of Pattern: Stripe, Col: charcoal for Ack#2')
         self.assertEqual(Fabric.objects.get(id=2).quantity, Decimal('-3'))
+        
+        # Test that a log was created
+        self.assertEqual(AckLog.objects.filter(acknowledgement=root_ack).count(), 1)
+        log = AckLog.objects.filter(acknowledgement=root_ack)[0]
+        self.assertEqual(log.message, "Order #{0} was opened".format(root_ack.id))
                 
     def test_post_with_custom_image(self):
         """

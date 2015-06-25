@@ -265,7 +265,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
            
         # Log Opening of an order
-        message = "Order #{0} was open.".format(instance.id)
+        message = "Order #{0} was opened.".format(instance.id)
         log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
         
         return instance
