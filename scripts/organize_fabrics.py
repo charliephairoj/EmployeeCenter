@@ -12,14 +12,14 @@ sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 from decimal import Decimal
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 import logging
 
 import boto
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from django.db.models import Avg, Max, Sum
+from django.db.models import Q, Sum
 from supplies.models import Fabric, Shelf, Tower
 
 
@@ -65,10 +65,13 @@ def sort_fabrics():
         """
         shelf_total = Decimal(shelf.fabrics.all().aggregate(Sum('quantity_th'))['quantity_th__sum'] or 0)
         return True if (shelf_total) + fabric.quantity > max_shelf_qty else False
+    
+    # Reset the shelving arrangements
+    Fabric.objects.all().update(shelf=None)
         
     # Loops through the fabrics, organized by patterns so that 
     # similar fabrics by patterns are close to each other
-    for fabric in Fabric.objects.filter(quantity_th__gt=0).order_by('pattern'):
+    for fabric in Fabric.objects.filter(item__acknowledgement__time_created__gte=date(2014, 1, 1)).distinct().order_by('pattern', 'color'):
         # Only find a shelf if there is fabric to store
         if fabric.quantity > Decimal('0'):
             if not exceeds_shelf_capacity(shelf, fabric):
@@ -117,7 +120,6 @@ if __name__ == "__main__":
     
     
     message = sort_fabrics()
-    logger.debug(message)
     e_conn = boto.ses.connect_to_region('us-east-1')
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Fabric Organization',
