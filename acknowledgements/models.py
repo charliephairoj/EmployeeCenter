@@ -64,9 +64,6 @@ class Acknowledgement(models.Model):
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
     files = models.ManyToManyField(S3Object, through="File", related_name="acknowledgement")
-        
-    class Meta:
-        permissions = (('view_acknowledgement', 'Can view acknowledgements'))     
          
     """
     @property

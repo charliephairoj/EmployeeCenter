@@ -172,6 +172,7 @@ class PurchaseOrder(models.Model):
             raise ValueError('Purchase Order cannot not have 0 items')
         
         logger.debug("The subtotal is {0:.2f}".format(self.subtotal))
+        
         return self.subtotal
     
     def _calculate_total(self):
@@ -185,12 +186,14 @@ class PurchaseOrder(models.Model):
             self.total = subtotal
 
         logger.debug("The total is {0:.2f}".format(self.total))
+        
         return self.total
     
     def _calculate_grand_total(self):
         """
         Calcualte the grand total
         """
+        logger.info('\nCalculating total...')
         total = self._calculate_total()
         
         logger.debug("The vat is at {0}%".format(self.vat))
@@ -201,7 +204,10 @@ class PurchaseOrder(models.Model):
         
         # Convert to 2 decimal places
         self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
+        
         logger.debug("The grand total is {0:.2f}".format(self.grand_total))
+        logger.info("Total calculated. \n")
+        
         return self.grand_total
         
         
@@ -291,7 +297,7 @@ class Item(models.Model):
                                         self.unit_cost - discount_amount))
         
         # Set the discount to be used.
-        # Note: ENTER DISCOUNT OVERRULES SAVED DISCOUNT
+        # Note: ENTERED DISCOUNT OVERRULES SAVED DISCOUNT
         self.discount = self.discount or self.supply.discount
         
         unit_cost = Decimal(self.unit_cost)

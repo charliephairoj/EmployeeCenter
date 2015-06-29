@@ -357,7 +357,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         self.assertEqual(self.po.grand_total, Decimal('129.58'))
-        self.assertEqual(self.po.order_date.date(), datetime.datetime(2014, 3, 2).date())
+        self.assertEqual(self.po.order_date.date(), datetime.now().date())
         item = self.po.items.all()[0]
         self.assertEqual(item.id, 1)
         self.assertEqual(item.quantity, 10)
@@ -525,7 +525,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(resp_obj['revision'], 1)
         self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('107.54'))
         item1 = resp_obj['items'][0]
-        self.assertEqual(item1['id'], 1)
+        self.assertEqual(item1['id'], 2)
         self.assertEqual(item1['quantity'], '10.0000000000')
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
