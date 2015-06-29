@@ -136,7 +136,7 @@ class SupplySerializer(serializers.ModelSerializer):
         model = Supply
         list_serializer_class = SupplyListSerializer
         #read_only_fields = ['suppliers']
-        exclude = ['quantity_th', 'quantity_kh']
+        exclude = ['quantity_th', 'quantity_kh', 'shelf']
         
     def to_representation(self, instance):
         """

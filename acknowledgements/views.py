@@ -92,7 +92,7 @@ def acknowledgement_item_image(request):
 def acknowledgement_file(request):
     try:
         file = request.FILES['image']
-    except MultiValueDictKeyError:
+    except Exception:
         file = request.FILES['file']
     
     filename = file.name
