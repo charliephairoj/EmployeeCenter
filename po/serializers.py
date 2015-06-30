@@ -12,7 +12,7 @@ from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item
 from projects.models import Project, Room, Phase
-from projects.serializers import RoomSerializer, PhaseSerializer
+from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -203,8 +203,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                            'name': instance.supplier.name}
         
         try:
-            ret['project'] = {'id': instance.project.id,
-                              'codename': instance.project.codename}
+            ret['project'] = ProjectSerializer(instance.project).data
         except AttributeError:
             pass
             
@@ -271,7 +270,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         
         status = validated_data.pop('status', "")
-        logger.debug(status)
+        instance.project = validated_data.pop('project', instance.project)
+        instance.room = validated_data.pop('room', instance.room)
+        instance.phase = validated_data.pop('phase', instance.phase)
+        
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)
         

@@ -571,6 +571,13 @@ class PurchaseOrderTest(APITestCase):
         
         self.assertEqual(Supply.objects.get(pk=1).quantity, 20)
         
+    def test_updating_the_project(self):
+        """
+        Tests updating the project, phase, and room of a purchase order
+        """
+        modified_po = copy.deepcopy(base_purchase_order)
+        
+        
     def test_updating_to_receive_items(self):
         """
         Test updating the status of the po in order to to receive it
