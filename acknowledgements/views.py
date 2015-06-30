@@ -273,6 +273,10 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         """
         queryset = self.queryset
         
+        status = self.request.QUERY_PARAMS.get('status', None)
+        if status:
+            queryset = queryset.filter(status__icontains=status)
+        
         #Filter based on query
         query = self.request.QUERY_PARAMS.get('q', None)
         if query:
