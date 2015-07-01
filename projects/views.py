@@ -48,7 +48,7 @@ def phase_report(request, pk):
     
     
 class ProjectMixin(object):
-    queryset = Project.objects.all()
+    queryset = Project.objects.all().order_by('codename')
     serializer_class = ProjectSerializer
 
 
@@ -66,6 +66,10 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(codename__icontains=query) | 
                                        Q(pk__icontains=query))
                                       
+        status_exclusions = self.request.QUERY_PARAMS.get('status__exclude', None)
+        if status_exclusions:
+            queryset = queryset.exclude(status__icontains=status_exclusions)
+            
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:

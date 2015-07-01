@@ -18,7 +18,7 @@ class Project(models.Model):
     reference = models.TextField(null=True)
     codename = models.TextField(null=True)
     due_date = models.DateField(db_column="due_date", null=True)
-    status = models.TextField(default="Planning")
+    status = models.TextField(default="planning")
     deleted = models.BooleanField(default=False)
     supplies = models.ManyToManyField(Supply, through='ProjectSupply')
     files = models.ManyToManyField(S3Object, through='File', related_name='project')

@@ -33,7 +33,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Project
-        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies')
+        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies', 'status')
         depth = 1
         
     def to_representation(self, instance):
