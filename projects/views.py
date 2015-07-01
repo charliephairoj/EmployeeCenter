@@ -69,7 +69,10 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         status_exclusions = self.request.QUERY_PARAMS.get('status__exclude', None)
         if status_exclusions:
             queryset = queryset.exclude(status__icontains=status_exclusions)
-            
+        
+        # Enfore ordering by codename    
+        queryset = queryset.order_by('codename')
+        
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
