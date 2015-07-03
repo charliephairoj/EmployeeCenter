@@ -314,7 +314,7 @@ class PurchaseOrderPDF():
                          self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
                          u"{0:,.2f}".format(supply.quantity),
-                         u"{0:,.3f}".format(calculated_unit_cost),
+                         u"{0:,.4f}".format(calculated_unit_cost),
                          u"{0:,.2f}".format(supply.total)])
                          
             # increase the item number
