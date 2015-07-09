@@ -477,10 +477,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         log.action = "RESERVE"
         log.quantity = quantity
         log.employee = employee
-        log.message = "Reserve {0}{1} of {2} for Ack#{3}".format(quantity, 
-                                                                 fabric.units,
-                                                                 fabric.description,
-                                                                 acknowledgement_id)
+        log.message = u"Reserve {0}{1} of {2} for Ack#{3}".format(quantity, 
+                                                                  fabric.units,
+                                                                  fabric.description,
+                                                                  acknowledgement_id)
         
         # Save log                                               
         log.save()
