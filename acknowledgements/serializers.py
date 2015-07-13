@@ -216,6 +216,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
+        
         instance.create_and_upload_pdfs()
         
         # Add pdfs to files list
@@ -228,7 +229,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                 acknowledgement=instance)
-                    
+        
+                 
         # Extract fabric quantities
         fabrics = {}
         

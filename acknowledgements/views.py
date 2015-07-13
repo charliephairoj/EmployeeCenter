@@ -144,7 +144,7 @@ class AcknowledgementMixin(object):
                 for pillow in item['pillows']:
                     try:
                         fabric_id = pillow['fabric']['id'] if 'id' in pillow['fabric'] else pillow['fabric']
-                    except KeyError:
+                    except (KeyError, TypeError):
                         fabric_id = None
 
                     if (pillow['type'], fabric_id) in pillows:

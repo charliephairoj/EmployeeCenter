@@ -607,7 +607,7 @@ class AcknowledgementPDF(object):
 
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', 'x'],['Office Manager', '', 'Charlie Phairojmahakij']],
+        signature = Table([['x', '', 'x'],['Office Manager', '', 'Authorized Signature']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
@@ -1253,7 +1253,7 @@ class ProductionPDF(AcknowledgementPDF):
         
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', 'x'],['Office Manager', '', 'Charlie Phairojmahakij']],
+        signature = Table([['x', '', 'x'],['Office Manager', '', 'Authorized Signature']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
