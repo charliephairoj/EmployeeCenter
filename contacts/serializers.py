@@ -19,7 +19,7 @@ class AddressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Address
-        fields = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode')
+        fields = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode', 'latitude', 'longitude', 'user_defined_latlng')
         
     def create(self, validated_data):
         """

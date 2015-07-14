@@ -259,7 +259,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.calculate_total()
         
-        #instance.create_and_upload_pdf()
+        instance.create_and_upload_pdf()
         
         instance.save()
         return instance
