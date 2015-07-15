@@ -29,8 +29,8 @@ class Address(models.Model):
     country = models.CharField(max_length=150)
     zipcode = models.TextField()
     contact = models.ForeignKey(Contact, related_name="addresses")
-    latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
-    longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
+    latitude = models.DecimalField(decimal_places=15, max_digits=20, null=True)
+    longitude = models.DecimalField(decimal_places=15, max_digits=20, null=True)
     user_defined_latlng = models.BooleanField(default=False)
     
     @property

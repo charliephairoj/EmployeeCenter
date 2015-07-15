@@ -13,13 +13,12 @@ class AddressSerializer(serializers.ModelSerializer):
     address1 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     address2 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     city = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    region = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     zipcode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Address
-        fields = ("id", 'address1', 'address2', 'city', 'region', 'country', 'zipcode', 'latitude', 'longitude', 'user_defined_latlng')
+        fields = ("id", 'address1', 'address2', 'city', 'territory', 'country', 'zipcode', 'latitude', 'longitude', 'user_defined_latlng')
         
     def create(self, validated_data):
         """
@@ -32,6 +31,7 @@ class AddressSerializer(serializers.ModelSerializer):
 
 class ContactSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = SupplierContact
@@ -101,11 +101,12 @@ class ContactMixin(object):
             try:
                 address = Address.objects.get(pk=address_data['id'])
             except KeyError:
-                address = Address.objects.create()
+                address = Address.objects.create(contact=instance)
                 id_list.append(address.id)
                 
             for field in address_data.keys():
-                setattr(address, field, address_data[field])
+                if field != "contact":
+                    setattr(address, field, address_data[field])
                 
             address.save()
             
@@ -122,7 +123,9 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-
+    telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
     class Meta:
         model = Customer
         
