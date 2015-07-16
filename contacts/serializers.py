@@ -15,6 +15,7 @@ class AddressSerializer(serializers.ModelSerializer):
     city = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     zipcode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    territory = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Address

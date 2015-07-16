@@ -13,6 +13,7 @@ from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
+from contacts.serializers import AddressSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -200,7 +201,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ret = super(PurchaseOrderSerializer, self).to_representation(instance)
 
         ret['supplier'] = {'id': instance.supplier.id, 
-                           'name': instance.supplier.name}
+                           'name': instance.supplier.name,
+                           'addresses': AddressSerializer(instance.supplier.addresses.all(), many=True).data}
         
         try:
             ret['project'] = ProjectSerializer(instance.project).data

@@ -25,7 +25,7 @@ class Address(models.Model):
     address1 = models.CharField(max_length=160)
     address2 = models.CharField(max_length=160, null=True)
     city = models.CharField(max_length=100)
-    territory = models.CharField(max_length=150)
+    territory = models.TextField(null=True)
     country = models.CharField(max_length=150)
     zipcode = models.TextField()
     contact = models.ForeignKey(Contact, related_name="addresses")
