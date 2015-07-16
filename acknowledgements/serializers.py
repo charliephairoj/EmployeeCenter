@@ -373,7 +373,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                     acknowledgement=instance)
                    
-        if instance.status.lower() in ['acknowledged', 'in production']:
+        if instance.status.lower() in ['acknowledged', 'in production', 'ready to ship']:
             instance.calculate_totals()
             instance.create_and_upload_pdfs()
                                     
