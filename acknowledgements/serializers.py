@@ -222,7 +222,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Add pdfs to files list
         File.objects.create(file=instance.acknowledgement_pdf, acknowledgement=instance)
         File.objects.create(file=instance.production_pdf, acknowledgement=instance)
-        File.objects.create(file=instance.confirmation_pdf, acknowledgement=instance)
+        #File.objects.create(file=instance.confirmation_pdf, acknowledgement=instance)
         File.objects.create(file=instance.label_pdf, acknowledgement=instance)
 
         # Assign files
