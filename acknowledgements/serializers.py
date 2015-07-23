@@ -390,6 +390,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         ret['customer'] = {'id': instance.customer.id, 
                            'name': instance.customer.name}
                            
+        try:
+            address = instance.customer.addresses.all()[0]
+            ret['customer']['latitude'] = address.latitude
+            ret['customer']['longitude'] = address.longitude
+        except KeyError:
+            pass
+                           
         ret['employee'] = {'id': instance.employee.id,
                            'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
                            
