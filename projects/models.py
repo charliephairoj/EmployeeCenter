@@ -101,6 +101,7 @@ class Room(models.Model):
     status = models.TextField(default="Planning")
     deleted = models.BooleanField(default=False)
     files = models.ManyToManyField(S3Object, through='File', related_name='room')
+    floor = models.IntegerField(null=True)
     
     @classmethod
     def create(cls, **kwargs):

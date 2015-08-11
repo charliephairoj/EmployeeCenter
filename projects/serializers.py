@@ -116,7 +116,7 @@ class RoomSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Room
-        fields = ('id', 'description', 'reference', 'files', 'project', 'items')
+        fields = ('id', 'description', 'reference', 'files', 'project', 'items', 'floor')
         depth = 2
         
     def create(self, validated_data):

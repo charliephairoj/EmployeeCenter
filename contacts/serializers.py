@@ -171,7 +171,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
             
             ret['contacts'] = ContactSerializer(SupplierContact.objects.filter(supplier=instance.id), many=True).data
             
-            ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
+        ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
             
         return ret
         
