@@ -61,6 +61,7 @@ class StickerDocTemplate(BaseDocTemplate):
         template = PageTemplate('Normal', [frame])
         return template
         
+        
 class StickerPage(object):
     
     sticker_width = 50 * mm
@@ -80,15 +81,18 @@ class StickerPage(object):
         self.description = description
         self.codes = codes
         
-    def create(self, filename):
+    def create(self, response):
         """
         Main method to create a sticker page
         """
-        doc = StickerDocTemplate('{0}.pdf'.format(filename))
+        if response is None:
+            response = '{0}.pdf'.format(self.code)
+            
+        doc = StickerDocTemplate(response)
         stories = [self._create_sticker_page()]
         doc.build(stories)
         
-        return "{0}.pdf".format(filename)
+        return "{0}.pdf".format(self.code)
         
     def _create_sticker_page(self):
         """

@@ -146,7 +146,10 @@ urlpatterns += patterns('products.views',
 
 urlpatterns += patterns('supplies.views',
     url(r'^/api/v1/supply/image/$', 'supply_image'),
-    url(r'^api/v1/supply/image/$', 'supply_image')
+    url(r'^api/v1/supply/image/$', 'supply_image'),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker$', 'sticker'),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', 'sticker'),
+    
 )
 
 urlpatterns += patterns('po.views',
