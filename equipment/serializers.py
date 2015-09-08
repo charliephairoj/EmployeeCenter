@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from equipment.models import Equipment
 from hr.models import Employee
+from media.models import S3Object
+from media.serializers import S3ObjectSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +32,30 @@ class EquipmentSerializer(serializers.ModelSerializer):
     employee = serializers.PrimaryKeyRelatedField(required=False,
                                                   queryset=Employee.objects.all())
     id = serializers.IntegerField(required=False)
-                                                  
+    brand = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
+    status = serializers.CharField(required=False, allow_null=True)
+    image = S3ObjectSerializer(allow_null=True, required=False)
+    
     class Meta:
         model = Equipment
         list_serializer_class = EquipmentListSerializer
     
+    def create(self, validated_data):
+        print validated_data
+        image_data = validated_data.pop('image', {})
+        
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        try:
+            instance.image = S3Object.objects.get(pk=image_data['id'])
+        except KeyError:
+            pass
+        
+        instance.save()
+        
+        return instance
+        
     def update(self, instance, validated_data):
         
         instance = super(EquipmentSerializer, self).update(instance, validated_data)
@@ -42,6 +63,12 @@ class EquipmentSerializer(serializers.ModelSerializer):
         if instance.status.lower() == "checked in":
             instance.employee = None
         
+        
+        try:
+            instance.image = S3Object.objects.get(pk=validated_data['image']['id'])
+        except KeyError:
+            pass
+            
         instance.save()
             
         return instance
@@ -66,8 +93,11 @@ class EquipmentSerializer(serializers.ModelSerializer):
         except AttributeError as e:
             pass
             
-        if ret['status'].lower() == 'checked in':
-            del ret['employee']
+        try:
+            if ret['status'].lower() == 'checked in':
+                del ret['employee']
+        except AttributeError:
+            pass
                            
         return ret
         

@@ -1,15 +1,29 @@
 import logging
 
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect, HttpResponse
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 
 from equipment.models import Equipment
 from equipment.serializers import EquipmentSerializer
+from media.stickers import StickerPage
 
 logger = logging.getLogger(__name__)
 
 
+@login_required
+def sticker(request, pk=None):
+    response = HttpResponse(content_type='application/pdf; charset=utf-8')
+    equipment = Equipment.objects.get(pk=pk)
+    logger.debug(request);
+    pdf = StickerPage(code="DRE-{0}".format(equipment.id), description=equipment.description, copy=1)
+    pdf.create(response)
+    
+    return response
+    
+    
 class EquipmentMixin(object):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer

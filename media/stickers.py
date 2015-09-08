@@ -30,7 +30,7 @@ pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
 
 class StickerDocTemplate(BaseDocTemplate):
-    def __init__(self, filename, page_size=(168 * mm, 221.5 * mm), **kwargs):
+    def __init__(self, filename, page_size=A4, **kwargs):
         """
         Constructor
         
@@ -54,34 +54,35 @@ class StickerDocTemplate(BaseDocTemplate):
                       0, 
                       self.width, 
                       self.height, 
-                      leftPadding=6 * mm,
-                      bottomPadding=1 * mm, 
-                      rightPadding=6 * mm,
-                      topPadding=1.5 * mm)
+                      leftPadding=0 * mm,
+                      bottomPadding=4.5 * mm, 
+                      rightPadding=0 * mm,
+                      topPadding=4.5 * mm)
         template = PageTemplate('Normal', [frame])
         return template
         
         
 class StickerPage(object):
     
-    sticker_width = 50 * mm
-    sticker_height = 19 * mm
-    barcode_height = 10 * mm
-    vertical_spacing = 3 * mm
-    horizontal_spacing = 2.5 * mm
+    sticker_width = 70 * mm
+    sticker_height = 36 * mm
+    barcode_height = 16 * mm
+    vertical_spacing = 0 * mm
+    horizontal_spacing = 0 * mm
     
-    def __init__(self, code=None, description=None, codes=None, *args, **kwargs):
+    def __init__(self, code=None, description=None, codes=None, copy=None, *args, **kwargs):
         """
         Constructor
         """
         super(StickerPage, self).__init__()
         
         #Set attribute
+        self.copy = copy
         self.code = code
         self.description = description
         self.codes = codes
         
-    def create(self, response):
+    def create(self, response=None):
         """
         Main method to create a sticker page
         """
@@ -102,11 +103,16 @@ class StickerPage(object):
         code_index = 0
         
         data = []
-        for i in range(19):
+        for i in range(15):
             row = []
             for h in range(5):
                 if h % 2 == 0 and i % 2 == 0:
-                    row.append(self._create_sticker_cell(codes[code_index]))
+                    # Add code and description to sticker. If out of code add empty space
+                    try:
+                        row.append(self._create_sticker_cell(codes[code_index]))
+                    except IndexError:
+                        row.append('')
+                        
                     code_index += 1
                 else:
                     row.append('')
@@ -114,12 +120,12 @@ class StickerPage(object):
             
         table = Table(data,
                       colWidths=tuple([self.sticker_width if i % 2 == 0 else self.horizontal_spacing for i in range(5) ]),
-                      rowHeights=tuple([self.sticker_height if i % 2 == 0 else self.vertical_spacing for i in range(19)]))
+                      rowHeights=tuple([self.sticker_height if i % 2 == 0 else self.vertical_spacing for i in range(15)]))
         style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                            ('TOPPADDING', (0, 0), (-1, -1), 0),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING', (0, 0), (-1, -1), 1),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                             ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
@@ -163,7 +169,7 @@ class StickerPage(object):
             codes = self.codes
         elif self.code and isinstance(self.code, str):
             codes = [(self.code, self.description) if self.description else
-                     self.code for i in range(30)]
+                     self.code for i in range(self.copy or 30)]
         else:
             raise ValueError('Expecting some codes here')
         

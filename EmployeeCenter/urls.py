@@ -152,6 +152,12 @@ urlpatterns += patterns('supplies.views',
     
 )
 
+urlpatterns += patterns('equipment.views',
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', 'sticker'),
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', 'sticker'),
+    
+)
+
 urlpatterns += patterns('po.views',
     url(r'api/v1/purchase-order/stats$', 'purchase_order_stats'),
     url(r'api/v1/purchase-order/stats/$', 'purchase_order_stats')

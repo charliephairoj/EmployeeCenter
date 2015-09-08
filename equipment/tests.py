@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from equipment.models import Equipment
 from hr.models import Employee
+from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ class EquipmentTestCase(APITestCase):
                                  last_name="Smith",
                                  department="Carpentry")
         self.employee.save()
+        
+        self.image = S3Object()
+        self.image.save()
         
     def test_get_list(self):
         """
@@ -68,12 +72,14 @@ class EquipmentTestCase(APITestCase):
         """
         data = {'description': 'Jigsaw',
                 'brand': 'Makita',
-                'status': 'Checked In'}
+                'status': 'Checked In',
+                'image': {
+                    'id': 1
+                }}
         
         resp = self.client.post("/api/v1/equipment/", data=data, format='json')
         
         self.assertEqual(resp.status_code, 201, msg=resp)
-        
         obj = resp.data
         
         self.assertIsInstance(obj, dict)
@@ -85,6 +91,9 @@ class EquipmentTestCase(APITestCase):
         self.assertEqual(obj['brand'], 'Makita')
         self.assertIn('status', obj)
         self.assertEqual(obj['status'], 'Checked In')
+        self.assertIn('image', obj)
+        self.assertIn('id', obj['image'])
+        self.assertEqual(obj['image']['id'], 1)
         
         #Test that resource saved to database
         self.assertEqual(Equipment.objects.all().count(), 2)
@@ -96,6 +105,44 @@ class EquipmentTestCase(APITestCase):
         self.assertEqual(obj.description, 'Jigsaw')
         self.assertEqual(obj.brand, "Makita")
         self.assertEqual(obj.status, "Checked In")
+        self.assertIsNotNone(obj.image)
+        
+    def test_post_empty_equipment(self):
+        """
+        Test creating resource via POST where the equipment only has an image
+        """
+        data = {'image': {'id': 1}}
+        
+        resp = self.client.post("/api/v1/equipment/", data=data, format='json')
+        
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        
+        obj = resp.data
+        
+        self.assertIsInstance(obj, dict)
+        self.assertIn('id', obj)
+        self.assertEqual(obj['id'], 2)
+        self.assertIn('description', obj)
+        self.assertIsNone(obj['description'])
+        self.assertIn('brand', obj)
+        self.assertIsNone(obj['brand'])
+        self.assertIn('status', obj)
+        self.assertIsNone(obj['status'])
+        self.assertIn('image', obj)
+        self.assertIn('id', obj['image'])
+        self.assertEqual(obj['image']['id'], 1)
+        
+        #Test that resource saved to database
+        self.assertEqual(Equipment.objects.all().count(), 2)
+        
+        obj = Equipment.objects.all().order_by('id')[1]
+        
+        self.assertIsNotNone(obj.id)
+        self.assertEqual(obj.id, 2)
+        self.assertIsNone(obj.description, )
+        self.assertIsNone(obj.brand)
+        self.assertIsNone(obj.status)
+        self.assertIsNotNone(obj.image)
         
     def test_put(self):
         """

@@ -28,6 +28,7 @@ def employee_image(request):
         response.status_code = 201
         return response
         
+        
 class EmployeeMixin(object):
     queryset = Employee.objects.all().order_by('name')
     serializer_class = EmployeeSerializer
