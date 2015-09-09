@@ -209,7 +209,7 @@ class Supply(models.Model):
     def create_stickers(self):
         sticker_page = StickerPage(code="DRS-{0}".format(self.id), 
                                    description=self.description)
-        filename = sticker_page.create("DRS-{0}".format(self.id))    
+        filename = sticker_page.create()    
         stickers = S3Object.create(filename, 
                                    "supplies/stickers/{0}".format(filename), 
                                    'document.dellarobbiathailand.com', 

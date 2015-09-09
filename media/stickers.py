@@ -86,6 +86,8 @@ class StickerPage(object):
         """
         Main method to create a sticker page
         """
+        logger.debug(self.code)
+        logger.debug(response)
         if response is None:
             response = '{0}.pdf'.format(self.code)
             
