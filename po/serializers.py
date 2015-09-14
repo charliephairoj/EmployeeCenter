@@ -253,7 +253,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                   **validated_data)
         instance.currency = currency
         instance.terms = terms
-        
+        logger.debug(instance.currency)
         item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance}, 
                                          many=True)
         if item_serializer.is_valid(raise_exception=True):
@@ -275,6 +275,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
+        instance.currency = validated_data.pop('currency', instance.currency)
         
         if status.lower() == "received" and instance.status.lower() != "received":
             self.receive_order(instance, validated_data)

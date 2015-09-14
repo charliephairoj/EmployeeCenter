@@ -344,6 +344,37 @@ class PurchaseOrderTest(APITestCase):
         log = Log.objects.all()[0]
         self.assertEqual(log.message, "Price change from 12.11USD to 1.99USD for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
         
+    def test_creating_new_po_with_different_currency(self):
+        """
+        Tests creating a new po via post while also changing the price of a supply
+        """
+        print '\n'
+        logger.debug("Creating new po with a price change")
+        print '\n'
+        #validate the response
+        po = copy.deepcopy(base_purchase_order)
+        del po['items'][1]
+        po['items'][0]['cost'] = '1.99'
+        po['currency'] = 'RMB'
+        resp = self.client.post('/api/v1/purchase-order/',
+                                data=po,
+                                format='json')
+        self.assertEqual(resp.status_code, 201, msg=resp)
+        resp_obj = resp.data
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(resp_obj['pdf']['url'])
+        
+        #Verify the returned data
+        self.assertEqual(resp_obj['id'], 2)
+        self.assertEqual(resp_obj['vat'], 7)
+        self.assertEqual(resp_obj['currency'], 'RMB')
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
+        item = resp_obj['items'][0]
+        self.assertEqual(Decimal(item['unit_cost']), Decimal('1.99'))
+        self.assertEqual(Decimal(item['total']), Decimal('19.90'))
+        
+        po = PurchaseOrder.objects.get(pk=2)
+        self.assertEqual(po.currency, 'RMB')
+        
     def test_updating_the_po(self):
         """
         Tests updating the purchase order
@@ -492,6 +523,25 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.discount, 5)
         self.assertEqual(item2.total, Decimal('34.51'))
+        
+    def test_updating_po_with_new_currency(self):
+        """
+        Test updating the status of supplies and automatically checking in supplies 
+        """
+        #test original quantity
+        
+        modified_po = copy.deepcopy(base_purchase_order)
+        modified_po['currency'] = 'RMB'
+        
+        resp = self.client.put('/api/v1/purchase-order/1/',
+                               format='json',
+                               data=modified_po)
+                               
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        
+        po = resp.data
+        
+        self.assertEqual(po['currency'], 'RMB')
         
     def test_updating_the_supply_price(self):
         """
