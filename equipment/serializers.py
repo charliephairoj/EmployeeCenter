@@ -7,6 +7,7 @@ from hr.models import Employee
 from media.models import S3Object
 from media.serializers import S3ObjectSerializer
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +17,7 @@ class EquipmentListSerializer(serializers.ListSerializer):
         Implmement multiple update for equipment
         """
         ret = []
+        
         #Update the quantity for each supply
         for data in validated_data:
             equipment = Equipment.objects.get(pk=data['id'])
@@ -60,7 +62,11 @@ class EquipmentSerializer(serializers.ModelSerializer):
         
         instance = super(EquipmentSerializer, self).update(instance, validated_data)
         
-        if instance.status.lower() == "checked in":
+        try:
+            if instance.status.lower() == "checked in":
+                instance.employee = None
+        except AttributeError:
+            instance.status = 'checked in'
             instance.employee = None
         
         

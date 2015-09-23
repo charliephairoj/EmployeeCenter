@@ -272,6 +272,28 @@ class EquipmentTestCase(APITestCase):
         self.assertEqual(equip2.status, "Checked In")
         self.assertIsNone(equip2.employee)
         
+    def test_updating_bulk_with_different_data(self):
+        """
+        Test updating list of equipment with varying amounts of information
+        """
+        
+        # Create new equipment to test
+        equip1 = Equipment.objects.create(pk=188)
+        equip2 = Equipment.objects.create(pk=189)
+        equip3 = Equipment.objects.create(pk=190)
+        
+        # Data to submit via PUT
+        data = [
+            {'id': 188},
+            {'id': 189,
+             'description': 'saw'},
+            {'id': 190,
+             'description': 'jigsaw',
+             'brand': 'Makita'}
+        ]
+        
+        resp = self.client.put('/api/v1/equipment/', data=data, format='json')
+        
         
                                
                                
