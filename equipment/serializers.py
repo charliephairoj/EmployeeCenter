@@ -66,7 +66,7 @@ class EquipmentSerializer(serializers.ModelSerializer):
         
         try:
             instance.image = S3Object.objects.get(pk=validated_data['image']['id'])
-        except KeyError:
+        except (TypeError, KeyError):
             pass
             
         instance.save()

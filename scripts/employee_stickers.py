@@ -78,6 +78,7 @@ class EmployeeStickerPage(object):
     sticker_width = 55 * mm
     sticker_height = 29.5 * mm
     barcode_height = 7.5 * mm
+    barcode_width = 1.2 * mm
     vertical_spacing = 0.5 * mm
     horizontal_spacing = 5 * mm
         

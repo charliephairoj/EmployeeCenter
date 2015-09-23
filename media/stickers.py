@@ -67,6 +67,7 @@ class StickerPage(object):
     sticker_width = 70 * mm
     sticker_height = 36 * mm
     barcode_height = 16 * mm
+    barcode_width = 0.35 * mm
     vertical_spacing = 0 * mm
     horizontal_spacing = 0 * mm
     
@@ -143,7 +144,7 @@ class StickerPage(object):
             code, description = code
         else:
             code, description = code, code
-        barcode = code128.Code128(code, barHeight=self.barcode_height)
+        barcode = code128.Code128(code, barHeight=self.barcode_height, barWidth=self.barcode_width)
         data = [[barcode],
                 [self._format_description(description)]]
         
