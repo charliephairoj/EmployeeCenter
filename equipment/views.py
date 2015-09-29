@@ -8,7 +8,7 @@ from rest_framework import status
 
 from equipment.models import Equipment
 from equipment.serializers import EquipmentSerializer
-from media.stickers import StickerPage
+from media.stickers import StickerPage, Sticker
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 def sticker(request, pk=None):
     response = HttpResponse(content_type='application/pdf; charset=utf-8')
     equipment = Equipment.objects.get(pk=pk)
-    logger.debug(request);
-    pdf = StickerPage(code="DRE-{0}".format(equipment.id), description=equipment.description, copy=1)
+    pdf = Sticker(code="DRE-{0}".format(equipment.id), 
+                  description="{0} ({1})".format(equipment.description, (equipment.brand or "").capitalize()))
     pdf.create(response)
     
     return response

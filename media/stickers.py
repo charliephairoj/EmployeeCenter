@@ -60,6 +60,108 @@ class StickerDocTemplate(BaseDocTemplate):
                       topPadding=4.5 * mm)
         template = PageTemplate('Normal', [frame])
         return template
+
+class SingleStickerDocTemplate(BaseDocTemplate):
+    
+    def __init__(self, filename, page_size=A4, **kwargs):
+        """
+        Constructor
+        
+        Set the page size in the kwargs then
+        Call the parent constructor of the base doc template
+        and then apply addition settings
+        """
+        self.width, self.height = page_size
+        kwargs['pagesize'] = page_size
+        kwargs['leftMargin'] = 0 * mm
+        kwargs['rightMargin'] = 0 * mm
+        kwargs['topMargin'] = 0 * mm
+        kwargs['bottomMargin'] = 0 * mm
+        
+        BaseDocTemplate.__init__(self, filename, **kwargs)
+        
+        self.addPageTemplates(self._create_page_template())
+
+    def _create_page_template(self):
+        frame = Frame(mm, 
+                      0, 
+                      self.width, 
+                      self.height, 
+                      leftPadding=0 * mm,
+                      bottomPadding=0 * mm, 
+                      rightPadding=0 * mm,
+                      topPadding=1 * mm)
+        template = PageTemplate('Normal', [frame])
+        return template
+        
+        
+class Sticker(object):
+    
+    sticker_width = 62 * mm
+    sticker_height = 29 * mm
+    barcode_height = (sticker_height / 2) - 1 * mm
+    barcode_width = 0.4 * mm
+    
+    def __init__(self, code=None, description=None, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(Sticker, self).__init__()
+        
+        #Set attribute
+        self.code = code
+        self.description = description
+        
+    def create(self, response=None):
+        """
+        Main method to create a sticker page
+        """
+        logger.debug(self.code)
+        logger.debug(response)
+        if response is None:
+            response = '{0}.pdf'.format(self.code)
+            
+        doc = SingleStickerDocTemplate(response, (self.sticker_width, self.sticker_height))
+        stories = [self._create_sticker()]
+        doc.build(stories)
+        
+        return "{0}.pdf".format(self.code)
+        
+    def _create_sticker(self):
+        """
+        Creates a single sticker page.
+        """
+        barcode = code128.Code128(self.code, barHeight=self.barcode_height, barWidth=self.barcode_width)
+        data = [[barcode], [self._format_description(self.description)]]
+        table = Table(data, colWidths=self.sticker_width, rowHeights=(self.sticker_height / 2) - 1 * mm)
+        style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING', (0, 0), (-1, -1), 1),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                            #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
+                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
+        table.setStyle(style)
+        
+        return table
+    
+    def _format_description(self, description):
+        """
+        Formats the description into a paragraph
+        with the paragraph style
+        """
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               leading=12,
+                               wordWrap='CJK',
+                               allowWidows=1,
+                               alignment=1,
+                               allowOrphans=1,
+                               fontSize=10,
+                               textColor=colors.CMYKColor(black=60))
+        
+        return Paragraph(description, style)
         
         
 class StickerPage(object):
