@@ -21,7 +21,7 @@ from supplies.PDF import SupplyPDF
 from utilities.http import save_upload
 from auth.models import S3Object
 from supplies.serializers import SupplySerializer, FabricSerializer, LogSerializer
-from media.stickers import StickerPage
+from media.stickers import StickerPage, Sticker
 
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,7 @@ logger = logging.getLogger(__name__)
 def sticker(request, pk=None):
     response = HttpResponse(content_type='application/pdf; charset=utf-8')
     supply = Supply.objects.get(pk=pk)
-    logger.debug(request);
-    pdf = StickerPage(code="DRS-{0}".format(supply.id), description=supply.description)
+    pdf = Sticker(code="DRS-{0}".format(supply.id), description=supply.description)
     pdf.create(response)
     
     return response
