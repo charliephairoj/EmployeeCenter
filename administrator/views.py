@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 def log(request):
     if request.method.lower() == 'post':
-        data = request.data
+        data = request.POST
     
-        Log.objects.create(user=request.user, type=data['type'], message=data['message'])
+        Log.objects.create(user=request.user, type=data['type'].upper(), message=data['message'])
     
         response = HttpResponse('ok', content_type='application/json; charset=utf-8')
         response.status_code = 201

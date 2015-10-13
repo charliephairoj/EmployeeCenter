@@ -78,6 +78,7 @@ def app_login(request):
             logger.debug(cleanUsername)
             logger.debug(cleanPassword)
             user = authenticate(username=cleanUsername, password=cleanPassword)
+            logger.debug(user)
             #checks whether user authennticated
             if user is not None:
                 #checks if user is still active
