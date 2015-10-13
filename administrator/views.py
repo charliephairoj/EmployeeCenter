@@ -7,6 +7,9 @@ from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadReque
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
 from rest_framework import generics
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+import boto.ses
 
 #from administrator.models import User
 from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer
@@ -21,8 +24,18 @@ def log(request):
         data = request.POST
     
         Log.objects.create(user=request.user, type=data['type'].upper(), message=data['message'])
-    
-        response = HttpResponse('ok', content_type='application/json; charset=utf-8')
+        
+        #Send an email if log is an error
+        if data['type'].lower() == 'error': 
+            conn = boto.ses.connect_to_region('us-east-1')
+            body = data['message']
+            conn.send_email('no-replay@dellarobbiathailand.com',
+                            u'System error for {0}'.format(request.user.username),
+                            body,
+                            'charliep@dellarobbiathailand.com',
+                            format='html')
+                            
+        response = HttpResponse('Log created.', content_type='application/json; charset=utf-8')
         response.status_code = 201
         return response
         
