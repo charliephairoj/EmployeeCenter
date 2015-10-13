@@ -68,6 +68,8 @@ urlpatterns = patterns('',
     url(r'^/api/v1/current_user$', 'administrator.views.current_user'),
     url(r'^api/v1/change_password', 'auth.views.change_password'),
     url(r'^api/v1/change_password/', 'auth.views.change_password'),
+    url(r'^api/v1/client/log/$', 'administrator.views.log'),
+    
     
     url(r'^', include(router.urls)),
     

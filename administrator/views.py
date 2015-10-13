@@ -10,11 +10,29 @@ from rest_framework import generics
 
 #from administrator.models import User
 from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer
+from administrator.models import Log
 
 
 logger = logging.getLogger(__name__)
 
 
+def log(request):
+    if request.method.lower() == 'post':
+        data = request.data
+    
+        Log.objects.create(user=request.user, type=data['type'], message=data['message'])
+    
+        response = HttpResponse('ok', content_type='application/json; charset=utf-8')
+        response.status_code = 201
+        return response
+        
+    else:
+        
+        response = HttpResponse('suck it', content_type='application/json')
+        response.status_code = 200 
+        return response
+        
+    
 class UserMixin(object):
     queryset = User.objects.all()
     serializer_class = UserSerializer
