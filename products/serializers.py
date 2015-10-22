@@ -2,7 +2,8 @@ import logging
 
 from rest_framework import serializers
 
-from products.models import Product, Configuration, Model, Upholstery, Pillow, Table, ModelImage
+from products.models import Product, Configuration, Model, Upholstery, Pillow, Table, ModelImage, Supply as ProductSupply
+from supplies.models import Supply
 from media.models import S3Object
 from contacts.serializers import CustomerSerializer
 
@@ -238,6 +239,16 @@ class TableSerializer(serializers.ModelSerializer):
             setattr(instance, field_name, validated_data[field_name])
             
         return instance
+        
+
+class ProductSupplySerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all(), allow_null=True, required=False)
+    
+    class Meta:
+        model = ProductSupply
+        field = ('id', 'description', 'cost', 'quantity')
+
     
         
         

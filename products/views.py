@@ -8,8 +8,8 @@ from django.db.models import Q
 from django.conf import settings
 from django.http import HttpResponse
 
-from products.models import Upholstery, Table, Model, Configuration
-from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer
+from products.models import Upholstery, Table, Model, Configuration, Supply as ProductSupply
+from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer, ProductSupplySerializer
 from media.models import S3Object
 from utilities.http import save_upload
 
@@ -232,3 +232,58 @@ class TableViewSet(viewsets.ModelViewSet):
     """
     queryset = Table.objects.all()
     serializer_class = TableSerializer
+    
+    
+class SupplyMixin(object):
+    queryset = ProductSupply.objects.all()
+    serializer_class = ProductSupplySerializer
+    
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        fields = ['product', 'supply']
+        
+        for field in fields:
+            try:
+                if field in request.data:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+            except TypeError:
+                pass
+                    
+        return request
+        
+                    
+class ProductSupplyList(SupplyMixin, generics.ListCreateAPIView):
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        #Filter based on query
+        product_id = self.request.QUERY_PARAMS.get('product__id', None)
+        if product_id:
+            queryset = queryset.filter(product__id=product_id)
+                                      
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+            
+        return queryset
+        
+    def post(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        return super(ProductSupplyList, self).post(request, *args, **kwargs)
+        
+        
+class ProductSupplyDetail(SupplyMixin, generics.RetrieveUpdateDestroyAPIView):
+    def put(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        return super(ProductSupplyDetail, self).put(request, *args, **kwargs)
+        
+        

@@ -23,6 +23,7 @@ from supplies.views import LogList, LogDetail
 from products.views import ConfigurationViewSet, ModelViewSet
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
+from products.views import ProductSupplyList, ProductSupplyDetail
 from estimates.views import EstimateList, EstimateDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
@@ -83,6 +84,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/fabric/(?P<pk>[0-9]+)/$', FabricDetail.as_view()),
     url(r'^api/v1/upholstery/$', UpholsteryList.as_view()),
     url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
+    url(r'^api/v1/product/supply/$', ProductSupplyList.as_view()),
+    url(r'^api/v1/product/supply/(?P<pk>[0-9]+)/$', ProductSupplyDetail.as_view()),
     url(r'^api/v1/table/$', TableList.as_view()),
     url(r'^api/v1/table/(?P<pk>[0-9]+)/$', TableDetail.as_view()),
     url(r'^api/v1/estimate/$', EstimateList.as_view()),

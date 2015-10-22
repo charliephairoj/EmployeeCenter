@@ -8,6 +8,7 @@ from boto.s3.key import Key
 from django.conf import settings
 from django.db import models
 
+from supplies.models import Supply as S
 from media.models import S3Object
 
 
@@ -515,4 +516,11 @@ class Rug(Product):
         data.update(super(Table, self).to_dict(user))
         return data
 
+
+class Supply(models.Model):
+    description = models.TextField(null=True)
+    supply = models.ForeignKey(S, null=True)
+    product = models.ForeignKey(Product)
+    quantity = models.DecimalField(decimal_places=5, max_digits=12, null=True)
+    cost = models.DecimalField(decimal_places=5, max_digits=12, null=True)
 
