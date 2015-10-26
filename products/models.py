@@ -41,6 +41,7 @@ class Product(models.Model):
     last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
     collection = models.TextField(default="Dellarobbia Thailand")
     deleted = models.BooleanField(default=False)
+    supplies = models.ManyToManyField(S, through='Supply')
 
     class Meta:
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),

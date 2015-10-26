@@ -249,6 +249,23 @@ class ProductSupplySerializer(serializers.ModelSerializer):
         model = ProductSupply
         field = ('id', 'description', 'cost', 'quantity')
 
+    def to_representation(self, instance):
+        """
+        Override the 'to_representation' method'
+        
+        "Will call parent method and then change some of the data"
+        """
+        ret = super(ProductSupplySerializer, self).to_representation(instance)
+        
+        try:
+            ret['supply'] = {'id': instance.supply.id,
+                             'description': instance.supply.description,
+                             'cost': instance.supply.products.all()[0].cost}
+                             
+        except AttributeError:
+            pass
+            
+        return ret
     
         
         
