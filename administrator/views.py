@@ -23,8 +23,11 @@ def log(request):
     if request.method.lower() == 'post':
         data = request.POST
     
-        Log.objects.create(user=request.user, type=data['type'].upper(), message=data['message'])
-        
+        try:
+            Log.objects.create(user=request.user, type=data['type'].upper(), message=data['message'])
+        except Exception:
+            pass
+            
         #Send an email if log is an error
         if data['type'].lower() == 'error': 
             conn = boto.ses.connect_to_region('us-east-1')

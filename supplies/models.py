@@ -71,7 +71,7 @@ class Supply(models.Model):
         try:
             return self._get_product(self.supplier).cost
         except AttributeError as e:
-            if not self.supplier:
+            if not hasattr(self, 'supplier'):
                 raise ValueError("Please set the supplier for this supply in order to get a cost")
             else: 
                 raise Exception(e)
