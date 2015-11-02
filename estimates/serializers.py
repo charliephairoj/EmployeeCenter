@@ -216,7 +216,11 @@ class EstimateSerializer(serializers.ModelSerializer):
         #    except File.DoesNotExist:
         #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
         #                            acknowledgement=instance)
-                                    
+        
+        instance.calculate_totals()
+        
+        instance.create_and_upload_pdf()
+                                 
         instance.save()
         
         return instance
