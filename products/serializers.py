@@ -95,7 +95,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class UpholsterySerializer(serializers.ModelSerializer):
     model = serializers.PrimaryKeyRelatedField(queryset=Model.objects.all())
     configuration = serializers.PrimaryKeyRelatedField(queryset=Configuration.objects.all())
-    pillows = PillowSerializer(required=False, many=True)
+    pillows = PillowSerializer(required=False, many=True, write_only=True)
     image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all(),
                                                allow_null=True)
     collection = serializers.CharField(required=False, allow_null=True)
@@ -123,13 +123,17 @@ class UpholsterySerializer(serializers.ModelSerializer):
                         
         ret['configuration'] = {'id': instance.configuration.id,
                                 'configuration': instance.configuration.configuration}
+                       
+        ret['pillows'] = [{'id': pillow.id,
+                           'type': pillow.type,
+                           'quantity': pillow.quantity} for pillow in instance.pillows.all()]
                                 
         try:
             ret['image'] = {'id': instance.image.id,
                             'url': instance.image.generate_url()}
         except AttributeError:
             pass
-            
+        logger.info(ret)    
         return ret
             
     def create(self, validated_data):
@@ -163,6 +167,14 @@ class UpholsterySerializer(serializers.ModelSerializer):
         del validated_data['model']
         del validated_data['configuration']
         
+        for p_data in validated_data['pillows']:
+            try:
+                pillow = Pillow.objects.get(product=instance, type=p_data['type'].lower())
+            except Pillow.DoesNotExist as e:
+                pillow = Pillow.objects.create(product=instance, type=p_data['type'].lower())
+            pillow.quantity = p_data['quantity']
+            pillow.save()
+            
         for field_name in validated_data.keys():
             setattr(instance, field_name, validated_data[field_name])
             

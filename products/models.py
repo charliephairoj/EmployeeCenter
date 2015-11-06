@@ -379,6 +379,7 @@ class Upholstery(Product):
             obj._add_pillow('corner', kwargs["corner_pillow"])
 
         return obj
+        
 
     def update(self, user=None, **kwargs):
         """

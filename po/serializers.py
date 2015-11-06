@@ -58,7 +58,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
         instance.supply.supplier = self.context['supplier']
         instance.description = validated_data.pop('description', None) or instance.description
-        instance.unit_cost = validated_data.pop('unit_cost', None)
+        instance.unit_cost = validated_data.pop('unit_cost', instance.supply.cost)
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', None) or instance.discount
         instance.comments = validated_data.get('comments', instance.comments)        
