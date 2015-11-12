@@ -115,14 +115,8 @@ if __name__ == "__main__":
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["charliep@dellarobbiathailand.com",]
-                      """
-                       "vutikiat@decoroom.com",
-                       "rungroj@decoroom.com",
-                       "pummarin@decoroom.com",
-                       "nittiya@decoroom.com",
-                       "sirilak@decoroom.com",
-                       "sujira@decoroom.com"]""",
+                      ["charliep@dellarobbiathailand.com",],
+                     
                       format='html')
    
 
