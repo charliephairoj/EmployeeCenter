@@ -79,9 +79,10 @@ class AcknowledgementEmail(object):
         
         self.queryset = Acknowledgement.objects.raw("""
         SELECT id, delivery_date, status from acknowledgements_acknowledgement
-        where (delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
+        where ((delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
         OR (delivery_date > now() - interval '14 days' AND 
-        (lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship'))
+        (lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship')))
+        AND (customer_id = 357 OR customer_id = 41 OR customer_id = 527)
         ORDER BY delivery_date""")
         
         self.acks = []
@@ -114,7 +115,14 @@ if __name__ == "__main__":
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["deliveries@dellarobbiathailand.com"],
+                      ["charliep@dellarobbiathailand.com",]
+                      """
+                       "vutikiat@decoroom.com",
+                       "rungroj@decoroom.com",
+                       "pummarin@decoroom.com",
+                       "nittiya@decoroom.com",
+                       "sirilak@decoroom.com",
+                       "sujira@decoroom.com"]""",
                       format='html')
    
 
