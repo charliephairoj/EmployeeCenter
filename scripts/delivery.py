@@ -9,7 +9,7 @@ the email address
 
 import sys, os, django
 sys.path.append('/Users/Charlie/Sites/employee/backend')
-sys.path.append('/home/django_worker/backend')
+#sys.path.append('/home/django_worker/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 from decimal import Decimal
 from datetime import timedelta, datetime
@@ -61,11 +61,17 @@ class AcknowledgementEmail(object):
     item_cell_style = """
                       padding:0.75em 0.25em;
                       """
+                      
+    status_cell = """
+                  color: #DDD;
+                  text-align:center;
+                  """
     
     def __init__(self, *args, **kwargs):
         #super(self, AcknowledgementEmail).__init__(*args, **kwargs)
         
-        self.start_date = datetime.today()
+        date = datetime.today()
+        self.start_date = date - timedelta(days=31)
         self.end_date = self.start_date + timedelta(days=31)
         self.queryset = self.queryset.filter(delivery_date__range=[self.start_date,
                                                                    self.end_date])
@@ -73,16 +79,29 @@ class AcknowledgementEmail(object):
         
         self.queryset = Acknowledgement.objects.raw("""
         SELECT id, delivery_date, status from acknowledgements_acknowledgement
-        where (delivery_date <= now() + interval '31 days' AND delivery_date >= now())
-        OR (delivery_date > now() - interval '14 days' and (lower(status) = 'acknowledged' OR lower(status) = 'in production'))
+        where (delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
+        OR (delivery_date > now() - interval '14 days' AND 
+        (lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship'))
         ORDER BY delivery_date""")
         
+        self.acks = []
+        
+        for ack in self.queryset:
+            for status in ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid']:
+                if ack.logs.filter(message__icontains=status).exists(): 
+                    setattr(ack, '_'.join(status.split(' ')), True) 
+                else:
+                    setattr(ack, '_'.join(status.split(' ')), False)
+                  
+            self.acks.append(ack)
+            
     def get_message(self):
         #return self.message
-        return render_to_string('delivery_email.html', {'acknowledgements': self.queryset,
+        return render_to_string('delivery_email.html', {'acknowledgements': self.acks,
                                                         'header_style': self.header_cell_style,
                                                         'cell_style': self.cell_style,
                                                         'item_cell_style': self.item_cell_style,
+                                                        'status_cell': self.status_cell,
                                                         'start_date': self.start_date,
                                                         'end_date': self.end_date})       
             
@@ -90,11 +109,12 @@ class AcknowledgementEmail(object):
 if __name__ == "__main__":
     email = AcknowledgementEmail()
     message = email.get_message()
+    
     e_conn = boto.ses.connect_to_region('us-east-1')
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["deliveries@dellarobbiathailand.com"],
+                      ["charliep@dellarobbiathailand.com"],
                       format='html')
    
 

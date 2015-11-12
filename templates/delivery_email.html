@@ -127,6 +127,8 @@
 			/* Put CSS for high density (hdpi) Android layouts in here */
 		}
 		/* end Android targeting */
+		
+		
 	</style>
 
 	<!-- Targeting Windows Mobile -->
@@ -152,7 +154,7 @@
     <table class="content" width="100%" bgcolor="#f6f8f1" border="1" cellpadding="0" cellspacing="0">
 		<thead>
 			<tr>
-				<td colspan="8">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
+				<td colspan="9" style="text-align:center; font-size:1.5em; padding:1em 0;">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
 			</tr>
 			<tr>
 				<th style="{{header_style}}">#</th>
@@ -182,7 +184,13 @@
 							<tr>
 								<td style="{{item_cell_style}} width:10em;">{{item.description}}</td>
 								<td style="{{item_cell_style}} width:2em; padding:0.75em 1em; text-align:center;">{{item.quantity}}</td>
-								<td style="{{item_cell_style}} width:6em;">{% if item.fabric %}{{item.fabric.description}}{% endif %}</td>
+								<td style="{{item_cell_style}} width:6em;">
+									{% if item.fabric %}
+										{{item.fabric.description}}
+										<img style="width:100%" src="{{item.fabric.image.generate_url}}"/>
+										
+									{% endif %}
+								</td>
 							</tr>
 							{% for pillow in item.pillows.all %}
 							<tr>
@@ -192,10 +200,10 @@
 									{% if pillow.fabric %}
 									
 									{{pillow.fabric.description}}
+									<img style="width:100%" src="{{pillow.fabric.image.generate_url}}"/>
 									
 									{% endif %}
 								</td>
-									
 							</tr>
 							{% endfor %}
 									
@@ -204,8 +212,22 @@
 					</table>
 				</td>
 			</tr>
+			<tr>
+				<td colspan="9">
+					<table style="width:100%; height:12px">
+						<tr>
+							<td style="{{status_cell}} {% if ack.opened %} background-color:rgb(54, 66, 140); color:#FFF;{% endif %}">Acknowledged</td>
+							<td style="{{status_cell}} {% if ack.deposit_received %} background-color:rgb(50, 130, 120); color:#FFF;{% endif %}">Deposit Received</td>
+							<td style="{{status_cell}} {% if ack.in_production %} background-color:rgb(198, 148, 77); color:#FFF;{% endif %}">In Production</td>
+							<td style="{{status_cell}} {% if ack.ready_to_ship %} background-color:rgb(87,117,83); color:#FFF;{% endif %}">Ready to Ship</td>
+							<td style="{{status_cell}} {% if ack.shipped %} background-color:rgb(97,92,130); color:#FFF;{% endif %}">Shipped</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
 			{% endfor %}
 		</tbody>
     </table>
+	
 </body>
 </html>
