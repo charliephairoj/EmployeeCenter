@@ -294,7 +294,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             employee = self.context['request'].user
             message = "Order #{0} is {1}.".format(instance.id, status.lower())
             log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
-            instance.status = status
+            
+            # Check if a high level event has ocurrred. If yes, then the status will not change
+            statuses = ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid']
+            for status in statuses:
+                if instance.logs.filter(message__icontains=status).exists():
+                    instance.status = status
             
             assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
             
