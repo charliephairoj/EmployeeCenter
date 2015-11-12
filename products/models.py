@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+import re
 from decimal import Decimal
 
 from boto.s3.connection import S3Connection, Location
@@ -12,7 +13,7 @@ from supplies.models import Supply as S
 from media.models import S3Object
 
 
-logger = logging.getLogger('django.request')
+logger = logging.getLogger(__name__)
 
 
 class Product(models.Model):
@@ -42,7 +43,11 @@ class Product(models.Model):
     collection = models.TextField(default="Dellarobbia Thailand")
     deleted = models.BooleanField(default=False)
     supplies = models.ManyToManyField(S, through='Supply')
-
+    
+    # Constants
+    _overhead_percent = 40
+    _profit_percent = 35
+    
     class Meta:
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
                        ('edit_manufacture_price', 'Can edit the manufacture price'),
@@ -98,106 +103,121 @@ class Product(models.Model):
             obj._add_pillow('corner', kwargs["corner_pillow"])
             
         return obj
-
-    def update(self, user=None, **kwargs):
-
-        if 'width' in kwargs:
-            self.width = kwargs["width"]
-        if 'depth' in kwargs:
-            self.depth = kwargs["depth"]
-        if 'height' in kwargs:
-            self.height = kwargs["height"]
+        
+        
+    def calculate_prices(self, apply_prices=False):
+        grades = {'A1': 15, 
+                  'A2': 20, 
+                  'A3': 25,
+                  'A4': 30,
+                  'A5': 35,
+                  'A6': 40}
+        
+        prices = {}
+        
+        for grade in grades:
+            prices[grade] = self.calculate_price(grades[grade])
             
-        if user:
-            if "manufacture_price" in kwargs:
-                if user.has_perm('products.edit_manufacture_price'):
-                    self.manufacture_price = Decimal(str(kwargs["manufacture_price"]))
-            if "retail_price" in kwargs:
-                if user.has_perm('products.edit_retail_price'):
-                    self.retail_price = Decimal(str(kwargs["retail_price"]))
-            if "wholesale_price" in kwargs:
-                if user.has_perm('products.edit_wholesale_price'):
-                    self.wholesale_price = Decimal(str(kwargs["wholesale_price"]))
-            if "export_price" in kwargs:
-                if user.has_perm('products.edit_export_price'):
-                    self.export_price = Decimal(str(kwargs["export_price"]))
-
-        if "image" in kwargs:
-            if 'id' in kwargs['image']:
-                self.image = S3Object.objects.get(id=kwargs['image']['id'])
-
-        if "back_pillow" in kwargs:
-            try:
-                pillow = self.pillow_set.get(type='back')
-                pillow.quantity = kwargs['back_pillow']
-                pillow.save()
-            except Pillow.DoesNotExist:
-                self._add_pillow('back', kwargs['back_pillow'])
-
-        if "accent_pillow" in kwargs:
-            try:
-                pillow = self.pillow_set.get(type='accent')
-                pillow.quantity = kwargs['accent_pillow']
-                pillow.save()
-            except Pillow.DoesNotExist:
-                self._add_pillow('accent', kwargs["accent_pillow"])
-
-        if "lumbar_pillow" in kwargs:
-            try:
-                pillow = self.pillow_set.get(type='lumbar')
-                pillow.quantity = kwargs['lumbar_pillow']
-                pillow.save()
-            except Pillow.DoesNotExist:
-                self._add_pillow('lumbar', kwargs["lumbar_pillow"])
-
-        if "corner_pillow" in kwargs:
-            try:
-                pillow = self.pillow_set.get(type='corner')
-                pillow.quantity = kwargs['corner_pillow']
-                pillow.save()
-            except Pillow.DoesNotExist:
-                self._add_pillow('corner', kwargs["corner_pillow"])
-        self.save()
-
-    def to_dict(self, user=None,):
-        data = {'id': self.id,
-                'type': self.type,
-                'width': self.width,
-                'depth': self.depth,
-                'height': self.height,
-                'units': self.units,
-                'type': self.type,
-                'description': self.description,
-                'url': self.image_url,
-                'deleted': self.deleted}
-        if self.image:
-                data['image'] = {'url': self.image.generate_url()}
-        if self.wholesale_price:
-                data["has_price"] = True
-
-        #Checks to see if there are pillows to add
-        pillows = self.pillow_set.all()
-        if len(pillows) > 0:
-            #Create pillow array in data
-            data["pillows"] = []
-            #loop through pillow types
-            for pillow in pillows:
-                data['{0}_pillow'.format(pillow.type)] = pillow.quantity
-                #loop through invidual pillows
-                for p in range(pillow.quantity):
-                    data["pillows"].append({'type': pillow.type})
-        #Checks permission
-        if user != None:
-            if user.has_perm('products.view_manufacture_price'):
-                data.update({'manufacture_price': str(self.manufacture_price)})
-            if user.has_perm('products.view_wholesale_price'):
-                data.update({'wholesale_price': str(self.wholesale_price)})
-            if user.has_perm('products.view_retail_price'):
-                data.update({'retail_price': str(self.retail_price)})
-            if user.has_perm('products.view_export_price'):
-                data.update({'export_price': str(self.export_price)})
-
-        return data
+        if apply_prices:
+            for grade in prices:
+                Price.objects.create(grade=grade.upper(), product=self, price=prices[grade])
+                logger.info("{0} price for {1} created at {2}".format(grade, self.description, prices[grade]))
+                
+        return prices
+        
+    def calculate_price(self, grade):
+        """
+        Calculate the price of the product at the specified grade
+        """
+        logger.debug("\nCalculating prices for grade {0}".format(grade))
+        
+        # Calculate all the costs excluding fabric cost
+        direct_cost = self._calculate_costs_excluding_fabric()
+        
+        # Add fabric cost based on quantity of fabric used
+        direct_cost += self._calculate_fabric_costs(Supply.objects.get(product=self, description='fabric').quantity, grade)
+        
+        logger.debug("Total direct material cost is {0:.2f}".format(direct_cost))
+        
+        # Calculate the total manufacture cost. Minimum cost to make this product 
+        # without losing money
+        total_manufacture_cost = direct_cost + self._calculate_overhead(direct_cost)
+        
+        logger.debug("Total manufacture cost is {0:.2f}".format(total_manufacture_cost))
+        
+        #Calculate the wholesale for this product
+        wholesale_price = self._calculate_wholesale_price(total_manufacture_cost)
+        
+        retail_price = wholesale_price * Decimal('2')
+        
+        return retail_price
+        
+    def _calculate_fabric_costs(self, quantity, grade):
+        try:
+            cost = Decimal(str(quantity)) * Decimal(str(grade)) * Decimal(str(36))
+        except InvalidOperation as e:
+            if not quantity:
+                raise ValueError("Quantity cannot be {0}".format(quantity))
+            
+            if not grade:
+                raise ValueError("Quantity cannot be {0}".format(grade))
+        
+        logger.debug("Fabric cost is {0}".format(cost))
+        
+        return cost
+        
+    def _calculate_costs_excluding_fabric(self):
+        """
+        Calculate the direct material cost of the product
+        """
+        cost = 0
+        
+        for ps in Supply.objects.filter(product=self).exclude(description='fabric').exclude(cost__isnull=True, quantity__isnull=True):
+            if ps.supply and ps.quantity:
+                #Set supplier in order to retrieve cost
+                product = ps.supply.products.all().order_by('cost')[0]
+                ps.supply.supplier = product.supplier
+                
+                #Add the cost of the supply to the total
+                try:
+                    cost += ps.quantity * (ps.supply.cost / product.quantity_per_purchasing_unit)
+                except Exception as e:
+                    logger.debug(e)
+                    print ps.quantity, ps.description, ps.supply.description
+            else:
+                cost += (ps.cost or 0)
+                
+        logger.debug("Costs excluding fabric are {0:.2f}".format(cost))
+        
+        return cost
+        
+    def _calculate_overhead(self, direct_costs):
+        return direct_costs * (Decimal(str(self._overhead_percent)) / Decimal('100'))
+    
+    def _calculate_wholesale_price(self, tmc):    
+        
+        if re.search('^fc-\s+', self.description):
+            pp = self._profit_percent + 5
+        else:
+            pp = self._profit_percent
+            
+        divisor = 1 - (pp / Decimal('100')) 
+        
+        price = tmc / divisor
+        
+        logger.debug("Wholesale price is {0:.2f}".format(price))
+        
+        return price
+        
+    def _retrieve_price(self, grade):
+        try:
+            price = self.prices.get(grade=grade.lower())
+            
+            logger.debug("Price for {0} at grade {1} is {2:.2f}".format(self.description, grade, price))
+            
+            return price
+        except TypeError:
+            raise ValueError("Please specify the grade to retrieve the price for {0}".format(self.description))
 
     def _add_pillow(self, type, quantity):
         pillow = Pillow()
@@ -240,36 +260,6 @@ class Model(models.Model):
                 obj.images.add(S3Object.objects.get(id=kwargs["image"]["id"]))
         obj.save()
         return obj
-
-    def update(self, user=None, **kwargs):
-        if "model" in kwargs:
-            self.model = kwargs["model"]
-        if "name" in kwargs:
-            self.name = kwargs["name"]
-        if "collection" in kwargs:
-            self.collection = kwargs["collection"]
-        self.save()
-
-    def to_dict(self, *args, **kwargs):
-        #prepares array for configs
-        configs = []
-        #loop through the products to get config
-        for product in self.upholstery_set.all():
-            configs.append({'configuration': product.configuration.configuration,
-                            'id': product.configuration.id})
-
-        data = {"id": self.id,
-                "model": self.model,
-                "name": self.name,
-                "collection": self.collection,
-                "configurations": configs,
-                'images': [image.generate_url() for image in self.images.all()]}
-        try:
-            data.update({'image': {'url': self.images.all()[0].generate_url()}})
-        except:
-            pass
-        #returns the data object
-        return data
 
 
 class ModelImage(models.Model):
@@ -379,29 +369,6 @@ class Upholstery(Product):
             obj._add_pillow('corner', kwargs["corner_pillow"])
 
         return obj
-        
-
-    def update(self, user=None, **kwargs):
-        """
-        Updates the upholstery.
-
-        This method with update the parent attributes, and then the objects
-        attributes. The user object is required to update certain attributes
-        """
-        super(Upholstery, self).update(user=user, **kwargs)
-
-    def to_dict(self, user=None):
-        """
-        Returns the objects attributes as a dictionary
-        """
-        data = {"model": {"id": self.model.id,
-                          "model": self.model.model,
-                          "name": self.model.name},
-                "configuration": {"id": self.configuration.id,
-                                  "configuration": self.configuration.configuration}}
-
-        data.update(super(Upholstery, self).to_dict(user))
-        return data
 
 
 class Pillow(models.Model):
@@ -526,3 +493,10 @@ class Supply(models.Model):
     quantity = models.DecimalField(decimal_places=5, max_digits=12, null=True)
     cost = models.DecimalField(decimal_places=5, max_digits=12, null=True)
 
+
+class Price(models.Model):
+    price = models.DecimalField(decimal_places=2, max_digits=12)
+    grade = models.TextField()
+    product = models.ForeignKey(Product, related_name='prices')
+    effective_date = models.DateTimeField(auto_now_add=True)
+    

@@ -65,7 +65,14 @@ class ItemSerializer(serializers.ModelSerializer):
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False,
                                                allow_null=True)
     id = serializers.IntegerField(required=False, allow_null=True)
-                                               
+                                           
+    grades = {'A1': 15,
+              'A2': 20,
+              'A3': 25,
+              'A4': 30,
+              'A5': 35,
+              'A6': 40}
+              
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product', 
@@ -80,7 +87,11 @@ class ItemSerializer(serializers.ModelSerializer):
         acknowledgement = self.context['acknowledgement']
         pillow_data = validated_data.pop('pillows', None)      
         product = validated_data['product']
-        unit_price = validated_data.pop('custom_price', None) or product.price
+        fabric = validate_data.pop('fabric', None)
+        try:
+            unit_price = validated_data.pop('custom_price', None) or product.calculate_price(self._grades[fabric.grade])
+        except AttributeError:
+            unit_price = validate_data.pop('custom_price', product.price)
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height
@@ -88,7 +99,7 @@ class ItemSerializer(serializers.ModelSerializer):
         
         instance = self.Meta.model.objects.create(acknowledgement=acknowledgement, unit_price=unit_price, 
                                                   width=width, depth=depth, 
-                                                  height=height, **validated_data)
+                                                  height=height, fabric=fabric, **validated_data)
         
         #attach fabric quantity
         instance.fabric_quantity = fabric_quantity
