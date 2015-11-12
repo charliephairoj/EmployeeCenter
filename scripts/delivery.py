@@ -9,7 +9,7 @@ the email address
 
 import sys, os, django
 sys.path.append('/Users/Charlie/Sites/employee/backend')
-#sys.path.append('/home/django_worker/backend')
+sys.path.append('/home/django_worker/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 from decimal import Decimal
 from datetime import timedelta, datetime
