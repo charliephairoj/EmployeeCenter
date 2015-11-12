@@ -82,7 +82,7 @@ class AcknowledgementEmail(object):
         where ((delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
         OR (delivery_date > now() - interval '14 days' AND 
         (lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship')))
-        AND (customer_id = 357 OR customer_id = 41 OR customer_id = 527)
+        AND (customer_id = 357 OR customer_id = 41 OR customer_id = 527) AND lower(status) != 'cancelled'
         ORDER BY delivery_date""")
         
         self.acks = []
@@ -116,7 +116,13 @@ if __name__ == "__main__":
                       'Delivery Schedule',
                       message,
                       ["charliep@dellarobbiathailand.com",],
-                     
+                       "porrawat@decoroom.com",
+                       "vutikiat@decoroom.com",
+                       "rungroj@decoroom.com",
+                       "pummarin@decoroom.com",
+                       "nittiya@decoroom.com",
+                       "sirilak@decoroom.com",
+                       "sujira@decoroom.com"],
                       format='html')
    
 
