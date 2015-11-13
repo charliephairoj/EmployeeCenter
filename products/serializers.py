@@ -20,9 +20,11 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 class ModelSerializer(serializers.ModelSerializer):
     images = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     image = serializers.DictField(required=False, write_only=True)
+    name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
     class Meta:
         model = Model
-        field = ('id', 'name', 'model', 'images')
+        field = ('id', 'model', 'images')
         exclude = ('image_url', 'bucket', 'image_key')
         
     def create(self, validated_data):
