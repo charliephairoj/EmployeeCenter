@@ -2,6 +2,7 @@ import os
 import logging
 import time
 import re
+import math
 from decimal import Decimal
 
 from boto.s3.connection import S3Connection, Location
@@ -106,6 +107,12 @@ class Product(models.Model):
         
         
     def calculate_prices(self, apply_prices=False):
+        #Calculate supply quantities before calculating cost
+        try:
+            self.calculate_supply_quantities()
+        except AttributeError:
+            pass
+            
         grades = {'A1': 15, 
                   'A2': 20, 
                   'A3': 25,
@@ -155,7 +162,7 @@ class Product(models.Model):
     def _calculate_fabric_costs(self, quantity, grade):
         try:
             cost = Decimal(str(quantity)) * Decimal(str(grade)) * Decimal(str(36))
-        except InvalidOperation as e:
+        except Exception as e:
             if not quantity:
                 raise ValueError("Quantity cannot be {0}".format(quantity))
             
@@ -238,6 +245,7 @@ class Model(models.Model):
     image_key = models.TextField()
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
+    has_back_pillows = models.BooleanField(default=True)
 
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -369,7 +377,136 @@ class Upholstery(Product):
             obj._add_pillow('corner', kwargs["corner_pillow"])
 
         return obj
-
+        
+    def calculate_supply_quantities(self):
+        """
+        Calculate the quantities of supplies used by this furniture 
+        """
+        # Calculate pillow quantites
+        self.validate_pillows()
+        
+        # Calculate fiber ball quantities by 
+        # using the quantities of pillows
+        self.calculate_fiber_ball_quantity()
+        
+        # Calculate the quantity of webbing
+        # from dimensions
+        self.calculate_webbing_quantity()
+        
+    def validate_pillows(self):
+        """
+        Validate that pillows exists and that the quantities
+        are correct based on these rules:
+        
+        -Sofa: 3 back pillows, 3 accent pillows
+        -Loveseat: 2 back pillows, 2 accent pillows
+        -chair: 1 back pillow, 1 accent pillow
+        """
+        config = self.configuration.configuration.lower()
+        modifier = 1 if self.model.has_back_pillows else 0
+        
+        if "sofa" in config:
+            pillows = {'back': 3 * modifier, 'accent': 3}
+        elif "loveseat" in config:
+            pillows = {'back': 2 * modifier, 'accent': 2}
+        elif "chair" in config:
+            pillows = {'back': 1 * modifier, 'accent': 1}
+        elif "corner" in config:
+            pillows = {'back': 2 * modifier, 'accent': 1}
+        elif "chaise" in config:
+            pillows = {'back': 1 * modifier, 'accent': 1}
+        else:
+            pillows = None
+           
+        if not self.pillows.all().exists():
+             logger.debug('Creating pillows for {0}'.format(self.description))
+             if pillows:
+                 for pillow_type in pillows:
+                     
+                     # Creates a pillow if the quantity is more than 0
+                     if pillows[pillow_type]:
+                         Pillow.objects.create(product=self, type=pillow_type, quantity=pillows[pillow_type])
+            
+        
+        
+    def calculate_fiber_ball_quantity(self):
+        """
+        Calculate the quantity of fiber ball in kg need for this upholstery.
+        Calculated based on these rules:
+        
+        -Back pillows = 2kg
+        -Accent pillows = 0.7kg
+        """
+        total_qty = 0
+        
+        for pillow in self.pillows.all():
+            
+            if pillow.type == 'back':
+                total_qty += pillow.quantity * Decimal('2')
+            elif pillow.type == 'accent':
+                total_qty += pillow.quantity * Decimal('0.7')
+        
+        try:
+            supply = Supply.objects.get(product=self, supply_id=2584)
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, supply=S.objects.get(pk=2584), description='fiber ball')
+        
+        supply.quantity = total_qty
+        supply.save()
+        
+        logger.debug("{0:.2f}kg used for {1}".format(total_qty, self.description))
+        return supply.quantity
+        
+    def calculate_webbing_quantity(self):
+        """
+        Calculate"""
+        if self.width > self.height:
+            width, height = self.width, self.height
+        else:
+            width, height = self.height, self.width
+                 
+        # Caculate number of strands to use horizontally   
+        number_of_width_strands = math.ceil((width / Decimal('76')) / 2)
+        if number_of_width_strands > 2:
+            number_of_width_strands -= 1
+            
+        # Calculate total length in mm of horizontal strands
+        w_length = (number_of_width_strands) * height
+        
+        # Caculate number of strands to use verticall   
+        number_of_height_strands = math.ceil((height / Decimal('76')) / 2) 
+        if number_of_height_strands > 2:
+            number_of_height_strands -= 1
+                
+        # Calculate total length in mm of veritcal strands
+        h_length = (number_of_height_strands) * width
+        
+        
+        length = (w_length + h_length) / 1000
+        
+        logger.debug("Width: {0:.0f}mm | Depth: {1:.0f}mm".format(width, height))
+        logger.debug("Used {0} strands horizontally".format(number_of_width_strands))
+        logger.debug('Used {0:.2f}mm horizontally'.format(w_length))
+        logger.debug("Used {0} strands vertically".format(number_of_height_strands))
+        logger.debug('Used {0:.2f}mm veritically'.format(h_length))
+        logger.debug("{0:.2f}m for {1}".format(length, self.description))
+        
+        print '\n'
+        
+        try:
+            supply = Supply.objects.get(product=self, supply_id=4874)
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, supply=S.objects.get(pk=4874), description='Webbing')
+        
+        supply.quantity = length
+        supply.save()
+        
+        return supply.quantity
+            
+        
+        
+            
+            
 
 class Pillow(models.Model):
     product = models.ForeignKey(Product, related_name="pillows")

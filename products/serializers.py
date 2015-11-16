@@ -24,7 +24,7 @@ class ModelSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Model
-        field = ('id', 'model', 'images')
+        field = ('id', 'model', 'images', 'has_back_pillows')
         exclude = ('image_url', 'bucket', 'image_key')
         
     def create(self, validated_data):
@@ -72,6 +72,12 @@ class ModelSerializer(serializers.ModelSerializer):
         
         ret = super(ModelSerializer, self).to_representation(instance)
         
+        try:
+            ret['images'] = [{'id': image.id,
+                              'url': image.generate_url()} for image in instance.images.all()]
+        except (AttributeError, IndexError):
+            pass
+            
         try:
             image = instance.images.all()[0]
             ret['image'] = {'id': image.id,
@@ -169,13 +175,16 @@ class UpholsterySerializer(serializers.ModelSerializer):
         del validated_data['model']
         del validated_data['configuration']
         
-        for p_data in validated_data['pillows']:
-            try:
-                pillow = Pillow.objects.get(product=instance, type=p_data['type'].lower())
-            except Pillow.DoesNotExist as e:
-                pillow = Pillow.objects.create(product=instance, type=p_data['type'].lower())
-            pillow.quantity = p_data['quantity']
-            pillow.save()
+        try:
+            for p_data in validated_data['pillows']:
+                try:
+                    pillow = Pillow.objects.get(product=instance, type=p_data['type'].lower())
+                except Pillow.DoesNotExist as e:
+                    pillow = Pillow.objects.create(product=instance, type=p_data['type'].lower())
+                pillow.quantity = p_data['quantity']
+                pillow.save()
+        except KeyError:
+            pass
             
         for field_name in validated_data.keys():
             setattr(instance, field_name, validated_data[field_name])

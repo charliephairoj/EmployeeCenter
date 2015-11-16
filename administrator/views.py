@@ -29,7 +29,7 @@ def log(request):
             pass
             
         #Send an email if log is an error
-        if data['type'].lower() == 'error': 
+        if data['type'].lower() == 'xerror': 
             conn = boto.ses.connect_to_region('us-east-1')
             body = data['message']
             conn.send_email('no-replay@dellarobbiathailand.com',
