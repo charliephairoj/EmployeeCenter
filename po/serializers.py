@@ -23,6 +23,7 @@ class ItemSerializer(serializers.ModelSerializer):
     supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all())
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Item
