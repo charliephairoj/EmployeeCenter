@@ -87,11 +87,12 @@ class ItemSerializer(serializers.ModelSerializer):
         acknowledgement = self.context['acknowledgement']
         pillow_data = validated_data.pop('pillows', None)      
         product = validated_data['product']
-        fabric = validate_data.pop('fabric', None)
+        fabric = validated_data.pop('fabric', None)
+        
         try:
             unit_price = validated_data.pop('custom_price', None) or product.calculate_price(self._grades[fabric.grade])
         except AttributeError:
-            unit_price = validate_data.pop('custom_price', product.price)
+            unit_price = validated_data.pop('custom_price', product.price)
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height

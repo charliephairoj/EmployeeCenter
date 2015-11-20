@@ -70,7 +70,7 @@ class PricelistDocTemplate(BaseDocTemplate):
         
 
 class PricelistPDF(object):
-    queryset = Upholstery.objects.filter(Q(description__istartswith='dw-') | Q(description__istartswith='fc-'))
+    queryset = Upholstery.objects.filter(Q(description__istartswith='fc-'))#Q(description__istartswith='dw-') | Q(description__istartswith='fc-'))
     queryset = queryset.filter(supplies__id__gt=0).distinct('description').order_by('description')
     
     _overhead_percent = 30
@@ -129,16 +129,15 @@ class PricelistPDF(object):
                 stories.append(Spacer(0, 25))
             
             stories.append(PageBreak())
-            
-        stories.append(PageBreak())
-        
+                    
         logger.debug("\n\nProcessing Products\n\n\n\n".format(self.queryset.count()))
         
-        models = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-'))
+        models = Model.objects.filter(Q(model__istartswith='fc-'))
+        #Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-'))
         models = models.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
         
         for model in models:
-            pass
+                
             stories.append(self._create_model_section(model))
             stories.append(PageBreak())
                     
@@ -157,16 +156,18 @@ class PricelistPDF(object):
         products = Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description')
         
         # Initial array and image of product
-        images = model.images.all()
+        images = model.images.all().order_by('-id')
+       
         try:
             data = [[self._get_image(images[0].generate_url(), width=500)]]
         except IndexError:
-            data = [['']]
+            data = []
+            
+        #data = [[self._prepare_text(model.model, font_size=24, alignment=TA_LEFT)]]
         
         # Var to keep track of number of products priced
         count = 0
         
-        logger.debug(int(math.ceil(products.count() / float(4))))
         for index in xrange(0, int(math.ceil(products.count() / float(4)))):
             
             # Create indexes used to pull products set from array
@@ -185,7 +186,7 @@ class PricelistPDF(object):
         table_style = [('ALIGNMENT', (0,0), (0, 0), 'CENTER'),
                        ('ALIGNMENT', (0, 1), (0, -1), 'LEFT'),
                        ('LEFTPADDING', (0, 1), (0, -1), 15)]
-                       
+
         table = Table(data, colWidths=(550))
         table.setStyle(TableStyle(table_style))
         return table
@@ -218,8 +219,9 @@ class PricelistPDF(object):
         Calculate price list for each product
         """
         data  = []
-        for i in [15, 20, 25, 30, 35, 40]:
-            logger.debug('Grade {0}'.format(i))
+        prices = product.calculate_prices()
+        for grade in prices:
+            logger.debug('Grade {0}'.format(grade))
             
             """
             cost = self._calculate_material_cost(product)
@@ -240,7 +242,7 @@ class PricelistPDF(object):
             logger.debug("Retail Price: {0:.2f}".format(retail_price))
             """
             
-            data.append(["{0:.2f}".format(math.ceil((product.calculate_price(i) * Decimal('0.5')) / 10) * 10)])
+            data.append(["{0:.2f}".format(math.ceil((prices[grade] * Decimal('0.5')) / 10) * 10)])
                 
         return Table(data, colWidths=(100,))
         
@@ -324,8 +326,12 @@ class PricelistPDF(object):
         try:
             #Read image from link
             img = utils.ImageReader(path)
-        except:
+        except Exception as e:
+            logger.debug(e)
+            logger.debug(path)
             return None
+            #raise ValueError("First argument must be a url or filename of the image.")
+
         #Get Size
         imgWidth, imgHeight = img.getSize()
         #Detect if there height or width provided
@@ -355,9 +361,12 @@ class FabricPDF(object):
                    ('PADDING', (0,0), (-1,-1), 0),
                    ('FONTSIZE', (0,0),(-1,-1), 10)]
              
-    def __init__(self, fabrics, *args, **kwargs):
+    def __init__(self, fabrics=None, *args, **kwargs):
     
-        self.fabrics = fabrics
+        if fabrics:
+            self.fabrics = fabrics
+        else:
+            self.fabrics = Fabric.objects.filter(status='current')
  
     def create(self, filename="Fabrics.pdf"):
         doc = SimpleDocTemplate(filename, 
@@ -374,6 +383,9 @@ class FabricPDF(object):
         fabrics = {}
         supplier = Supplier.objects.get(name__istartswith='crevin')
         for fabric in Fabric.objects.filter(suppliers__name__istartswith='crevin'):
+            fabric.status = 'current'
+            fabric.save()
+            
             fabric.supplier = supplier
             try:
                 fabrics[fabric.pattern.lower()].append(fabric)
@@ -398,6 +410,9 @@ class FabricPDF(object):
             supplier = fabrics[pattern][0].supplier
             data.append([self._prepare_text(pattern.title(), alignment=TA_LEFT), 
                          self._create_color_section(fabrics[pattern])])
+            
+            
+            
         
         table = Table(data, colWidths=(200, 300), repeatRows=1)
         table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
@@ -412,14 +427,16 @@ class FabricPDF(object):
         data = []
     
         for fabric in fabrics:
+            
             try:
-                data.append([fabric.color.title(), 
-                             self._get_image(fabric.image.generate_url(), width=100) if fabric.image else ''])
+                data.append([self._get_image(fabric.image.generate_url(), width=100) if fabric.image else '',
+                             fabric.color.title(),  
+                             self._calculate_grade(fabric)])
             except ValueError as e:
-                logger.error(e)
+                logger.warn(e)
                 raise ValueError("{0} : {1}".format(fabric.description, fabric.supplier.name))
         
-        table = Table(data, colWidths=(150, 150))
+        table = Table(data, colWidths=(125, 125, 50))
         table.setStyle(TableStyle([('ALIGNMENT', (-1, 0), (-1, -1), 'CENTER'),
                                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                    ('ALIGNMENT', (0, 0), (0, -1), 'LEFT')]))
@@ -480,7 +497,7 @@ class FabricPDF(object):
         try:
             #Read image from link
             img = utils.ImageReader(path)
-        except:
+        except Exception as e:
             return None
         #Get Size
         imgWidth, imgHeight = img.getSize()
@@ -507,6 +524,7 @@ if __name__ == "__main__":
     data = {}
     f_list = []
     
+    """
     with open('steve_fabric.csv') as file:
         rows = csv.reader(file)
         
@@ -564,6 +582,9 @@ if __name__ == "__main__":
                 fabrics[fabric.pattern.lower()].append(fabric)
             except KeyError:
                 fabrics[fabric.pattern.lower()] = [fabric]
+            
+            fabric.status = "current"
+            fabric.save()
     
     della = []
     for p in fabrics:
@@ -575,6 +596,7 @@ if __name__ == "__main__":
         writer.writerow(['Pattern', 'Color', 'Price'])
         for f in della:
             writer.writerow([f.pattern, f.color, f.cost])
+    """
     
     if not os.path.exists(directory):
         os.makedirs(directory)

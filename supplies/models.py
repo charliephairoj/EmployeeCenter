@@ -58,6 +58,7 @@ class Supply(models.Model):
     deleted = models.BooleanField(default=False)
     admin_only = models.BooleanField(default=False)
     shelf = models.ForeignKey(Shelf, related_name='fabrics', null=True)
+    status = models.TextField(null=True)
     
     _check_quantity = False
 

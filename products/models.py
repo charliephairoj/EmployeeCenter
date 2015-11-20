@@ -15,6 +15,7 @@ from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class Product(models.Model):
@@ -47,7 +48,7 @@ class Product(models.Model):
     
     # Constants
     _overhead_percent = 40
-    _profit_percent = 35
+    _profit_percent = 30
     
     class Meta:
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
@@ -109,7 +110,7 @@ class Product(models.Model):
     def calculate_prices(self, apply_prices=False):
         #Calculate supply quantities before calculating cost
         try:
-            self.calculate_supply_quantities()
+            pass#self.calculate_supply_quantities()
         except AttributeError:
             pass
             
@@ -122,8 +123,17 @@ class Product(models.Model):
         
         prices = {}
         
+        # Calculate the direct cost here, so that it doens't have to be recalculated
+        # for each grade
+        direct_cost = self._calculate_costs_excluding_fabric()
+        
         for grade in grades:
-            prices[grade] = self.calculate_price(grades[grade])
+            # Retrieve the stored grade, or calculate if no grade is stored
+            try:
+                prices[grade] = self.get_price(grade.upper())
+            except Price.DoesNotExist:
+                logger.debug('Price for grade {0} does not exist'.format(grade))
+                prices[grade] = self.calculate_price(grades[grade], direct_cost=direct_cost)
             
         if apply_prices:
             for grade in prices:
@@ -132,14 +142,18 @@ class Product(models.Model):
                 
         return prices
         
-    def calculate_price(self, grade):
+    def get_price(self, grade):
+        return self.prices.get(grade=grade)
+        
+    def calculate_price(self, grade, direct_cost=None):
         """
         Calculate the price of the product at the specified grade
         """
         logger.debug("\nCalculating prices for grade {0}".format(grade))
         
         # Calculate all the costs excluding fabric cost
-        direct_cost = self._calculate_costs_excluding_fabric()
+        if not direct_cost:
+            direct_cost = self._calculate_costs_excluding_fabric()
         
         # Add fabric cost based on quantity of fabric used
         direct_cost += self._calculate_fabric_costs(Supply.objects.get(product=self, description='fabric').quantity, grade)
@@ -177,6 +191,9 @@ class Product(models.Model):
         """
         Calculate the direct material cost of the product
         """
+        print 'test'
+        logger.info('Calculating costs excluding fabric for {0}'.format(self.description))
+        
         cost = 0
         
         for ps in Supply.objects.filter(product=self).exclude(description='fabric').exclude(cost__isnull=True, quantity__isnull=True):
@@ -204,7 +221,7 @@ class Product(models.Model):
     def _calculate_wholesale_price(self, tmc):    
         
         if re.search('^fc-\s+', self.description):
-            pp = self._profit_percent + 5
+            pp = self._profit_percent
         else:
             pp = self._profit_percent
             

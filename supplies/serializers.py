@@ -131,6 +131,7 @@ class SupplySerializer(serializers.ModelSerializer):
     suppliers = ProductSerializer(source="products", required=False, many=True)
     employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False)
     id = serializers.IntegerField(required=False)
+    status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Supply
