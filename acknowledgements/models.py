@@ -548,7 +548,7 @@ class Item(models.Model):
         if self.product.collection == "Dellarobbia Thailand":
             upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 10, 1) for key in dimensions)
         elif self.product.collection == "Dwell Living":
-            upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 5, 1) for key in dimensions)
+            upcharge_percentage = sum(self._calculate_upcharge(dimensions[key], 150, 10, 1) for key in dimensions)
         else:
             upcharge_percentage = 0
 

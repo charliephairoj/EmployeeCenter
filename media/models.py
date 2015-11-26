@@ -6,8 +6,9 @@ from django.db import models
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.conf import settings
-from boto.s3.connection import S3Connection
+from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key
+import boto
 
 
 class Log(models.Model):
@@ -84,7 +85,7 @@ class S3Object(models.Model):
         """
         Returns the S3 Connection of the object
         """
-        return S3Connection()
+        return boto.s3.connect_to_region('ap-southeast-1')
 
     def _get_bucket(self):
         """

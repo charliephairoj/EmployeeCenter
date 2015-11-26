@@ -18,7 +18,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
         
 class ModelSerializer(serializers.ModelSerializer):
-    images = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
+    images = serializers.ListField(child=serializers.DictField(), required=False)
     image = serializers.DictField(required=False, write_only=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
@@ -141,7 +141,12 @@ class UpholsterySerializer(serializers.ModelSerializer):
                             'url': instance.image.generate_url()}
         except AttributeError:
             pass
-        logger.info(ret)    
+        
+        try:
+            ret['prices'] = [{'grade': price.grade, 'price':price.price} for price in instance.prices.all()]
+        except AttributeError:
+            pass
+             
         return ret
             
     def create(self, validated_data):
@@ -182,7 +187,10 @@ class UpholsterySerializer(serializers.ModelSerializer):
                 except Pillow.DoesNotExist as e:
                     pillow = Pillow.objects.create(product=instance, type=p_data['type'].lower())
                 pillow.quantity = p_data['quantity']
-                pillow.save()
+                if pillow.quantity == 0:
+                    pillow.delete()
+                else:    
+                    pillow.save()
         except KeyError:
             pass
             

@@ -106,6 +106,37 @@ class Product(models.Model):
             
         return obj
         
+    def get_prices(self):
+        #Calculate supply quantities before calculating cost
+        try:
+            pass#self.calculate_supply_quantities()
+        except AttributeError:
+            pass
+            
+        grades = {'A1': 15, 
+                  'A2': 20, 
+                  'A3': 25,
+                  'A4': 30,
+                  'A5': 35,
+                  'A6': 40}
+        
+        prices = {}
+        
+        # Calculate the direct cost here, so that it doens't have to be recalculated
+        # for each grade
+        if self.prices.all().count() < len(grades):
+            direct_cost = self._calculate_costs_excluding_fabric()
+        
+        for grade in grades:
+            # Retrieve the stored grade, or calculate if no grade is stored
+            try:
+                logger.info("Retrieving price for grade {0}".format(grade))
+                prices[grade] = self.get_price(grade.upper()).price
+            except Price.DoesNotExist:
+                logger.info('Price for grade {0} does not exist'.format(grade))
+                prices[grade] = self.calculate_price(grades[grade], direct_cost=direct_cost)
+
+        return prices
         
     def calculate_prices(self, apply_prices=False):
         #Calculate supply quantities before calculating cost
@@ -128,16 +159,18 @@ class Product(models.Model):
         direct_cost = self._calculate_costs_excluding_fabric()
         
         for grade in grades:
-            # Retrieve the stored grade, or calculate if no grade is stored
-            try:
-                prices[grade] = self.get_price(grade.upper())
-            except Price.DoesNotExist:
-                logger.debug('Price for grade {0} does not exist'.format(grade))
-                prices[grade] = self.calculate_price(grades[grade], direct_cost=direct_cost)
+            # Calculate if no grade is stored
+            logger.info("Calculating price for grade {0}".format(grade))
+            prices[grade] = self.calculate_price(grades[grade], direct_cost=direct_cost)
             
         if apply_prices:
+            
+            Price.objects.filter(product=self).delete()
+            
             for grade in prices:
+                
                 Price.objects.create(grade=grade.upper(), product=self, price=prices[grade])
+                    
                 logger.info("{0} price for {1} created at {2}".format(grade, self.description, prices[grade]))
                 
         return prices
@@ -191,7 +224,6 @@ class Product(models.Model):
         """
         Calculate the direct material cost of the product
         """
-        print 'test'
         logger.info('Calculating costs excluding fabric for {0}'.format(self.description))
         
         cost = 0
@@ -202,9 +234,18 @@ class Product(models.Model):
                 product = ps.supply.products.all().order_by('cost')[0]
                 ps.supply.supplier = product.supplier
                 
+                if product.supplier.currency.lower() == 'usd':
+                    currency_modifier = 36
+                elif product.supplier.currency.lower() == 'eur':
+                    currency_modifier = 39
+                elif product.supplier.currency.lower() == 'rmb':
+                    currency_modifier = 5.7
+                else:
+                    currency_modifier = 1
+                    
                 #Add the cost of the supply to the total
                 try:
-                    cost += ps.quantity * (ps.supply.cost / product.quantity_per_purchasing_unit)
+                    cost += ps.quantity * ((ps.supply.cost * currency_modifier)/ product.quantity_per_purchasing_unit)
                 except Exception as e:
                     logger.debug(e)
                     print ps.quantity, ps.description, ps.supply.description
@@ -221,7 +262,7 @@ class Product(models.Model):
     def _calculate_wholesale_price(self, tmc):    
         
         if re.search('^fc-\s+', self.description):
-            pp = self._profit_percent
+            pp = self._profit_percent + 5
         else:
             pp = self._profit_percent
             
@@ -406,9 +447,18 @@ class Upholstery(Product):
         # using the quantities of pillows
         self.calculate_fiber_ball_quantity()
         
+        #Calculate fiber padding quantity used by the frame
+        self.calculate_100g_fiber_padding_quantity()
+        
+        # Calculate the 200g fiber ball quantity used by the cushions
+        self.calculate_200g_fiber_padding_quantity()
+        
         # Calculate the quantity of webbing
         # from dimensions
-        self.calculate_webbing_quantity()
+        try:
+            self.calculate_webbing_quantity()
+        except TypeError as e:
+            logger.debug("{0} \n {1}: Width: {2} // Depth: {3}".format(e, self.description, self.width, self.depth))
         
     def validate_pillows(self):
         """
@@ -439,13 +489,45 @@ class Upholstery(Product):
              logger.debug('Creating pillows for {0}'.format(self.description))
              if pillows:
                  for pillow_type in pillows:
-                     
                      # Creates a pillow if the quantity is more than 0
                      if pillows[pillow_type]:
                          Pillow.objects.create(product=self, type=pillow_type, quantity=pillows[pillow_type])
-            
+                         
+    def create_pillows(self):
+        """
+        Validate that pillows exists and that the quantities
+        are correct based on these rules:
         
+        -Sofa: 3 back pillows, 3 accent pillows
+        -Loveseat: 2 back pillows, 2 accent pillows
+        -chair: 1 back pillow, 1 accent pillow
+        """
+        config = self.configuration.configuration.lower()
+        modifier = 1 if self.model.has_back_pillows else 0
         
+        if "sofa" in config:
+            pillows = {'back': 3 * modifier, 'accent': 3}
+        elif "loveseat" in config:
+            pillows = {'back': 2 * modifier, 'accent': 2}
+        elif "chair" in config:
+            pillows = {'back': 1 * modifier, 'accent': 1}
+        elif "corner" in config:
+            pillows = {'back': 2 * modifier, 'accent': 1}
+        elif "chaise" in config:
+            pillows = {'back': 1 * modifier, 'accent': 1}
+        else:
+            pillows = None
+           
+        self.pillows.all().delete()
+        
+        logger.debug('Creating pillows for {0}'.format(self.description))
+        if pillows:
+            for pillow_type in pillows:
+             
+                # Creates a pillow if the quantity is more than 0
+                if pillows[pillow_type]:
+                    Pillow.objects.create(product=self, type=pillow_type, quantity=pillows[pillow_type])
+                    
     def calculate_fiber_ball_quantity(self):
         """
         Calculate the quantity of fiber ball in kg need for this upholstery.
@@ -478,34 +560,34 @@ class Upholstery(Product):
         """
         Calculate"""
         if self.width > self.height:
-            width, height = self.width, self.height
+            width, depth = self.width, self.depth
         else:
-            width, height = self.height, self.width
-                 
+            width, depth = self.depth, self.width
+            
         # Caculate number of strands to use horizontally   
         number_of_width_strands = math.ceil((width / Decimal('76')) / 2)
         if number_of_width_strands > 2:
             number_of_width_strands -= 1
             
         # Calculate total length in mm of horizontal strands
-        w_length = (number_of_width_strands) * height
+        w_length = (number_of_width_strands) * depth
         
         # Caculate number of strands to use verticall   
-        number_of_height_strands = math.ceil((height / Decimal('76')) / 2) 
-        if number_of_height_strands > 2:
-            number_of_height_strands -= 1
+        number_of_depth_strands = math.ceil((depth / Decimal('76')) / 2) 
+        if number_of_depth_strands > 2:
+            number_of_depth_strands -= 1
                 
         # Calculate total length in mm of veritcal strands
-        h_length = (number_of_height_strands) * width
+        d_length = (number_of_depth_strands) * width
         
         
-        length = (w_length + h_length) / 1000
+        length = (w_length + d_length) / 1000
         
-        logger.debug("Width: {0:.0f}mm | Depth: {1:.0f}mm".format(width, height))
+        logger.debug("Width: {0:.0f}mm | Depth: {1:.0f}mm".format(width, depth))
         logger.debug("Used {0} strands horizontally".format(number_of_width_strands))
         logger.debug('Used {0:.2f}mm horizontally'.format(w_length))
-        logger.debug("Used {0} strands vertically".format(number_of_height_strands))
-        logger.debug('Used {0:.2f}mm veritically'.format(h_length))
+        logger.debug("Used {0} strands vertically".format(number_of_depth_strands))
+        logger.debug('Used {0:.2f}mm veritically'.format(d_length))
         logger.debug("{0:.2f}m for {1}".format(length, self.description))
         
         print '\n'
@@ -520,9 +602,70 @@ class Upholstery(Product):
         
         return supply.quantity
             
+    def calculate_100g_fiber_padding_quantity(self):
+        config = self.configuration.configuration.lower()
         
-        
+        if "sofa" in config:
+            qty = 6
+        elif "loveseat" in config:
+            qty = 5
+        elif "chair" in config:
+            qty = 4
+        elif "corner" in config:
+            qty = 3
+        elif "chaise" in config:
+            qty = 3
+        elif "ottoman" in config:
+            qty = 1
+        else:
+            raise ValueError("configuration not found for {0}".format(self.description))
             
+        if "armless" in config and 'chaise' not in config:
+            qty -= 2
+        elif "one-arm" in config and 'chaise' not in config:
+            qty -= 1
+        elif 'armless' in config and 'chaise' in config:
+            qty -= 1
+        
+        try:
+            supply = Supply.objects.get(product=self, supply_id=2509)
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, supply=S.objects.get(pk=2509), description='fiber padding (100g)')
+            
+        supply.quantity = qty
+        supply.save()
+        
+        return supply.quantity
+        
+    def calculate_200g_fiber_padding_quantity(self):
+        config = self.configuration.configuration.lower()
+        if "sofa" in config:
+            qty = 3
+        elif "loveseat" in config:
+            qty = 2
+        elif "chair" in config:
+            qty = 1
+        elif "corner" in config:
+            qty = 1
+        elif "chaise" in config:
+            qty = 2
+        elif "ottoman" in config:
+            qty = 1
+        else:
+            raise ValueError("configuration not found for {0}".format(self.description))
+            
+        if "bumper" in config:
+            qty += 0.5
+        
+        try:
+            supply = Supply.objects.get(product=self, supply_id=2697)
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, supply=S.objects.get(pk=2697), description='fiber padding (200g)')
+            
+        supply.quantity = qty
+        supply.save()
+        
+        return supply.quantity
             
 
 class Pillow(models.Model):

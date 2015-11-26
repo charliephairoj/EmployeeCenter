@@ -9,6 +9,8 @@ from decimal import *
 import re
 import csv
 import multiprocessing
+from threading import Thread
+from time import sleep
 
 from django.conf import settings
 from django.core.exceptions import *
@@ -23,7 +25,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
-from products.models import Model, Product, Upholstery, Supply as ProductSupply
+from products.models import Model, Upholstery, Supply as ProductSupply
 from supplies.models import Fabric
 from contacts.models import Supplier
 
@@ -57,7 +59,7 @@ class PricelistDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        path = """form_logo.jpg"""
         
         img = utils.ImageReader(path)
         #Get Size
@@ -70,8 +72,8 @@ class PricelistDocTemplate(BaseDocTemplate):
         
 
 class PricelistPDF(object):
-    queryset = Upholstery.objects.filter(Q(description__istartswith='fc-'))#Q(description__istartswith='dw-') | Q(description__istartswith='fc-'))
-    queryset = queryset.filter(supplies__id__gt=0).distinct('description').order_by('description')
+    queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-'))
+    queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
     
     _overhead_percent = 30
     _profit_percent = 35
@@ -109,13 +111,13 @@ class PricelistPDF(object):
         
         
         stories.append(Spacer(0, 200))
-        link = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        link = "form_logo.jpg"
         stories.append(self._get_image(link, width=200))
         stories.append(PageBreak())
         
         logger.debug("\n\nProcessing Terms and Conditions\n\n")
         
-        for category in self._preface:
+        for category in ['General Information', 'Warranty', 'Product Information']:
             
             stories.append(self._prepare_text("<u>" + category + "</u>", alignment=TA_LEFT, font_size=18, fontname="Helvetica-Bold"))
             stories.append(Spacer(0, 20))
@@ -130,36 +132,72 @@ class PricelistPDF(object):
             
             stories.append(PageBreak())
                     
-        logger.debug("\n\nProcessing Products\n\n\n\n".format(self.queryset.count()))
+        logger.debug("\n\nProcessing {0} Models\n\n\n\n".format(self.queryset.count()))
+
+        models = self._prepare_data(self.queryset)
         
-        models = Model.objects.filter(Q(model__istartswith='fc-'))
-        #Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-'))
-        models = models.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
-        
-        for model in models:
+        for model in sorted(models.keys(), key=lambda model: model.model):
                 
-            stories.append(self._create_model_section(model))
+            stories.append(self._create_model_section(model, models[model]))
             stories.append(PageBreak())
                     
         for story in stories:
-            story.hAlign = "CENTER"
-            
+            try:
+                story.hAlign = "CENTER"
+            except AttributeError:
+                pass
         
             
         doc.build(stories)
+        
+    def _prepare_data(self, models):
+        
+        data = {}
+        threads = []
+        for model in models:
+            data[model] = []
+            for uphol in Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description'):
+                t = Thread(target=self._add_upholstery_data, args=(uphol, model, data))
+                threads.append(t)
+                t.start()
+        
+        while len([t for t in threads if t.isAlive()]) > 0:
+            sleep(1)
+            
+        else:
+            return data
+                
+    def _add_upholstery_data(self, upholstery, model, data):
+        if upholstery.supplies.count() > 0:
+            uphol_data = {'id': upholstery.id,
+                          'description': upholstery.description,
+                          'width': upholstery.width,
+                          'depth': upholstery.depth,
+                          'height': upholstery.height}
+            prices = upholstery.get_prices()
+            uphol_data['prices'] = prices
+        else:
+            logger.debug("{0} has {1} supplies".format(product.description, product.supplies))
+        
+        
+        data[model].append(uphol_data)
     
-    def _create_model_section(self, model):
+    def _create_model_section(self, model, products):
         """
         Create a table of prices for all the products in this model
         """
         # Products for this model
-        products = Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description')
+        #products = Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description')
         
         # Initial array and image of product
         images = model.images.all().order_by('-id')
        
         try:
-            data = [[self._get_image(images[0].generate_url(), width=500)]]
+            data = [[self._prepare_text(model.model,
+                                        fontname='Helvetica',
+                                        alignment=TA_LEFT,
+                                        font_size=24,
+                                        left_indent=12)]]#,[self._get_image(images[0].generate_url(), width=500)]]
         except IndexError:
             data = []
             
@@ -168,11 +206,11 @@ class PricelistPDF(object):
         # Var to keep track of number of products priced
         count = 0
         
-        for index in xrange(0, int(math.ceil(products.count() / float(4)))):
+        for index in xrange(0, int(math.ceil(len(products) / float(4)))):
             
             # Create indexes used to pull products set from array
-            i1 = index * 4 if index * 4 < products.count() else products.count()
-            i2 = ((index + 1) * 4) if ((index + 1) * 4) < products.count() else products.count()
+            i1 = index * 4 if index * 4 < len(products) else products.count()
+            i2 = ((index + 1) * 4) if ((index + 1) * 4) < len(products) else len(products)
             section_products = products[i1:i2]
             # Count number of products priced
             count += len(section_products)
@@ -181,10 +219,12 @@ class PricelistPDF(object):
             data.append([section])
             
         # Check that all products for this model have been priced
-        assert count == products.count(), "Only {0} of {1} price".format(count, products.count())
+        assert count == len(products), "Only {0} of {1} price".format(count, len(products))
         
         table_style = [('ALIGNMENT', (0,0), (0, 0), 'CENTER'),
                        ('ALIGNMENT', (0, 1), (0, -1), 'LEFT'),
+                       ('PADDING', (0, 1), (-1, -1), 0),
+                       ('BOTTOMPADDING', (0, 0), (-1, -1), 30),
                        ('LEFTPADDING', (0, 1), (0, -1), 15)]
 
         table = Table(data, colWidths=(550))
@@ -194,109 +234,41 @@ class PricelistPDF(object):
     def _create_section(self, products, index):
         
         header = [self._prepare_text('Grade', font_size=12)]
-        data = [Table([[i] for i in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']])]
+        titles = Table([[i] for i in ['', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
+        titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+        data = [titles]
         
         assert len(products) <= 4, "There are {0} in this set.".format(len(products))
 
         for product in products:
-            if product.supplies.count() > 0:
-                logger.debug("Processing {0}\n, ID:{1}".format(product.description, product.id))
-        
-                header.append(self._prepare_text(product.description, font_size=12))
-                try:
-                    data.append(self._create_product_price_table(product))
-                except ProductSupply.DoesNotExist as e:
-                    logger.warn("No fabric for {0}, ID: {1}".format(product.description, product.id))
-        
-                print '\n\n'
-            else:
-                logger.debug("{0} has {1} supplies".format(product.description, product.supplies))
+    
+            header.append(self._prepare_text(product['description'], font_size=12))
                 
-        return Table([header, data], colWidths=[50] + [120 for i in xrange(0, len(header) - 1)])
+            data.append(self._create_product_price_table(product))           
+                
+        table = Table([header, data], colWidths=[50] + [120 for i in xrange(0, len(header) - 1)])
+        table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)), 
+                                   ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                                   ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+        
+        return table
         
     def _create_product_price_table(self, product):
         """
         Calculate price list for each product
         """
-        data  = []
-        prices = product.calculate_prices()
-        for grade in prices:
-            logger.debug('Grade {0}'.format(grade))
-            
-            """
-            cost = self._calculate_material_cost(product)
-            try:
-                
-                cost += self._calculate_fabric_cost(ProductSupply.objects.get(product=product, description='fabric').quantity, i)
-            except Exception as e:
-                logger.error("{0} : {1} : {2}".format(ProductSupply.objects.get(product=product, description='fabric').quantity, i, self._forex_rate))
-            logger.debug("Direct Costs: {0:.2f}".format(cost))
-            
-            tmc = cost + self._calculate_overhead(cost)
-            logger.debug("Total Manufacturing Cost: {0:.2f}".format(tmc))
-            
-            wholesale_price = self._calculate_wholesale_price(tmc, product)
-            logger.debug("Wholesale Price: {0:.2f}".format(wholesale_price))
-            
-            retail_price = self._calculate_retail_price(wholesale_price)
-            logger.debug("Retail Price: {0:.2f}".format(retail_price))
-            """
-            
+        data  = [["W:{0} x D:{1} x H:{2}".format(product['width'], product['depth'], product['height'])]]
+        #data  = []
+        prices = product['prices']
+        
+        for grade in sorted(prices.keys()):            
             data.append(["{0:.2f}".format(math.ceil((prices[grade] * Decimal('0.5')) / 10) * 10)])
                 
-        return Table(data, colWidths=(100,))
-        
-    def _calculate_material_cost(self, product):
-        """
-        Calculate the cost of all the supplies excluding the fabric
-        """
-        total_cost = 0
-        
-        for ps in ProductSupply.objects.filter(product=product).exclude(description='fabric').exclude(cost__isnull=True, quantity__isnull=True):
-            if ps.supply and ps.quantity:
-                #Set supplier in order to retrieve cost
-                product = ps.supply.products.all().order_by('cost')[0]
-                ps.supply.supplier = product.supplier
-                
-                #Add the cost of the supply to the total
-                try:
-                    total_cost += ps.quantity * (ps.supply.cost / product.quantity_per_purchasing_unit)
-                except Exception as e:
-                    logger.debug(e)
-                    print ps.quantity, ps.description, ps.supply.description
-            else:
-                total_cost += (ps.cost or 0)
-                
-        return total_cost
-                
-            
-
-    def _calculate_fabric_cost(self, quantity, grade):
-        """
-        Calculate the cost of the fabric based on quantity, grade and foreign_exchange rate
-        """
-        return Decimal(str(quantity)) * Decimal(str(grade)) * Decimal(str(self._forex_rate))
-        
-    def _calculate_overhead(self, direct_costs):
-        return direct_costs * (Decimal(str(self._overhead_percent)) / Decimal('100'))
-        
-    def _calculate_wholesale_price(self, tmc, product):    
-        
-        if re.search('^fc-\s+', product.description):
-            logger.debug(product.description)
-            pp = self._profit_percent + 10
-        else:
-            pp = self._profit_percent
-            
-        divisor = 1 - (pp / Decimal('100')) 
-        
-        price = tmc / divisor
-        logger.debug('Profit {0}%: {1:.2f}'.format(self._profit_percent, price * (self._profit_percent / Decimal('100'))))
-        
-        return price 
-        
-    def _calculate_retail_price(self, ws_price):
-        return ws_price * Decimal('2')
+        table = Table(data, colWidths=(120,))
+        table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                                   ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))]))
+        return table
         
     def _prepare_text(self, description, font_size=12, alignment=TA_CENTER, left_indent=0, fontname='Garuda', leading=12):
         
@@ -323,15 +295,14 @@ class PricelistPDF(object):
         size from the image. The correct dimensions for
         image are calculated based on the desired with or
         height"""
+           
         try:
             #Read image from link
             img = utils.ImageReader(path)
         except Exception as e:
             logger.debug(e)
-            logger.debug(path)
-            return None
-            #raise ValueError("First argument must be a url or filename of the image.")
-
+            return ''
+            
         #Get Size
         imgWidth, imgHeight = img.getSize()
         #Detect if there height or width provided
@@ -366,7 +337,17 @@ class FabricPDF(object):
         if fabrics:
             self.fabrics = fabrics
         else:
-            self.fabrics = Fabric.objects.filter(status='current')
+            fabrics = Fabric.objects.filter(status='current')
+            
+            self.fabrics = {}
+            
+            for fabric in fabrics:
+                fabric.supplier = fabric.suppliers.all()[0]
+                
+                try:
+                    self.fabrics[fabric.pattern.lower()].append(fabric)
+                except (AttributeError, KeyError):
+                    self.fabrics[fabric.pattern.lower()] = [fabric]
  
     def create(self, filename="Fabrics.pdf"):
         doc = SimpleDocTemplate(filename, 
@@ -452,6 +433,12 @@ class FabricPDF(object):
                 cost += Decimal('10')
         
                 cost = math.ceil(cost)
+        elif 'crevin' in fabric.supplier.name.lower():
+
+            if cost > 0:
+                cost += Decimal('10')
+        
+                cost = math.ceil(cost)
         else:
         
             if cost > 0:
@@ -473,8 +460,16 @@ class FabricPDF(object):
             grade = 'A5'
         elif cost <= 40:
             grade = 'A6'
+        elif cost <= 45:
+            grade = 'A7'
+        elif cost <= 50:
+            grade = 'A8'
         else:
             raise ValueError("cost is {0} for {1}".format(cost, fabric.description))
+        
+    
+        fabric.grade = grade
+        fabric.save()    
         
         return grade
     
@@ -498,7 +493,9 @@ class FabricPDF(object):
             #Read image from link
             img = utils.ImageReader(path)
         except Exception as e:
+            logger.debug(e)
             return None
+            
         #Get Size
         imgWidth, imgHeight = img.getSize()
         #Detect if there height or width provided
@@ -524,80 +521,6 @@ if __name__ == "__main__":
     data = {}
     f_list = []
     
-    """
-    with open('steve_fabric.csv') as file:
-        rows = csv.reader(file)
-        
-        for row in rows:
-            try:
-                data[row[0].lower().strip()].append(row[1].lower().strip())
-            except KeyError:
-                data[row[0].lower().strip()] = [row[1].lower().strip()]
-                    
-    for pattern in data:
-        for color in data[pattern]:
-            try:
-                fabric = Fabric.objects.get(pattern__istartswith=pattern, color__istartswith=color)
-                try:
-                    fabric.supplier = fabric.suppliers.all()[0]
-                except IndexError:
-                    logger.warn(fabric.description)
-                    supplier = Supplier.objects.filter(supplies__description__istartswith=pattern).distinct()[0]
-                    SP.objects.create(supply=fabric, supplier=supplier)
-                    fabric.supplier = supplier
-                    
-            except Fabric.DoesNotExist:
-                logger.error("{0} : {1}".format(pattern, color))
-                try:
-                    supplier = Supplier.objects.get(supplies__description__istartswith=pattern)
-                except Supplier.MultipleObjectsReturned:
-                    supplier = Supplier.objects.filter(supplies__description__istartswith=pattern).distinct()[0]
-                except Supplier.DoesNotExist:
-                    supplier = Supplier.objects.get(name__istartswith='dellarobbia')
-                    
-                    
-                fabric = Fabric.objects.create(pattern=pattern.title(), color=color.title())
-                SP.objects.create(supply=fabric, supplier=supplier)
-                fabric.supplier = supplier
-                
-            if fabric.description is None:
-                fabric.description = "{0} Col: {1}".format(fabric.pattern.title(), fabric.color.title())
-                fabric.save()
-                
-            if not fabric.supplier:
-                raise ValueError()
-                
-            if fabric not in f_list:
-                f_list.append(fabric)
-                
-            else:
-                print '\n'
-                logger.warn(data[pattern])
-                logger.warn(Fabric.objects.filter(pattern=fabric.pattern, color=fabric.color).count())
-                logger.warn(fabric.description)
-                logger.warn(f_list[f_list.index(fabric)].description)
-                logger.warn("{0} : {1}  || {2}, {3}, {4}".format(pattern, color, fabric.description, fabric.pattern, fabric.color))
-                print '\n'
-            try:
-                fabrics[fabric.pattern.lower()].append(fabric)
-            except KeyError:
-                fabrics[fabric.pattern.lower()] = [fabric]
-            
-            fabric.status = "current"
-            fabric.save()
-    
-    della = []
-    for p in fabrics:
-        for f in fabrics[p]:
-            if 'Della' in f.supplier.name:
-                della.append(f)
-    with open('dellarobbia_fabrics.csv', 'w') as file:
-        writer = csv.writer(file)
-        writer.writerow(['Pattern', 'Color', 'Price'])
-        for f in della:
-            writer.writerow([f.pattern, f.color, f.cost])
-    """
-    
     if not os.path.exists(directory):
         os.makedirs(directory)
         
@@ -606,12 +529,12 @@ if __name__ == "__main__":
         pdf.create(filename)
     
     def create_fabriclist(filename, fabrics):
-        f_pdf = FabricPDF(fabrics=fabrics)
+        f_pdf = FabricPDF(fabrics=None)
         f_pdf.create(filename)
     
     p1 = multiprocessing.Process(target=create_pricelist, args=(directory + '/Pricelist.pdf', ))
     p1.start()
-    #p2 = multiprocessing.Process(target=create_fabriclist, args=(directory + '/Fabrics.pdf', fabrics ))
+    p2 = multiprocessing.Process(target=create_fabriclist, args=(directory + '/Fabrics.pdf', fabrics ))
     #p2.start()
     
     
