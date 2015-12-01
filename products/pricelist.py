@@ -72,9 +72,11 @@ class PricelistDocTemplate(BaseDocTemplate):
         
 
 class PricelistPDF(object):
-    queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-'))
+    queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-'))
+    #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
     
+    _display_retail_price = True
     _overhead_percent = 30
     _profit_percent = 35
     _forex_rate = 36 #Forex rate for THB per USD
@@ -263,7 +265,8 @@ class PricelistPDF(object):
         prices = product['prices']
         
         for grade in sorted(prices.keys()):            
-            data.append(["{0:.2f}".format(math.ceil((prices[grade] * Decimal('0.5')) / 10) * 10)])
+            price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
+            data.append(["{0:.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
                 
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),

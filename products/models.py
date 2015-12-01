@@ -189,8 +189,11 @@ class Product(models.Model):
             direct_cost = self._calculate_costs_excluding_fabric()
         
         # Add fabric cost based on quantity of fabric used
-        direct_cost += self._calculate_fabric_costs(Supply.objects.get(product=self, description='fabric').quantity, grade)
-        
+        try:
+            direct_cost += self._calculate_fabric_costs(Supply.objects.get(product=self, description='fabric').quantity, grade)
+        except Supply.DoesNotExist as e:
+            raise ValueError('Missing fabric quantity for {0}'.format(self.description))
+
         logger.debug("Total direct material cost is {0:.2f}".format(direct_cost))
         
         # Calculate the total manufacture cost. Minimum cost to make this product 
@@ -263,6 +266,8 @@ class Product(models.Model):
         
         if re.search('^fc-\s+', self.description):
             pp = self._profit_percent + 5
+        elif re.search('^ac-\s+', self.description):
+            pp = self._profit_percent + 15
         else:
             pp = self._profit_percent
             
@@ -517,6 +522,13 @@ class Upholstery(Product):
             pillows = {'back': 1 * modifier, 'accent': 1}
         else:
             pillows = None
+            
+        if "return" in config:
+            try:
+                pillows['back'] += (1 * modifier)
+            except KeyError:
+                pillows['back'] = (1 * modifier)
+            
            
         self.pillows.all().delete()
         
@@ -617,6 +629,8 @@ class Upholstery(Product):
             qty = 3
         elif "ottoman" in config:
             qty = 1
+        elif "bumper" in config:
+            qty = 1
         else:
             raise ValueError("configuration not found for {0}".format(self.description))
             
@@ -651,6 +665,8 @@ class Upholstery(Product):
             qty = 2
         elif "ottoman" in config:
             qty = 1
+        elif "bumper" in config:
+            qty = 1.25
         else:
             raise ValueError("configuration not found for {0}".format(self.description))
             

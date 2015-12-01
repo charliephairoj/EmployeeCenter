@@ -37,15 +37,16 @@ def update_upholstery(data):
     except Configuration.DoesNotExist as e:
         configuration = Configuration.objects.create(configuration=data['configuration'])
     except KeyError:
-        print p
+        print data
         
     # Retrieve or create a model
     try:
         model = Model.objects.get(model=data['model'])
     except Model.DoesNotExist as e:
-        print e
-        print p['Model']
+        logger.info('Creating new model: {0}'.format(data['model']))
         model = Model.objects.create(model=data['model'])
+    except Model.MultipleObjectsReturned as e:
+        raise ValueError('Too many instances of model: {0}'.format(data['model']))
         
     # Retrieve or create a new upholstery
     try:
@@ -64,7 +65,13 @@ def update_upholstery(data):
         uphol = uphols[0]
         for u in uphols[1:]:
             u.delete()
-        
+       
+    # Set dimensions
+    uphol.width = data['width'] or uphol.width
+    uphol.depth = data['depth'] or uphol.depth
+    uphol.height = data['height'] or uphol.height
+    uphol.save()
+     
     # Loop through all the columns (supplies) 
     for i in data:
         # Check if this column refers to a specific supply by id
@@ -79,8 +86,10 @@ def update_upholstery(data):
             i = i
             s_id = i
             
+        
+            
         # Determine if the column is a supply or description of the product
-        if i.lower() not in ['model', 'configuration']:
+        if i.lower() not in ['model', 'configuration', 'width', 'depth', 'height']:
             try:
                 try:
                     ps = ProductSupply.objects.get(product=uphol, supply=Supply.objects.get(pk=s_id))
@@ -118,6 +127,7 @@ def update_upholstery(data):
     
     uphol.calculate_supply_quantities()
     if not uphol.prices.all().exists():
+        logger.info('Saving new prices for {0}'.format(uphol.description))
         uphol.calculate_prices(apply_prices=True)
     
     
@@ -136,13 +146,16 @@ if __name__ == "__main__":
             if index == 0:
                 for i, col in enumerate(row):
                     header[i] = col
-            elif row[2] != None and row[2]:
+            elif row[5] != None and row[5]:
                 
                 p = {'model': row[0],
-                     'configuration': row[1]}
+                     'configuration': row[1],
+                     'width': row[2],
+                     'depth': row[3],
+                     'height': row[4]}
                      
                 for i, col in enumerate(row):
-                    if i > 1:
+                    if i > 4:
                         if row[i] != None and row[i] and header[i].strip().lower() not in ['labor total', 'manufacture total', 'overhead', '50% profit', '30% profit', 'retail']:
                             p[header[i].lower()] = col
                        
@@ -168,9 +181,10 @@ if __name__ == "__main__":
             pass#logger.debug('{0} {1}'.format(model, config))
             
         bad_uphols = Upholstery.objects.filter(model__model__istartswith=model).exclude(configuration__configuration__in=models[model])
+        
         for u in bad_uphols:
             u.delete()
-            logger.debug(u.description)
+            logger.debug("Deleting {0}".format(u.description))
         
 
         
