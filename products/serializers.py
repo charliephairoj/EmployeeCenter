@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from products.models import Product, Configuration, Model, Upholstery, Pillow, Table, ModelImage, Supply as ProductSupply
+from products.models import Product, Configuration, Model, Upholstery, Pillow, Table, Image, Supply as ProductSupply
 from supplies.models import Supply
 from media.models import S3Object
 from contacts.serializers import CustomerSerializer
@@ -18,8 +18,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 
         
 class ModelSerializer(serializers.ModelSerializer):
-    images = serializers.ListField(child=serializers.DictField(), required=False)
-    image = serializers.DictField(required=False, write_only=True)
+    images = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
@@ -35,15 +34,9 @@ class ModelSerializer(serializers.ModelSerializer):
         
         for image_data in images:
             try:
-                ModelImage.objects.get(image=S3Object.objects.get(pk=image_data['id']), model=instance)
-            except ModelImage.DoesNotExist:
-                ModelImage.objects.create(image=S3Object.objects.get(pk=image_data['id']), model=instance)
-            
-        if image:
-            try:
-                ModelImage.objects.get(image=S3Object.objects.get(pk=image['id']), model=instance)
-            except ModelImage.DoesNotExist:
-                ModelImage.objects.create(image=S3Object.objects.get(pk=image['id']), model=instance)
+                Image.objects.get(id=image_data['id'])
+            except Image.DoesNotExist:
+                Image.objects.create(id=image_data['id'])
             
         return instance
         
@@ -55,16 +48,15 @@ class ModelSerializer(serializers.ModelSerializer):
         instance = super(ModelSerializer, self).update(instance, validated_data)
         
         for image_data in images:
+            # Retrieve or create if it does not exist
             try:
-                ModelImage.objects.get(image=S3Object.objects.get(pk=image_data['id']), model=instance)
-            except ModelImage.DoesNotExist:
-                ModelImage.objects.create(image=S3Object.objects.get(pk=image_data['id']), model=instance)
+                image = Image.objects.get(id=image_data['id'])
+            except Image.DoesNotExist:
+                image = Image.objects.create(id=image_data['id'])
             
-        if image:
-            try:
-                ModelImage.objects.get(image=S3Object.objects.get(pk=image['id']), model=instance)
-            except ModelImage.DoesNotExist:
-                ModelImage.objects.create(image=S3Object.objects.get(pk=image['id']), model=instance)
+            # Update the image
+            image.primary = image_data['primary']
+            image.save()
             
         return instance
         
@@ -74,14 +66,8 @@ class ModelSerializer(serializers.ModelSerializer):
         
         try:
             ret['images'] = [{'id': image.id,
-                              'url': image.generate_url()} for image in instance.images.all()]
-        except (AttributeError, IndexError):
-            pass
-            
-        try:
-            image = instance.images.all()[0]
-            ret['image'] = {'id': image.id,
-                            'url': image.generate_url()}
+                              'url': image.generate_url(),
+                              'primary': image.primary} for image in instance.images.all().order_by('-primary')]
         except (AttributeError, IndexError):
             pass
             

@@ -58,7 +58,8 @@ class Product(models.Model):
                        ('view_retail_price', 'Can view the retail price'),
                        ('edit_retail_price', 'Can edit the retail price'),
                        ('view_export_price', 'Can view the export price'),
-                       ('edit_export_price', 'Can edit the export price'))
+                       ('edit_export_price', 'Can edit the export price'),
+                       ('edit_dimensions', 'Can edit dimensions'))
 
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -304,7 +305,7 @@ class Model(models.Model):
     isActive = models.BooleanField(default=True, db_column='is_active')
     date_created = models.DateField(auto_now=True, auto_now_add=True)
     bucket = models.TextField()
-    images = models.ManyToManyField(S3Object, through='ModelImage')
+    #images = models.ManyToManyField(S3Object, through='ModelImage')
     image_key = models.TextField()
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
@@ -339,6 +340,11 @@ class ModelImage(models.Model):
     url = models.TextField(null=True)
     bucket = models.TextField(null=True)
     key = models.TextField(null=True)
+    
+
+class Image(S3Object):
+    model = models.ForeignKey(Model, related_name='images')
+    primary = models.BooleanField(default=True, db_column='primary_image')
 
 
 class Configuration(models.Model):
