@@ -226,8 +226,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
         
-        instance.calculate_totals()
         
+        instance.calculate_totals()
         
         instance.create_and_upload_pdfs()
         
@@ -322,24 +322,29 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 
-            #Update the fabric for this item
+            # Update the fabric for this item if 'fabric' key exists
             try:
                 item.fabric = item_data['fabric']
                 item.save()
             except KeyError as e:
                 logger.warn(e)
             
+            # Loop and update pillows if 'pillows' key exists
             try: 
                 for pillow_data in item_data['pillows']:
+                        # Retrieve or create new pillow if it does not exist
                         try:
                             pillow = item.pillows.get(type=pillow_data['type'], fabric=pillow_data['fabric'])
                         except Pillow.DoesNotExist:
                             pillow = Pillow(type=pillow_data['type'], fabric=pillow_data['fabric'], item=item)
                             
+                        # Set pillow attributes 
                         pillow.fabric = pillow_data['fabric']
                         pillow.fabric_quantity = pillow_data['fabric_quantity']
                         pillow.quantity = pillow_data['quantity']
+                        
                         pillow.save()
+                        
             except KeyError:
                 pass
                 
@@ -391,8 +396,14 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                                     acknowledgement=instance)
                    
         #if instance.status.lower() in ['acknowledged', 'in production', 'ready to ship']:
+        
+        # Store old total and calculate new total
+        old_total = instance.total
         instance.calculate_totals()
-        instance.create_and_upload_pdfs()
+        
+        # Create new pdf documents if the old total and new total are not the same
+        if old_total != instance.total:
+            instance.create_and_upload_pdfs()
                                     
         instance.save()
         
