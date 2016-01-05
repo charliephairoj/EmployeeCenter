@@ -53,6 +53,7 @@ router.register(r'api/v1/project-part', PartViewSet)
 urlpatterns = patterns('',
     url(r'^$', 'login.views.app_login'),
     url(r'^login$', 'login.views.app_login'),
+    url(r'^oauth2callback$', 'login.views.auth_return'),
     url(r'^logout$', 'login.views.logout'),
     url(r'^api/v1/current_user$', 'administrator.views.current_user'),
     url(r'^api/v1/current_user$', 'administrator.views.current_user'),
