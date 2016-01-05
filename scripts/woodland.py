@@ -1,50 +1,41 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Retrieves a list of Orders and products to be shipped 
+in the 30 day period starting today, and creates an 
+html message. This email message is then sent to 
+the email address
+"""
+
 import sys, os, django
 sys.path.append('/Users/Charlie/Sites/employee/backend')
+sys.path.append('/home/django_worker/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
-from django.conf import settings
-from django.core.exceptions import *
-from decimal import *
-import csv
-from glob import glob
-import xlrd
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 
-from contacts.models import Supplier
-from supplies.models import Supply, Product
+import boto
+from django.contrib.auth.models import User
 
-def lower(s):
-    try:
-        return s.lower()
-    except: 
-        return s
+from administrator.models import AWSUser
 
-def test_row(row):
-    test_string = "".join([lower(cell.value) for cell in row])
-    try:
-        for header in ['ref', 'description', 'unit', 'price']:
-            if header not in test_string:
-                raise ValueError
-                
-        return True
-    except ValueError:
-        return False 
-        
-def extract():
-    filename = glob('/Users/Charlie/Downloads/*Siam*.xlsx')[-1]
-    wb = xlrd.open_workbook(filename)
-    for index in xrange(0, wb.nsheets):
-        sheet = wb.sheet_by_index(index)
-        positions = {}
-        for i in xrange(0, sheet.nrows):
-            row = sheet.row(i)
-            if test_row(row):
-                for index, cell in enumerate(row):
-                    for header in ['ref', 'description', 'unit', 'price']:
-                        try:
-                            if header in cell.value.lower():
-                                positions[header] = index
-                        except AttributeError:
-                            pass
-                
 
+django.setup()            
+            
 if __name__ == "__main__":
-    extract()
+    
+    users = User.objects.all()
+    iam = boto.connect_iam()
+    
+    for user in users:
+
+       
+        
+        response = iam.add_user_to_group('S3-Users', user.email)
+
+
+
+
+
+
+
