@@ -67,9 +67,9 @@ def update_upholstery(data):
             u.delete()
        
     # Set dimensions
-    uphol.width = data['width'] or uphol.width
-    uphol.depth = data['depth'] or uphol.depth
-    uphol.height = data['height'] or uphol.height
+    uphol.width = Decimal(data['width'] or 0) or uphol.width
+    uphol.depth = Decimal(data['depth'] or 0) or uphol.depth
+    uphol.height = Decimal(data['height'] or 0) or uphol.height
     uphol.save()
      
     # Loop through all the columns (supplies) 
@@ -125,7 +125,14 @@ def update_upholstery(data):
             ps.description = i
             ps.save()
     
+    #try:
     uphol.calculate_supply_quantities()
+    #except TypeError as e:
+        
+        #logger.info(e)
+        #logger.error("Can't calculate supplies for {0} with dimensions {1} x {2} x{3}".format(uphol.description, uphol.width, uphol.depth, uphol.height))
+        
+    logger.info('{0}: Lumber total: {1}'.format(uphol.description, uphol.calculate_lumber_quantity()))
     if not uphol.prices.all().exists():
         logger.info('Saving new prices for {0}'.format(uphol.description))
         uphol.calculate_prices(apply_prices=True)

@@ -39,7 +39,7 @@ class Estimate(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     vat = models.IntegerField(default=0, null=True)
     project = models.ForeignKey(Project, null=True, blank=True, related_name='estimates')
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object,
                                             null=True,
@@ -329,7 +329,7 @@ class Item(models.Model):
     image = models.ForeignKey(S3Object, null=True, blank=True, related_name="estimate_item_image")
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         permissions = (('change_item_price', 'Can edit item price'),
@@ -595,7 +595,7 @@ class Pillow(models.Model):
 
 class Log(models.Model):
     message = models.TextField()
-    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
     delivery_date = models.DateField(null=True)
     estimate = models.ForeignKey(Estimate)
 
@@ -621,7 +621,7 @@ class Delivery(models.Model):
     _delivery_date = models.DateTimeField()
     longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     @property
     def delivery_date(self):

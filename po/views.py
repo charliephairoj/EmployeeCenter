@@ -132,10 +132,10 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         # Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(supplier__name__icontains=query) |
                                        Q(pk__icontains=query) |
@@ -143,12 +143,12 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
             queryset = queryset.distinct('id')
                                        
         # Filter by project
-        project_id = self.request.QUERY_PARAMS.get('project_id', None)
+        project_id = self.request.query_params.get('project_id', None)
         if project_id:
             queryset = queryset.filter(project_id=project_id)
             
         # Last modified
-        last_modified = self.request.QUERY_PARAMS.get('last_modified', None)
+        last_modified = self.request.query_params.get('last_modified', None)
         if last_modified:
             queryset = queryset.filter(last_modified__gte=last_modified)
                                       
@@ -159,6 +159,8 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         

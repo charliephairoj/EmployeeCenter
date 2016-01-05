@@ -28,7 +28,7 @@ class Shipping(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
     comments = models.TextField(null=True, blank=True)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     #project = models.ForeignKey(Project, null=True)
     #phase = models.ForeignKey(Phase, null=True)
 

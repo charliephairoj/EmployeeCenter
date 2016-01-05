@@ -42,7 +42,7 @@ class PurchaseOrder(models.Model):
     # refers to the todal after vat
     grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     employee = models.ForeignKey(User)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     status = models.TextField(default="Processed")
     pdf = models.ForeignKey(S3Object, null=True)
     auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")

@@ -158,10 +158,10 @@ class PricelistPDF(object):
         threads = []
         for model in models:
             data[model] = []
-            for uphol in Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description'):
-                t = Thread(target=self._add_upholstery_data, args=(uphol, model, data))
-                threads.append(t)
-                t.start()
+            
+            t = Thread(target=self._add_upholstery_data, args=(model, data))
+            threads.append(t)
+            t.start()
         
         while len([t for t in threads if t.isAlive()]) > 0:
             sleep(1)
@@ -169,20 +169,22 @@ class PricelistPDF(object):
         else:
             return data
                 
-    def _add_upholstery_data(self, upholstery, model, data):
-        if upholstery.supplies.count() > 0:
-            uphol_data = {'id': upholstery.id,
-                          'description': upholstery.description,
-                          'width': upholstery.width,
-                          'depth': upholstery.depth,
-                          'height': upholstery.height}
-            prices = upholstery.get_prices()
-            uphol_data['prices'] = prices
-        else:
-            logger.debug("{0} has {1} supplies".format(product.description, product.supplies))
+    def _add_upholstery_data(self, model, data):
+        for upholstery in Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description'):
+           
+            if upholstery.supplies.count() > 0:
+                uphol_data = {'id': upholstery.id,
+                              'description': upholstery.description,
+                              'width': upholstery.width,
+                              'depth': upholstery.depth,
+                              'height': upholstery.height}
+                prices = upholstery.get_prices()
+                uphol_data['prices'] = prices
+            else:
+                logger.debug("{0} has {1} supplies".format(product.description, product.supplies))
         
         
-        data[model].append(uphol_data)
+            data[model].append(uphol_data)
     
     def _create_model_section(self, model, products):
         """

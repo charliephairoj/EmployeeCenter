@@ -209,6 +209,8 @@ class ShippingPDF(object):
         delivery_date, dd_obj = self.outputBKKTime(self.shipping.delivery_date, '%B %d, %Y')
         data.append(['Order Date:', order_date])
         data.append(['Delivery Date:', delivery_date])
+        # Add the acknowledgement number
+        data.append(['Acknowledgement #', self.shipping.acknowledgement.id])
         #Adds po if exists
         if self.shipping.acknowledgement.po_id != None:
             data.append(['PO #:', self.ack.po_id])

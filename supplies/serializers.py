@@ -147,7 +147,7 @@ class SupplySerializer(serializers.ModelSerializer):
         ret = super(SupplySerializer, self).to_representation(instance)
         
         view = self.context['view']
-        if view.lookup_field in view.kwargs or self.context['request'].method.lower() in ['put', 'post']:
+        if view.lookup_field in view.kwargs or self.context['request'].method.lower() in ['put', 'post', 'get']:
             ret['suppliers'] = [{'id': product.id,
                                  'supplier': {'id': product.supplier.id,
                                               'name': product.supplier.name},

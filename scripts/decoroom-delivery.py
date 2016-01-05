@@ -122,6 +122,7 @@ if __name__ == "__main__":
                        "pummarin@decoroom.com",
                        "nittiya@decoroom.com",
                        "sirilak@decoroom.com",
+                       'pimpilai@decoroom.com',
                        "sujira@decoroom.com"],
                       format='html')
    

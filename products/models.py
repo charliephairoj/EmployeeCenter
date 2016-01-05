@@ -10,7 +10,7 @@ from boto.s3.key import Key
 from django.conf import settings
 from django.db import models
 
-from supplies.models import Supply as S
+from supplies.models import Supply as S, Lumber
 from media.models import S3Object
 
 
@@ -41,14 +41,14 @@ class Product(models.Model):
     image_key = models.TextField(null=True)
     image_url = models.TextField(null=True)
     schematic_key = models.TextField(null=True)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     collection = models.TextField(default="Dellarobbia Thailand")
     deleted = models.BooleanField(default=False)
     supplies = models.ManyToManyField(S, through='Supply')
     
     # Constants
     _overhead_percent = 40
-    _profit_percent = 30
+    _profit_percent = 20
     
     class Meta:
         permissions = (('view_manufacture_price', 'Can view the manufacture price'),
@@ -303,13 +303,18 @@ class Model(models.Model):
     name = models.CharField(max_length=100, null=True)
     collection = models.CharField(max_length=100, null=True)
     isActive = models.BooleanField(default=True, db_column='is_active')
-    date_created = models.DateField(auto_now=True, auto_now_add=True)
+    date_created = models.DateField(auto_now_add=True)
     bucket = models.TextField()
     #images = models.ManyToManyField(S3Object, through='ModelImage')
     image_key = models.TextField()
     image_url = models.TextField()
     last_modified = models.DateTimeField(auto_now=True)
     has_back_pillows = models.BooleanField(default=True)
+    has_arms = models.BooleanField(default=True)
+    arm_width = models.DecimalField(max_digits=15, decimal_places=2, default=200)
+    arm_height = models.DecimalField(max_digits=15, decimal_places=2, default=300)
+    base_height = models.DecimalField(max_digits=15, decimal_places=2, default=200)
+    back_depth = models.DecimalField(max_digits=15, decimal_places=2, default=200)
 
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -377,9 +382,14 @@ class Configuration(models.Model):
         return data
 
 
-#Creates the Upholster class
-#that inherits from Products
 class Upholstery(Product):
+    """
+    Upholstery Class
+    
+    This class inherits from the product class and extends it. This class
+    is for all upholstered furniture, which means furniture that one can 
+    sit on.
+    """
     model = models.ForeignKey(Model, on_delete=models.PROTECT)
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
     category = models.CharField(max_length=50, null=True)
@@ -454,6 +464,19 @@ class Upholstery(Product):
         # Calculate pillow quantites
         self.validate_pillows()
         
+        # Caculate the quantity of lumber
+        self.calculate_lumber_quantity()
+        
+        # Calculate the quantity of plywood
+        self.calculate_plywood_quantity()
+        
+        # Calculate the quantity of webbing
+        # from dimensions
+        try:
+            self.calculate_webbing_quantity()
+        except TypeError as e:
+            logger.debug("{0} \n {1}: Width: {2} // Depth: {3}".format(e, self.description, self.width, self.depth))
+        
         # Calculate fiber ball quantities by 
         # using the quantities of pillows
         self.calculate_fiber_ball_quantity()
@@ -463,13 +486,6 @@ class Upholstery(Product):
         
         # Calculate the 200g fiber ball quantity used by the cushions
         self.calculate_200g_fiber_padding_quantity()
-        
-        # Calculate the quantity of webbing
-        # from dimensions
-        try:
-            self.calculate_webbing_quantity()
-        except TypeError as e:
-            logger.debug("{0} \n {1}: Width: {2} // Depth: {3}".format(e, self.description, self.width, self.depth))
         
     def validate_pillows(self):
         """
@@ -545,7 +561,69 @@ class Upholstery(Product):
                 # Creates a pillow if the quantity is more than 0
                 if pillows[pillow_type]:
                     Pillow.objects.create(product=self, type=pillow_type, quantity=pillows[pillow_type])
-                    
+    
+    def calculate_plywood_quantity(self):
+        """
+        Calculate the quantity of plywood boards used for this upholstery.
+        
+        Firstly calculates back then calculates the arms. Calculated by multiplying depth or width by height. 
+        
+        Rules:
+        -Chaise, only half of side arm is calculates: (depth x height) / 2
+        -No arms for ottomans or bumpers
+        -20645 mm squared per board
+        """  
+        
+        # Calculate surface area back
+        surface_area = self.width * self.height
+        
+        # Calculate surface area of 1 arm
+        if 'one-arm' in self.description.lower():
+            
+            # If Chaise lounge calculate half 
+            if "chaise" in self.description:
+                surface_area += (self.depth * self.height) / 2
+                
+            # Else calculate full arm
+            else:
+                surface_area += self.depth * self.height
+        
+        
+        # Calculate surface area of dual arm
+        elif "armless" not in self.description and "one-arm" not in self.description:
+            
+            surface_area += (self.depth * self.height) * 2
+            
+        # Raise error for unknown configuration
+        else:
+            raise ValueError('No calculation mechanism for {0}'.format(self.description))
+            
+        # Calculate front surface area:
+        if 'ottoman' or 'bumper' in self.description:
+            
+            surface_area += self.width * self.height
+            
+        else:
+            surface_area += (self.width * self.height) / 2
+        
+        # Calculate sheets of plywood based on 20645 mm squared per sheet
+        quantity = math.ceil(surface_area / Decimal('20645'))
+        
+        # Update or create supply association    
+        try:
+            supply = Supply.objects.get(product=self, supply_id=2573)
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, supply=S.objects.get(pk=2573), description='Plywood')
+        
+        supply.quantity = quantity
+        supply.save()
+        
+        logger.info('{0}pcs of plywood used for {0}'.format(quantity, self.description))
+        
+        return supply.quantity
+            
+            
+            
     def calculate_fiber_ball_quantity(self):
         """
         Calculate the quantity of fiber ball in kg need for this upholstery.
@@ -688,6 +766,81 @@ class Upholstery(Product):
         supply.save()
         
         return supply.quantity
+    
+    def calculate_lumber_quantity(self):
+        """
+        Calculates the total quantity of lumber used to manufacture 
+        this upholstery
+        """
+        base = []
+        back = []
+        arms = []
+        
+        # Calculate the base of the furniture. 
+        # The short sides of the piece is calculated
+        base.append(Lumber(width=4, length=self.depth, thickness=2, metric='length', quantity=4))
+        base.append(Lumber(width=4, length=(self.height / 4) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+        logger.info("{0}: Lumber for short side of base: {1:.2f} BF\n".format(self.description, sum([l.board_feet for l in base])))
+        
+        # The long sides of the piece is caluclated
+        base.append(Lumber(width=4, length=self.width - (4 * Decimal('0.3937') * 2), thickness=2, metric='length', quantity=4))
+        base.append(Lumber(width=4, length=(self.height / 4) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+        logger.info("{0}: Lumber for long side of base: {1:.2f} BF\n".format(self.description, sum([l.board_feet for l in base[-3:-1]])))
+        
+        # Calculate the back
+        # The short sides of the back is calculated
+        back.append(Lumber(width=4, length=30, thickness=2, metric='length', quantity=4))
+        back.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+        logger.info("{0}: Lumber for short side of back: {1:.2f} BF\n".format(self.description, sum([l.board_feet for l in back])))
+        
+        
+        if "bumper" in self.description:
+            # The long sides of the back is caluclated
+            back.append(Lumber(width=4, length=self.width - (4 * Decimal('0.3937') * 2) - 50, thickness=2, metric='length', quantity=4))
+            back.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+            logger.info("{0}: Lumber for long side of back: {1:.2f} BF\n".format(self.description, sum([l.board_feet for l in back[-3:-1]])))
+        else:
+            # The long sides of the back is caluclated
+            back.append(Lumber(width=4, length=self.width - (4 * Decimal('0.3937') * 2), thickness=2, metric='length', quantity=4))
+            back.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+            logger.info("{0}: Lumber for long side of back: {1:.2f} BF\n".format(self.description, sum([l.board_feet for l in back[-3:-1]])))   
+            
+        # Calculate the arms
+        if 'armless' in self.description:
+            pass
+        
+        elif 'one-arm' in self.description:
+            # The short sides of the piece is calculated
+            arms.append(Lumber(width=4, length=30, thickness=2, metric='length', quantity=2))
+            arms.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=2))
+        
+            # The long sides of the piece is caluclated
+            arms.append(Lumber(width=4, length=self.depth - (4 * Decimal('0.3937') * 2), thickness=2, metric='length', quantity=2))
+            arms.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=2))
+            
+        else: 
+            # The short sides of the piece is calculated
+            arms.append(Lumber(width=4, length=30, thickness=2, metric='length', quantity=4))
+            arms.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+        
+            # The long sides of the piece is caluclated
+            arms.append(Lumber(width=4, length=self.depth - (4 * Decimal('0.3937') * 2), thickness=2, metric='length', quantity=4))
+            arms.append(Lumber(width=4, length=(self.height / 2) - (4 * Decimal('0.3937')), thickness=2, metric='length', quantity=4))
+            
+        bf_total = sum([float(lumber.board_feet) for lumber in (arms + back + base)])
+        
+        logger.info('Total board feet for {0}: {1:.2f} BF'.format(self.description, bf_total))
+        
+        # Retrieve the lumber supply for this upholstery and set the cost based
+        # on total board feet of wood used. 
+        try:
+            supply = Supply.objects.get(product=self, description__icontains='lumber')
+        except Supply.DoesNotExist:
+            supply = Supply(product=self, description='lumber')
+        supply.cost = bf_total * 37.5
+        supply.save()
+        
+        return bf_total
             
 
 class Pillow(models.Model):

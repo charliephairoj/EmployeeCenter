@@ -2,25 +2,14 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import *
 from django.conf import settings
-from tastypie.api import Api
 from rest_framework.routers import DefaultRouter
-
-from contacts.api import SupplierResource, CustomerResource
-from acknowledgements.api import AcknowledgementResource, ItemResource as AckItemResource
-from po.api import PurchaseOrderResource, ItemResource as POItemResource
-from shipping.api import ShippingResource
-from projects.api import ProjectResource, RoomResource
-from supplies.api import SupplyResource, FabricResource, LogResource, SupplyReservationResource
-from equipment.api import EquipmentResource
-from products.api import ModelResource, ConfigurationResource, UpholsteryResource, TableResource
-from administrator.api import UserResource, GroupResource, PermissionResource
-from hr.api import EmployeeResource, AttendanceResource
 
 from contacts.views import CustomerViewSet, SupplierViewSet, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import LogList, LogDetail
-from products.views import ConfigurationViewSet, ModelViewSet
+from products.views import ConfigurationViewSet
+from products.views import ModelList, ModelDetail
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
 from products.views import ProductSupplyList, ProductSupplyDetail
@@ -53,7 +42,7 @@ resources with the api
 router = DefaultRouter()
 
 router.register(r'api/v1/customer', CustomerViewSet)
-router.register(r'api/v1/model', ModelViewSet)
+#router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 router.register(r'api/v1/phase', PhaseViewSet)
 router.register(r'api/v1/project-part', PartViewSet)
@@ -66,7 +55,7 @@ urlpatterns = patterns('',
     url(r'^login$', 'login.views.app_login'),
     url(r'^logout$', 'login.views.logout'),
     url(r'^api/v1/current_user$', 'administrator.views.current_user'),
-    url(r'^/api/v1/current_user$', 'administrator.views.current_user'),
+    url(r'^api/v1/current_user$', 'administrator.views.current_user'),
     url(r'^api/v1/change_password', 'auth.views.change_password'),
     url(r'^api/v1/change_password/', 'auth.views.change_password'),
     url(r'^api/v1/client/log/$', 'administrator.views.log'),
@@ -82,6 +71,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/supply/type$', supply_type_list),
     url(r'^api/v1/fabric/$', FabricList.as_view()),
     url(r'^api/v1/fabric/(?P<pk>[0-9]+)/$', FabricDetail.as_view()),
+    url(r'^api/v1/model/$', ModelList.as_view()),
+    url(r'^api/v1/model/(?P<pk>[0-9]+)/$', ModelDetail.as_view()),
     url(r'^api/v1/upholstery/$', UpholsteryList.as_view()),
     url(r'^api/v1/upholstery/(?P<pk>[0-9]+)/$', UpholsteryDetail.as_view()),
     url(r'^api/v1/product/supply/$', ProductSupplyList.as_view()),
@@ -127,9 +118,9 @@ urlpatterns += patterns('acknowledgements.views',
     #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
     #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
     url(r'api/v1/acknowledgement/stats/$', 'acknowledgement_stats'),
-    url(r'/api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
+    url(r'api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
-    url(r'/api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
+    url(r'api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/file/$', 'acknowledgement_file')
     
@@ -138,19 +129,19 @@ urlpatterns += patterns('acknowledgements.views',
 )
 
 urlpatterns += patterns('products.views',
-    url(r'/api/v1/upholstery/image$', 'product_image'),
+    url(r'api/v1/upholstery/image$', 'product_image'),
     url(r'^api/v1/upholstery/image$', 'product_image'),
     url(r'^api/v1/upholstery/image/$', 'product_image'),
-    url(r'^/api/v1/upholstery/image/$', 'product_image'),
-    url(r'/api/v1/model/image$', 'product_image'),
+    url(r'^api/v1/upholstery/image/$', 'product_image'),
+    url(r'api/v1/model/image$', 'product_image'),
     url(r'^api/v1/model/image$', 'product_image'),
     url(r'^api/v1/model/image/$', 'product_image'),
-    url(r'^/api/v1/model/image/$', 'product_image')
+    url(r'^api/v1/model/image/$', 'product_image')
     
 )
 
 urlpatterns += patterns('supplies.views',
-    url(r'^/api/v1/supply/image/$', 'supply_image'),
+    url(r'^api/v1/supply/image/$', 'supply_image'),
     url(r'^api/v1/supply/image/$', 'supply_image'),
     url(r'api/v1/supply/(?P<pk>\d+)/sticker$', 'sticker'),
     url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', 'sticker'),
@@ -176,7 +167,6 @@ urlpatterns += patterns('projects.views',
 )
 
 urlpatterns += patterns('hr.views',
-    url(r'^/api/v1/employee/image/$', 'employee_image'),
     url(r'^api/v1/employee/image/$', 'employee_image')
 )
 

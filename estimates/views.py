@@ -66,17 +66,6 @@ class EstimateMixin(object):
     queryset = Estimate.objects.all().order_by('-id')
     serializer_class = EstimateSerializer
     
-    def handle_exception(self, exc):
-        """
-        Custom Exception Handler
-        
-        Exceptions are logged as error via logging, 
-        which will send an email to the system administrator
-        """
-        logger.error(exc)        
-        
-        return super(EstimateMixin, self).handle_exception(exc)
-    
     def _condense_pillows(self, request):
         """
         Condense the pillows by combining pillows of the same type and fabric
@@ -207,10 +196,10 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(customer__name__icontains=query) | 
                                        Q(pk__icontains=query)).distinct('id')
@@ -219,6 +208,8 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         

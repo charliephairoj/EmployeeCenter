@@ -5,7 +5,7 @@ import json
 import logging
 
 from django.shortcuts import render
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_protect
 from django.contrib.staticfiles.views import serve
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth import authenticate, login, logout
@@ -19,10 +19,12 @@ from login.models import LoginForm
 
 logger = logging.getLogger(__name__)
 
-
+@csrf_protect
 @login_required
+@ensure_csrf_cookie
 def main(request):
     serve(request, 'templates/auth/login.html')
+
 
 @csrf_exempt
 @ensure_csrf_cookie

@@ -564,20 +564,19 @@ class AcknowledgementPDF(object):
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
             #get subtotal and add to pdf
-            data.append(['', '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
+            data.append(['', 'Subtotal', "%.2f" % self.ack.subtotal])
             total = self.ack.subtotal
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
                 discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
-                data.append(['', '', '',
-                             'Discount %s%%' % self.ack.discount, "%.2f" % discount])
+                data.append(['', 'Discount %s%%' % self.ack.discount, "%.2f" % discount])
             #add vat if vat is greater than 0
             if self.ack.vat != 0:
                 if self.ack.discount != 0:
                     #append total to pdf
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                     total -= discount
-                    data.append(['', '', '', 'Total', "%.2f" % total])
+                    data.append(['', 'Total', "%.2f" % total])
                     
                     prevat_total = total
                 else:
@@ -585,9 +584,9 @@ class AcknowledgementPDF(object):
                     
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
-                data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
-        data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total])
-        table = Table(data, colWidths=(70, 280, 10, 100, 85))
+                data.append(['', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
+        data.append(['', 'Grand Total', "%.2f" % self.ack.total])
+        table = Table(data, colWidths=(80, 300, 165))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (-2, -1), (-1, -1), 1,

@@ -25,17 +25,6 @@ class ShippingMixin(object):
     queryset = Shipping.objects.all().order_by('-id')
     serializer_class = ShippingSerializer
     
-    def handle_exception(self, exc):
-        """
-        Custom Exception Handler
-        
-        Exceptions are logged as error via logging, 
-        which will send an email to the system administrator
-        """
-        logger.error(exc)        
-        
-        return super(ShippingMixin, self).handle_exception(exc)
-    
     def _format_primary_key_data(self, request):
         """
         Format fields that are primary key related so that they may 
@@ -75,10 +64,10 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(pk__icontains=query) | 
                                        Q(customer__name__icontains=query))
@@ -87,6 +76,8 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         

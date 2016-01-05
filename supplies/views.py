@@ -67,17 +67,6 @@ def shopping_list(request):
 class SupplyMixin(object):
     queryset = Supply.objects.all().order_by('description')
     serializer_class = SupplySerializer
-    
-    def handle_exception(self, exc):
-        """
-        Custom Exception Handler
-        
-        Exceptions are logged as error via logging, 
-        which will send an email to the system administrator
-        """
-        #logger.error(exc)        
-        
-        return super(SupplyMixin, self).handle_exception(exc)
         
     def _format_primary_key_data(self, request):
         """
@@ -139,19 +128,19 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         queryset = self.queryset
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
                                        Q(description__icontains=query) |
                                        Q(products__reference__icontains=query))
         
         #Filter based on supplier
-        s_id = self.request.QUERY_PARAMS.get('supplier_id', None)
+        s_id = self.request.query_params.get('supplier_id', None)
         if s_id:
             queryset = queryset.filter(products__supplier_id=s_id)
         
         #Filter based on product upc code
-        upc = self.request.QUERY_PARAMS.get('upc', None)
+        upc = self.request.query_params.get('upc', None)
         if upc:
             queryset = queryset.filter(products__upc=upc)
 
@@ -159,6 +148,8 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         
@@ -221,10 +212,10 @@ class FabricList(FabricMixin, SupplyList):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(products__supplier__name__icontains=query) | 
                                        Q(description__icontains=query) |
@@ -233,19 +224,21 @@ class FabricList(FabricMixin, SupplyList):
                                        Q(color__icontains=query))
         
         #Filter based on supplier
-        s_id = self.request.QUERY_PARAMS.get('supplier_id', None)
+        s_id = self.request.query_params.get('supplier_id', None)
         if s_id:
             queryset = queryset.filter(products__supplier_id=s_id)
         
         #Filter based on product upc code
-        upc = self.request.QUERY_PARAMS.get('upc', None)
+        upc = self.request.query_params.get('upc', None)
         if upc:
             queryset = queryset.filter(products__upc=upc)
 
         offset = int(self.request.query_params.get('offset', 0))
-        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        limit = int(self.request.query_params.get('limit', self.request.query_params.get('page_size', settings.REST_FRAMEWORK['PAGINATE_BY'])))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
     
@@ -271,15 +264,15 @@ class LogViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
-        supply_id = self.request.QUERY_PARAMS.get('supply', None)
-        supply_id = self.request.QUERY_PARAMS.get('supply_id', None) or supply_id     
+        supply_id = self.request.query_params.get('supply', None)
+        supply_id = self.request.query_params.get('supply_id', None) or supply_id     
 
         if supply_id:
             queryset = queryset.filter(supply_id=supply_id)
             
-        action = self.request.QUERY_PARAMS.get('action', None)
+        action = self.request.query_params.get('action', None)
 
         if action:
             queryset = queryset.filter(action=action)
@@ -298,15 +291,15 @@ class LogList(generics.ListAPIView):
     
     def get_queryset(self):
         
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
-        supply_id = self.request.QUERY_PARAMS.get('supply', None)
-        supply_id = self.request.QUERY_PARAMS.get('supply_id', None) or supply_id     
+        supply_id = self.request.query_params.get('supply', None)
+        supply_id = self.request.query_params.get('supply_id', None) or supply_id     
 
         if supply_id:
             queryset = queryset.filter(supply_id=supply_id)
             
-        action = self.request.QUERY_PARAMS.get('action', None)
+        action = self.request.query_params.get('action', None)
 
         if action:
             queryset = queryset.filter(action=action)

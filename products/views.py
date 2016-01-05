@@ -40,10 +40,10 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(configuration__icontains=query))
                                       
@@ -51,6 +51,8 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         
@@ -64,22 +66,25 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
         else:
             return limit
             
-            
-class ModelViewSet(viewsets.ModelViewSet):
+
+class ModelMixin(object):
     """
     API endpoint to view and edit models
     """
     queryset = Model.objects.all()
     serializer_class = ModelSerializer
-
+    
+    
+class ModelList(ModelMixin, generics.ListCreateAPIView):
+   
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(model__icontains=query) |
@@ -89,6 +94,8 @@ class ModelViewSet(viewsets.ModelViewSet):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         
@@ -102,21 +109,14 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             return limit
             
+
+class ModelDetail(ModelMixin, generics.RetrieveUpdateDestroyAPIView):   
+    pass
+    
                 
 class UpholsteryMixin(object):
     queryset = Upholstery.objects.all()
     serializer_class = UpholsterySerializer
-    
-    def handle_exception(self, exc):
-        """
-        Custom Exception Handler
-        
-        Exceptions are logged as error via logging, 
-        which will send an email to the system administrator
-        """
-        logger.error(exc)        
-        
-        return super(UpholsteryMixin, self).handle_exception(exc)
     
     def _format_primary_key_data(self, request):
         """
@@ -151,10 +151,10 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(description__icontains=query) |
                                        Q(model__model__icontains=query) |
@@ -162,9 +162,11 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
                                        Q(configuration__configuration__icontains=query))
                                       
         offset = int(self.request.query_params.get('offset', 0))
-        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        limit = int(self.request.query_params.get('limit', self.request.query_params.get('page_size', settings.REST_FRAMEWORK['PAGINATE_BY'])))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         
@@ -263,10 +265,10 @@ class ProductSupplyList(SupplyMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        product_id = self.request.QUERY_PARAMS.get('product__id', None)
+        product_id = self.request.query_params.get('product__id', None)
         if product_id:
             queryset = queryset.filter(product__id=product_id)
                                       
@@ -274,6 +276,8 @@ class ProductSupplyList(SupplyMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         

@@ -14,7 +14,7 @@ class Contact(models.Model):
     currency = models.CharField(max_length=10, null=True)
     notes = models.TextField(null=True, default="", blank=True)
     deleted = models.BooleanField(default=False)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     #class Meta:
         #ordering = ['name']
 

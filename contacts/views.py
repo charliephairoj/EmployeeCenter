@@ -28,7 +28,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(email__icontains=query) |
@@ -74,7 +74,7 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -88,6 +88,8 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
             
         return queryset
         
@@ -117,15 +119,22 @@ class SupplierViewSet(viewsets.ModelViewSet):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(email__icontains=query) |
                                        Q(telephone__icontains=query) |
                                        Q(notes__icontains=query))
+        
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
                                       
         return queryset
         

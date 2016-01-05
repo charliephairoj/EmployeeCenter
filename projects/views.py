@@ -61,22 +61,24 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         queryset = Project.objects.all()
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(codename__icontains=query) | 
                                        Q(pk__icontains=query))
                                       
-        status_exclusions = self.request.QUERY_PARAMS.get('status__exclude', None)
+        status_exclusions = self.request.query_params.get('status__exclude', None)
         if status_exclusions:
             queryset = queryset.exclude(status__icontains=status_exclusions)
         
         # Enfore ordering by codename    
-        queryset = queryset.order_by('codename')
+        queryset = queryset.order_by('-codename')
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset
 
         return queryset
     

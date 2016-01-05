@@ -41,7 +41,7 @@ class Acknowledgement(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, related_name='acknowledgements')
     room = models.ForeignKey(Room, null=True, blank=True, related_name='acknowledgements')
     phase = models.ForeignKey(Phase, null=True, blank=True, related_name='acknowledgements')
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     acknowledgement_pdf = models.ForeignKey(S3Object,
                                             null=True,
@@ -371,7 +371,7 @@ class Item(models.Model):
     image = models.ForeignKey(S3Object, null=True, blank=True)
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         permissions = (('change_item_price', 'Can edit item price'),
@@ -638,7 +638,7 @@ class Pillow(models.Model):
 
 class Log(models.Model):
     message = models.TextField()
-    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
     delivery_date = models.DateField(null=True)
     acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs')
     employee = models.ForeignKey(User, null=True, related_name="acknowledgement_logs")
@@ -657,7 +657,7 @@ class Delivery(models.Model):
     _delivery_date = models.DateTimeField()
     longitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
     latitude = models.DecimalField(decimal_places=6, max_digits=9, null=True)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     @property
     def delivery_date(self):

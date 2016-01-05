@@ -184,7 +184,7 @@ class Item(models.Model):
     reference = models.TextField(null=True)
     type = models.TextField(null=True)
     quantity = models.IntegerField(default=1)
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     #files = models.ManyToManyField(S3Object, through='File', related_name='room_item')
     supplies = models.ManyToManyField(Supply, through='ItemSupply', related_name='room_item')
     files = models.ManyToManyField(S3Object, through='File', related_name='room_item')

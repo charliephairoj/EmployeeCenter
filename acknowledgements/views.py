@@ -120,18 +120,7 @@ def acknowledgement_file(request):
 class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all().order_by('-id')
     serializer_class = AcknowledgementSerializer
-    
-    def handle_exception(self, exc):
-        """
-        Custom Exception Handler
-        
-        Exceptions are logged as error via logging, 
-        which will send an email to the system administrator
-        """
-        logger.error(exc)        
-        
-        return super(AcknowledgementMixin, self).handle_exception(exc)
-    
+  
     def _condense_pillows(self, request):
         """
         Condense the pillows by combining pillows of the same type and fabric
@@ -271,20 +260,20 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
-        status = self.request.QUERY_PARAMS.get('status', None)
+        status = self.request.query_params.get('status', None)
         if status:
             queryset = queryset.filter(status__icontains=status)
         
         #Filter based on query
-        query = self.request.QUERY_PARAMS.get('q', None)
+        query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(customer__name__icontains=query) | 
                                        Q(pk__icontains=query)).distinct('id')
                         
         #Filter by project
-        project_id = self.request.QUERY_PARAMS.get('project_id', None)
+        project_id = self.request.query_params.get('project_id', None)
         if project_id:
             queryset = queryset.filter(project_id=project_id)
         
@@ -299,6 +288,8 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
         
         
             

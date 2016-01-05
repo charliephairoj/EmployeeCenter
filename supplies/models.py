@@ -52,7 +52,7 @@ class Supply(models.Model):
     quantity_th = models.FloatField(db_column='quantity', default=0)
     quantity_kh = models.FloatField(default=0)
     quantity_units = models.TextField(default="mm")
-    last_modified = models.DateTimeField(auto_now=True, auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
     sticker = models.ForeignKey(S3Object, null=True, blank=True, related_name="supply_sticker")
     deleted = models.BooleanField(default=False)
@@ -342,7 +342,7 @@ class Log(models.Model):
     action = models.TextField(default=None)
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
-    timestamp = models.DateTimeField(auto_now=True, auto_now_add=True, db_column='log_timestamp')
+    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
     employee = models.ForeignKey(Employee, null=True)
     acknowledgement_id = models.TextField(null=True)
 
@@ -458,50 +458,71 @@ class Glue(Supply):
 
 class Lumber(Supply):
     wood_type = models.TextField(db_column  = "wood_type")
-
-    #Methods
-    def set_data(self, data, **kwargs):
-        #extract args
-        if "user" in kwargs: user = kwargs["user"]
-        #set parent data
-        super(Lumber, self).set_data(data, user=user)
-        #set the type to lumber
-        self.type = "lumber"
-        #set the wood type
-        if "type" in data:self.wood_type = data["type"]
-
-
-        self.set_parent_data(data)
-        #set parent properties
-        if "width_units" in data: self.width_units = data["width_units"]
-        if "depth_units" in data: self.depth_units = data["depth_units"]
-        if "height_units" in data: self.height_units = data["height_units"]
-        self.purchasing_units = "pc"
-        #set the description
-        if "description" in data: 
-            self.description = data["description"]
-        else:
-            self.description = "%s %s%sx%s%sx%s%s" % (self.wood_type, self.width, self.width_units, self.depth, self.depth_units, self.height, self.height_units)
+    width = Decimal('0')
+    length = Decimal('0')
+    thickness = Decimal('0')
+    quantity = 0
+    
+    def __init__(self, width=Decimal('0'), length=Decimal('0'), thickness=Decimal('0'), metric='', quantity=0):
+        """
+        Initialize the Lumber instance. Metric indicates the incoming
+        values are in cm And must be converted back into inches first. Conversion is activated by 
+        including the attribute name in a string. i.e.: 'width thickness'
+        """
+        # Validates all dimensions are given
+        self._validate_dimensions(width, length, thickness)
+             
+        # This area converts the dimensions to inch
+        # Conversion factor
+        try:
+            cf = Decimal('0.03937')
+            if 'width' in metric:
+                width = cf * width
+            if 'length' in metric:
+                length = cf * length
+            if 'thickness' in metric:
+                thickness = cf * thickness
+        except TypeError:
+            raise Exception("{0} : {1} / {2} : {3}".format(cf, length, type(cf), type(length)))
             
-        #set the supplier
-        if "supplier_id" in data: self.supplier = Supplier.objects.get(id = data["supplier_id"])
+        self.width, self.length, self.thickness = width, length, thickness
+        self.quantity = quantity
         
-        self.save()
+    @property
+    def board_feet(self):
+        """
+        Calculate the board foot of a piece of wood. Check that all necessary 
+        values are present
+        """
+        # Check for width, length, thickness
+        try:
+            self._validate_dimensions()
+        except ValueError as e:
+            logger.error(e.split(' ')[1] + 'need to caculate board feet.')
+            
+        # Caluclate board feet
+        bf = (self.width * self.length * self.thickness) / Decimal('144')
         
-    def get_data(self, **kwargs):
+        logger.info('Board feet for {0} x {1} x {2}. Qty:{3}: {4}'.format(self.width, self.length, self.thickness, self.quantity, bf))
         
-        #sets the data for this supply
-        data = {
-                'type':self.wood_type,
-        }
-        #merges with parent data
-        data.update(super(Lumber, self).get_data())
-       
-        #returns the data
-        return data
+        return bf * self.quantity
+        
+    def _validate_dimensions(self, width=0, length=0, thickness=0):
+        """
+        Validate incoming or attribute dimensions
+        """
+        if not (width or self.width):
+            raise ValueError('Missing width')
+        
+        if not (length or self.length):
+            raise ValueError('Length cannot be {0}. Length must be a positive, nonzero value.'.format(length or self.length))
+        
+        if not (thickness or self.thickness):
+            raise ValueError('Missing thickness')
+            
+        return True
+        
 
-
-#screw
 class Screw(Supply):
     
     
