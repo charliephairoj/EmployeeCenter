@@ -160,8 +160,12 @@ class ItemSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
-            ret['image'] = {'url': instance.image.generate_url()}
+            ret['image'] = {'url': instance.image.generate_url(key, secret)}
         except AttributeError:
             pass
             
@@ -446,29 +450,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
-        try:
-            ret['pdf'] = {'acknowledgement': instance.acknowledgement_pdf.generate_url(),
-                          'production': instance.production_pdf.generate_url()}
-                          
-            try:
-                ret['pdf']['confirmation'] = instance.confirmation_pdf.generate_url()
-            except AttributeError:
-                pass
-                
-            try:
-                ret['pdf']['label'] = instance.label_pdf.generate_url()
-            except AttributeError:
-                pass
-                
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
         
-        except AttributeError:
-            pass
-            """
-            ret['pdf'] = {'acknowledgement': 'test',
-                          'confirmation': 'test',
-                          'production': 'test'}
-            """
-            
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
             try:
@@ -487,7 +472,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url()} for file in instance.files.all()]
+                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
         except AttributeError:
             pass
             

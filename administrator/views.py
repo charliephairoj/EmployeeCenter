@@ -87,21 +87,6 @@ class PermissionList(PermissionMixin, generics.ListCreateAPIView):
 class PermissionDetail(PermissionMixin, generics.RetrieveUpdateDestroyAPIView):
     pass
     
-    
-def get_access_key(iam, user):
-    try:
-        data = iam.get_all_access_keys(user.username)
-        return data["list_access_keys_response"]["list_access_keys_result"]["access_key_metadata"][0]["access_key_id"]
-    except IndexError:
-        data = iam.create_access_key(user.username)
-        return data["create_access_key_response"]["create_access_key_result"]["access_key"]["access_key_id"]
-    except boto.exception.BotoServerError as e:
-        print e
-        iam.create_user(user.username)
-        data = iam.create_access_key(user.username)
-        print data
-        return data["create_access_key_response"]["create_access_key_result"]["access_key"]["access_key_id"]
-
 
 @login_required
 #current user profile

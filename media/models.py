@@ -1,6 +1,7 @@
 import os
 import datetime
 import dateutil.parser
+import logging
 
 from django.db import models
 from django.contrib import admin
@@ -9,6 +10,9 @@ from django.conf import settings
 from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key
 import boto
+
+
+logger = logging.getLogger(__name__)
 
 
 class Log(models.Model):
@@ -47,11 +51,11 @@ class S3Object(models.Model):
         self._upload(filename, delete_original, encrypt_key)
         self.save()
 
-    def generate_url(self, time=1800):
+    def generate_url(self, key, secret, time=1800):
         """
         Generates a url for the object
         """
-        conn = self._get_connection()
+        conn = self._get_connection(key, secret)
         return conn.generate_url(time,
                                  'GET',
                                  bucket=self.bucket,
@@ -81,11 +85,15 @@ class S3Object(models.Model):
         bucket.delete_key(self.key)
         super(S3Object, self).delete(**kwargs)
 
-    def _get_connection(self):
+    def _get_connection(self, key, secret):
         """
         Returns the S3 Connection of the object
         """
-        return boto.s3.connect_to_region('ap-southeast-1')
+        logger.debug(key)
+        logger.debug(secret)
+        return boto.s3.connect_to_region('ap-southeast-1',
+                                         aws_access_key_id=key,
+                                         aws_secret_access_key=secret)
 
     def _get_bucket(self):
         """

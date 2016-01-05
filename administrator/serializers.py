@@ -2,8 +2,9 @@ import logging
 
 from rest_framework import serializers
 from django.contrib.auth.models import Permission, Group
+import boto
 
-from administrator.models import User
+from administrator.models import User, AWSUser
 
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,9 @@ class UserSerializer(serializers.ModelSerializer):
         assert instance.check_password(password)
         assert instance.has_usable_password()
         
+        #Create the credentials for aws
+        _create_aws_credentials(instance)
+        
         for group_data in groups:
             instance.groups.add(Group.objects.get(pk=group_data['id']))
             
@@ -103,6 +107,23 @@ class UserSerializer(serializers.ModelSerializer):
         
         return instance
         
+    def _create_aws_credentials(self, user):
+        aws_user = AWSUser(user=user).save()
+        
+        iam = boto.connect_iam()
+        
+        response = iam.create_user(user.email)
+        user.aws_credentials.iam_id = response.user.user_id
+        
+        # Add to S3 group
+        response = iam.add_user_to_group('S3-Users', 'Bob')
+
+        # Create AccessKey/SecretKey pair for User
+        response = iam.create_access_key(user.email)
+        user.aws_credentials.access_key_id = response.access_key_id
+        user.aws_credentials.secret_access_key = response.secret_access_key
+        
+        user.aws_credentials.save()
         
 
 

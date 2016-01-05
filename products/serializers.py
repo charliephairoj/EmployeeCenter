@@ -64,9 +64,13 @@ class ModelSerializer(serializers.ModelSerializer):
         
         ret = super(ModelSerializer, self).to_representation(instance)
         
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
             ret['images'] = [{'id': image.id,
-                              'url': image.generate_url(),
+                              'url': image.generate_url(key, secret),
                               'primary': image.primary} for image in instance.images.all().order_by('-primary')]
         except (AttributeError, IndexError):
             pass
@@ -121,12 +125,17 @@ class UpholsterySerializer(serializers.ModelSerializer):
         ret['pillows'] = [{'id': pillow.id,
                            'type': pillow.type,
                            'quantity': pillow.quantity} for pillow in instance.pillows.all()]
-                                
+                         
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+               
         try:
             ret['image'] = {'id': instance.image.id,
-                            'url': instance.image.generate_url()}
+                            'url': instance.image.generate_url(key, secret)}
         except AttributeError:
             pass
+        
         
         try:
             ret['prices'] = [{'grade': price.grade, 'price':price.price} for price in instance.prices.all()]
@@ -214,8 +223,12 @@ class TableSerializer(serializers.ModelSerializer):
         ret['configuration'] = {'id': instance.configuration.id,
                                 'configuration': instance.configuration.configuration}
               
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
-            ret['image'] = {'url': instance.image.generate_url()}
+            ret['image'] = {'url': instance.image.generate_url(key, secret)}
         except AttributeError:
             pass
             

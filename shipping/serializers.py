@@ -142,9 +142,13 @@ class ShippingSerializer(serializers.ModelSerializer):
                                                  'codename': instance.acknowledgement.project.codename}
         except AttributeError:
             pass
-            
+        
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
-            ret['pdf'] = {'url': instance.pdf.generate_url()}
+            ret['pdf'] = {'url': instance.pdf.generate_url(key, secret)}
         except AttributeError:
             pass
        

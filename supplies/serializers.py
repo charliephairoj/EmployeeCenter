@@ -146,6 +146,10 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         ret = super(SupplySerializer, self).to_representation(instance)
         
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         view = self.context['view']
         if view.lookup_field in view.kwargs or self.context['request'].method.lower() in ['put', 'post', 'get']:
             ret['suppliers'] = [{'id': product.id,
@@ -160,11 +164,11 @@ class SupplySerializer(serializers.ModelSerializer):
             #Add sticker url or create stickers if they do not exists
             try:                     
                 ret['sticker'] = {'id': instance.sticker.id, 
-                                  'url': instance.sticker.generate_url()}
+                                  'url': instance.sticker.generate_url(key, secret)}
             except AttributeError:
                 instance.create_stickers()
                 ret['sticker'] = {'id': instance.sticker.id,
-                                  'url': instance.sticker.generate_url()}
+                                  'url': instance.sticker.generate_url(key, secret)}
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
@@ -178,10 +182,11 @@ class SupplySerializer(serializers.ModelSerializer):
                 pass
             
         ret['quantity'] = instance.quantity
-           
+        
+        
         try:
             ret['image'] = {'id': instance.image.id,
-                            'url': instance.image.generate_url()}
+                            'url': instance.image.generate_url(key, secret)}
         except AttributeError: 
             pass
 
