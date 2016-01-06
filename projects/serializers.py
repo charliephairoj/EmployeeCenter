@@ -47,7 +47,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             for acknowledgement in instance.acknowledgements.all():
                 ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
                 
-        ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
+        #ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
         
         return ret
         
@@ -100,8 +100,14 @@ class ProjectSerializer(serializers.ModelSerializer):
                
         ret['quantity'] = ProjectSupply.objects.get(supply=supply, project=project).quantity
         
+        logger.debug(self.context)
+        
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
-            ret['image'] = {'url': supply.image.generate_url()}
+            ret['image'] = {'url': supply.image.generate_url(key, secret)}
         except AttributeError:
             pass
             
@@ -162,12 +168,16 @@ class RoomSerializer(serializers.ModelSerializer):
         ret = super(RoomSerializer, self).to_representation(instance)
         
         ret['items'] = [ItemSerializer(item).data for item in instance.items.all()]
-                
+        
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url()} for file in instance.files.all()]
+                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
         except AttributeError:
             pass
 
@@ -265,18 +275,22 @@ class ItemSerializer(serializers.ModelSerializer):
         
         ret = super(ItemSerializer, self).to_representation(instance)
         
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         ret['supplies'] = [{'id': supply.id,
                             'description': supply.description,
                             'quantity': ItemSupply.objects.get(item=instance, supply=supply).quantity,
                             'url': self._get_image_from_supply(supply),
                             'units': supply.units}
-                           for supply in instance.supplies.all()]
+                           for supply in instance.supplies.all(key, secret)]
                            
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url()} for file in instance.files.all()]
+                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
         except AttributeError:
             pass
             
@@ -293,8 +307,12 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Returns the image url from the supply if there is an image
         """
+        iam_credentials = self.context['request'].user.aws_credentials
+        key = iam_credentials.access_key_id
+        secret = iam_credentials.secret_access_key
+        
         try:
-            return supply.image.generate_url()
+            return supply.image.generate_url(key, secret)
         except AttributeError:
             return None
             
