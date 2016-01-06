@@ -79,12 +79,19 @@ def acknowledgement_stats(request):
     
 def acknowledgement_item_image(request):
     if request.method == "POST":
+        
+        credentials = request.user.aws_credentials
+        key = credentials.access_key_id
+        secret = credentials.secret_access_key
+        
         filename = save_upload(request)
         obj = S3Object.create(filename,
                         "acknowledgement/item/image/{0}.jpg".format(time.time()),
-                        'media.dellarobbiathailand.com')
+                        'media.dellarobbiathailand.com',
+                        key, 
+                        secret)
         response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url()}),
+                                            'url': obj.generate_url(key, secret)}),
                                 content_type="application/json")
         response.status_code = 201
         return response
@@ -102,15 +109,20 @@ def acknowledgement_file(request):
         for chunk in file.chunks():
             destination.write(chunk)
     
+    credentials = request.user.aws_credentials
+    key = credentials.access_key_id
+    secret = credentials.secret_access_key
     
     obj = S3Object.create(filename,
                           u"acknowledgement/files/{0}".format(filename),
-                          u"media.dellarobbiathailand.com")
+                          u"media.dellarobbiathailand.com",
+                          key, 
+                          secret)
     
     response = HttpResponse(json.dumps({'id': obj.id,
                                         'filename': filename,
                                         'type': filename.split('.')[-1],
-                                        'url': obj.generate_url()}), 
+                                        'url': obj.generate_url(key, secret)}), 
                             content_type="application/json")
                             
     response.status_code = 201

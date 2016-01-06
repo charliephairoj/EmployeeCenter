@@ -182,14 +182,18 @@ def room_image(request):
     Uploads the file in the request
     """
     if request.method.lower() == 'post':
-
+        
+        credentials = request.user.aws_credentials
+        key = credentials.access_key_id
+        secret = credentials.secret_access_key
+        
         filename = save_upload(request)
         obj = S3Object.create(filename,
                         'project/room/image/{0}.jpg'.format(time.time()),
                         'media.dellarobbiathailand.com')
 
         return HttpResponse(json.dumps({'id': obj.id,
-                                        'url': obj.generate_url()}),
+                                        'url': obj.generate_url(key, secret)}),
                             mimetype='application/json',
                             status=201)
     else:

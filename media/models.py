@@ -24,13 +24,18 @@ class Log(models.Model):
 class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField()   
-
+    
     @classmethod
-    def create(cls, filename, key, bucket, delete_original=True, encrypt_key=False, upload=True):
+    def create(cls, filename, key, bucket, access_key='', secret='', delete_original=True, encrypt_key=False, upload=True):
         """
         Creates S3object for a file
         """
         obj = cls()
+        
+        
+        obj.access_key = access_key
+        obj.secret_key = secret
+        
         if key:
             obj.key = key
         else:
@@ -98,7 +103,7 @@ class S3Object(models.Model):
         Returns the S3 Bucket of the object
         """
         if self.bucket:
-            conn = self._get_connection()
+            conn = self._get_connection(self.access_key, self.secret_key)
             bucket = conn.get_bucket(self.bucket, True)
             bucket.configure_versioning(True)
             return bucket

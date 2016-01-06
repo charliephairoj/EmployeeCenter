@@ -38,12 +38,17 @@ def sticker(request, pk=None):
     
 def supply_image(request):
     if request.method == "POST":
+        credentials = request.user.aws_credentials
+        key = credentials.access_key_id
+        secret = credentials.secret_access_key
+        
         filename = save_upload(request)
         obj = S3Object.create(filename,
                         "supply/image/{0}.jpg".format(time.time()),
-                        'media.dellarobbiathailand.com')
+                        'media.dellarobbiathailand.com',
+                        key, secret)
         response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url()}),
+                                            'url': obj.generate_url(key, secret)}),
                                 content_type="application/json")
         response.status_code = 201
         return response
