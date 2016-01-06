@@ -10,7 +10,7 @@ import boto.ses
 
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
-from po.models import PurchaseOrder, Item
+from po.models import PurchaseOrder, Item, Log as POLog
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
 from contacts.serializers import AddressSerializer
@@ -258,7 +258,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                   **validated_data)
         instance.currency = currency
         instance.terms = terms
-        logger.debug(instance.currency)
+
         item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance}, 
                                          many=True)
         if item_serializer.is_valid(raise_exception=True):
@@ -274,23 +274,31 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
-        """
-        
+        """    
         status = validated_data.pop('status', "")
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
         instance.currency = validated_data.pop('currency', instance.currency)
         
-        if status.lower() == "received" and instance.status.lower() != "received":
-            self.receive_order(instance, validated_data)
-        
-        elif status.lower() != instance.status.lower() and status.lower():
+        if status.lower() != instance.status.lower() and status.lower():
             
-            instance.status = status
-            
+            if status.lower() == "received" and instance.status.lower() != "received":
+                self.receive_order(instance, validated_data)
+                
             if instance.status.lower() == 'paid':
                 instance.paid_date = datetime.now()
+                
+            employee = self.context['request'].user
+            message = "Order #{0} has been {1}.".format(instance.id, status.lower())
+            log = POLog.objects.create(message=message, purchase_order=instance, employee=employee)
+            
+            # Check if a high level event has ocurrred. If yes, then the status will not change
+            statuses = ['processed', 'deposited', 'received', 'invoiced', 'paid']
+            for status in statuses:
+                if instance.logs.filter(message__icontains=status).exists():
+                    instance.status = status
+            
             
             instance.save()
              

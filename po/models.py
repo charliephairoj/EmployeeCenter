@@ -307,4 +307,11 @@ class Item(models.Model):
 
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
+
         
+class Log(models.Model):
+    message = models.TextField(default="")
+    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
+    receive_date = models.DateField(null=True)
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name='logs')
+    employee = models.ForeignKey(User, null=True, related_name="purchase_order_logs")
