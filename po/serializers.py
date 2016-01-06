@@ -241,6 +241,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
+        try:
+            ret['logs'] = [{'message': log.message,
+                            #'employee': get_employee(log),
+                            'timestamp': log.timestamp} for log in instance.logs.all()]
+        except Exception as e:
+            logger.debug(e)
+            
         return ret
         
     def create(self, validated_data):
@@ -298,7 +305,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 instance.paid_date = datetime.now()
                 
             employee = self.context['request'].user
-            message = "Order #{0} has been {1}.".format(instance.id, status.lower())
+            message = "Purchase Order #{0} has been {1}.".format(instance.id, status.lower())
             log = POLog.objects.create(message=message, purchase_order=instance, employee=employee)
             
             # Check if a high level event has ocurrred. If yes, then the status will not change
