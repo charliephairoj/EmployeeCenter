@@ -14,20 +14,29 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 import logging
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
+import logging
+import httplib2
 
 import boto
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
+from oauth2client import xsrfutil
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.django_orm import Storage
+from apiclient import discovery
 
 from administrator.models import AWSUser
+from administrator.models import CredentialsModel
 
 
 django.setup()            
 logger = logging.getLogger(__name__)
             
+logger = logging.getLogger(__name__)
+
+
 if __name__ == "__main__":
     
-    users = User.objects.all()
-    iam = boto.connect_iam()
+    user = User.objects.get(email="charliep@dellarobbiathailand.com")
     
     for user in users:
         
@@ -58,12 +67,7 @@ if __name__ == "__main__":
         aws_credentials.access_key_id = creds.access_key_id
         aws_credentials.secret_access_key = creds.secret_access_key
         aws_credentials.save()
-        
-        response = iam.add_user_to_group('S3-Users', user.email)
 
-
-
-
-
+    
 
 

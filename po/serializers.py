@@ -4,6 +4,7 @@ import decimal
 from decimal import Decimal
 from datetime import datetime
 from pytz import timezone
+import httplib2
 
 from rest_framework import serializers
 import boto.ses
@@ -14,6 +15,10 @@ from po.models import PurchaseOrder, Item, Log as POLog
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
 from contacts.serializers import AddressSerializer
+from oauth2client.django_orm import Storage
+from apiclient import discovery
+
+from administrator.models import CredentialsModel
 
 
 logger = logging.getLogger(__name__)
@@ -269,6 +274,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.create_and_upload_pdf()
         
         instance.save()
+        
+        #self._create_calendar_event(instance, self.context['request'].user)
+        
         return instance
         
     def update(self, instance, validated_data):
@@ -495,3 +503,55 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                             body,
                             recipients,
                             format='html')
+                            
+    def _create_calendar_event(self, purchase_order, user):
+        
+        storage = Storage(CredentialsModel, 'id', user, 'credential')
+        credential = storage.get()
+        
+        logger.debug(credential)
+        http = credentials.authorize(httplib2.Http())
+        service = discovery.build('calendar', 'v3', http=http)
+        
+        calendar_summaries = [cal['summary'].lower() for cal in response['items']]
+    
+        # Associate calendar with user
+        if 'account payables' not in calendar_summaries:
+            # Get calendar
+            cal_id = 'dellarobbiathailand.com_aoaa6epe7cqnehh5jc5qrhr9ho@group.calendar.google.com'
+            calendar = service.calendars().get(calendarId=cal_id).execute()
+     
+            # Add calendar to user's calendarList
+            service.calendarList().insert(body={
+                'id': calendar['id']
+            }).execute()
+        else:
+            # Get calendar is already in calendarList
+            for cal in response['items']:
+                if cal['summary'].lower() == 'account payables':
+                    calendar = cal
+    
+        evt = {
+            'summary': 'test',
+            'start': {
+                'date': '2016-1-6'
+            },
+            'end': {
+                'date': '2016-1-6'
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                  {'method': 'email', 'minutes': 24 * 60},
+                  {'method': 'email', 'minutes': 10},
+                ]
+            }
+        }
+        response = service.events().insert(calendarId=ap_cal['id'], body=evt).execute()
+        
+        
+        
+        
+        
+        
+        

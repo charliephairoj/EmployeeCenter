@@ -30,7 +30,7 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
-    scope='https://www.googleapis.com/auth/plus.me',
+    scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
     redirect_uri='http://localhost:8000/oauth2callback')
     
     
@@ -79,12 +79,10 @@ def app_login(request):
         form = LoginForm(request.POST)
         #check if form is valid
         if form.is_valid():
-            #gets the clean password and
-            #clean username
+            
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
-            #authenticate the user
-            #if not authenticated user is None
+           
             user = authenticate(username=cleanUsername, password=cleanPassword)
 
             #checks whether user authennticated
@@ -104,34 +102,15 @@ def app_login(request):
                         authorize_url = FLOW.step1_get_authorize_url()
                         return HttpResponseRedirect(authorize_url)
                         
-                    else:
-                        http = httplib2.Http()
-                        http = credential.authorize(http)
-                        service = build("plus", "v1", http=http)
-                        activities = service.activities()
-                        activitylist = activities.list(collection='public',
-                                                       userId='me').execute()
-                        logging.info(activitylist)
-
-                        return render_to_response('plus/welcome.html', {
-                                    'activitylist': activitylist,
-                                    })
-
+                    FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                                   request.user)
+                    authorize_url = FLOW.step1_get_authorize_url()
+                    return HttpResponseRedirect(authorize_url)
+                 
                     #Gets user profile to do checks
                     #url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
                     #return HttpResponseRedirect(url)
-
-                else:
-                    logger.debug('User is not active')
-                    return HttpResponseRedirect('/login')
-
-            else:
-                logger.debug('User is None')
-                #returns unauthenticated users
-                #back to the login page
-                return HttpResponseRedirect('/login')
-        else:
-            logger.debug('Form not valid')
+               
             return HttpResponseRedirect('/login')
 
 
