@@ -207,14 +207,17 @@ class Supply(models.Model):
 
         return supply
 
-    def create_stickers(self):
+    def create_stickers(self, key, secret):
         sticker_page = StickerPage(code="DRS-{0}".format(self.id), 
                                    description=self.description)
         filename = sticker_page.create()    
         stickers = S3Object.create(filename, 
                                    "supplies/stickers/{0}".format(filename), 
                                    'document.dellarobbiathailand.com', 
-                                    encrypt_key=True)
+                                    key, 
+                                    secret,
+                                    encrypt_key=True,
+                                    )
         self.sticker = stickers
         self.save()
         
