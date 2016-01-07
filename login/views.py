@@ -94,7 +94,7 @@ def app_login(request):
                     login(request, user)
                     
                     #Only require google login if not inventory
-                    if user.first_name != 'inventory':
+                    if user.first_name.lower() != 'inventory':
                         
                         storage = Storage(CredentialsModel, 'id', request.user, 'credential')
                         credential = storage.get()
