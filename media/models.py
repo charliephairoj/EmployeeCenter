@@ -94,16 +94,14 @@ class S3Object(models.Model):
         """
         Returns the S3 Connection of the object
         """
-        return boto.s3.connect_to_region('ap-southeast-1',
-                                         aws_access_key_id=key,
-                                         aws_secret_access_key=secret)
+        return boto.s3.connect_to_region('ap-southeast-1')
 
     def _get_bucket(self):
         """
         Returns the S3 Bucket of the object
         """
         if self.bucket:
-            conn = self._get_connection(self.access_key, self.secret_key)
+            conn = self._get_connection()
             bucket = conn.get_bucket(self.bucket, True)
             bucket.configure_versioning(True)
             return bucket
