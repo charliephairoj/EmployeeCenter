@@ -162,6 +162,7 @@ class SupplySerializer(serializers.ModelSerializer):
                                  'upc': product.upc} for product in instance.products.all()]
             
             #Add sticker url or create stickers if they do not exists
+            """
             try:                     
                 ret['sticker'] = {'id': instance.sticker.id, 
                                   'url': instance.sticker.generate_url(key, secret)}
@@ -169,6 +170,8 @@ class SupplySerializer(serializers.ModelSerializer):
                 instance.create_stickers(key, secret)
                 ret['sticker'] = {'id': instance.sticker.id,
                                   'url': instance.sticker.generate_url(key, secret)}
+            """
+        
         else:
             try:
                 if 'supplier_id' in self.context['request'].query_params:
