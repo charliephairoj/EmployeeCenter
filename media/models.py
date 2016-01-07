@@ -101,7 +101,7 @@ class S3Object(models.Model):
         Returns the S3 Bucket of the object
         """
         if self.bucket:
-            conn = self._get_connection()
+            conn = self._get_connection(self.access_key, self.secret_key)
             bucket = conn.get_bucket(self.bucket, True)
             bucket.configure_versioning(True)
             return bucket
