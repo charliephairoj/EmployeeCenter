@@ -31,7 +31,7 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
-    redirect_uri='http://localhost:8000/oauth2callback')
+    redirect_uri='http://employee.dellarobbiathailand.com/oauth2callback')
     
     
 @csrf_protect
@@ -93,23 +93,26 @@ def app_login(request):
                     #login the user
                     login(request, user)
                     
-                    storage = Storage(CredentialsModel, 'id', request.user, 'credential')
-                    credential = storage.get()
+                    #Only require google login if not inventory
+                    if user.first_name != 'inventory':
+                        
+                        storage = Storage(CredentialsModel, 'id', request.user, 'credential')
+                        credential = storage.get()
                     
-                    if credential is None or credential.invalid == True:
+                        if credential is None or credential.invalid == True:
+                            FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                                           request.user)
+                            authorize_url = FLOW.step1_get_authorize_url()
+                            return HttpResponseRedirect(authorize_url)
+                        
                         FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
                                                                        request.user)
                         authorize_url = FLOW.step1_get_authorize_url()
                         return HttpResponseRedirect(authorize_url)
-                        
-                    FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
-                                                                   request.user)
-                    authorize_url = FLOW.step1_get_authorize_url()
-                    return HttpResponseRedirect(authorize_url)
                  
                     #Gets user profile to do checks
-                    #url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
-                    #return HttpResponseRedirect(url)
+                    url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
+                    return HttpResponseRedirect(url)
                
             return HttpResponseRedirect('/login')
 
