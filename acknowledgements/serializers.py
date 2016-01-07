@@ -159,11 +159,14 @@ class ItemSerializer(serializers.ModelSerializer):
                              'description': instance.fabric.description}
         except AttributeError:
             pass
-            
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
         
+        try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
+        except:
+            key, secret = ('', '')
+            
         try:
             ret['image'] = {'url': instance.image.generate_url(key, secret)}
         except AttributeError:
@@ -450,9 +453,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
+        try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
+        except:
+            key, secret = ('', '')
         
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
