@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import logging
 import json
 import time
+import dateutil
+import unicodecsv as csv
 
 from rest_framework import viewsets, status
 from rest_framework import generics
@@ -129,6 +133,41 @@ def acknowledgement_file(request):
     return response
     
 
+def acknowledgement_download(request):
+    
+    # Get the start and ending date to filter
+    start_date = dateutil.parser.parse(request.GET.get('start'))
+    end_date = dateutil.parser.parse(request.GET.get('end'))
+    logger.warn(start_date)
+    logger.warn(end_date)
+    
+    # Get the Acknowledgements
+    acknowledgements = Acknowledgement.objects.filter(time_created__gte=start_date, 
+                                          time_created__lte=end_date)
+    
+    # Create the respones and write headers 
+    filename = 'Acknowledgements_{0}_{1}'.format(start_date.strftime('%Y-%m-%d'),
+                                                 end_date.strftime('%Y-%m-%d'))       
+    response = HttpResponse(content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="{0}.csv"'.format(filename)
+    
+    # Write BOM to make UTF-8     
+    response.write("\xEF\xBB\xBF")
+
+    # Write to file
+    writer = csv.writer(response, encoding='cp874')
+    writer.writerow(['id', 'date', 'customer', 'vat', 'total'])
+    
+    for acknowledgement in acknowledgements:
+        writer.writerow([acknowledgement.id,
+                         acknowledgement.time_created,
+                         u'{0}'.format(acknowledgement.customer.name),
+                         '{0}'.format(acknowledgement.vat),
+                         '{0}'.format(acknowledgement.total)])
+                         
+    return response
+    
+    
 class AcknowledgementMixin(object):
     queryset = Acknowledgement.objects.all().order_by('-id')
     serializer_class = AcknowledgementSerializer

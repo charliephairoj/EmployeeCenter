@@ -375,7 +375,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                           supplier=po.supplier)
         except Product.MultipleObjectsReturned as e:
             logger.warn(e)
-            product = Product.objects.filter(supply=item.supply, supplier=po.supplier)
+            product = Product.objects.filter(supply=item.supply, supplier=po.supplier)[0]
             
         
         #Calculate the quantity to add to current supply qty
