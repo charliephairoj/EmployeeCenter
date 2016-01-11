@@ -397,7 +397,7 @@ class ShippingPDF(object):
                             [product.description]]
         
         if product.item.image:
-            image_url = product.item.image.generate_url(time=3600)
+            image_url = product.item.image.generate_url(time=3600, '', '')
             description_data.append([self.get_image(image_url, height=75)])
         
         description_table = Table(description_data, colWidths=(360))
