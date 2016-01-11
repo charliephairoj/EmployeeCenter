@@ -56,7 +56,7 @@ class S3Object(models.Model):
         self._upload(filename, delete_original, encrypt_key)
         self.save()
 
-    def generate_url(self, key, secret, time=1800):
+    def generate_url(self, key=None, secret=None, time=1800):
         """
         Generates a url for the object
         """

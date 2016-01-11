@@ -473,7 +473,7 @@ class AcknowledgementPDF(object):
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(time=3600, '', ''), height=100, max_width=290)])
+            data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=100, max_width=290)])
         #Create table
         table = Table(data, colWidths=(80, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
@@ -499,7 +499,7 @@ class AcknowledgementPDF(object):
     def _get_fabric_table(self, fabric, string="   Fabric:"):
         fabric_str = string + ' {0}'
         try:
-            fabric_image = self.get_image(fabric.image.generate_url(time=3600, '', ''), height=30)
+            fabric_image = self.get_image(fabric.image.generate_url('', '', time=3600), height=30)
         except AttributeError:
             fabric_image = None
         fabric_table = Table([[fabric_str.format(fabric.description),fabric_image]],
@@ -899,7 +899,7 @@ class ConfirmationPDF(object):
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(3600, '', ''), height=75, max_width=290)])
+            data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=75, max_width=290)])
         #Create table
         table = Table(data, colWidths=(80, 425, 40))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
@@ -922,7 +922,7 @@ class ConfirmationPDF(object):
     def _get_fabric_table(self, fabric, string="   Fabric:"):
         fabric_str = string + ' {0}'
         try:
-            fabric_image = self.get_image(fabric.image.generate_url(3600, '', ''), height=30)
+            fabric_image = self.get_image(fabric.image.generate_url('', '', time=3600), height=30)
         except AttributeError:
             fabric_image = None
         fabric_table = Table([[fabric_str.format(fabric.description),fabric_image]],
@@ -1227,7 +1227,7 @@ class ProductionPDF(AcknowledgementPDF):
         #Get Image url and add image
         data.append([''])
         if product.image:
-            data.append(['', self.get_image(product.image.generate_url(time=3600, '', ''), height=100, max_width=400)])
+            data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=100, max_width=400)])
         #Create table
         table = Table(data, colWidths=(80, 420, 40), splitByRow=True)
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),
@@ -1323,7 +1323,7 @@ class ShippingLabelPDF(object):
                             [product.description]]
         
         if product.image:
-            image_url = product.image.generate_url(time=3600, '', '')
+            image_url = product.image.generate_url('', '', time=3600)
             description_data.append([self.get_image(image_url, height=125)])
         
         description_table = Table(description_data, colWidths=(360))
