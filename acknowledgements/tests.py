@@ -932,7 +932,6 @@ class AcknowledgementResourceTest(APITestCase):
         self.assertIsNotNone(ack['pdf']['production'])
         self.assertIsNotNone(ack['pdf']['confirmation'])
     
-    @unittest.skip('currently not allowed')    
     def test_put(self):
         """
         Test making a PUT call

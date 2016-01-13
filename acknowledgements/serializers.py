@@ -311,6 +311,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             
             #assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
             
+        old_qty = sum([item.quantity for item in instance.items.all()])
         # Extract items data
         items_data = validated_data.pop('items')
         fabrics = {}
@@ -409,7 +410,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.calculate_totals()
         
         # Create new pdf documents if the old total and new total are not the same
-        if old_total != instance.total:
+        if (old_total != instance.total) or old_qty != sum([item.quantity for item in instance.items.all()]):
             instance.create_and_upload_pdfs()
                                     
         instance.save()
