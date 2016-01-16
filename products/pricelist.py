@@ -3,6 +3,8 @@
 import sys, os, django
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 import logging
 import math
 from decimal import *
@@ -76,7 +78,7 @@ class PricelistPDF(object):
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
     
-    _display_retail_price = True
+    _display_retail_price = False
     _overhead_percent = 30
     _profit_percent = 35
     _forex_rate = 36 #Forex rate for THB per USD

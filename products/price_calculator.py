@@ -10,6 +10,8 @@ import sys, os, django
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 from django.conf import settings
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 import logging
 import json
 from decimal import Decimal
@@ -132,7 +134,6 @@ def update_upholstery(data):
         #logger.info(e)
         #logger.error("Can't calculate supplies for {0} with dimensions {1} x {2} x{3}".format(uphol.description, uphol.width, uphol.depth, uphol.height))
         
-    logger.info('{0}: Lumber total: {1}'.format(uphol.description, uphol.calculate_lumber_quantity()))
     if not uphol.prices.all().exists():
         logger.info('Saving new prices for {0}'.format(uphol.description))
         uphol.calculate_prices(apply_prices=True)

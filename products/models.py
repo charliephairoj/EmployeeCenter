@@ -465,7 +465,7 @@ class Upholstery(Product):
         self.validate_pillows()
         
         # Caculate the quantity of lumber
-        self.calculate_lumber_quantity()
+        #self.calculate_lumber_quantity()
         
         # Calculate the quantity of plywood
         self.calculate_plywood_quantity()
@@ -656,12 +656,12 @@ class Upholstery(Product):
         """
         Calculate"""
         if self.width > self.height:
-            width, depth = self.width, self.depth
+            width, depth = Decimal(str(self.width)), Decimal(str(self.depth))
         else:
-            width, depth = self.depth, self.width
+            width, depth = Decimal(str(self.depth)), Decimal(str(self.width))
             
         # Caculate number of strands to use horizontally   
-        number_of_width_strands = math.ceil((width / Decimal('76')) / 2)
+        number_of_width_strands = Decimal(str(math.ceil((width / Decimal('76')) / 2)))
         if number_of_width_strands > 2:
             number_of_width_strands -= 1
             
@@ -669,7 +669,7 @@ class Upholstery(Product):
         w_length = (number_of_width_strands) * depth
         
         # Caculate number of strands to use verticall   
-        number_of_depth_strands = math.ceil((depth / Decimal('76')) / 2) 
+        number_of_depth_strands = Decimal(str(math.ceil((depth / Decimal('76')) / 2)))
         if number_of_depth_strands > 2:
             number_of_depth_strands -= 1
                 
@@ -715,6 +715,8 @@ class Upholstery(Product):
             qty = 1
         elif "bumper" in config:
             qty = 1
+        elif "day bed" in config:
+            qty = 3
         else:
             raise ValueError("configuration not found for {0}".format(self.description))
             
@@ -751,6 +753,8 @@ class Upholstery(Product):
             qty = 1
         elif "bumper" in config:
             qty = 1.25
+        elif "day bed" in config:
+            qty = 2
         else:
             raise ValueError("configuration not found for {0}".format(self.description))
             
