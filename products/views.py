@@ -16,6 +16,19 @@ from utilities.http import save_upload
 logger = logging.getLogger(__name__)
 
 
+def model_public(request):
+    if request.method.lower() == "get":
+        models = Model.objects.filter(images__id__gt=0).distinct()
+        models_data = [{'name': model.name,
+                        'model': model.model,
+                        'images': [img.generate_url() for img in model.images.all()]}
+                        for model in models]
+        response = HttpResponse(json.dumps(models_data), 
+                                content_type="application/json")
+        response.status_code = 200
+        return response
+        
+        
 def product_image(request):
     if request.method == "POST":
         credentials = request.user.aws_credentials
