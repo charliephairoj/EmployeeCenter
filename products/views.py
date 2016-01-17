@@ -21,7 +21,7 @@ def model_public(request):
         models = Model.objects.filter(web_active=True)
         models_data = [{'name': model.name,
                         'model': model.model,
-                        'images': [img.generate_url() for img in model.images.all()]}
+                        'images': [img.generate_url() for img in model.images.all().order_by('-primary')]}
                         for model in models]
         response = HttpResponse(json.dumps(models_data), 
                                 content_type="application/json")
