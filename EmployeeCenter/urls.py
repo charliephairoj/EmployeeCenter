@@ -24,6 +24,7 @@ from projects.views import RoomItemList, RoomItemDetail
 from projects.views import PartViewSet
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
+from hr.views import ShiftViewSet
 from administrator.views import UserList, UserDetail
 from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail
@@ -38,7 +39,6 @@ resources with the api
 """
 
 
-
 router = DefaultRouter()
 
 router.register(r'api/v1/customer', CustomerViewSet)
@@ -46,7 +46,7 @@ router.register(r'api/v1/customer', CustomerViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 router.register(r'api/v1/phase', PhaseViewSet)
 router.register(r'api/v1/project-part', PartViewSet)
-
+router.register(r'api/v1/shift', ShiftViewSet)
 
 
 #primary login and url routing
@@ -171,7 +171,8 @@ urlpatterns += patterns('projects.views',
 )
 
 urlpatterns += patterns('hr.views',
-    url(r'^api/v1/employee/image/$', 'employee_image')
+    url(r'^api/v1/employee/image/$', 'employee_image'),
+    url(r'^api/v1/employee/attendance/$', 'upload_attendance')
 )
 
 

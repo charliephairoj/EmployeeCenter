@@ -95,7 +95,8 @@ def app_login(request):
                     
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':
-                        
+                        pass
+                        """
                         storage = Storage(CredentialsModel, 'id', request.user, 'credential')
                         credential = storage.get()
                     
@@ -109,7 +110,8 @@ def app_login(request):
                                                                        request.user)
                         authorize_url = FLOW.step1_get_authorize_url()
                         return HttpResponseRedirect(authorize_url)
-                 
+                        """
+                        
                     #Gets user profile to do checks
                     url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
                     return HttpResponseRedirect(url)
