@@ -69,10 +69,10 @@ class ItemSerializer(serializers.ModelSerializer):
         estimate = self.context['estimate']
         pillow_data = validated_data.pop('pillows', None)      
         product = validated_data['product']
-        unit_price = validated_data.pop('custom_price', None) or product.price
-        width = validated_data.pop('width', None) or product.width
-        depth = validated_data.pop('depth', None) or product.depth
-        height = validated_data.pop('height', None) or product.height
+        unit_price = validated_data.pop('unit_price', product.price) 
+        width = validated_data.pop('width', product.width)
+        depth = validated_data.pop('depth', product.depth)
+        height = validated_data.pop('height', product.height)
         fabric_quantity = validated_data.pop('fabric_quantity', None)
         
         instance = self.Meta.model.objects.create(estimate=estimate, unit_price=unit_price, 
@@ -137,7 +137,8 @@ class EstimateSerializer(serializers.ModelSerializer):
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
     project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
     items = ItemSerializer(many=True)
-    remarks = serializers.CharField(required=False, allow_null=True)
+    remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
@@ -170,7 +171,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
                                                   **validated_data)
-        instance.status = "OPEN"
+        instance.status = "open"
         
         item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
         
@@ -217,9 +218,12 @@ class EstimateSerializer(serializers.ModelSerializer):
         #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
         #                            acknowledgement=instance)
         
-        instance.calculate_totals()
+        instance.status = validated_data.pop('status', instance.status)
         
-        instance.create_and_upload_pdf()
+        if instance.status.lower() != 'cancelled':
+            instance.calculate_totals()
+        
+            instance.create_and_upload_pdf()
                                  
         instance.save()
         
@@ -247,11 +251,6 @@ class EstimateSerializer(serializers.ModelSerializer):
             ret['pdf'] = instance.pdf.generate_url()
         except AttributeError:
             pass
-            """
-            ret['pdf'] = {'acknowledgement': 'test',
-                          'confirmation': 'test',
-                          'production': 'test'}
-            """
             
         try:
             ret['files'] = [{'id': file.id,

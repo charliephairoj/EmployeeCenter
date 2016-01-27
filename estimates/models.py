@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class Estimate(models.Model):
-    po_id = models.TextField(default=None, null=True)
+    po_id = models.TextField(default=None, null=True, blank=True)
     company = models.TextField(default="Dellarobbia Thailand")
     discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
