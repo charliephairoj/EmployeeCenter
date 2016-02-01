@@ -248,13 +248,15 @@ class Attendance(models.Model):
         self.tz = timezone('Asia/Bangkok')
         
         if self.start_time and self.end_time:
-            self._calculate_different_time_types()
-                
+            self.calculate_times()
+                            
     def calculate_times(self):
         """
         wrapper for '_calculate_different_time_types'
         """
         self.pay_rate = self.pay_rate or self.employee.wage
+        
+        self.shift = self.shift or self.employee.shift
         
         if self.start_time and self.end_time:
             self._calculate_different_time_types()
