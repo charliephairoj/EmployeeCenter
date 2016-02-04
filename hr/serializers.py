@@ -2,18 +2,56 @@ import logging
 
 from rest_framework import serializers
 
-from hr.models import Employee, Attendance
+from hr.models import Employee, Attendance, Shift
 from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
 
 
+class ShiftSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    
+    class Meta:
+        model = Shift
+        fields = ('id', 'start_time', 'end_time')
+        
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    enable_overtime = serializers.BooleanField(default=False, write_only=True)
+    date = serializers.DateField(read_only=True)
+        
+    class Meta:
+        model = Attendance
+        exclude = ('_start_time', '_end_time', '_enable_overtime')
+        
+    def update(self, instance, validated_data):
+        
+        enable_overtime = validated_data.pop('enable_overtime')
+        logger.warn(enable_overtime)
+        instance.enable_overtime = enable_overtime
+        logger.warn(instance.enable_overtime)
+        instance.calculate_times()
+        
+        return instance
+        
+    def to_representation(self, instance):
+
+        ret = super(AttendanceSerializer, self).to_representation(instance)
+        
+        ret['start_time'] = instance.start_time
+        ret['end_time'] = instance.end_time
+        ret['enable_overtime'] = instance.enable_overtime
+        logger.warn(ret)
+        return ret
+        
+
 class EmployeeSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    nationality = serializers.CharField(required=False, allow_null=True)
+    nationality = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     social_security_id = serializers.CharField(required=False, 
                                                allow_null=True,
                                                allow_blank=True)
@@ -25,12 +63,31 @@ class EmployeeSerializer(serializers.ModelSerializer):
                                                allow_null=True)
     wage = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, allow_null=True)
     pay_period = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    attendances = AttendanceSerializer(many=True, required=False, read_only=True)
+    shift = ShiftSerializer(required=False)
     
     
     class Meta:
         model = Employee
-        fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department',
-                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id')
+        fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
+                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances')
+    
+    def update(self, instance, validated_data):
+        
+        shift_data = validated_data.pop('shift')
+        
+        instance.shift = Shift.objects.get(start_time=shift_data['start_time'], end_time=shift_data['end_time'])
+        instance.pay_period = validated_data.pop('pay_period', instance.pay_period)
+        instance.nationality = validated_data.pop('nationality', None)
+        instance.department = validated_data.pop('department', None)
+        instance.card_id = validated_data.pop('card_id', None)
+        instance.bank = validated_data.pop('bank', instance.bank)
+        instance.account_number = validated_data.pop('account_number', instance.account_number)
+        instance.wage = validated_data.pop('wage', 0)
+        
+        instance.save()
+        
+        return instance
         
     def to_representation(self, instance):
         """
@@ -50,11 +107,4 @@ class EmployeeSerializer(serializers.ModelSerializer):
             pass
             
         return ret
-        
-class AttendanceSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = Attendance
-        exclude = ('shift', )
-        
         
