@@ -83,7 +83,7 @@ class UserSerializer(serializers.ModelSerializer):
         assert instance.has_usable_password()
         
         #Create the credentials for aws
-        _create_aws_credentials(instance)
+        self._create_aws_credentials(instance)
         
         for group_data in groups:
             instance.groups.add(Group.objects.get(pk=group_data['id']))
