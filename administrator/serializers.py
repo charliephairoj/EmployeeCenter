@@ -116,7 +116,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.aws_credentials.iam_id = response.user.user_id
         
         # Add to S3 group
-        response = iam.add_user_to_group('S3-Users', 'Bob')
+        response = iam.add_user_to_group('S3-Users', user.email)
 
         # Create AccessKey/SecretKey pair for User
         response = iam.create_access_key(user.email)

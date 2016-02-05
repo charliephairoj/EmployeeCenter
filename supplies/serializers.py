@@ -332,6 +332,7 @@ class FabricSerializer(SupplySerializer):
                        
             suppliers_data = [data]
             
+            
         iam_credentials = self.context['request'].user.aws_credentials
         key = iam_credentials.access_key_id
         secret = iam_credentials.secret_access_key
@@ -339,6 +340,9 @@ class FabricSerializer(SupplySerializer):
         instance = self.Meta.model.objects.create(**validated_data)
         instance.description = u"{0} Col: {1}".format(instance.pattern, instance.color)
         instance.create_stickers(key, secret)
+        
+        # Set the purchasing units to the same as units for this fabric
+        suppliers_data[0]['purchasing_units'] = instance.units
         
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
