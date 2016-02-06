@@ -39,7 +39,7 @@ class Employee(models.Model):
     shift = models.ForeignKey(Shift, null=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
     last_modified = models.DateTimeField(auto_now=True)
-    card_id = models.IntegerField(null=True)
+    card_id = models.TextField(null=True)
     bank = models.TextField(blank=True, null=True)
     account_number = models.TextField(null=True, blank=True)
     government_id = models.TextField(null=True)

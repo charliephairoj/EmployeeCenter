@@ -70,7 +70,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
-                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances')
+                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
+                  'bank', 'account_number')
     
     def update(self, instance, validated_data):
         
@@ -78,11 +79,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
         
         instance.shift = Shift.objects.get(start_time=shift_data['start_time'], end_time=shift_data['end_time'])
         instance.pay_period = validated_data.pop('pay_period', instance.pay_period)
-        instance.nationality = validated_data.pop('nationality', None)
-        instance.department = validated_data.pop('department', None)
-        instance.card_id = validated_data.pop('card_id', None)
+        instance.nationality = validated_data.pop('nationality', instance.nationality)
+        instance.department = validated_data.pop('department', instance.department)
+        instance.card_id = validated_data.pop('card_id', instance.card_id)
         instance.bank = validated_data.pop('bank', instance.bank)
         instance.account_number = validated_data.pop('account_number', instance.account_number)
+        instance.government_id = validated_data.pop('government_id', instance.government_id)
+        instance.social_security_id = validated_data.pop('social_security_id', instance.social_security_id)
+        
+        
         instance.wage = validated_data.pop('wage', 0)
         
         instance.save()
