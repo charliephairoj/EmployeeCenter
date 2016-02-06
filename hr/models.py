@@ -42,7 +42,11 @@ class Employee(models.Model):
     card_id = models.IntegerField(null=True)
     bank = models.TextField(blank=True, null=True)
     account_number = models.TextField(null=True, blank=True)
+    government_id = models.TextField(null=True)
     
+    class Meta:
+        permissions = (('can_view_pay_rate', 'Can view pay rate'),)
+                       
     @property
     def xname(self):
         try:
@@ -281,7 +285,7 @@ class Attendance(models.Model):
             if self.total_time > Decimal('8') and self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
                 self.doubletime = Decimal('8')
             else:
-                self.doubletime = self._calculate_timedelta(self.start_time.time(), self.shift.end_time)
+                self.doubletime = (Decimal(str(self._calculate_timedelta(self.start_time.time(), self.shift.end_time).total_seconds())) / Decimal('3600')) - 1
         
         # Calculate the times for nonsundays
         else:
