@@ -52,6 +52,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     nationality = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     social_security_id = serializers.CharField(required=False, 
                                                allow_null=True,
                                                allow_blank=True)
@@ -71,7 +72,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
-                  'bank', 'account_number')
+                  'bank', 'account_number', 'company')
     
     def update(self, instance, validated_data):
         
@@ -86,7 +87,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         instance.account_number = validated_data.pop('account_number', instance.account_number)
         instance.government_id = validated_data.pop('government_id', instance.government_id)
         instance.social_security_id = validated_data.pop('social_security_id', instance.social_security_id)
-        
+        instance.company = validated_data.pop('company', instance.company)
         
         instance.wage = validated_data.pop('wage', 0)
         

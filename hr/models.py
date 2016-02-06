@@ -43,6 +43,7 @@ class Employee(models.Model):
     bank = models.TextField(blank=True, null=True)
     account_number = models.TextField(null=True, blank=True)
     government_id = models.TextField(null=True)
+    company = models.TextField(null=True)
     
     class Meta:
         permissions = (('can_view_pay_rate', 'Can view pay rate'),)
