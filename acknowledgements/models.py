@@ -212,7 +212,7 @@ class Acknowledgement(models.Model):
         production_filename = production_pdf.create()
         
         try:
-            pass #label_filename = label_pdf.create()
+            label_filename = None #label_filename = label_pdf.create()
         except Exception as e:
             logger.warn(e)
             label_filename = None
