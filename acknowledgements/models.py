@@ -210,7 +210,13 @@ class Acknowledgement(models.Model):
         ack_filename = ack_pdf.create()
         #confirmation_filename = confirmation_pdf.create()
         production_filename = production_pdf.create()
-        label_filename = label_pdf.create()
+        
+        try:
+            pass #label_filename = label_pdf.create()
+        except Exception as e:
+            logger.warn(e)
+            label_filename = None
+            
         return ack_filename, production_filename, label_filename
     
     def create_and_upload_shipping_label(self):
