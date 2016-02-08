@@ -4,6 +4,7 @@ Models to be use in the HR application
 import logging
 from decimal import Decimal
 from datetime import datetime, timedelta
+import math
 from math import floor
 import traceback
 
@@ -205,6 +206,12 @@ class Attendance(models.Model):
     regular_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     overtime_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     doubletime_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    is_holiday = models.BooleanField(default=False)
+    
+    @property
+    def is_sunday(self):
+        """Return True if day of the week is Sunday"""
+        return True if self.date.weekday() == 6 else False
 
     @property
     def start_time(self):
@@ -256,124 +263,100 @@ class Attendance(models.Model):
             self.calculate_times()
                             
     def calculate_times(self):
+        """Calculate the different times based on the assigned shift
+        
+        This method will calculate the regular time, overtime, and lunch overtime based on the 
+        assigned shift for this attendance. 
+        
+        - Calculate the regular time
+        - Calculate the overtime
+        - Calculate lunch overtime 
         """
-        wrapper for '_calculate_different_time_types'
+        self.regular_time = self._calculate_regular_time()
+        self.overtime = self._calculate_overtime()
+        
+    def calculate_pay(self):
+        """Calculate the pay rates and gross wage for this attendance
+        
+        This method calculates pay rate based on the date is friday, a holiday or absence
+        
+        Rules:
+        - Sunday during shift is 2x pay rate
+        - Sunday after shift is 3x pay rate
+        - Holiday during shift is 2.5x pay rate
+        - Holiday after shift is 2.5x pay rate
         """
-        self.pay_rate = self.pay_rate or self.employee.wage
         
-        self.shift = self.shift or self.employee.shift
-        
-        if self.start_time and self.end_time:
-            self._calculate_different_time_types()
-        
-    def _calculate_different_time_types(self):
-        """
-        Calculates the times to be work
-        """
-        # Calculate the total time for this attendance
-        total_seconds = Decimal(str((self.end_time - self.start_time).total_seconds()))
-        self.total_time = (total_seconds / Decimal('3600')) - Decimal('1')
-        
-        # Calculate the times for sundays
-        if self.date.weekday() == 6:
-            start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-            end = self.end_time.time()
-        
-            time_delta = self._calculate_timedelta(start, end)
-            self.total_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
-
-            # Calculate whether an employee is late or not
-            if self.total_time > Decimal('8') and self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.doubletime = Decimal('8')
-            else:
-                self.doubletime = (Decimal(str(self._calculate_timedelta(self.start_time.time(), self.shift.end_time).total_seconds())) / Decimal('3600')) - 1
-        
-        # Calculate the times for nonsundays
+        if self.is_sunday:
+            self.pay_rate = self.employee.wage * Decimal('2')
+        elif self.is_holiday:
+            self.pay_rate = self.employee.wage * Decimal('2.5')
         else:
-            # Calculate times if overtime is enabled
-            if self.enable_overtime:
-                start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-                end = self.end_time.time()
+            self.pay_rate = self.employee.wage
             
-                time_delta = self._calculate_timedelta(start, end)
-                self.total_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
-
-                if self.total_time > Decimal('8'):
-                    self.regular_time = Decimal('8')
-                    self.overtime = self.total_time - self.regular_time
-                    logger.warn(self.overtime)
         
-            # Calculate the times if overtime is not enabled
-            else:
-                start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-                end = self.end_time.time() if self.end_time.time() < self.shift.end_time else self.shift.end_time
-            
-                time_delta = self._calculate_timedelta(start, end)
-            
-                self.regular_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
-                self.overtime = 0
-                self.total_time = self.regular_time
-            
-        self.save()
-            
-    def _calculate_timedelta(self, t1, t2):
+        
+    def _calculate_regular_time(self):
+        """Calculate the regular time based on the assigned shift
+        
+        This method will calculate the regular, while looking at if the employee clocked
+        in late, or left work early
+        
+        Rules:
+        - Determine the start time for calculation based on if the employee clocked in
+          late or not
+        - Employees are giving a leeway of 10 minutes after shift starts
+        - Determine the end time based on if the employee clocked out early.
+        - End time cannot be greater than end of shift time
         """
-        Calculate the differences in times
+        start_time = self.start_time if self.start_time < self.shift.start_time else self.shift.start_time
+        end_time = self.end_time if self.end_time < self.shift.end_time else self.shift.end_time
+        
+        t_delta = self._calculate_timedelta(start_time, end_time)
+        regular_time = (Decimal(str(t_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
+        
+        return regular_time
+        
+    def _calculate_overtime(self):
+        """Calculates the number of overtime hours due to the employee
+        
+        Rules:
+        - Will only calculate overtime if it is enabled
+        - Must work at least 1 hour past end of shift
+        - Overtime granted by the hour
+        """
+        if self.enable_overtime:
+            
+            if self.end_time > self.end_time + timedelta(day=1):
+                
+                t_delta = self.calculate_timedelta(self.shift.end_time, self.end_time)
+                # Convert time delta to time decimal
+                overtime = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
+                # Round down to the nearest hour
+                truncated_overtime = Decimal(str(math.floor(overtime)))
+                
+                return truncated_overtime
+        
+        # Return 0 if any of the coniditions fail       
+        return Decimal('0')
+        
+    def _calculate_regular_pay_rate(self):
+        """Calculate the pay rate for employees"""
+        if self.is_sunday:
+            return self.employee.wage * Decimal('2')
+        elif self.is_holiday:
+            return self.employee.wage * Decimal('2.5')
+        else:
+            return self.employee.wage
+        
+    
+        
+    def _calculate_timedelta(self, t1, t2):
+        """Calculate the differences in two times
         """
         fmt = '%H:%M:%S'
         s1 = t1.strftime(fmt)
         s2 = t2.strftime(fmt)
         tdelta = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
         
-        return tdelta
-        
-    def _calculate_overtime(self):
-        """
-        Calculates the number of overtime hours due to the employee
-        
-        Rules:
-        -Must work at least 1 hour past end of shift
-        -Overtime granted by every half hour. Must work past half hour
-        Ex. worked 1.66 overtime becomes 1.5. worked 1.25 becomes 1
-        """
-        excess_time = self.total_time - self.regular_time
-        logger.debug("excess: {0}".format(excess_time))
-        
-        self.overtime = floor(excess_time * 2) / 2 if excess_time >= 1 else 0
-        self.overtime = Decimal(str(self.overtime))
-        
-    def _calculate_pay(self):
-        """
-        Calculate the daily pay
-        
-        Calculates the regular pay first based on if the employee worked 8 hours
-        and if the employee was late
-        """
-        # Get the pay rate based on if the day is Sunday
-        if self.date.weekday() == 6:
-            pay_rate = self.pay_rate * Decimal('2')
-            # Calculate wage to be paid for this date based on if late or hours less than 8 hours
-            if self.regular_time == Decimal('8'):
-                self.doubletime_pay = pay_rate
-            elif self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.doubletime_pay = pay_rate
-            else:
-                self.doubletime_pay = pay_rate * self.doubletime
-                
-        else:
-            pay_rate = self.pay_rate
-            # Calculate wage to be paid for this date based on if late or hours less than 8 hours
-            if self.regular_time == Decimal('8'):
-                self.regular_pay = pay_rate
-            elif self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.regular_pay = pay_rate
-            else:
-                self.regular_pay = pay_rate * self.regular_time
-            
-        
-        
-            # Calculate the overtime pay for non Sunday dates
-            if self.enable_overtime:
-                self.overtime_pay = ((pay_rate / Decimal('8')) * Decima('1.5')) * self.overtime
-
                 
