@@ -10,7 +10,7 @@ from django.test import TestCase
 from pytz import timezone
 from rest_framework.test import APITestCase, APIClient
 
-from hr.models import Employee, Attendance, Shift
+from hr.models import Employee, Attendance, Shift, Payroll, PayRecord
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,8 @@ employee1_data = {
     'wage': Decimal('18000'),
     'pay_period': 'Monthly',
     'employement_date': date.today(),
-    'social_security_id': '123-33-333'
+    'social_security_id': '123-33-333',
+    'incentive_pay': Decimal('50')
 }
 
 employee2_data = {
@@ -33,10 +34,11 @@ employee2_data = {
     'legal': True,
     'department': 'painting',
     'telephone': '0983337654',
-    'wage': '550',
+    'wage': Decimal('550'),
     'pay_period': 'Daily',
     'employement_date': date.today(),
-    'social_security_id': '123-33-333'
+    'social_security_id': '123-33-333',
+    'incentive_pay': Decimal('30')
 }
 
 employee3_data = {
@@ -44,7 +46,7 @@ employee3_data = {
     'legal': False,
     'department': 'carpentry',
     'telephone': '0834679880',
-    'wage': '300',
+    'wage': Decimal('300'),
     'pay_period': 'Daily',
     'employement_date': date.today(),
     'social_security_id': '123-33-333'
@@ -66,172 +68,235 @@ class AttendanceTest(APITestCase):
         self.shift = Shift(start_time=time(8, 0),
                            end_time=time(17, 0))
         self.shift.save()
+        
         self.employee = Employee(shift=self.shift, **employee2_data)
         self.employee.save()
         
+        # Regular attendance
         self.attendance = Attendance(date=date(2014, 7, 1),
                                      start_time=datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                     end_time=datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
-                                     employee=self.employee)
+                                     end_time=datetime(2014, 7, 1, 23, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                     employee=self.employee,
+                                     shift=self.shift)
+                                     
         self.attendance.save()
         
-    def test_accessing_attendance_instance(self):
-        """
-        Tests that the attendance data can be correctly accessed by the model
-        """
-        a = Attendance.objects.get(pk=1)
-        self.assertEqual(a.start_time, datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')))
-        self.assertEqual(a.end_time, datetime(2014, 7, 1, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')))
-        
-    def xtest_processing_times_based_on_instance_shift_with_normal_times(self):
-        """
-        Tests that the instance can correctly assign the time
-        based on what shift the instance
-        """
-        a = Attendance(date=date(2014, 7, 2))
-        a.employee = self.employee
-        a.shift = self.shift
-        a.save()
-        
-        self.assertIsNone(a.start_time)
-        self.assertIsNone(a.end_time)
-        
-        d = datetime(2014, 7, 2, 7, 45, 0, tzinfo=timezone('Asia/Bangkok'))
-        self.assertIsNotNone(a.start_time)
-        self.assertEqual(a.start_time, d)
-        self.assertIsNone(a.end_time)
-        
-        d = datetime(2014, 7, 2, 18, 27, 0, tzinfo=timezone('Asia/Bangkok'))
-        self.assertIsNotNone(a.end_time)
-        self.assertEqual(a.end_time, d)
-        self.assertIsNotNone(a.start_time)
-        
-    def xtest_processing_times_based_on_instance_shift_with_late_times(self):
-        """
-        Tests that the instance can correctly assign the time
-        based on what shift the instance
-        """
-        a = Attendance(date=date(2014, 7, 2))
-        a.employee = self.employee
-        a.shift = self.shift
-        a.save()
-        
-        self.assertIsNone(a.start_time)
-        self.assertIsNone(a.end_time)
-        
-        d = datetime(2014, 7, 2, 8, 45, 0, tzinfo=timezone('Asia/Bangkok'))
-        self.assertIsNotNone(a.start_time)
-        self.assertEqual(a.start_time, d)
-        self.assertIsNone(a.end_time)
-        
-        d = datetime(2014, 7, 2, 10, 45, 0, tzinfo=timezone('Asia/Bangkok'))
-        self.assertIsNotNone(a.start_time)
-        self.assertEqual(a.start_time, d)
-        self.assertIsNone(a.end_time)
-        
-        d = datetime(2014, 7, 2, 16, 45, 0, tzinfo=timezone('Asia/Bangkok'))
-        self.assertIsNotNone(a.start_time)
-        self.assertIsNotNone(a.end_time)
-        self.assertEqual(a.end_time, d)
-        
-    def test_calculate_overtime_function(self):
-        """
-        Tests 'calculate overtime'
-        """
-        self.attendance.regular_time = 8
-        self.attendance.total_time = 8.4
-        self.assertNotEqual(self.attendance.overtime, 8)
-        
-        self.attendance.calculate_overtime()
-        self.assertEqual(self.attendance.overtime, 0)
-        
-        self.attendance.regular_time = 8
-        self.attendance.total_time = 9.4
-        self.assertNotEqual(self.attendance.overtime, 1)
-        
-        self.attendance.calculate_overtime()
-        self.assertEqual(self.attendance.overtime, 1)
-        
-        self.attendance.regular_time = 8
-        self.attendance.total_time = 10.6
-        self.assertNotEqual(self.attendance.overtime, 2.5)
-        
-        self.attendance.calculate_overtime()
-        self.assertEqual(self.attendance.overtime, 2.5)
-        
-    def test_cutoff_times_without_ot(self):
-        """
-        Tests that the hours are cutoff 
-        correctly even if the employee clocks in early
-        or clocks out late
+        # Sunday attendance
+        self.sunday_attendance = Attendance(date=date(2016, 2, 7),
+                                            start_time=datetime(2016, 2, 7, 8, 02, 0, tzinfo=timezone('Asia/Bangkok')),
+                                            end_time=datetime(2016, 2, 7, 23, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                            employee=self.employee,
+                                            shift=self.shift)
+                                            
+    def test_regular_attedance_regular_hours(self):
+        """Test the regular hours of a regular attedance
         """
         self.attendance.calculate_times()
-        self.assertEqual(self.attendance.regular_time, 8)
-        self.assertEqual(self.attendance.total_time, 8)
-        self.assertEqual(self.attendance.overtime, 0)
-    
-    def test_times_with_overtime_but_not_over_minumum(self):
-        """
-        Tests that the times are correct if overtime is enabled for
-        this particular date
+        self.assertEqual(self.attendance.regular_time, Decimal('8.0'))
+        self.assertEqual(self.attendance.overtime, Decimal('0'))
+        
+    def test_regular_attedance_with_overtime_enabled(self):
+        """Test the regular hours of a regular attedance
         """
         self.attendance.enable_overtime = True
-        self.attendance.save()
         
-        self.assertEqual(self.attendance.regular_time, 8)
-        self.assertEqual(self.attendance.total_time, 8.25)
-        self.assertEqual(self.attendance.overtime, 0)
+        self.attendance.calculate_times()
+        self.assertEqual(self.attendance.regular_time, Decimal('8.0'))
+        self.assertEqual(self.attendance.overtime, Decimal('6'))
         
-        a = Attendance(employee=self.employee,
-                       date=date(2014, 7, 2),
-                       start_time=datetime(2014, 7, 2, 8, 0, 0, tzinfo=timezone('Asia/Bangkok')),
-                       end_time=datetime(2014, 7, 2, 17, 45, 0, tzinfo=timezone('Asia/Bangkok')))
-        a.enable_overtime = True
-        a.save()
-        a.calculate_times()
-        self.assertEqual(a.regular_time, 8)
-        self.assertEqual(a.total_time, 8.75)
-        self.assertEqual(a.overtime, 0)
-        
-    def test_times_with_overtime_but_not_over_minumum(self):
+    def test_regular_attendance_gross_wage(self):
+        """Test the gross wage of a regular attendance
         """
-        Tests that the times are correct if overtime is enabled for
-        this particular date
+        self.attendance.calculate_times()
+        self.attendance.calculate_gross_wage()
+        
+        self.assertEqual(self.attendance.regular_pay, Decimal('550'))
+        self.assertEqual(self.attendance.overtime_pay, Decimal('0'))
+        self.assertEqual(self.attendance.lunch_pay, Decimal('0'))
+        
+        self.assertEqual(self.attendance.gross_wage, Decimal('550'))
+        
+    def test_regular_attendance_gross_wage_with_overtime_enabled(self):
+        """Test the gross wage of a regular attendance with overtime enabled
         """
-        a = Attendance(employee=self.employee,
-                       date=date(2014, 7, 2),
-                       start_time=datetime(2014, 7, 2, 8, 0, 0, tzinfo=timezone('Asia/Bangkok')),
-                       end_time=datetime(2014, 7, 2, 18, 45, 0, tzinfo=timezone('Asia/Bangkok')))
-        a.enable_overtime = True
-        a.save()
-        a.calculate_times()
-        self.assertEqual(a.regular_time, 8)
-        self.assertEqual(a.total_time, 9.75)
-        self.assertEqual(a.overtime, 1.5)
+        self.attendance.enable_overtime = True
+        self.attendance.calculate_times()
+        self.attendance.calculate_gross_wage()
+        
+        self.assertEqual(self.attendance.regular_pay, Decimal('550'))
+        
+        # Calculate expected overtime pay
+        ot_rate = (Decimal('550') / Decimal('8')) * Decimal('1.5')
+        self.assertEqual(self.attendance.overtime_pay, ot_rate * Decimal('6'))
+        self.assertEqual(self.attendance.lunch_pay, Decimal('0'))
+        
+        # Test gross wage
+        self.assertEqual(self.attendance.gross_wage, Decimal('550') + (ot_rate * Decimal('6')))
+        
+    def test_regular_attendance_net_wage(self):
+        """Test the gross wage of a regular attendance
+        """
+        self.attendance.calculate_times()
+        self.attendance.calculate_net_wage()
+        
+        self.assertEqual(self.attendance.gross_wage, Decimal('550'))
+        self.assertEqual(self.attendance.reimbursement, Decimal('30'))
+        self.assertEqual(self.attendance.net_wage, Decimal('580'))
+        
+    def test_regular_attendance_net_wage_with_lunch(self):
+        """Test the gross wage of a regular attendance
+        """
+        self.attendance.receive_lunch_overtime = True
+        self.attendance.calculate_times()
+        self.attendance.calculate_net_wage()
+        
+        self.assertEqual(self.attendance.gross_wage, Decimal('653.125'))
+        self.assertEqual(self.attendance.reimbursement, Decimal('60'))
+        self.assertEqual(self.attendance.net_wage, Decimal('713.125'))
+        
+    def test_regular_attendance_net_wage_where_clockin_late(self):
+        """Test the net wage where an employee is late
+        """
+        # Change start time so employee is late
+        self.attendance.start_time = datetime(2014, 7, 1, 8, 15, 0, tzinfo=timezone('Asia/Bangkok'))
+        self.attendance.calculate_times()
+        self.attendance.calculate_net_wage()
+        
+        self.assertLess(self.attendance.regular_time, Decimal('8'))
+        self.assertEqual(self.attendance.reimbursement, Decimal('0'))
+        self.assertEqual(self.attendance.net_wage, Decimal('550'))
     
-    def test_get_list(self):
+    def test_sunday_attedance_regular_hours(self):
+        """Test the regular hours of a regular attedance
         """
-        Test getting a list of objects
-        """
-        resp = self.client.get('/api/v1/attendance')
-        self.assertHttpOK(resp)
+        self.sunday_attendance.calculate_times()
+        self.assertEqual(self.sunday_attendance.regular_time, Decimal('8.0'))
+        self.assertEqual(self.sunday_attendance.overtime, Decimal('0'))
         
-        obj_list = self.deserialize(resp)
+    def test_sunday_attedance_with_overtime_enabled(self):
+        """Test the regular hours of a regular attedance
+        """
+        self.sunday_attendance.enable_overtime = True
         
-    def test_get_list_filter_by_employee(self):
-        """
-        Test getting a list of objects filtered by employee
-        """
-        resp = self.client.get('/api/v1/attendance?employee=1')
-        self.assertHttpOK(resp)
+        self.sunday_attendance.calculate_times()
+        self.assertEqual(self.sunday_attendance.regular_time, Decimal('8.0'))
+        self.assertEqual(self.sunday_attendance.overtime, Decimal('6'))
         
-    def test_get(self):
+    def test_sunday_attendance_gross_wage(self):
+        """Test the gross wage of a sunday attendance
         """
-        Tests basic get of single object
+        self.sunday_attendance.calculate_times()
+        self.sunday_attendance.calculate_gross_wage()
+        
+        self.assertEqual(self.sunday_attendance.regular_pay, Decimal('1100'))
+        self.assertEqual(self.sunday_attendance.overtime_pay, Decimal('0'))
+        self.assertEqual(self.sunday_attendance.lunch_pay, Decimal('0'))
+        
+        self.assertEqual(self.sunday_attendance.gross_wage, Decimal('1100'))
+        
+    def test_sunday_attendance_gross_wage_with_overtime_enabled(self):
+        """Test the gross wage of a sunday attendance
         """
-        resp = self.client.get('/api/v1/attendance/1')
+        self.sunday_attendance.enable_overtime = True
+        self.sunday_attendance.calculate_times()
+        self.sunday_attendance.calculate_gross_wage()
+        
+        self.assertEqual(self.sunday_attendance.regular_pay, Decimal('1100'))
+        
+        # Calculate expected overtime pay
+        ot_rate = (Decimal('550') / Decimal('8')) * Decimal('3')
+        self.assertEqual(self.sunday_attendance.overtime_pay, ot_rate * Decimal('6'))
+        self.assertEqual(self.sunday_attendance.lunch_pay, Decimal('0'))
+        
+        # Test gross wage
+        self.assertEqual(self.sunday_attendance.gross_wage, Decimal('1100') + (ot_rate * Decimal('6')))
+        
+
+class PayRecordTest(APITestCase):
+    """Test class for Payrecord"""
     
+    def setUp(self):
+        """Setup for testing
+        
+        Employees:
+        - 1. Daily employee
+        -   1.1 Attendances 
+        - 2. Salaried employee
+        -   2.1 Attendances
+        """
+        self.shift = Shift(start_time=time(8, 0),
+                           end_time=time(17, 0))
+        self.shift.save()
+        
+        self.employee1 = Employee.objects.create(**employee2_data)
+        self.employee2 = Employee.objects.create(**employee1_data)
+        
+        for i in xrange(0, 6):
+            a_date = date(2016, 2, 1 + i)
+            
+            # Create attendances for daily employee
+            a = Attendance.objects.create(date=a_date,
+                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
+                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          employee=self.employee1,
+                                          shift=self.shift)
+            a.calculate_times()
+            a.calculate_net_wage()
+            a.save()
+             
+            # Create attendances for monthly employee
+            a = Attendance.objects.create(date=a_date,
+                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
+                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          employee=self.employee2,
+                                          shift=self.shift)
+            a.calculate_times()
+            a.calculate_net_wage()
+            a.save()
+            
+        
+    def test_gross_wage_hourly_employee(self):
+        """Test calculate the gross wage of a pay record
+        """
+        record = PayRecord.objects.create(self.employee1, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        gw = record.calculate_gross_wage()
+        self.assertEqual(gw, Decimal('3300'))
+        
+    def test_net_wage_hourly_employee(self):
+        """Test calculate the net wage of a pay record
+        """
+        record = PayRecord.objects.create(self.employee1, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        nw = record.calculate_net_wage()
+        self.assertEqual(nw, Decimal('3315'))
+        self.assertEqual(record.reimbursements, Decimal('180'))
+        self.assertEqual(record.social_security_withholding, Decimal('165'))
     
+    def test_gross_wage_salaried_employee(self):
+        """Test calculate the gross wage of a pay record
+        """
+        record = PayRecord.objects.create(self.employee2, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        gw = record.calculate_gross_wage()
+        self.assertEqual(gw, Decimal('9000'))
+        
+    def test_net_wage_salaried_employee(self):
+        """Test calculate the net wage of a pay record
+        """
+        record = PayRecord.objects.create(self.employee2, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        nw = record.calculate_net_wage()
+        self.assertEqual(nw, Decimal('8850'))
+        self.assertEqual(record.reimbursements, Decimal('300'))
+        self.assertEqual(record.social_security_withholding, Decimal('450'))
+        
+        
+@unittest.skip("ok")           
 class Employee1Test(APITestCase):
     """
     Testing class for salaried workers

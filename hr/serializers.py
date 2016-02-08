@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from hr.models import Employee, Attendance, Shift
+from hr.models import Employee, Attendance, Shift, PayRecord, Payroll
 from media.models import S3Object
 
 
@@ -72,7 +72,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
-                  'bank', 'account_number', 'company')
+                  'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option')
     
     def update(self, instance, validated_data):
         
@@ -113,4 +113,19 @@ class EmployeeSerializer(serializers.ModelSerializer):
             pass
             
         return ret
+        
+        
+class PayrollSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Payroll
+        
+    def create(self, validated_data):
+    
+    
+    
+    
+    
+    
+    
         

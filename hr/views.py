@@ -12,7 +12,7 @@ from rest_framework import generics
 from rest_framework import viewsets
 from django.conf import settings
 
-from hr.serializers import EmployeeSerializer, AttendanceSerializer, ShiftSerializer
+from hr.serializers import EmployeeSerializer, AttendanceSerializer, ShiftSerializer, PayrollSerializer
 from utilities.http import save_upload
 from auth.models import S3Object
 from hr.models import Employee, Attendance, Timestamp, Shift
@@ -162,14 +162,20 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
                                        Q(nickname__icontains=query) |
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
-        
+                                       
+        status = self.request.query_param.get('status', None)
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        if status:
+            query.filter(status__icontains=status)
+            
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
             
+        
         return queryset
     
     
@@ -182,7 +188,7 @@ class EmployeeDetail(EmployeeMixin, generics.RetrieveUpdateDestroyAPIView):
     
     
 class AttendanceMixin(object):
-    queryset = Attendance.objects.all().order_by('id')
+    queryset = Attendance.objects.all().order_by('-id')
     serializer_class = AttendanceSerializer
     
     
@@ -234,4 +240,9 @@ class ShiftViewSet(viewsets.ModelViewSet):
     """
     queryset = Shift.objects.all()
     serializer_class = ShiftSerializer
+    
+    
+class PayrollList(generics.ListCreateAPIView):
+    queryset = Payroll.objects.all().order_by('-id')
+    serializer_class = PayrollSerializer
     
