@@ -15,7 +15,7 @@ from django.conf import settings
 from hr.serializers import EmployeeSerializer, AttendanceSerializer, ShiftSerializer, PayrollSerializer
 from utilities.http import save_upload
 from auth.models import S3Object
-from hr.models import Employee, Attendance, Timestamp, Shift
+from hr.models import Employee, Attendance, Timestamp, Shift, Payroll
 
 
 logger = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
                                        
-        status = self.request.query_param.get('status', None)
+        status = self.request.query_params.get('status', None)
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         
