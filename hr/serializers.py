@@ -1,4 +1,5 @@
 import logging
+from dateutil import parser
 
 from rest_framework import serializers
 
@@ -111,6 +112,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         instance.social_security_id = validated_data.pop('social_security_id', instance.social_security_id)
         instance.company = validated_data.pop('company', instance.company)
         
+        instance.status = validated_data.pop('status', instance.status)
+        
+        instance.payment_option = validated_data.pop('payment_option', instance.payment_option)
         instance.wage = validated_data.pop('wage', 0)
         
         instance.save()
@@ -133,6 +137,40 @@ class EmployeeSerializer(serializers.ModelSerializer):
                             'url': instance.image.generate_url(key, secret)}
         except AttributeError: 
             pass
+            
+        request = self.context['request']
+        
+        start_date = request.query_params.get('start_date', None)
+        end_date =  request.query_params.get('end_date', None) 
+        
+        if start_date and end_date:
+            start_date = parser.parse(start_date)
+            end_date = parser.parse(end_date)
+            attendances = instance.attendances.filter(date__gte=start_date,
+                                                      date__lte=end_date)
+            
+            regular_time = 0
+            overtime = 0                               
+            gross_wage = 0
+            reimbursements = 0
+            incentive_pay = 0
+            
+            for a in attendances:
+                if a.start_time and a.end_time:
+                    a.calculate_net_wage()
+                    regular_time += a.regular_time
+                    overtime += a.overtime
+                    gross_wage += a.gross_wage
+                    reimbursements += a.reimbursement
+                    incentive_pay += a.incentive_pay
+                
+            ret['regular_time'] = regular_time
+            ret['overtime'] = overtime
+            ret['gross_wage'] = gross_wage
+            ret['reimbursements']  =reimbursements
+            ret['total_incentive_pay'] = incentive_pay
+                
+        logger.warn(ret)
             
         return ret
         

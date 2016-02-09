@@ -172,9 +172,9 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
             query.filter(status__icontains=status)
             
         if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+            queryset = queryset[offset - 1:]
         else:
-            queryset = queryset[0:50]
+            queryset = queryset[0:]
             
         
         return queryset
@@ -214,19 +214,20 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         # Filter all records after the start_date
         if start_date:
             start_date = parser.parse(start_date)
+            logger.warn(start_date)
             queryset = queryset.filter(date__gte=start_date)
             
         # Filter all records before end_date
         if end_date:
             end_date = parser.parse(end_date)
             queryset = queryset.filter(date__lte=end_date)
-            
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+    
+        if offset:
+            queryset = queryset[offset - 1:]
         else:
-            queryset = queryset[0:50]
+            queryset = queryset[0:]
             
-        
+        logger.warn(queryset.count())
               
         return queryset
     

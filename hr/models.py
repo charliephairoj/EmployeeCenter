@@ -322,9 +322,7 @@ class Attendance(models.Model):
             minimum_end_time = datetime.combine(self.date, self.shift.end_time.replace(tzinfo=self.tz))
             minimum_end_time = self.tz.normalize(minimum_end_time)
             minimum_end_time += (timedelta(hours=1) - timedelta(minutes=18))
-            logger.warn(self.end_time)
-            logger.warn(minimum_end_time)
-            logger.warn(self.end_time > minimum_end_time)
+
             if self.end_time > minimum_end_time:
                 
                 t_delta = self._calculate_timedelta(self.shift.end_time, self.end_time)
