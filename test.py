@@ -1,8 +1,11 @@
 """
 Tests the specified module
 """
+import os
 import sys
 import subprocess
+
+import django
 
 
 def test_module(module):
@@ -10,6 +13,7 @@ def test_module(module):
     subprocess.call(cmd, shell=True)
     
 if __name__ == '__main__':
+    
     try:
         module_to_test = sys.argv[1]
         if module_to_test == 'all':

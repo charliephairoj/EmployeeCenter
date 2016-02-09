@@ -3,7 +3,8 @@ Models to be use in the HR application
 """
 import logging
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+import math
 from math import floor
 import traceback
 
@@ -42,8 +43,11 @@ class Employee(models.Model):
     card_id = models.TextField(null=True)
     bank = models.TextField(blank=True, null=True)
     account_number = models.TextField(null=True, blank=True)
-    government_id = models.TextField(null=True)
+    government_id = models.TextField(null=True, blank=True)
     company = models.TextField(null=True)
+    incentive_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new 
+    status = models.TextField(default='active') #new
+    payment_option = models.TextField(null=True) #new
     
     class Meta:
         permissions = (('can_view_pay_rate', 'Can view pay rate'),)
@@ -54,125 +58,6 @@ class Employee(models.Model):
             return "{0} {1}".format(self.first_name, self.last_name or "")
         except Exception:
             return ""
-            
-    def log_attendance(self, start_time, end_time):
-        """
-        Creates a instance of the attendance class to track
-        employee attendance
-        
-        Takes the arguments of start time and end time, and creates
-        a new instance. Attendance instance will automatically calculate
-        regular_time, overtime, and total_time.
-        """
-        
-    def calculate_net_pay(self, start_date, end_date):
-        """
-        Calculates the total amount owed to the employee
-        after wages and deductions
-        """
-        gross_pay = self._calculate_gross_pay(start_date, end_date)
-        pay_after_social_security = self._apply_social_security_deduction(gross_pay)
-        pay_after_tax = self._apply_tax_deduction(pay_after_social_security)
-        
-        net_pay = pay_after_tax
-        
-        return net_pay
-             
-    def _calculate_gross_pay(self, start_date, end_date):
-        """
-        Retrieve the pay due to the employee for the determine
-        period pretax deductions
-        """
-        if self.pay_period.lower() == 'monthly':
-            pay = self._calculate_salary_pay_for_pay_period(start_date, end_date)
-        elif self.pay_period.lower() == 'daily':
-            pay = self._calculate_daily_wages_for_pay_period(start_date, end_date)
-        else:
-            message = """
-            Expecting pay to be classified by month or daily, not {0}
-            """.format(self.pay_period)
-            raise ValueError(message)
-        
-        #Debug Log
-        message = "Gross pay for period {0} to {1} is {2} for {3}, a {4} employee"
-        message = message.format(start_date.strftime('%B %d, %Y'),
-                                 end_date.strftime('%B %d, %Y'),
-                                 pay, 
-                                 self.name,
-                                 self.pay_period.lower())
-        logger.debug(message)
-        
-        return pay
-            
-    def _calculate_salary_pay_for_pay_period(self, start_date, end_date):
-        """
-        Calculate the pay for a salaried employee within the pay period
-        """
-        period = end_date - start_date
-        
-        if period.days > 15:
-            return Decimal(self.wage)
-        else: 
-            return Decimal(self.wage) / 2
-            
-    def _calculate_daily_wages_for_pay_period(self, start_date, end_date):
-        attendances = Attendance.objects.filter(start_time__gte=start_date,
-                                                end_time__lte=end_date,
-                                                employee=self)
-        
-        message = "Worked for {0} days in period {1} to {2}"
-        message = message.format(attendances.count(),
-                                 start_date.strftime('%B %d, %Y'),
-                                 end_date.strftime('%B %d, %Y'))
-        logger.debug(message)
-        
-        wages = sum([self._calculate_daily_wages(a) for a in attendances])
-        logger.debug(wages)
-        
-        return wages  
-            
-    def _calculate_daily_wages(self, attendance):
-        """
-        Calculates the daily wages based on attendance
-        """
-        #Get base pay
-        pay = Decimal(self.wage) if attendance.total_time >= 8 else 8
-        
-        
-        if attendance.start_time.isoweekday() == 7:
-            pay = pay * Decimal('2')                                    
-        
-        logger.debug("Base pay for {0} is {1}".format(attendance.start_time.strftime('%B %d, %Y'),
-                                                      pay))
-                                                      
-        if attendance.overtime > 0:
-            
-            rate = '3' if attendance.start_time.isoweekday() == 7 else '1.5'
-            overtime_rate = Decimal(rate)
-            
-            logger.debug("Worked {0} overtime".format(attendance.overtime))
-            overtime = attendance.overtime * ((Decimal(self.wage) / Decimal('8') * overtime_rate))
-            logger.debug("Overtime pay for {0} is {1}".format(attendance.start_time.strftime('%B %d, %Y'),
-                                                              overtime))
-                                                              
-            pay += overtime
-            
-        return pay
-        
-    def _apply_social_security_deduction(self, pay):
-        """
-        Deduct social security benefits from the pay
-        
-        -Deductions are currently 5% of the pay
-        """
-        return pay - (pay * Decimal('0.05') if pay * Decimal('0.05') < 750 else Decimal('750')) if self.legal else pay
-        
-    def _apply_tax_deduction(self, pay):
-        """
-        Deduct tax from the pay
-        -Deductions are currently 500baht per person
-        """
-        return pay - Decimal('500') if self.legal else pay
 
 
 class Timestamp(models.Model):
@@ -201,10 +86,39 @@ class Attendance(models.Model):
     doubletime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
     total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
     shift = models.ForeignKey(Shift, null=True)
+    salaried = models.BooleanField(default=False) #new
+    receive_lunch_overtime = models.BooleanField(default=False) #new
     pay_rate = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     regular_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     overtime_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    doubletime_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    lunch_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new
+    
+    # Wages
+    gross_wage = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new 
+    net_wage = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new
+    
+    #Reimbursements
+    reimbursement = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new
+    incentive_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new 
+    
+    # Special days that affect the pay rate
+    is_holiday = models.BooleanField(default=False) #new
+    sick_leave = models.BooleanField(default=False) #new
+    vacation = models.BooleanField(default=False) #new
+    
+    # Pay Rates for non regular days
+    sunday_pay_rate = 2
+    sunday_ot_pay_rate = 3
+    holiday_pay_rate = 2.5
+    holiday_ot_pay_rate = 2.5
+    
+    remarks = models.TextField(default='') #new
+
+    
+    @property
+    def is_sunday(self):
+        """Return True if day of the week is Sunday"""
+        return True if self.date.weekday() == 6 else False
 
     @property
     def start_time(self):
@@ -226,7 +140,6 @@ class Attendance(models.Model):
         
     @end_time.setter
     def end_time(self, value):
-        logger.debug('setter: {0}'.format(value))
         self._end_time = value
 
     
@@ -240,8 +153,7 @@ class Attendance(models.Model):
     @enable_overtime.setter
     def enable_overtime(self, value):
         self._enable_overtime = bool(value)
-        if self.start_time and self.end_time:
-            self.calculate_times()
+        
         
     def __init__(self, *args, **kwargs):
         """
@@ -252,128 +164,381 @@ class Attendance(models.Model):
         #Set standard timezone
         self.tz = timezone('Asia/Bangkok')
         
+        # Set the pay rate if not set and not specified
+        if 'pay_rate' not in kwargs and not self.pay_rate:
+            self.pay_rate = self.employee.wage
+        
+        # Set the shift if not set and not specified
+        if 'shift' not in kwargs and not self.shift:
+            self.shift = self.employee.shift
+            
         if self.start_time and self.end_time:
             self.calculate_times()
                             
     def calculate_times(self):
+        """Calculate the different times based on the assigned shift
+        
+        This method will calculate the regular time, overtime, and lunch overtime based on the 
+        assigned shift for this attendance. 
+        
+        - Calculate the regular time
+        - Calculate the overtime
+        - Calculate lunch overtime 
         """
-        wrapper for '_calculate_different_time_types'
+        self.regular_time = self._calculate_regular_time()
+        self.overtime = self._calculate_overtime()
+        
+    def calculate_gross_wage(self):
+        """Calculate the gross wage for this attendance
+        
+        This method will calculate the gross wage for this attendance. The steps are:
+        - 1. Determine not vacation or sick leave
+        -   1.1 Calculate pay for regular time
+        -   1.2 Calculate pay for overtime if enabled
+        -   1.3 Calculate pay for lunch overtime
         """
-        self.pay_rate = self.pay_rate or self.employee.wage
-        
-        self.shift = self.shift or self.employee.shift
-        
-        if self.start_time and self.end_time:
-            self._calculate_different_time_types()
-        
-    def _calculate_different_time_types(self):
-        """
-        Calculates the times to be work
-        """
-        # Calculate the total time for this attendance
-        total_seconds = Decimal(str((self.end_time - self.start_time).total_seconds()))
-        self.total_time = (total_seconds / Decimal('3600')) - Decimal('1')
-        
-        # Calculate the times for sundays
-        if self.date.weekday() == 6:
-            start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-            end = self.end_time.time()
-        
-            time_delta = self._calculate_timedelta(start, end)
-            self.total_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
+        if not self.sick_leave and not self.vacation:
+            
+            # Calculate the regular wage if not a salaried employee
+            if not self.salaried:
+                self.regular_pay = self._calculate_regular_pay_rate()
+            else: 
+                self.regular_pay = 0
 
-            # Calculate whether an employee is late or not
-            if self.total_time > Decimal('8') and self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.doubletime = Decimal('8')
-            else:
-                self.doubletime = (Decimal(str(self._calculate_timedelta(self.start_time.time(), self.shift.end_time).total_seconds())) / Decimal('3600')) - 1
-        
-        # Calculate the times for nonsundays
-        else:
-            # Calculate times if overtime is enabled
+            # Calculate the overtime wage if overtime is enabled
             if self.enable_overtime:
-                start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-                end = self.end_time.time()
-            
-                time_delta = self._calculate_timedelta(start, end)
-                self.total_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
-
-                if self.total_time > Decimal('8'):
-                    self.regular_time = Decimal('8')
-                    self.overtime = self.total_time - self.regular_time
-                    logger.warn(self.overtime)
-        
-            # Calculate the times if overtime is not enabled
+                self.overtime_pay = self.overtime * self._calculate_overtime_pay_rate()
+            else: 
+                self.overtime_pay = 0
+                
+            # Calculate the overtime wage if this employee is to receive lunch overtime
+            if self.receive_lunch_overtime:
+                self.lunch_pay = (self.pay_rate / Decimal('8')) * Decimal('1.5')
             else:
-                start = self.start_time.time() if self.start_time.time() > self.shift.start_time else self.shift.start_time
-                end = self.end_time.time() if self.end_time.time() < self.shift.end_time else self.shift.end_time
+                self.lunch_pay = 0
             
-                time_delta = self._calculate_timedelta(start, end)
+            gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
+        
+        # If attendance is for vacation or sick leave pay only regular wage
+        else:
+            gross_wage = self.regular_pay
             
-                self.regular_time = (Decimal(str(time_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
-                self.overtime = 0
-                self.total_time = self.regular_time
-            
-        self.save()
-            
-    def _calculate_timedelta(self, t1, t2):
+        self.gross_wage = gross_wage
+        
+        return self.gross_wage
+       
+    def calculate_net_wage(self):
+        """Calculate the net wage for this attendance
+        
+        This method will calculate the net wage by accounting for reimbursements and deductions.
+        
+        - 1. Get the gross wage
+        - 2. Calculate reimbursements
+        -   2.1 Calculate lunch costs
+        -   2.2 Calculate overtime meal if over 5 hours
+        -   2.3 Calculate incentive pay
+        - 3. Calculate deductions
+        -   3.1 Calculate if late
         """
-        Calculate the differences in times
+        self.remarks = ''
+        
+        gross_wage = self.calculate_gross_wage()
+        
+        # Calculate the reimbursements
+        reimbursements = 0 
+        
+        # Calculate mid meal reimbursement
+        if self.receive_lunch_overtime:
+            reimbursements = Decimal('30')
+            
+            # Add a note for lunch reimbursement
+            self.remarks += u'- Reimbursed 30THB for lunch \n'
+            
+        if self.overtime >= Decimal('5'):
+            reimbursements += Decimal('30')
+        
+            # Add a note for overtime meal reimbursement
+            self.remarks += u'- Reimbursed 30THB for working over 4 hours of overtime \n'
+        
+        if not self.vacation and not self.sick_leave and self.regular_time >= Decimal('8'):
+            self.incentive_pay = self.employee.incentive_pay
+            reimbursements += self.incentive_pay
+            
+            # Add a note incentive pay
+            self.remarks += u'- Reimbursed {0}THB for incentive pay \n'.format(self.incentive_pay)
+        
+        
+        self.reimbursement = reimbursements
+        
+        # Calculate deductions
+        
+        self.net_wage = gross_wage + reimbursements
+            
+        return self.net_wage        
+        
+    def _calculate_regular_time(self):
+        """Calculate the regular time based on the assigned shift
+        
+        This method will calculate the regular, while looking at if the employee clocked
+        in late, or left work early
+        
+        Rules:
+        - Determine the start time for calculation based on if the employee clocked in
+          late or not
+        - Employees are giving a leeway of 10 minutes after shift starts
+        - Determine the end time based on if the employee clocked out early.
+        - End time cannot be greater than end of shift time
+        """
+        
+        # Determine the proper start time by testings if the clockin time was late
+        if self.start_time.time() >= (datetime.combine(self.date, self.shift.start_time) + timedelta(minutes=10)).time():
+            start_time = self.start_time
+        else:
+            start_time = datetime.combine(self.date, self.shift.start_time).replace(tzinfo=self.tz)
+            
+        if self.end_time.time() < self.shift.end_time:
+            end_time = self.end_time
+        else:
+            end_time = datetime.combine(self.date, self.shift.end_time).replace(tzinfo=self.tz)
+                
+        t_delta = self._calculate_timedelta(start_time, end_time)
+        
+        # Calculate total amount of regular time worked
+        regular_time = (Decimal(str(t_delta.total_seconds())) / Decimal('3600')) - Decimal('1')
+        
+        return regular_time
+        
+    def _calculate_overtime(self):
+        """Calculates the number of overtime hours due to the employee
+        
+        Rules:
+        - Will only calculate overtime if it is enabled
+        - Must work at least 1 hour past end of shift
+        - Overtime granted by the hour
+        """
+        if self.enable_overtime:
+            
+            # Calculate the minium end time for overtime to actually take place
+            minimum_end_time = datetime.combine(self.date, self.shift.end_time.replace(tzinfo=self.tz))
+            minimum_end_time = self.tz.normalize(minimum_end_time)
+            minimum_end_time += (timedelta(hours=1) - timedelta(minutes=18))
+            logger.warn(self.end_time)
+            logger.warn(minimum_end_time)
+            logger.warn(self.end_time > minimum_end_time)
+            if self.end_time > minimum_end_time:
+                
+                t_delta = self._calculate_timedelta(self.shift.end_time, self.end_time)
+                # Convert time delta to time decimal
+                overtime = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
+                # Round down to the nearest hour
+                truncated_overtime = Decimal(str(math.floor(overtime)))
+                
+                return truncated_overtime
+        
+        # Return 0 if any of the coniditions fail       
+        return Decimal('0')
+        
+    def _calculate_regular_pay_rate(self):
+        """Calculate the pay rate for employees during regular time
+        """
+        if self.is_sunday:
+            return self.pay_rate * Decimal(str(self.sunday_pay_rate))
+        elif self.is_holiday:
+            return self.pay_rate * Decimal(str(self.holiday_pay_rate))
+        else:
+            return self.pay_rate
+        
+    def _calculate_overtime_pay_rate(self):
+        """Calculate the hourly pay rate for overtime
+        
+        This method will calculate the hourly pay rate for overtime based on 
+        the following steps
+        
+        - 1. Calculate hour regular pay rate
+        - 2. Calculate sunday overtime pay rate
+        - 3. Calculate holiday overtime pay rate
+        - 4. Calculate regular overtime pay rate
+        """
+        if not self.salaried:
+            hourly_rate = self.pay_rate / Decimal('8')
+        else:
+            hourly_rate = (self.pay_rate / Decimal('30')) / Decimal('8')
+        
+        if self.is_sunday:
+            return hourly_rate * Decimal(str(self.sunday_ot_pay_rate))
+        elif self.is_holiday:
+            return hourly_rate * Decimal(str(self.holiday_ot_pay_rate))
+        else:
+            return hourly_rate * Decimal('1.5')
+        
+    def _calculate_timedelta(self, t1, t2):
+        """Calculate the differences in two times
         """
         fmt = '%H:%M:%S'
         s1 = t1.strftime(fmt)
         s2 = t2.strftime(fmt)
-        tdelta = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
+        t_delta = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
         
-        return tdelta
+        return t_delta
+
+
+class PayrollManager(models.Model):
+    
+    def create(self, start_date, end_date, *args, **kwargs):
         
-    def _calculate_overtime(self):
+        payroll = Payroll(start_date=start_date,
+                          end_date=end_date)
+        payroll.save()
+        
+        for employee in Employee.objects.filter(status='active'):
+            
+            record = PayRecord.objects.create(employee,
+                                              start_date=start_date,
+                                              end_date=end_date,
+                                              payroll=payroll)
+                            
+        
+class Payroll(models.Model):
+    start_date = models.DateField(null=False)
+    end_date = models.DateField(null=False)
+    
+    objects = PayrollManager()
+    
+    def create(self, start_date, end_date):
+        """Create a payroll for the specified pay period
+        
+        This method will calculate the total wages"""
+    
+    
+class PayRecordManager(models.Manager):
+    
+    def create(self, employee, start_date, end_date, *args, **kwargs):
+        """Create a new PayRecord for the given dates
+        
+        This method will calculate """
+        record = PayRecord(employee=employee, start_date=start_date,
+                           end_date=end_date)
+        record.calculate_net_wage()
+        record.save()
+        
+        return record
+        
+class PayRecord(models.Model):
+    payroll = models.ForeignKey(Payroll, related_name='pay_records')
+    employee = models.ForeignKey(Employee, related_name='pay_records')
+    start_date = models.DateField(null=False)
+    end_date = models.DateField(null=False)
+    gross_wage = models.DecimalField(decimal_places=2, max_digits=12, )
+    net_wage = models.DecimalField(decimal_places=2, max_digits=12, )
+    reimbursements = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    deductions = models.DecimalField(decimal_places=2, max_digits=12, )
+    social_security_withholding = models.DecimalField(decimal_places=2, max_digits=12, )
+    tax_withholding = models.DecimalField(decimal_places=2, max_digits=12, )
+    remarks = models.TextField(default='')
+    
+    objects = PayRecordManager()
+    
+    def calculate_gross_wage(self):
+        """Calculate the total gross wage
+        
+        This method will loop through all the attendances and
+        calculate the total gross wage
         """
-        Calculates the number of overtime hours due to the employee
+        gross_wage = 0
         
-        Rules:
-        -Must work at least 1 hour past end of shift
-        -Overtime granted by every half hour. Must work past half hour
-        Ex. worked 1.66 overtime becomes 1.5. worked 1.25 becomes 1
+        if self.employee.pay_period.lower() == 'monthly':
+            self.gross_wage = self.employee.wage / Decimal('2')
+        
+        elif self.employee.pay_period.lower() == 'daily':
+            attendances = self._get_employee_attendances()
+            for attendance in attendances:
+                gross_wage += attendance.gross_wage
+
+            self.gross_wage = gross_wage
+
+        return self.gross_wage
+        
+    def calculate_net_wage(self):
+        """Calculate the total net wage
+        
+        This method will calculate the total net wage for the pay period through
+        the following steps:
+        
+        - 1. Get gross wage
+        - 2. Calculate all reimbursements
+        - 3. Calculate all deductions
+        -   3.1 Calculate social security withholding
+        -   3.2 Calculate tax withholding
         """
-        excess_time = self.total_time - self.regular_time
-        logger.debug("excess: {0}".format(excess_time))
+        gross_pay = self.calculate_gross_wage()
         
-        self.overtime = floor(excess_time * 2) / 2 if excess_time >= 1 else 0
-        self.overtime = Decimal(str(self.overtime))
+        incentive_pay = 0
+        reimbursements = 0
+        deductions = 0
+        regular_pay = 0
         
-    def _calculate_pay(self):
-        """
-        Calculate the daily pay
-        
-        Calculates the regular pay first based on if the employee worked 8 hours
-        and if the employee was late
-        """
-        # Get the pay rate based on if the day is Sunday
-        if self.date.weekday() == 6:
-            pay_rate = self.pay_rate * Decimal('2')
-            # Calculate wage to be paid for this date based on if late or hours less than 8 hours
-            if self.regular_time == Decimal('8'):
-                self.doubletime_pay = pay_rate
-            elif self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.doubletime_pay = pay_rate
-            else:
-                self.doubletime_pay = pay_rate * self.doubletime
-                
-        else:
-            pay_rate = self.pay_rate
-            # Calculate wage to be paid for this date based on if late or hours less than 8 hours
-            if self.regular_time == Decimal('8'):
-                self.regular_pay = pay_rate
-            elif self.start_time.hour == self.shift.start_time.hour and self.start_time.minute <= 10:
-                self.regular_pay = pay_rate
-            else:
-                self.regular_pay = pay_rate * self.regular_time
+        # Loop through all the attendances 
+        attendances = self._get_employee_attendances()
+        for attendance in attendances:
+            
+            # Calculate regular pay for use in calculating
+            # social security later
+            regular_pay += attendance.regular_pay
+
+            # Calculate all incentive pay
+            incentive_pay += attendance.incentive_pay
+            
+            # Calculate reimbursements
+            self.reimbursements += attendance.reimbursement
+            self.remarks += "\n\n{0}:\n{1}".format(attendance.date, 
+                                                attendance.remarks)
+
+            # Calculate the deductions
+            #deductions += attendance.deduction
             
         
-        
-            # Calculate the overtime pay for non Sunday dates
-            if self.enable_overtime:
-                self.overtime_pay = ((pay_rate / Decimal('8')) * Decima('1.5')) * self.overtime
+        # Calculate social security
+        if self.employee.pay_period.lower() == 'daily':
+            ss_w = regular_pay * Decimal('0.05')
+        elif self.employee.pay_period.lower() == 'monthly':
+            ss_w = self.gross_wage * Decimal('0.05')
+        self.social_security_withholding = ss_w
 
+        net_wage = gross_pay
+        net_wage += self.reimbursements
+        net_wage -= self.social_security_withholding
+        
+        self.net_wage = net_wage
+        
+        return self.net_wage
+    
+    def add_reimbursement(self, amount, note):
+        """Adds a reimbursement for the pay record
+        
+        This mother will add a reimbursement to the total reimbursement
+        and add a note to the remarks"""
+        self.reimbursements += amount
+        
+        self.remarks += '{0}\n'.format(note)
+        
+    def _get_employee_attendances(self):
+        """Return all the attendances for this employee during
+        this pay period.
+        
+        This method will filter all attendances for attendances that match
+        the employee and the are within the date ranges
+        """
+        if not hasattr(self, 'queryset'):
+            self.queryset = Attendance.objects.filter(employee=self.employee)
+            self.queryset = self.queryset.filter(date__gte=self.start_date)
+            self.queryset = self.queryset.filter(date__lte=self.end_date)
+
+        return self.queryset
+    
+    
+        
+        
+        
+        
+        
                 
