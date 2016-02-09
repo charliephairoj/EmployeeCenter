@@ -23,15 +23,25 @@ class AttendanceSerializer(serializers.ModelSerializer):
         
     class Meta:
         model = Attendance
+        read_only_fields = ('gross_wage', 'net_wage', 'lunch_pay', 'remarks')
         exclude = ('_start_time', '_end_time', '_enable_overtime')
+        
+    def create(self, validated_data):
+        """Create a new instance of Attendance
+        """
+        instance = self.Meta.model.objects.create(**validated_data)
+        
+        return instance
         
     def update(self, instance, validated_data):
         
         enable_overtime = validated_data.pop('enable_overtime')
-        logger.warn(enable_overtime)
         instance.enable_overtime = enable_overtime
-        logger.warn(instance.enable_overtime)
+        instance.receive_lunch_overtime = validated_data.pop('receive_lunch_overtime', False)
+        instance.vacation = validated_data.pop('vacation', False)
+        instance.sick_leave = validated_data.pop('sick_leave', False)
         instance.calculate_times()
+        instance.save()
         
         return instance
         
@@ -42,7 +52,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         ret['start_time'] = instance.start_time
         ret['end_time'] = instance.end_time
         ret['enable_overtime'] = instance.enable_overtime
-        logger.warn(ret)
+
         return ret
         
 
@@ -74,6 +84,17 @@ class EmployeeSerializer(serializers.ModelSerializer):
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
                   'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option')
     
+    def create(self, validated_data):
+        """Create a new instance of Employee
+        """
+        shift = validated_data.pop('shift', None)
+        if shift:
+            shift = Shift.objects.get(pk=shift['id'])
+            
+        instance = self.Meta.model.objects.create(shift=shift, **validated_data)
+        
+        return instance
+        
     def update(self, instance, validated_data):
         
         shift_data = validated_data.pop('shift')

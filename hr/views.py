@@ -159,6 +159,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(id__icontains=query) |
                                        Q(first_name__icontains=query) |
                                        Q(last_name__icontains=query) |
+                                       Q(name__icontains=query) |
                                        Q(nickname__icontains=query) |
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
