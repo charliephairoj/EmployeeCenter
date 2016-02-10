@@ -48,6 +48,7 @@ class Employee(models.Model):
     incentive_pay = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new 
     status = models.TextField(default='active') #new
     payment_option = models.TextField(null=True) #new
+    manager_stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new
     
     class Meta:
         permissions = (('can_view_pay_rate', 'Can view pay rate'),)

@@ -78,13 +78,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     attendances = AttendanceSerializer(many=True, required=False, read_only=True)
     incentive_pay = serializers.DecimalField(required=False, decimal_places=2, max_digits=15, allow_null=True)
     shift = ShiftSerializer(required=False)
-    
+    card_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
-                  'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option')
+                  'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend')
     
     def create(self, validated_data):
         """Create a new instance of Employee
@@ -116,6 +116,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         
         instance.payment_option = validated_data.pop('payment_option', instance.payment_option)
         instance.wage = validated_data.pop('wage', 0)
+        instance.manager_stipend = validated_data.pop('manager_stipend', 0) 
+        instance.incentive_pay = validated_data.pop('incentive_pay', 0) 
         
         instance.save()
         

@@ -49,8 +49,7 @@ def upload_attendance(request):
                     employee.shift = Shift.objects.all()[0]
                     employee.save()
                 except Employee.DoesNotExist:
-                    employee = Employee.objects.create(name=d[3], card_id=int(d[2]), shift=Shift.objects.all()[0])
-                    logger.warn("Employee {0} not found. Creating new employee".format(d[3]))
+                    raise ValueError('No employee for card ID {0}'.format(d[2]))
                 
                 try:
                     timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
