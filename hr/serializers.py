@@ -102,6 +102,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         shift_data = validated_data.pop('shift')
         
         instance.name = validated_data.pop('name', instance.name)
+        instance.title = validated_data.pop('title', instance.title)
         instance.shift = Shift.objects.get(start_time=shift_data['start_time'], end_time=shift_data['end_time'])
         instance.pay_period = validated_data.pop('pay_period', instance.pay_period)
         instance.nationality = validated_data.pop('nationality', instance.nationality)

@@ -25,6 +25,7 @@ class Shift(models.Model):
     
 class Employee(models.Model):
     
+    title = models.TextField(null=True)
     name = models.TextField(db_column="name", null=True)
     first_name = models.TextField(null=True, blank=True)
     last_name = models.TextField(default="", null=True, blank=True)
