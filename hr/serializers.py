@@ -84,7 +84,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
-                  'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend')
+                  'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend', 'title')
     
     def create(self, validated_data):
         """Create a new instance of Employee
