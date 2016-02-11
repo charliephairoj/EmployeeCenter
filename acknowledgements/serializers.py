@@ -239,10 +239,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.create_and_upload_pdfs()
         
         # Add pdfs to files list
-        File.objects.create(file=instance.acknowledgement_pdf, acknowledgement=instance)
-        File.objects.create(file=instance.production_pdf, acknowledgement=instance)
-        #File.objects.create(file=instance.confirmation_pdf, acknowledgement=instance)
-        File.objects.create(file=instance.label_pdf, acknowledgement=instance)
+        filenames = ['acknowledgement_pdf', 'production_pdf', 'label_pdf']
+        for filename in filenames:
+            try:
+                File.objects.create(file=getattr(instance, filename), 
+                                    acknowledgement=instance)
+            except Exception as e:
+                logger.warn(e)
 
         # Assign files
         for file in files:

@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 def upload_attendance(request):
     if request.method == "POST":
-        print 'ok'
         file = request.FILES.get('file')
         
         with open('attendance.txt', 'wb+') as destination:
@@ -32,24 +31,26 @@ def upload_attendance(request):
         
         lines = open('attendance.txt').readlines()
         data = [l.replace('\r\n', '').split('\t') for l in lines][:1000]
-        print 'got lines'
+
         timestamps = []
+        error_times = []
         timezone = pytz.timezone('Asia/Bangkok')
-        print "{0} lines long".format(len(data))
-        
+
         def create_timestamps(data):
-            print "Processing {0} timestamps".format(len(data))
+
             for index, d in enumerate(data):
             
                 timestamp = timezone.localize(parser.parse(d[-1]))
            
                 card_id = d[2]
+                
                 try:
-                    employee = Employee.objects.get(Q(name__icontains=d[3]) | Q(card_id=d[2]))
+                    employee = Employee.objects.get(card_id=card_id)
                     employee.shift = Shift.objects.all()[0]
                     employee.save()
                 except Employee.DoesNotExist:
-                    raise ValueError('No employee for card ID {0}'.format(d[2]))
+                    error_times.append(d)
+                    logger.warn('No employee for card ID {0}'.format(card_id))
                 
                 try:
                     timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
@@ -71,11 +72,7 @@ def upload_attendance(request):
         thread2.start()
         
         while len([t for t in threads if t.isAlive()]) > 0:
-            sleep(1)
-
-        
-        logger.warn("Clearing all old attendances. Only during development phase")
-        Attendance.objects.all().delete()
+            sleep(100)
         
         for t in timestamps:
             if Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).count() == 0:
@@ -97,7 +94,7 @@ def upload_attendance(request):
             attendance.save()
             
             
-        response = HttpResponse(json.dumps({'status': 'ok'}),
+        response = HttpResponse(json.dumps({'status': 'Times Uploaded'}),
                                 content_type="application/json")
         response.status_code = 201
         return response
