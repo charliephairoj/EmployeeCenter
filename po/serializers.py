@@ -282,6 +282,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         instance.save()
         
+        # Log Opening of an order
+        message = "Order #{0} was processed.".format(instance.id)
+        log = POLog.objects.create(message=message, purchase_order=instance, employee=self.context['request'].user)
+        
         #self._create_calendar_event(instance, self.context['request'].user)
         
         return instance
@@ -312,7 +316,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             log = POLog.objects.create(message=message, purchase_order=instance, employee=employee)
             
             # Check if a high level event has ocurrred. If yes, then the status will not change
-            statuses = ['processed', 'deposited', 'received', 'invoiced', 'paid']
+            statuses = ['processed', 'deposited', 'received', 'invoiced', 'paid', 'cancelled']
             for status in statuses:
                 if instance.logs.filter(message__icontains=status).exists():
                     instance.status = status
