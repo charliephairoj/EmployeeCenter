@@ -6,6 +6,8 @@ import pytz
 from threading import Thread
 from time import sleep
 
+import boto
+from django.template.loader import render_to_string
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse
 from rest_framework import generics
@@ -30,7 +32,7 @@ def upload_attendance(request):
                 destination.write(chunk)
         
         lines = open('attendance.txt').readlines()
-        data = [l.replace('\r\n', '').split('\t') for l in lines][:1000]
+        data = [l.replace('\r\n', '').split('\t') for l in lines]
 
         timestamps = []
         error_times = []
@@ -39,7 +41,7 @@ def upload_attendance(request):
         def create_timestamps(data):
 
             for index, d in enumerate(data):
-            
+                employee = None
                 timestamp = timezone.localize(parser.parse(d[-1]))
            
                 card_id = d[2]
@@ -51,50 +53,82 @@ def upload_attendance(request):
                 except Employee.DoesNotExist:
                     error_times.append(d)
                     logger.warn('No employee for card ID {0}'.format(card_id))
+                except Employee.MultipleObjectsReturned as e:
+                    logger.warn(e)
+                    logger.warn(d)
                 
-                try:
-                    timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
-                except Timestamp.DoesNotExist:
-                    timestamps.append(Timestamp.objects.create(employee=employee,
-                                                                 datetime=timestamp))
-                except Timestamp.MultipleObjectsReturned:
-                    Timestamp.objects.filter(employee=employee, datetime=timestamp).delete()
-                    timestamps.append(Timestamp.objects.create(employee=employee,
-                                                                 datetime=timestamp))
+                if employee:
+                    
+                    try:
+                        timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
+                    except Timestamp.DoesNotExist:
+                        timestamps.append(Timestamp.objects.create(employee=employee,
+                                                                     datetime=timestamp))
+                    except Timestamp.MultipleObjectsReturned:
+                        Timestamp.objects.filter(employee=employee, datetime=timestamp).delete()
+                        timestamps.append(Timestamp.objects.create(employee=employee,
+                                                                     datetime=timestamp))
                                                                  
-        
-        thread1 = Thread(target=create_timestamps, args=(data[1:len(data)/2], ))
-        thread2 = Thread(target=create_timestamps, args=(data[len(data)/2:], ))
-        
-        threads = [thread1, thread2]
-        
-        thread1.start()
-        thread2.start()
-        
-        while len([t for t in threads if t.isAlive()]) > 0:
-            sleep(100)
-        
-        for t in timestamps:
-            if Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).count() == 0:
-                attendance = Attendance.objects.create(employee=t.employee, date=t.datetime.date(), 
-                                                       shift=t.employee.shift, pay_rate  =t.employee.wage)
+            
+        def create_attendances(timestamps):
+            for t in timestamps:
+                if Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).count() == 0:
+                    attendance = Attendance.objects.create(employee=t.employee, date=t.datetime.date(), 
+                                                           shift=t.employee.shift, pay_rate  =t.employee.wage)
 
-                if t.time.hour < t.employee.shift.start_time.hour + 4:
-                    attendance.start_time = t.time
+                    if t.time.hour < t.employee.shift.start_time.hour + 4:
+                        attendance.start_time = t.time
+                    else:
+                        attendance.end_time = t.time
                 else:
-                    attendance.end_time = t.time
-            else:
-                attendance = Attendance.objects.get(employee=t.employee, date=t.datetime.date())
-                if t.time.hour < t.employee.shift.start_time.hour + 4:
-                    attendance.start_time = t.time
-                else:
-                    attendance.end_time = t.time
+                    attendance = Attendance.objects.get(employee=t.employee, date=t.datetime.date())
+                    if t.time.hour < t.employee.shift.start_time.hour + 4:
+                        attendance.start_time = t.time
+                    else:
+                        attendance.end_time = t.time
             
-            attendance.calculate_times()        
-            attendance.save()
+                #attendance.calculate_times()        
+                attendance.save()
+        
+            
+        def create_timestamps_and_attendances(data):
+            thread1 = Thread(target=create_timestamps, args=(data[1:len(data)/2], ))
+            thread2 = Thread(target=create_timestamps, args=(data[len(data)/2:], ))
+        
+            threads = [thread1, thread2]
+        
+            thread1.start()
+            thread2.start()
+        
+            while len([t for t in threads if t.isAlive()]) > 0:
+                sleep(100)
+                
+            create_attendances(timestamps)
+            
+            heading = """Attendance Upload Report"""
+            header_cell_style = """
+                                border-right:1px solid #595959;
+                                border-bottom:1px solid #595959;
+                                border-top:1px solid #595959;
+                                padding:1em;
+                                """
+            message = render_to_string("generic_email", {'heading': heading})
+    
+            e_conn = boto.ses.connect_to_region('us-east-1')
+            e_conn.send_email('noreply@dellarobbiathailand.com',
+                              'Delivery Schedule',
+                              message,
+                              ["charliep@dellarobbiathailand.com"],
+                              format='html')
             
             
-        response = HttpResponse(json.dumps({'status': 'Times Uploaded'}),
+            
+        # Primary parallel thread
+        primary_thread = Thread(target=create_timestamps_and_attendances, args=(data, ))
+        primary_thread.start()
+        
+                
+        response = HttpResponse(json.dumps({'status': 'We will send you an email once the upload has completed.'}),
                                 content_type="application/json")
         response.status_code = 201
         return response
@@ -155,6 +189,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(Q(id__icontains=query) |
                                        Q(first_name__icontains=query) |
                                        Q(last_name__icontains=query) |
+                                       Q(card_id__icontains=query) |
                                        Q(name__icontains=query) |
                                        Q(nickname__icontains=query) |
                                        Q(department__icontains=query) |

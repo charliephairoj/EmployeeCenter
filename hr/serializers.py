@@ -173,9 +173,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             ret['gross_wage'] = gross_wage
             ret['reimbursements']  =reimbursements
             ret['total_incentive_pay'] = incentive_pay
-                
-        logger.warn(ret)
-            
+                            
         return ret
         
         

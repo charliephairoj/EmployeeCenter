@@ -311,6 +311,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             for status in statuses:
                 if instance.logs.filter(message__icontains=status).exists():
                     instance.status = status
+                    
+            if status.lower() = 'cancelled':
+                instance.status == status
             
             #assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
             
@@ -476,7 +479,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                             'employee': get_employee(log),
                             'timestamp': log.timestamp} for log in instance.logs.all()]
         except Exception as e:
-            logger.debug(e)
+            logger.warn(e)
             
         try:
             ret['files'] = [{'id': file.id,

@@ -304,6 +304,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if instance.status.lower() == 'paid':
                 instance.paid_date = datetime.now()
                 
+            if status.lower() = 'cancelled':
+                instance.status = status
+                
             employee = self.context['request'].user
             message = "Purchase Order #{0} has been {1}.".format(instance.id, status.lower())
             log = POLog.objects.create(message=message, purchase_order=instance, employee=employee)
