@@ -294,7 +294,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """    
-        status = validated_data.pop('status', "")
+        status = validated_data.pop('status', instance.status)
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
@@ -319,7 +319,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             statuses = ['processed', 'deposited', 'received', 'invoiced', 'paid', 'cancelled']
             for status in statuses:
                 if instance.logs.filter(message__icontains=status).exists():
-                    instance.status = status
+                    pass #instance.status = status
             
             
             instance.save()

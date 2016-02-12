@@ -225,7 +225,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         discount = validated_data.pop('discount', None) or validated_data['customer'].discount
         
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
+        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount, 
+                                                  status='acknowledged',
                                                   **validated_data)
         
         item_serializer = ItemSerializer(data=items_data, context={'acknowledgement': instance}, many=True)
@@ -289,7 +290,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
            
         # Log Opening of an order
-        message = "Order #{0} was opened.".format(instance.id)
+        message = "Order #{0} was acknowledged.".format(instance.id)
         log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
         
         return instance
@@ -307,7 +308,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
             
             # Check if a high level event has ocurrred. If yes, then the status will not change
-            statuses = ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid']
+            statuses = ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid', 'cancelled']
             for status in statuses:
                 if instance.logs.filter(message__icontains=status).exists():
                     instance.status = status
