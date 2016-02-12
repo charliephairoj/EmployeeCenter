@@ -121,6 +121,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         instance.manager_stipend = validated_data.pop('manager_stipend', 0) 
         instance.incentive_pay = validated_data.pop('incentive_pay', 0) 
         
+        instance.image = validated_data.pop('image', instance.image)
+    
         instance.save()
         
         return instance

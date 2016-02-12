@@ -132,7 +132,7 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = self.queryset.exclude(status='cancelled')
         
         # Filter based on query
         query = self.request.query_params.get('q', None)

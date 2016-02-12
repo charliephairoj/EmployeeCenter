@@ -112,7 +112,7 @@ def upload_attendance(request):
                                 border-top:1px solid #595959;
                                 padding:1em;
                                 """
-            message = render_to_string("generic_email", {'heading': heading})
+            message = render_to_string("generic_email.html", {'heading': heading})
     
             e_conn = boto.ses.connect_to_region('us-east-1')
             e_conn.send_email('noreply@dellarobbiathailand.com',
