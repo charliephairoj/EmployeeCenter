@@ -304,7 +304,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if instance.status.lower() == 'paid':
                 instance.paid_date = datetime.now()
                 
-            if status.lower() = 'cancelled':
+            if status.lower() == 'cancelled':
                 instance.status = status
                 
             employee = self.context['request'].user

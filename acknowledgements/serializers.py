@@ -312,8 +312,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 if instance.logs.filter(message__icontains=status).exists():
                     instance.status = status
                     
-            if status.lower() = 'cancelled':
-                instance.status == status
+            if status.lower() == 'cancelled':
+                instance.status = status
             
             #assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
             
