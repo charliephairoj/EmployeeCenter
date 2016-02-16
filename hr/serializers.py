@@ -114,7 +114,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         instance.government_id = validated_data.pop('government_id', instance.government_id)
         instance.social_security_id = validated_data.pop('social_security_id', instance.social_security_id)
         instance.company = validated_data.pop('company', instance.company)
-        
+        instance.location = validated_data.pop('location', instance.location)
         instance.status = validated_data.pop('status', instance.status)
         
         instance.payment_option = validated_data.pop('payment_option', instance.payment_option)
