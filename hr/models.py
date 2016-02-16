@@ -50,6 +50,7 @@ class Employee(models.Model):
     status = models.TextField(default='active') #new
     payment_option = models.TextField(null=True) #new
     manager_stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0) #new
+    location = models.TextField(default="thailand")
     
     class Meta:
         permissions = (('can_view_pay_rate', 'Can view pay rate'),)
@@ -318,6 +319,8 @@ class Attendance(models.Model):
         - Must work at least 1 hour past end of shift
         - Overtime granted by the hour
         """
+        overtime = 0
+        
         if self.enable_overtime:
             
             # Calculate the minium end time for overtime to actually take place
@@ -329,14 +332,22 @@ class Attendance(models.Model):
                 
                 t_delta = self._calculate_timedelta(self.shift.end_time, self.end_time)
                 # Convert time delta to time decimal
-                overtime = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
-                # Round down to the nearest hour
-                truncated_overtime = Decimal(str(math.floor(overtime)))
+                raw_ot = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
+                # Round down to the nearest half hour
+                rounded_time = math.floor(raw_ot * 2) / 2
+
+                truncated_overtime = Decimal(str(rounded_time))
+
+                overtime += truncated_overtime
                 
-                return truncated_overtime
+        # Check if the employee receives lunch over time
+        # If True, the employee receives 1 hour of overtime for lunch
+        if self.receive_lunch_overtime == True:
+            overtime += Decimal('1')
         
-        # Return 0 if any of the coniditions fail       
-        return Decimal('0')
+        print overtime
+        
+        return overtime
         
     def _calculate_regular_pay_rate(self):
         """Calculate the pay rate for employees during regular time
@@ -424,17 +435,19 @@ class PayRecordManager(models.Manager):
         return record
         
 class PayRecord(models.Model):
-    payroll = models.ForeignKey(Payroll, related_name='pay_records')
+    payroll = models.ForeignKey(Payroll, related_name='pay_records', null=True)
     employee = models.ForeignKey(Employee, related_name='pay_records')
     start_date = models.DateField(null=False)
     end_date = models.DateField(null=False)
     gross_wage = models.DecimalField(decimal_places=2, max_digits=12, )
     net_wage = models.DecimalField(decimal_places=2, max_digits=12, )
     reimbursements = models.DecimalField(decimal_places=2, max_digits=12, default=0)
-    deductions = models.DecimalField(decimal_places=2, max_digits=12, )
-    social_security_withholding = models.DecimalField(decimal_places=2, max_digits=12, )
-    tax_withholding = models.DecimalField(decimal_places=2, max_digits=12, )
+    deductions = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    social_security_withholding = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    tax_withholding = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     remarks = models.TextField(default='')
+    stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    manager_stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     
     objects = PayRecordManager()
     
@@ -468,11 +481,16 @@ class PayRecord(models.Model):
         - 2. Calculate all reimbursements
         - 3. Calculate all deductions
         -   3.1 Calculate social security withholding
+        -       3.1.1. Only calculate the social security if 
+                       it is the end of the month
         -   3.2 Calculate tax withholding
+        - 4. Calculate the manager stipend if it exists
+        - 5. Calculate the net wage
         """
-        gross_pay = self.calculate_gross_wage()
+        gross_wage = self.calculate_gross_wage()
+        logger.debug("Gross Wage: {0}".format(gross_wage))
         
-        incentive_pay = 0
+        self.stipend = 0
         reimbursements = 0
         deductions = 0
         regular_pay = 0
@@ -486,7 +504,7 @@ class PayRecord(models.Model):
             regular_pay += attendance.regular_pay
 
             # Calculate all incentive pay
-            incentive_pay += attendance.incentive_pay
+            self.stipend += attendance.incentive_pay
             
             # Calculate reimbursements
             self.reimbursements += attendance.reimbursement
@@ -496,15 +514,47 @@ class PayRecord(models.Model):
             # Calculate the deductions
             #deductions += attendance.deduction
             
+        logger.debug("Total Daily Stipend: {0}".format(self.stipend))
+        logger.debug("Total Reimbursements including stipend: {0}".format(self.reimbursements))
+        logger.debug(self.remarks)
+        
+        # Calculate the manager stipend
+        # 
+        # Check if it is the end of the month first
+        if self.end_date.day >= 25:
+            if self.employee.manager_stipend:
+                self.manager_stipend = self.employee.manager_stipend
+            else:
+                self.manager_stipend = 0
+        else:
+            self.manager_stipend = 0
+            
+        logger.debug("Manager Stipend: {0}".format(self.manager_stipend))
         
         # Calculate social security
-        if self.employee.pay_period.lower() == 'daily':
-            ss_w = regular_pay * Decimal('0.05')
-        elif self.employee.pay_period.lower() == 'monthly':
-            ss_w = self.gross_wage * Decimal('0.05')
-        self.social_security_withholding = ss_w
+        #
+        # Check if it is the end of the month before 
+        # calculating the social security
+        if self.end_date.day >= 25:
+            
+            if self.employee.pay_period.lower() == 'daily':
+                ss_w = regular_pay * Decimal('0.05')
+            elif self.employee.pay_period.lower() == 'monthly':
+                ss_w = self.gross_wage * Decimal('0.05')
+                
+            self.social_security_withholding = ss_w
+        else:
+            self.social_security_withholding = 0
 
-        net_wage = gross_pay
+        #Calculate the net pay
+        #
+        # 1. Get gross wage
+        # 2. Add stipends
+        #   2.1 Add manager stipend
+        # 3. Add reimbursements
+        # 4. Subtract social security
+        net_wage = gross_wage
+        net_wage += self.manager_stipend
         net_wage += self.reimbursements
         net_wage -= self.social_security_withholding
         

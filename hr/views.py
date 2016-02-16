@@ -234,7 +234,7 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
+        queryset = self.queryset.order_by('status', 'name')
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))

@@ -52,6 +52,19 @@ employee3_data = {
     'social_security_id': '123-33-333'
 }
 
+manager_data = {
+    'name': 'manager1',
+    'legal': True,
+    'department': 'painting',
+    'telephone': '029987465',
+    'wage': Decimal('650'),
+    'pay_period': 'daily',
+    'employement_date': date.today(),
+    'social_security_id': '123-33-333',
+    'incentive_pay': Decimal('50'),
+    'manager_stipend': 1500
+}
+
 
 class AttendanceTest(APITestCase):
     """
@@ -223,6 +236,8 @@ class PayRecordTest(APITestCase):
         -   1.1 Attendances 
         - 2. Salaried employee
         -   2.1 Attendances
+        - 3. Daily Manager
+        -   3.1 Attendances
         """
         self.shift = Shift(start_time=time(8, 0),
                            end_time=time(17, 0))
@@ -230,6 +245,7 @@ class PayRecordTest(APITestCase):
         
         self.employee1 = Employee.objects.create(**employee2_data)
         self.employee2 = Employee.objects.create(**employee1_data)
+        self.manager = Employee.objects.create(**manager_data)
         
         for i in xrange(0, 6):
             a_date = date(2016, 2, 1 + i)
@@ -254,6 +270,16 @@ class PayRecordTest(APITestCase):
             a.calculate_net_wage()
             a.save()
             
+            # Create attendances for daily manager
+            a = Attendance.objects.create(date=a_date,
+                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
+                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          employee=self.manager,
+                                          shift=self.shift)
+            a.calculate_times()
+            a.calculate_net_wage()
+            a.save()
+            
         
     def test_gross_wage_hourly_employee(self):
         """Test calculate the gross wage of a pay record
@@ -269,12 +295,14 @@ class PayRecordTest(APITestCase):
         """
         record = PayRecord.objects.create(self.employee1, 
                                           start_date=date(2016, 2, 1),
-                                          end_date=date(2016, 2, 10))
+                                           end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
+        self.assertEqual(record.stipend, Decimal('180'))
+        self.assertEqual(record.manager_stipend, Decimal('0'))
+        self.assertEqual(record.deductions, Decimal('0'))
+        self.assertEqual(record.social_security_withholding, Decimal('0'))
         self.assertEqual(nw, Decimal('3315'))
-        self.assertEqual(record.reimbursements, Decimal('180'))
-        self.assertEqual(record.social_security_withholding, Decimal('165'))
-    
+        
     def test_gross_wage_salaried_employee(self):
         """Test calculate the gross wage of a pay record
         """
@@ -294,6 +322,26 @@ class PayRecordTest(APITestCase):
         self.assertEqual(nw, Decimal('8850'))
         self.assertEqual(record.reimbursements, Decimal('300'))
         self.assertEqual(record.social_security_withholding, Decimal('450'))
+        
+    def test_gross_wage_manager(self):
+        """Test calculate the gross wage of a pay record
+        """
+        record = PayRecord.objects.create(self.manager, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        gw = record.calculate_gross_wage()
+        self.assertEqual(gw, Decimal('3900'))
+        
+    def test_net_wage_salaried_employee(self):
+        """Test calculate the net wage of a pay record
+        """
+        record = PayRecord.objects.create(self.manager, 
+                                          start_date=date(2016, 2, 1),
+                                          end_date=date(2016, 2, 10))
+        nw = record.calculate_net_wage()
+        self.assertEqual(nw, Decimal('3900'))
+        self.assertEqual(record.reimbursements, Decimal('300'))
+        self.assertEqual(record.social_security_withholding, Decimal('0'))
         
         
 @unittest.skip("ok")           
