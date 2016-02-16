@@ -36,6 +36,8 @@ def upload_attendance(request):
 
         timestamps = []
         error_times = []
+        missing_employees = []
+        duplicate_employees = []
         timezone = pytz.timezone('Asia/Bangkok')
 
         def create_timestamps(data):
@@ -46,19 +48,19 @@ def upload_attendance(request):
            
                 card_id = d[2]
                 
+                # Find the employee with the corresponding card
                 try:
                     employee = Employee.objects.get(card_id=card_id)
                     employee.shift = Shift.objects.all()[0]
                     employee.save()
                 except Employee.DoesNotExist:
-                    error_times.append(d)
+                    missing_employees.append({'id': d[2], 'timestamp': timestamp})
                     logger.warn('No employee for card ID {0}'.format(card_id))
                 except Employee.MultipleObjectsReturned as e:
+                    duplicate_employees.append({'id': d[2], 'timestamp': timestamp})
                     logger.warn(e)
-                    logger.warn(d)
                 
                 if employee:
-                    
                     try:
                         timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
                     except Timestamp.DoesNotExist:
@@ -87,7 +89,6 @@ def upload_attendance(request):
                     else:
                         attendance.end_time = t.time
             
-                #attendance.calculate_times()        
                 attendance.save()
         
             
@@ -111,14 +112,20 @@ def upload_attendance(request):
                                 border-bottom:1px solid #595959;
                                 border-top:1px solid #595959;
                                 padding:1em;
+                                text-align:center;
                                 """
-            message = render_to_string("generic_email.html", {'heading': heading})
+            message = render_to_string("attendance_upload_email.html", 
+                                       {'heading': heading,
+                                        'header_style': header_cell_style,
+                                        'missing_employees': missing_employees,
+                                        'duplicate_employees': duplicate_employees})
     
             e_conn = boto.ses.connect_to_region('us-east-1')
             e_conn.send_email('noreply@dellarobbiathailand.com',
                               'Delivery Schedule',
                               message,
-                              ["charliep@dellarobbiathailand.com"],
+                              ["charliep@dellarobbiathailand.com",
+                               "mod@dellarobbiathailand.com"],
                               format='html')
             
             

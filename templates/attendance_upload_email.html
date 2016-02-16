@@ -153,17 +153,42 @@
     <table class="content" width="100%" bgcolor="#f6f8f1" border="1" cellpadding="0" cellspacing="0">
 		<thead>
 			<tr>
-				<td style="{{header_style}}" colspan="8">{{heading}}</td>
+				<td style="text-align:center; font-size: 1.5em; padding:1em;" colspan="4">{{heading}}</td>
 			</tr>
 			<tr>
-				<th style="{{header_style}}">Tower</th>
-				<th style="{{header_style}}">Shelf</th>
-				<th style="{{header_style}}">Preview</th>
-				<th style="{{header_style}}">Description</th>
-				<th style="{{header_style}}">Qty</th>
+				<th style="{{header_style}}">ID</th>
+				<th style="{{header_style}}">Date</th>
+				<th style="{{header_style}}">Time</th>
 			</tr>
 		</thead>
-		
+		<tbody>
+			<tr>
+				<td style="text-align:center; font-size: 1.25em; padding: 0.75em" colspan="4">
+				Card IDs without matching Employee
+				</td>
+			</tr>
+			{% for employee in missing_employees %}
+			<tr>
+				<td style="padding-left:1em;">{{employee.id}}</td>
+				<td style="padding-left:1em;">{{employee.timestamp.date}}</td>
+				<td style="padding-left:1em;">{{employee.timestamp.time}}</td>
+				
+			</tr>
+			{% endfor %}
+			<tr>
+				<td style="text-align:center; font-size: 1.25em; padding:0.75em;" colspan="4">
+				Card IDs with duplicate Employee
+				</td>
+			</tr>
+			{% for employee in duplicate_employees %}
+			<tr>
+				<td style="padding-left:1em;">{{employee.id}}</td>
+				<td style="padding-left:1em;">{{employee.timestamp.date}}</td>
+				<td style="padding-left:1em;">{{employee.timestamp.time}}</td>
+				
+			</tr>
+			{% endfor %}
+		</tbody>
     </table>
 </body>
 </html>
