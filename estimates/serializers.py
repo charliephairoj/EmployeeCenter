@@ -102,7 +102,9 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Updates the instance after the parent method is called
         """
-        return super(ItemSerializer, self).update(instance, validated_data)
+        instance = super(ItemSerializer, self).update(instance, validated_data)
+        
+        return instance
         
     def to_representation(self, instance):
         """
@@ -220,6 +222,10 @@ class EstimateSerializer(serializers.ModelSerializer):
         
         instance.status = validated_data.pop('status', instance.status)
         
+        items_data = validated_data.pop('items')
+        
+        self._update_items(instance, items_data)
+        
         if instance.status.lower() != 'cancelled':
             instance.calculate_totals()
         
@@ -247,13 +253,16 @@ class EstimateSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
             
+        ret['files'] = []
+        
         try:
-            ret['pdf'] = instance.pdf.generate_url()
+            ret['files'] = [{'id': instance.id,
+                             'url': instance.pdf.generate_url()}]
         except AttributeError:
             pass
             
         try:
-            ret['files'] = [{'id': file.id,
+            ret['files'] += [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
                              'url': file.generate_url()} for file in instance.files.all()]
@@ -261,6 +270,45 @@ class EstimateSerializer(serializers.ModelSerializer):
             pass
             
         return ret
+        
+    def _update_items(self, instance, items_data):
+        """
+        Handles creation, update, and deletion of items
+        """
+        #Maps of id
+        id_list = [item_data.get('id', None) for item_data in items_data]
+
+        #Update or Create Item
+        for item_data in items_data:
+            try:
+                
+                item = Item.objects.get(pk=item_data['id'])
+                item.unit_price = item_data.pop('unit_price', item.unit_price)
+                
+                """
+                item.supply.supplier = instance.supplier
+                item.discount = item_data.get('discount', None) or item.discount
+                item.quantity = item_data.get('quantity', None) or item.quantity
+                item.unit_cost = item_data.get('unit_cost', None) or item.unit_cost
+                
+                #Change the cost of the supply and log price change
+                if item.unit_cost != item.supply.cost:
+                    self._change_supply_cost(item.supply, item.unit_cost)
+                    
+                item.calculate_total()
+                item.save()
+                """
+            except KeyError:
+                item_data['product'] = item_data['product'].id
+                serializer = ItemSerializer(data=item_data, context={'customer': instance.customer, 'estimate': instance})
+                if serializer.is_valid(raise_exception=True):
+                    item = serializer.save()
+                    id_list.append(item.id)
+
+        #Delete Items
+        for item in instance.items.all():
+            if item.id not in id_list:
+                item.delete()
         
         
         

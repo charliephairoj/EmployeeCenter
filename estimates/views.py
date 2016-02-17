@@ -1,6 +1,8 @@
 import logging
 import json
 import time
+from datetime import datetime, timedelta
+from pytz import timezone
 
 from rest_framework import viewsets, status
 from rest_framework import generics
@@ -162,6 +164,9 @@ class EstimateMixin(object):
                         except (KeyError, TypeError):
                             pass
                             
+                        if 'product' not in request.data['items'][index]:
+                            request.data['items'][index]['product'] = 10436
+                            
                         try:
                             request.data['items'][index]['image'] = item['image']['id']
                         except (KeyError, TypeError) as e:
@@ -196,7 +201,9 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=0)
+        logger.debug(max_date)
+        queryset = self.queryset.exclude(status__icontains='cancelled', last_modified__gt=max_date)
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -206,6 +213,7 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
