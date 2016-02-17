@@ -283,7 +283,9 @@ class EstimateSerializer(serializers.ModelSerializer):
             try:
                 
                 item = Item.objects.get(pk=item_data['id'])
-                item.unit_price = item_data.pop('unit_price', item.unit_price)
+                serializer = ItemSerializer(item, context={'customer': instance.customer, 'estimate': instance}, data=item_data)
+                if serializer.is_valid(raise_exception=True):
+                    item = serializer.save()
                 
                 """
                 item.supply.supplier = instance.supplier
