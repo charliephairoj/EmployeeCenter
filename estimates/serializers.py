@@ -210,7 +210,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
-        
+        instance.project = validated_data.pop('project', instance.project)
         #Update attached files
         #files = validated_data.pop('files', [])
         #for file in files:

@@ -178,6 +178,7 @@ class EstimateMixin(object):
                             project = Project(codename=request.data['project']['codename'])
                             project.save()
                             request.data['project'] = project.id
+                            
                     except TypeError:
                         pass
                    
