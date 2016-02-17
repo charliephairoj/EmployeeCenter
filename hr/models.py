@@ -9,9 +9,11 @@ from math import floor
 import traceback
 
 from django.db import models
+from django.db.models import Sum
 from pytz import timezone
 
 from media.models import S3Object
+from hr.PDF import PayrollPDF
 
 
 logger = logging.getLogger(__name__)
@@ -84,7 +86,7 @@ class Attendance(models.Model):
     _end_time = models.DateTimeField(null=True, db_column='end_time')
     employee = models.ForeignKey(Employee, related_name='attendances')
     _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
-    regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
+    regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True, default=0)
     overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
     doubletime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
     total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
@@ -221,7 +223,7 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
             
             gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
-        
+                
         # If attendance is for vacation or sick leave pay only regular wage
         else:
             gross_wage = self.regular_pay
@@ -264,7 +266,7 @@ class Attendance(models.Model):
             self.remarks += u'- Reimbursed 30THB for working over 4 hours of overtime \n'
         
         if not self.vacation and not self.sick_leave and self.regular_time >= Decimal('8'):
-            self.incentive_pay = self.employee.incentive_pay
+            self.incentive_pay = self.employee.incentive_pay or 0
             reimbursements += self.incentive_pay
             
             # Add a note incentive pay
@@ -344,9 +346,7 @@ class Attendance(models.Model):
         # If True, the employee receives 1 hour of overtime for lunch
         if self.receive_lunch_overtime == True:
             overtime += Decimal('1')
-        
-        print overtime
-        
+                
         return overtime
         
     def _calculate_regular_pay_rate(self):
@@ -357,7 +357,11 @@ class Attendance(models.Model):
         elif self.is_holiday:
             return self.pay_rate * Decimal(str(self.holiday_pay_rate))
         else:
-            return self.pay_rate
+            # Add 300THB if the employee is working in cambodia
+            if self.employee.location.lower() == 'cambodia':
+                return self.pay_rate + 300
+            else:
+                return self.pay_rate
         
     def _calculate_overtime_pay_rate(self):
         """Calculate the hourly pay rate for overtime
@@ -393,21 +397,24 @@ class Attendance(models.Model):
         return t_delta
 
 
-class PayrollManager(models.Model):
+class PayrollManager(models.Manager):
     
     def create(self, start_date, end_date, *args, **kwargs):
-        
         payroll = Payroll(start_date=start_date,
                           end_date=end_date)
         payroll.save()
         
-        for employee in Employee.objects.filter(status='active'):
+        for employee in Employee.objects.filter(status='active').order_by('-nationality')[0:50]:
             
             record = PayRecord.objects.create(employee,
                                               start_date=start_date,
                                               end_date=end_date,
                                               payroll=payroll)
-                            
+                                              
+        payroll.create_documents()
+        
+        return payroll
+        
         
 class Payroll(models.Model):
     start_date = models.DateField(null=False)
@@ -415,32 +422,40 @@ class Payroll(models.Model):
     
     objects = PayrollManager()
     
-    def create(self, start_date, end_date):
-        """Create a payroll for the specified pay period
+    def create_documents(self):
+        """Create all the corresponding documents for this payroll
+        """
         
-        This method will calculate the total wages"""
+        pdf = PayrollPDF(payroll=self, 
+                         start_date=self.start_date, 
+                         end_date=self.end_date)
+        pdf.create()
+        logger.debug('yay')
     
     
 class PayRecordManager(models.Manager):
     
-    def create(self, employee, start_date, end_date, *args, **kwargs):
+    def create(self, employee, start_date, end_date, payroll=None, *args, **kwargs):
         """Create a new PayRecord for the given dates
         
         This method will calculate """
+        
+        logger.debug(u"\n\nCreating Pay Record for {0}: {1}\n".format(employee.id, employee.name))
         record = PayRecord(employee=employee, start_date=start_date,
-                           end_date=end_date)
+                           end_date=end_date, payroll=payroll)
         record.calculate_net_wage()
         record.save()
-        
+
         return record
+        
         
 class PayRecord(models.Model):
     payroll = models.ForeignKey(Payroll, related_name='pay_records', null=True)
     employee = models.ForeignKey(Employee, related_name='pay_records')
     start_date = models.DateField(null=False)
     end_date = models.DateField(null=False)
-    gross_wage = models.DecimalField(decimal_places=2, max_digits=12, )
-    net_wage = models.DecimalField(decimal_places=2, max_digits=12, )
+    gross_wage = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    net_wage = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     reimbursements = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     deductions = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     social_security_withholding = models.DecimalField(decimal_places=2, max_digits=12, default=0)
@@ -463,11 +478,38 @@ class PayRecord(models.Model):
             self.gross_wage = self.employee.wage / Decimal('2')
         
         elif self.employee.pay_period.lower() == 'daily':
-            attendances = self._get_employee_attendances()
-            for attendance in attendances:
-                gross_wage += attendance.gross_wage
+            
+            # Calculate the wage of an employee in cambodia
+            if self.employee.location.lower() == 'cambodia':
+                dates = []
+                c_date = self.start_date
+                while c_date != self.end_date + timedelta(days=1):
+                    # Check if there were any days worked in thailand
+                    try:
+                        a = Attendance.objects.get(date=c_date, employee=self.employee)
+                        a.calculate_net_wage()
+                        logger.debug(a.__dict__)
+                        gross_wage += a.gross_wage
+                    
+                    # Add gross wage for days worked in cambodia
+                    except Attendance.DoesNotExist:
+                        if c_date.weekday() != 6:
+                            dates.append(c_date)
+                        c_date = c_date + timedelta(days=1)
+                    
+                gross_wage += len(dates) * (self.employee.wage + Decimal('300'))
+                logger.debug("Gross wage for employee in cambodia: {0}".format(gross_wage))
+                
+            else:
+                attendances = self._get_employee_attendances()
+                
+                for attendance in attendances:
+                    attendance.calculate_net_wage()
+                    gross_wage += attendance.gross_wage
 
             self.gross_wage = gross_wage
+            
+            assert self.gross_wage > 0
 
         return self.gross_wage
         
@@ -487,24 +529,27 @@ class PayRecord(models.Model):
         - 4. Calculate the manager stipend if it exists
         - 5. Calculate the net wage
         """
-        gross_wage = self.calculate_gross_wage()
+        gross_wage = self.calculate_gross_wage() or 0
         logger.debug("Gross Wage: {0}".format(gross_wage))
         
         self.stipend = 0
-        reimbursements = 0
+        self.reimbursements = 0
         deductions = 0
         regular_pay = 0
+        self.remarks = ""
         
         # Loop through all the attendances 
         attendances = self._get_employee_attendances()
         for attendance in attendances:
+            attendance.calculate_net_wage()
+            attendance.save()
             
             # Calculate regular pay for use in calculating
             # social security later
             regular_pay += attendance.regular_pay
 
             # Calculate all incentive pay
-            self.stipend += attendance.incentive_pay
+            self.stipend += attendance.incentive_pay or Decimal('0')
             
             # Calculate reimbursements
             self.reimbursements += attendance.reimbursement
@@ -523,7 +568,7 @@ class PayRecord(models.Model):
         # Check if it is the end of the month first
         if self.end_date.day >= 25:
             if self.employee.manager_stipend:
-                self.manager_stipend = self.employee.manager_stipend
+                self.manager_stipend = self.employee.manager_stipend or Decimal('0')
             else:
                 self.manager_stipend = 0
         else:
@@ -538,13 +583,54 @@ class PayRecord(models.Model):
         if self.end_date.day >= 25:
             
             if self.employee.pay_period.lower() == 'daily':
-                ss_w = regular_pay * Decimal('0.05')
-            elif self.employee.pay_period.lower() == 'monthly':
-                ss_w = self.gross_wage * Decimal('0.05')
                 
-            self.social_security_withholding = ss_w
+                start_date = date(self.end_date.year,
+                                  self.end_date.month - 1, 
+                                  26)
+                end_date = date(self.end_date.year,
+                                self.end_date.month,
+                                25)
+                                
+                if self.employee.location.lower() == 'cambodia':
+                    month_wage = 0
+                    
+                    # Automatically calculate the days worked for 
+                    # employees in cambodia
+                    dates = []
+                    c_date = start_date
+                    while c_date != end_date + timedelta(days=1):
+                        try:
+                            a = Attendance.objects.get(date=c_date, employee=self.employee)
+                            monthly_wage += a.gross_wage
+                        except Attendance.DoesNotExist:
+                            if c_date.weekday() != 6:
+                                dates.append(c_date)
+                            c_date = c_date + timedelta(days=1)
+                    
+                    month_wage += len(dates) * (self.employee.wage + Decimal('300'))
+                    ss_w = month_wage * Decimal('0.05')
+                    
+                else:
+                    
+                    
+                    queryset = self.employee.attendances.filter(date__gte=start_date,
+                                                                date__lte=end_date)
+                    regular_pay_sum = queryset.aggregate(Sum('regular_pay'))['regular_pay__sum']
+                
+                    logger.debug('Total monthly pay for daily employee: {0}'.format(regular_pay_sum))
+                
+                    ss_w = Decimal(str(regular_pay_sum)) * Decimal('0.05')
+                                                                
+                                                                
+            elif self.employee.pay_period.lower() == 'monthly':
+                ss_w = self.employee.wage * Decimal('0.05')
+                
+                
+            self.social_security_withholding = ss_w if ss_w <= Decimal('750') else Decimal('750')
         else:
             self.social_security_withholding = 0
+        
+        logger.debug("Social Security {0}".format(self.social_security_withholding))
 
         #Calculate the net pay
         #

@@ -187,7 +187,8 @@ class PayrollSerializer(serializers.ModelSerializer):
         
     def create(self, validated_data):
         
-        pass
+        start_date = validated_data.pop('start_date')
+        end_date = validated_data.pop('end_date')
     
     
     
