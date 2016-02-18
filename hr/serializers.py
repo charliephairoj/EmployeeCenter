@@ -20,8 +20,10 @@ class ShiftSerializer(serializers.ModelSerializer):
 
 class AttendanceSerializer(serializers.ModelSerializer):
     enable_overtime = serializers.BooleanField(default=False, write_only=True)
-    date = serializers.DateField(read_only=True)
-        
+    date = serializers.DateField(required=True)
+    start_time = serializers.DateTimeField(required=False, allow_null=True)
+    end_time = serializers.DateTimeField(required=False, allow_null=True)
+    
     class Meta:
         model = Attendance
         read_only_fields = ('gross_wage', 'net_wage', 'lunch_pay', 'remarks')
@@ -30,7 +32,14 @@ class AttendanceSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create a new instance of Attendance
         """
+        start_time = validated_data.pop('start_time', None)
+        end_time = validated_data.pop('end_time', None)
+        
         instance = self.Meta.model.objects.create(**validated_data)
+
+        instance.start_time = start_time
+        instance.end_time = end_time
+        instance.save()
         
         return instance
         
