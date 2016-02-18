@@ -84,6 +84,7 @@ class Attendance(models.Model):
     date = models.DateField(db_column='a_date')
     _start_time = models.DateTimeField(null=True, db_column='start_time')
     _end_time = models.DateTimeField(null=True, db_column='end_time')
+    overtime_request = models.DateTimeField(null=True)
     employee = models.ForeignKey(Employee, related_name='attendances')
     _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
     regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True, default=0)
