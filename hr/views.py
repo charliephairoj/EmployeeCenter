@@ -1,10 +1,10 @@
 import logging
 import json
-import time
 from dateutil import parser
 import pytz
 from threading import Thread
 from time import sleep
+from datetime import time, datetime
 
 import boto
 from django.template.loader import render_to_string
@@ -188,7 +188,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = self.queryset.all().order_by('status', 'name')
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -237,11 +237,33 @@ class AttendanceMixin(object):
     
 class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
     
+    
+    def post(self, request, *args, **kwargs):
+        
+        tz = pytz.timezone('Asia/Bangkok')
+        
+        a_date = parser.parse(request.data['date']).astimezone(tz).date()
+        request.data['date'] = a_date
+        
+        s_time = parser.parse(request.data['start_time'])
+        s_time = s_time.astimezone(tz)
+        s_time = datetime.combine(a_date, s_time.timetz())
+        request.data['start_time'] = s_time
+        
+        e_time = parser.parse(request.data['end_time'])
+        e_time = e_time.astimezone(tz)
+        e_time = datetime.combine(a_date, e_time.timetz())
+        request.data['end_time'] = e_time
+        
+        response = super(AttendanceList, self).post(request, *args, **kwargs)
+        
+        return response
+            
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.order_by('status', 'name')
+        queryset = self.queryset.order_by()
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
@@ -256,7 +278,6 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         # Filter all records after the start_date
         if start_date:
             start_date = parser.parse(start_date)
-            logger.warn(start_date)
             queryset = queryset.filter(date__gte=start_date)
             
         # Filter all records before end_date
@@ -275,7 +296,27 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
     
     
 class AttendanceDetail(AttendanceMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+    
+    def put(self, request, *args, **kwargs):
+        
+        tz = pytz.timezone('Asia/Bangkok')
+        
+        a_date = parser.parse(request.data['date']).astimezone(tz).date()
+        request.data['date'] = a_date
+        
+        s_time = parser.parse(request.data['start_time'])
+        s_time = s_time.astimezone(tz)
+        s_time = datetime.combine(a_date, s_time.timetz())
+        request.data['start_time'] = s_time
+        
+        e_time = parser.parse(request.data['end_time'])
+        e_time = e_time.astimezone(tz)
+        e_time = datetime.combine(a_date, e_time.timetz())
+        request.data['end_time'] = e_time
+        
+        response = super(AttendanceDetail, self).put(request, *args, **kwargs)
+        
+        return response
     
     
 class ShiftViewSet(viewsets.ModelViewSet):
