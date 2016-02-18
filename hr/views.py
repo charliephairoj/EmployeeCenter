@@ -255,6 +255,14 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         e_time = datetime.combine(a_date, e_time.timetz())
         request.data['end_time'] = e_time
         
+        try:
+            o_time = parser.parse(request.data['overtime_request'])
+            o_time = o_time.astimezone(tz)
+            o_time = datetime.combine(a_date, o_time.timetz())
+            request.data['overtime_request'] = o_time
+        except Exception as e:
+            logger.error(e)
+        
         response = super(AttendanceList, self).post(request, *args, **kwargs)
         
         return response
@@ -313,6 +321,14 @@ class AttendanceDetail(AttendanceMixin, generics.RetrieveUpdateDestroyAPIView):
         e_time = e_time.astimezone(tz)
         e_time = datetime.combine(a_date, e_time.timetz())
         request.data['end_time'] = e_time
+        
+        try:
+            o_time = parser.parse(request.data['overtime_request'])
+            o_time = o_time.astimezone(tz)
+            o_time = datetime.combine(a_date, o_time.timetz())
+            request.data['overtime_request'] = o_time
+        except Exception as e:
+            logger.error(e)
         
         response = super(AttendanceDetail, self).put(request, *args, **kwargs)
         
