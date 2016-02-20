@@ -503,12 +503,13 @@ class PayRecord(models.Model):
                         if c_date.weekday() != 6:
                             a = Attendance.objects.create(date=c_date,
                                                           employee=self.employee,
-                                                          cambodia=True)
+                                                          cambodia=True,
+                                                          shift=self.employee.shift)
                             a.start_time = datetime.combine(c_date, time(8, 0, 0, tzinfo=timezone('Asia/Bangkok')))
                             a.end_time = datetime.combine(c_date, time(17, 0, 0, tzinfo=timezone('Asia/Bangkok')))
-                            #a.calculate_net_wage()
+                            a.calculate_net_wage()
                             a.save()
-                            #gross_wage += a.gross_wage
+                            gross_wage += a.gross_wage
                         
                     # Advance the day
                     c_date = c_date + timedelta(days=1)
