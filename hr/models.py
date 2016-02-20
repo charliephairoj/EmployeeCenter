@@ -3,7 +3,7 @@ Models to be use in the HR application
 """
 import logging
 from decimal import Decimal
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 import math
 from math import floor
 import traceback
@@ -111,6 +111,7 @@ class Attendance(models.Model):
     is_holiday = models.BooleanField(default=False) #new
     sick_leave = models.BooleanField(default=False) #new
     vacation = models.BooleanField(default=False) #new
+    cambodia = models.BooleanField(default=False) #new
     
     # Pay Rates for non regular days
     sunday_pay_rate = 2
@@ -178,7 +179,7 @@ class Attendance(models.Model):
         if 'shift' not in kwargs and not self.shift:
             self.shift = self.employee.shift
             
-        if self.start_time and self.end_time:
+        if self._start_time and self._end_time:
             self.calculate_times()
                             
     def calculate_times(self):
@@ -191,8 +192,11 @@ class Attendance(models.Model):
         - Calculate the overtime
         - Calculate lunch overtime 
         """
-        self.regular_time = self._calculate_regular_time()
-        self.overtime = self._calculate_overtime()
+        if self.start_time and self.end_time:
+            self.regular_time = self._calculate_regular_time()
+            self.overtime = self._calculate_overtime()
+        else:
+            logger.warn("{0} : {1}".format(self.start_time, self.end_time))
         
     def calculate_gross_wage(self):
         """Calculate the gross wage for this attendance
@@ -203,7 +207,7 @@ class Attendance(models.Model):
         -   1.2 Calculate pay for overtime if enabled
         -   1.3 Calculate pay for lunch overtime
         """
-        if not self.sick_leave and not self.vacation:
+        if not self.sick_leave and not self.vacation and not self.cambodia:
             
             # Calculate the regular wage if not a salaried employee
             if not self.salaried:
@@ -224,6 +228,9 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
             
             gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
+        
+        elif self.cambodia:
+            gross_wage = self.regular_pay + Decimal('300')
                 
         # If attendance is for vacation or sick leave pay only regular wage
         else:
@@ -489,16 +496,24 @@ class PayRecord(models.Model):
                     try:
                         a = Attendance.objects.get(date=c_date, employee=self.employee)
                         a.calculate_net_wage()
-                        logger.debug(a.__dict__)
                         gross_wage += a.gross_wage
                     
                     # Add gross wage for days worked in cambodia
                     except Attendance.DoesNotExist:
                         if c_date.weekday() != 6:
-                            dates.append(c_date)
-                        c_date = c_date + timedelta(days=1)
+                            a = Attendance.objects.create(date=c_date,
+                                                          employee=self.employee,
+                                                          cambodia=True)
+                            a.start_time = datetime.combine(c_date, time(8, 0, 0, tzinfo=timezone('Asia/Bangkok')))
+                            a.end_time = datetime.combine(c_date, time(17, 0, 0, tzinfo=timezone('Asia/Bangkok')))
+                            #a.calculate_net_wage()
+                            a.save()
+                            #gross_wage += a.gross_wage
+                        
+                    # Advance the day
+                    c_date = c_date + timedelta(days=1)
+                    logger.debug("{0} : {1}".format(self.end_date, c_date))
                     
-                gross_wage += len(dates) * (self.employee.wage + Decimal('300'))
                 logger.debug("Gross wage for employee in cambodia: {0}".format(gross_wage))
                 
             else:
@@ -606,7 +621,9 @@ class PayRecord(models.Model):
                         except Attendance.DoesNotExist:
                             if c_date.weekday() != 6:
                                 dates.append(c_date)
-                            c_date = c_date + timedelta(days=1)
+                            
+                        c_date = c_date + timedelta(days=1)
+                        logger.debug("{0} : {1}".format(end_date, c_date))
                     
                     month_wage += len(dates) * (self.employee.wage + Decimal('300'))
                     ss_w = month_wage * Decimal('0.05')

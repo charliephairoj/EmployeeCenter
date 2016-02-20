@@ -145,7 +145,7 @@ def employee_image(request):
     if request.method == "POST":
         filename = save_upload(request)
         obj = S3Object.create(filename,
-                        "employee/image/{0}.jpg".format(time.time()),
+                        "employee/image/{0}.jpg".format(datetime.now().microsecond()),
                         'media.dellarobbiathailand.com')
         response = HttpResponse(json.dumps({'id': obj.id,
                                             'url': obj.generate_url()}),
@@ -312,15 +312,21 @@ class AttendanceDetail(AttendanceMixin, generics.RetrieveUpdateDestroyAPIView):
         a_date = parser.parse(request.data['date']).astimezone(tz).date()
         request.data['date'] = a_date
         
-        s_time = parser.parse(request.data['start_time'])
-        s_time = s_time.astimezone(tz)
-        s_time = datetime.combine(a_date, s_time.timetz())
-        request.data['start_time'] = s_time
+        try:
+            s_time = parser.parse(request.data['start_time'])
+            s_time = s_time.astimezone(tz)
+            s_time = datetime.combine(a_date, s_time.timetz())
+            request.data['start_time'] = s_time
+        except AttributeError as e:
+            pass
         
-        e_time = parser.parse(request.data['end_time'])
-        e_time = e_time.astimezone(tz)
-        e_time = datetime.combine(a_date, e_time.timetz())
+        try:
+            e_time = parser.parse(request.data['end_time'])
+            e_time = e_time.astimezone(tz)
+            e_time = datetime.combine(a_date, e_time.timetz())
         request.data['end_time'] = e_time
+        except AttributeError as e:
+            pass
         
         try:
             o_time = parser.parse(request.data['overtime_request'])
