@@ -34,10 +34,12 @@ class ModelSerializer(serializers.ModelSerializer):
         
         for image_data in images:
             try:
-                Image.objects.get(id=image_data['id'])
+                image = Image.objects.get(id=image_data['id'])
             except Image.DoesNotExist:
-                Image.objects.create(id=image_data['id'])
-            
+                image = Image.objects.create(id=image_data['id'])
+            image.model = instance
+            image.save()
+             
         return instance
         
     def update(self, instance, validated_data):
@@ -52,7 +54,7 @@ class ModelSerializer(serializers.ModelSerializer):
             try:
                 image = Image.objects.get(id=image_data['id'])
             except Image.DoesNotExist:
-                image = Image.objects.create(id=image_data['id'])
+                image = Image.objects.create(id=image_data['id'], model=instance)
             
             # Update the image
             image.primary = image_data['primary']
