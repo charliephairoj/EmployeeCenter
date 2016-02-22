@@ -57,6 +57,7 @@ class ModelSerializer(serializers.ModelSerializer):
                 image = Image.objects.create(id=image_data['id'], model=instance)
             
             # Update the image
+            image.model = instance
             image.primary = image_data['primary']
             image.save()
             
