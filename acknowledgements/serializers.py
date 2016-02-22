@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+import boto
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
@@ -304,19 +305,36 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         if status.lower() != instance.status.lower():
             
             employee = self.context['request'].user
-            message = "Order #{0} is {1}.".format(instance.id, status.lower())
-            log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
             
-            # Check if a high level event has ocurrred. If yes, then the status will not change
+            # Create a log for this status if it does not already exist
+            if AckLog.objects.filter(message__icontains=status.lower(), acknowledgement=instance).count() == 0:
+                message = "Order #{0} is {1}.".format(instance.id, status.lower())
+                log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
+            
+            # Check if a higher level event has ocurrred. If yes, then the status will change to the higher level
             statuses = ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid', 'cancelled']
             for status in statuses:
                 if instance.logs.filter(message__icontains=status).exists():
                     instance.status = status
-                    
-            if status.lower() == 'cancelled':
-                instance.status = status
             
-            #assert AckLog.objects.filter(message__icontains=instance.status.lower, acknowledgement=instance).count() > 0
+            logger.debug("Log count for {0}: {1}".format(instance.status, AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count()))
+            if AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count() > 1:
+                # Email charlie if there are too many repeats of a log
+                message = "Too many '{0}' for ack# {1}".format(instance.status, instance.id)
+            elif AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count() == 0:
+                # Email if there are no logs for this status
+                message = "Status '{0}' does not match any logs for Ack# {1}".format(instance.status, instance.id)
+            else:
+                message = None
+            
+            # Send an email if there is a valid message
+            if message:
+                e_conn = boto.ses.connect_to_region('us-east-1')
+                e_conn.send_email('noreply@dellarobbiathailand.com',
+                                  'Acknowledgement Log Error',
+                                  message,
+                                  ["charliep@dellarobbiathailand.com"],
+                                  format='html')
             
         old_qty = sum([item.quantity for item in instance.items.all()])
         # Extract items data
