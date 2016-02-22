@@ -397,7 +397,7 @@ class Attendance(models.Model):
     def _calculate_timedelta(self, t1, t2):
         """Calculate the differences in two times
         """
-        if t1.date() == t2.date()
+        if t1.date() == t2.date():
             fmt = '%H:%M:%S'
             s1 = t1.strftime(fmt)
             s2 = t2.strftime(fmt)
