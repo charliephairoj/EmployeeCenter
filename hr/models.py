@@ -110,7 +110,9 @@ class Attendance(models.Model):
     # Special days that affect the pay rate
     is_holiday = models.BooleanField(default=False) #new
     sick_leave = models.BooleanField(default=False) #new
+    sick_leave_excused = models.BooleanField(default=False) #new
     vacation = models.BooleanField(default=False) #new
+    vacation_excused = models.BooleanField(default=False) #new
     cambodia = models.BooleanField(default=False) #new
     
     # Pay Rates for non regular days
@@ -397,13 +399,19 @@ class Attendance(models.Model):
     def _calculate_timedelta(self, t1, t2):
         """Calculate the differences in two times
         """
-        if t1.date() == t2.date():
+        if isinstance(t1, datetime) and isinstance(t2, datetime):
+            if t1.date() == t2.date():
+                fmt = '%H:%M:%S'
+                s1 = t1.strftime(fmt)
+                s2 = t2.strftime(fmt)
+                t_delta = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
+            else:
+                t_delta = t2 - t1
+        else:
             fmt = '%H:%M:%S'
             s1 = t1.strftime(fmt)
             s2 = t2.strftime(fmt)
             t_delta = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
-        else:
-            t_delta = t2 - t1
         
         return t_delta
 

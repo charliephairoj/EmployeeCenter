@@ -58,7 +58,7 @@ class ModelSerializer(serializers.ModelSerializer):
             
             # Update the image
             image.model = instance
-            image.primary = image_data['primary']
+            image.primary = image_data.pop('primary', False)
             image.save()
             
         return instance

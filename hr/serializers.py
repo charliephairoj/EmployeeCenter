@@ -49,7 +49,9 @@ class AttendanceSerializer(serializers.ModelSerializer):
         instance.enable_overtime = enable_overtime
         instance.receive_lunch_overtime = validated_data.pop('receive_lunch_overtime', False)
         instance.vacation = validated_data.pop('vacation', False)
+        instance.vacation_excused = validated_data.pop('vacation_excused', False)
         instance.sick_leave = validated_data.pop('sick_leave', False)
+        instance.sick_leave_excused = validated_data.pop('sick_leave_excused', False)
         instance.cambodia = validated_data.pop('cambodia', False)
         instance.overtime_request = validated_data.pop('overtime_request', instance.overtime_request)
         instance.calculate_times()
