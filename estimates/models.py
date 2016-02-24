@@ -166,7 +166,7 @@ class Estimate(models.Model):
         create the pdfs from the object itself. It requires
         no arguments
         """
-        products = self.items.all().order_by('id')
+        products = self.items.all().order_by('description')
         ack_pdf = EstimatePDF(customer=self.customer, ack=self, products=products)
         ack_filename = ack_pdf.create()
         

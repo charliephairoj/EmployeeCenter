@@ -6,7 +6,9 @@ from decimal import Decimal
 from datetime import date, datetime, time, timedelta
 import math
 from math import floor
+from threading import Thread
 import traceback
+from time import sleep
 
 from django.db import models
 from django.db.models import Sum
@@ -423,16 +425,41 @@ class PayrollManager(models.Manager):
                           end_date=end_date)
         payroll.save()
         
-        for employee in Employee.objects.filter(status='active').order_by('-nationality')[0:50]:
-            
-            record = PayRecord.objects.create(employee,
-                                              start_date=start_date,
-                                              end_date=end_date,
-                                              payroll=payroll)
-                                              
-        payroll.create_documents()
+        # Create a function that will run in threads to speed up
+        # the calculation process
+        def calculate_payrecords(employees, payroll, start_date, end_date):
+            for employee in employees:
+                record = PayRecord.objects.create(employee,
+                                                  start_date=start_date,
+                                                  end_date=end_date,
+                                                  payroll=payroll)
+                                                  
+        employees = Employee.objects.filter(status='active', 
+                                            attendances__id__gt=0,
+                                            attendances__date__gte=start_date,
+                                            attendances__date__lte=end_date).distinct()
+        employees = employees.order_by('-nationality', 'id')
+        index = employees.count()
+        threads = []
         
-        return payroll
+        # Make for threads 
+        for i in xrange(0, 4):
+            i1 = i * math.floor(index / 4)
+            i2 = (i + 1) * math.floor(index / 4)
+            t = Thread(target=calculate_payrecords, args=(employees[i1:i2],
+                                                          payroll,
+                                                          start_date,
+                                                          end_date))
+            threads.append(t)
+            t.start()
+                                                                 
+        # Wait for all the threads to finish before continuing       
+        while len([t for t in threads if t.isAlive()]) > 0:
+            sleep(10)   
+        else:
+            payroll.create_documents()
+            logger.debug('done')
+            return payroll
         
         
 class Payroll(models.Model):
@@ -483,6 +510,11 @@ class PayRecord(models.Model):
     stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     manager_stipend = models.DecimalField(decimal_places=2, max_digits=12, default=0)
     
+    #regular_hours
+    regular_hours = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    #ot hours
+    overtime_hours = models.DecimalField(decimal_places=2, max_digits=12, default=0)
+    
     objects = PayRecordManager()
     
     def calculate_gross_wage(self):
@@ -521,10 +553,14 @@ class PayRecord(models.Model):
                             a.calculate_net_wage()
                             a.save()
                             gross_wage += a.gross_wage
-                        
+
+                    
+                    # Add regular times to total
+                    self.regular_hours += a.regular_time or 0
+                    self.overtime_hours += a.overtime or 0
+                    
                     # Advance the day
                     c_date = c_date + timedelta(days=1)
-                    logger.debug("{0} : {1}".format(self.end_date, c_date))
                     
                 logger.debug("Gross wage for employee in cambodia: {0}".format(gross_wage))
                 
@@ -534,10 +570,14 @@ class PayRecord(models.Model):
                 for attendance in attendances:
                     attendance.calculate_net_wage()
                     gross_wage += attendance.gross_wage
-
+                    
+                    self.regular_hours += attendance.regular_time or 0
+                    self.overtime_hours += attendance.overtime or 0
+                    
             self.gross_wage = gross_wage
             
-            assert self.gross_wage > 0
+            if self.employee.location != 'cambodia':
+                assert self.gross_wage > 0, u"Wage Error for {0} : {1}".format(self.employee.id, self.employee.name)
 
         return self.gross_wage
         

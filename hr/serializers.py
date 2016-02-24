@@ -96,7 +96,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
-                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'attendances', 'government_id', 'card_id',
+                  'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'government_id', 'card_id',
                   'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend', 'title',
                   'location')
     
@@ -163,6 +163,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         start_date = request.query_params.get('start_date', None)
         end_date =  request.query_params.get('end_date', None) 
         
+        
         if start_date and end_date:
             start_date = parser.parse(start_date)
             end_date = parser.parse(end_date)
@@ -189,7 +190,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             ret['gross_wage'] = gross_wage
             ret['reimbursements']  =reimbursements
             ret['total_incentive_pay'] = incentive_pay
-                            
+        
+                     
         return ret
         
         

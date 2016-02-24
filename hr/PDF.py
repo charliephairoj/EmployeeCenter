@@ -105,12 +105,12 @@ class PayrollPDF(object):
         index = 0
         
         current_department = None
-        data = [['ID', 'Name', 'Department', 'Gross Wage', 'Stipend', 'Manager', 'Social Security', 'Net Wage', 'Payment', 'Location']]
-        style_data = [('FONTSIZE', (0,0),(-1,0), 14),
+        data = [['ID', 'Name', 'Department', 'Regular Days', 'OT Hours', 'Pay Rate', 'Gross Wage', 'Stipend', 'Manager', 'Social Security', 'Net Wage']]
+        style_data = [('FONTSIZE', (0,0),(-1,0), 10),
                       ('FONT', (0,0), (-1,-1), 'Garuda'),
                       ('PADDING', (0, 0), (-1, -1), 0),
                       ('SPAN', (0, 1), (-1, 1)),
-                      ('FONTSIZE', (0, 1),(-1, 1), 14),
+                      ('FONTSIZE', (0, 1),(-1, 1), 10),
                       ('ALIGNMENT', (0, 1), (-1, 1), 'CENTER'),
                       ('ALIGNMENT', (3, 1), (-1, -1), 'RIGHT'),
                       ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -129,7 +129,7 @@ class PayrollPDF(object):
                 
                 # Set style and row height for subheader
                 style_data += [('SPAN', (0, index), (-1, index)),
-                               ('FONTSIZE', (0, index), (-1, index), 14),
+                               ('FONTSIZE', (0, index), (-1, index), 10),
                                ('ALIGNMENT', (0, index), (-1, index), 'CENTER')]
                                #('PADDING', (0, index + 2), (-1, index + 2), 10)]
                 row_heights.append(30)
@@ -138,13 +138,14 @@ class PayrollPDF(object):
             data.append([record.employee.id, 
                          record.employee.name,
                          record.employee.department,
-                         record.gross_wage,
-                         record.stipend,
-                         record.manager_stipend,
-                         record.social_security_withholding,
-                         record.net_wage, 
-                         record.employee.payment_option,
-                         record.employee.location])
+                         "{0:,.2f}".format(record.regular_hours / Decimal('8')),
+                         "{0:,.2f}".format(record.overtime_hours),
+                         "{0:,.2f}".format(record.employee.wage),
+                         "{0:,.2f}".format(record.gross_wage),
+                         "{0:,.2f}".format(record.stipend),
+                         "{0:,.2f}".format(record.manager_stipend),
+                         "{0:,.2f}".format(record.social_security_withholding),
+                         "{0:,.2f}".format(record.net_wage)])
 
             # Set row height
             row_heights.append(14)
@@ -162,14 +163,17 @@ class PayrollPDF(object):
                  ['Gross Wage + Stipend Total', '', '', total_gross],
                  ['Social Security Total', '', '',total_ss],
                  ['Net Wage Total', '', '', total_net]]
-        style_data += [('SPAN', (0, -4), (2, -4)),
-                       ('SPAN', (0, -3), (2, -3)),
-                       ('SPAN', (0, -2), (2, -2)),
-                       ('SPAN', (0, -1), (2, -1))]
+        
+        total_rows = len(data)
+        style_data += [('SPAN', (0, total_rows - 4), (2, total_rows - 4)),
+                       ('SPAN', (0, total_rows - 3), (2, total_rows - 3)),
+                       ('SPAN', (0, total_rows - 2), (2, total_rows - 2)),
+                       ('SPAN', (0, total_rows - 1), (2, total_rows - 1))]
+                                   
         row_heights += [20, 20, 20, 20]
         
         # Create and style table             
-        table = Table(data, rowHeights=row_heights)
+        table = Table(data, rowHeights=row_heights, repeatRows=1)
         style = TableStyle(style_data)
         
         table.setStyle(style)
@@ -235,10 +239,13 @@ class PayrollPDF(object):
                  ['Gross Wage + Stipend Total', '', '', total_gross],
                  ['Social Security Total', '', '',  total_ss],
                  ['Net Wage Total', '', '', total_net]]
-        style_data += [('SPAN', (0, -4), (2, -4)),
-                       ('SPAN', (0, -3), (2, -3)),
-                       ('SPAN', (0, -2), (2, -2)),
-                       ('SPAN', (0, -1), (2, -1))]
+        
+        total_rows = len(data)
+        style_data += [('SPAN', (0, total_rows - 4), (2, total_rows - 4)),
+                       ('SPAN', (0, total_rows - 3), (2, total_rows - 3)),
+                       ('SPAN', (0, total_rows - 2), (2, total_rows - 2)),
+                       ('SPAN', (0, total_rows - 1), (2, total_rows - 1))]
+                       
         row_heights += [20, 20, 20, 20]
         
         table = Table(data, rowHeights=row_heights)
@@ -305,10 +312,13 @@ class PayrollPDF(object):
                  ['Gross Wage + Stipend Total', '', '', total_gross],
                  ['Social Security Total', '', '',  total_ss],
                  ['Net Wage Total', '', '', total_net]]
-        style_data += [('SPAN', (0, -4), (2, -4)),
-                       ('SPAN', (0, -3), (2, -3)),
-                       ('SPAN', (0, -2), (2, -2)),
-                       ('SPAN', (0, -1), (2, -1))]
+        
+        total_rows = len(data)
+        style_data += [('SPAN', (0, total_rows - 4), (2, total_rows - 4)),
+                       ('SPAN', (0, total_rows - 3), (2, total_rows - 3)),
+                       ('SPAN', (0, total_rows - 2), (2, total_rows - 2)),
+                       ('SPAN', (0, total_rows - 1), (2, total_rows - 1))]
+                       
         row_heights += [20, 20, 20, 20]
         
         table = Table(data, rowHeights=row_heights)
@@ -377,10 +387,13 @@ class PayrollPDF(object):
                  ['Gross Wage + Stipend Total', '', '', total_gross],
                  ['Social Security Total', '', '',  total_ss],
                  ['Net Wage Total', '', '', total_net]]
-        style_data += [('SPAN', (0, -4), (2, -4)),
-                       ('SPAN', (0, -3), (2, -3)),
-                       ('SPAN', (0, -2), (2, -2)),
-                       ('SPAN', (0, -1), (2, -1))]
+        
+        total_rows = len(data)
+        style_data += [('SPAN', (0, total_rows - 4), (2, total_rows - 4)),
+                       ('SPAN', (0, total_rows - 3), (2, total_rows - 3)),
+                       ('SPAN', (0, total_rows - 2), (2, total_rows - 2)),
+                       ('SPAN', (0, total_rows - 1), (2, total_rows - 1))]
+                       
         row_heights += [20, 20, 20, 20]
 
         table = Table(data, rowHeights=row_heights)
@@ -450,10 +463,13 @@ class PayrollPDF(object):
                  ['Gross Wage + Stipend Total', '', '', total_gross],
                  ['Social Security Total', '', '',  total_ss],
                  ['Net Wage Total', '', '', total_net]]
-        style_data += [('SPAN', (0, -4), (2, -4)),
-                       ('SPAN', (0, -3), (2, -3)),
-                       ('SPAN', (0, -2), (2, -2)),
-                       ('SPAN', (0, -1), (2, -1))]
+        
+        total_rows = len(data)
+        style_data += [('SPAN', (0, total_rows - 4), (2, total_rows - 4)),
+                       ('SPAN', (0, total_rows - 3), (2, total_rows - 3)),
+                       ('SPAN', (0, total_rows - 2), (2, total_rows - 2)),
+                       ('SPAN', (0, total_rows - 1), (2, total_rows - 1))]
+                       
         row_heights += [20, 20, 20, 20]
         
         table = Table(data, rowHeights=row_heights)

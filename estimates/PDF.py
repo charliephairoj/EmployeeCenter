@@ -460,15 +460,15 @@ class EstimatePDF(object):
 
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', 'x'],['Office Manager', '', 'Charlie Phairojmahakij']],
+        signature = Table([['x', '', ''],['Customer Signature', '', '']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
                               colors.CMYKColor(black=60)),
                              ('LINEBELOW', (0,0), (0,0), 1,
                               colors.CMYKColor(black=60)),
-                             ('LINEBELOW', (-1,0), (-1,0), 1,
-                              colors.CMYKColor(black=60)),
+                             #('LINEBELOW', (-1,0), (-1,0), 1,
+                             # colors.CMYKColor(black=60)),
                              ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)
