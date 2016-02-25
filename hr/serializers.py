@@ -88,7 +88,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
                                                allow_null=True)
     wage = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, allow_null=True)
     pay_period = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    attendances = AttendanceSerializer(many=True, required=False, read_only=True)
+    #attendances = AttendanceSerializer(many=True, required=False, read_only=True)
     incentive_pay = serializers.DecimalField(required=False, decimal_places=2, max_digits=15, allow_null=True)
     shift = ShiftSerializer(required=False)
     card_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
