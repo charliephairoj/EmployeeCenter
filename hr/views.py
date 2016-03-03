@@ -188,7 +188,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all().order_by('status', 'name')
+        queryset = self.queryset.all().order_by('status', 'name')[0:50]
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -210,14 +210,11 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
             query.filter(status__icontains=status)
             
         if offset and limit == 0:
-            queryset = queryset[offset - 1:]
-        elif offset and limit != 0:
-            queryset = queryset[offset-1:offset + limit]
-        elif limit == 0 and not offset:
-            queryset = queryset[0:]
+            queryset = queryset[offset:]
+        elif offset == 0 and limit != 0:
+            queryset = queryset[offset:offset + limit]
         else:
-            queryset = queryset[0: settings.REST_FRAMEWORK['PAGINATE_BY']]
-            
+            queryset = queryset[offset: offset + settings.REST_FRAMEWORK['PAGINATE_BY']]
         
         return queryset
     

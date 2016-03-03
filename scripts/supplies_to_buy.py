@@ -2,10 +2,10 @@
 
 import sys, os, django
 sys.path.append('/home/django_worker/backend')
-#sys.path.append('/Users/Charlie/Sites/employee/backend')
+sys.path.append('/Users/Charlie/Sites/employee/backend')
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 from django.conf import settings
+from django.core.wsgi import get_wsgi_application
 import logging
 from decimal import *
 import decimal
@@ -29,13 +29,15 @@ from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+application = get_wsgi_application()
+
 
 from supplies.models import Supply, Log, Product
 
 getcontext().prec = 2
 logger = logging.getLogger(__name__)
 
-django.setup()
 
 #pdfdoc.PDFCatalog.OpenAction = '<</S/JavaScript/JS(this.print\({bUI:false,bSilent:true,bShrinkToFit:true}\);)>>'
 

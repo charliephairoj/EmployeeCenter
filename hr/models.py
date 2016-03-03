@@ -89,10 +89,14 @@ class Attendance(models.Model):
     overtime_request = models.DateTimeField(null=True)
     employee = models.ForeignKey(Employee, related_name='attendances')
     _enable_overtime = models.BooleanField(default=False, db_column="enable_overtime")
+    
     regular_time = models.DecimalField(decimal_places=2, max_digits=12, null=True, default=0)
+    sunday_time = models.DecimalField(decimal_places=2, max_digits=12, null=True, default=0)
     overtime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
+    sunday_overtime = models.DecimalField(decimal_places=2, max_digits=12, null=True, default=0)
     doubletime = models.DecimalField(decimal_places=2, max_digits=12, default=0, null=True)
     total_time = models.DecimalField(decimal_places=2, max_digits=12, null=True)
+    
     shift = models.ForeignKey(Shift, null=True)
     salaried = models.BooleanField(default=False) #new
     receive_lunch_overtime = models.BooleanField(default=False) #new
@@ -180,7 +184,7 @@ class Attendance(models.Model):
             self.pay_rate = self.employee.wage
         
         # Set the shift if not set and not specified
-        if 'shift' not in kwargs and not self.shift:
+        if 'shift' not in kwargs and self.shift == None:
             self.shift = self.employee.shift
             
         if self._start_time and self._end_time:
@@ -306,6 +310,8 @@ class Attendance(models.Model):
         - Determine the end time based on if the employee clocked out early.
         - End time cannot be greater than end of shift time
         """
+        assert self.start_time
+        assert self.shift, self.__dict__
         
         # Determine the proper start time by testings if the clockin time was late
         if self.start_time.time() >= (datetime.combine(self.date, self.shift.start_time) + timedelta(minutes=10)).time():
@@ -369,11 +375,7 @@ class Attendance(models.Model):
         elif self.is_holiday:
             return self.pay_rate * Decimal(str(self.holiday_pay_rate))
         else:
-            # Add 300THB if the employee is working in cambodia
-            if self.employee.location.lower() == 'cambodia':
-                return self.pay_rate + 300
-            else:
-                return self.pay_rate
+            return self.pay_rate
         
     def _calculate_overtime_pay_rate(self):
         """Calculate the hourly pay rate for overtime

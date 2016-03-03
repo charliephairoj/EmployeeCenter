@@ -269,9 +269,11 @@ class PayRecordTest(APITestCase):
         
         self.employee1 = Employee.objects.create(**employee2_data)
         self.employee2 = Employee.objects.create(**employee1_data)
-        self.employee3 = Employee.objects.create(**employee4_data)
+        self.employee3 = Employee.objects.create(shift=self.shift, **employee4_data)
         self.manager = Employee.objects.create(**manager_data)
         
+        
+        logger.warn(self.shift)
         # Create attendances for first half of the month
         for i in xrange(0, 6):
             a_date = date(2016, 2, 1 + i)

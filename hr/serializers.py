@@ -1,5 +1,6 @@
 import logging
 from dateutil import parser
+from decimal import Decimal
 
 from rest_framework import serializers
 
@@ -175,18 +176,27 @@ class EmployeeSerializer(serializers.ModelSerializer):
             gross_wage = 0
             reimbursements = 0
             incentive_pay = 0
+            sunday_time = 0
+            sunday_overtime = 0
             
             for a in attendances:
+                                
                 if a.start_time and a.end_time:
                     a.calculate_net_wage()
-                    regular_time += a.regular_time
-                    overtime += a.overtime
+                    if a.is_sunday:
+                        sunday_time += a.regular_time
+                        sunday_overtime += a.overtime
+                    else:
+                        regular_time += a.regular_time
+                        overtime += a.overtime
                     gross_wage += a.gross_wage
                     reimbursements += a.reimbursement
                     incentive_pay += a.incentive_pay
                 
-            ret['regular_time'] = regular_time
+            ret['regular_time'] = regular_time / Decimal('8')
             ret['overtime'] = overtime
+            ret['sunday_time'] = sunday_time / Decimal('8')
+            ret['sunday_overtime'] = sunday_overtime / Decimal('8')
             ret['gross_wage'] = gross_wage
             ret['reimbursements']  =reimbursements
             ret['total_incentive_pay'] = incentive_pay
