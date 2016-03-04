@@ -339,7 +339,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         
         if offset != None and limit:
-            queryset = queryset[offset:limit + offset]
+            queryset = queryset[int(offset):limit + int(offset)]
         else:
             queryset = queryset[0:50]
         
