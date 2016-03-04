@@ -335,10 +335,11 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
                                        Q(customer__id=420) |
                                        Q(customer__id=257))
             
-        offset = int(self.request.query_params.get('offset', 0))
+        offset = int(self.request.query_params.get('offset', None))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+        
+        if offset != None and limit:
+            queryset = queryset[offset:limit + offset]
         else:
             queryset = queryset[0:50]
         
