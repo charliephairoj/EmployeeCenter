@@ -542,7 +542,7 @@ if __name__ == "__main__":
     p1 = multiprocessing.Process(target=create_pricelist, args=(directory + '/Pricelist.pdf', ))
     p1.start()
     p2 = multiprocessing.Process(target=create_fabriclist, args=(directory + '/Fabrics.pdf', fabrics ))
-    #p2.start()
+    p2.start()
     
     
     
