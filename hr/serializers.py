@@ -174,6 +174,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             regular_time = 0
             overtime = 0                               
             gross_wage = 0
+            net_wage = 0
             reimbursements = 0
             incentive_pay = 0
             sunday_time = 0
@@ -192,6 +193,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     gross_wage += a.gross_wage
                     reimbursements += a.reimbursement
                     incentive_pay += a.incentive_pay
+                    net_wage += a.net_wage
+                    
+            if instance.pay_period == 'monthly':
+                gross_wage = instance.wage / Decimal('2')
+                net_wage += reimbursements + incentive_pay + (instance.manager_stipend / Decimal('2'))
                 
             ret['regular_time'] = regular_time / Decimal('8')
             ret['overtime'] = overtime
@@ -200,6 +206,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             ret['gross_wage'] = gross_wage
             ret['reimbursements']  =reimbursements
             ret['total_incentive_pay'] = incentive_pay
+            ret['net_wage'] = net_wage
         
                      
         return ret
