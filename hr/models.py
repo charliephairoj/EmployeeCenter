@@ -129,6 +129,7 @@ class Attendance(models.Model):
     
     remarks = models.TextField(default='') #new
 
+    tz = timezone('Asia/Bangkok')
     
     @property
     def is_sunday(self):
@@ -138,24 +139,24 @@ class Attendance(models.Model):
     @property
     def start_time(self):
         try:
-            return self._start_time.astimezone(self.tz)
+            return self._start_time.astimezone(timezone('Asia/Bangkok'))
         except AttributeError:
             return None
         
     @start_time.setter
     def start_time(self, value):
-        self._start_time = value
+        self._start_time = self.tz.localize(value) if value.tzinfo == None else value
     
     @property
     def end_time(self):
         try:
-            return self._end_time.astimezone(self.tz)
+            return self._end_time.astimezone(timezone('Asia/Bangkok'))
         except AttributeError as e:
             return None
         
     @end_time.setter
     def end_time(self, value):
-        self._end_time = value
+        self._end_time = self.tz.localize(value) if value.tzinfo == None else value
 
     
     @property
@@ -179,6 +180,13 @@ class Attendance(models.Model):
         #Set standard timezone
         self.tz = timezone('Asia/Bangkok')
         
+        # Set Start time
+        if 'start_time' in kwargs:
+            self.start_time = kwargs['start_time']
+            
+        if 'end_time' in kwargs:
+            self.end_time = kwargs['end_time']
+            
         # Set the pay rate if not set and not specified
         if 'pay_rate' not in kwargs and not self.pay_rate:
             self.pay_rate = self.employee.wage
@@ -215,6 +223,8 @@ class Attendance(models.Model):
         -   1.2 Calculate pay for overtime if enabled
         -   1.3 Calculate pay for lunch overtime
         """
+        logger.debug('\n\nCalculating Attendance Gross Wage for {0}\n'.format(self.date))
+        
         if not self.sick_leave and not self.vacation and not self.cambodia:
             
             # Calculate the regular wage if not a salaried employee
@@ -238,13 +248,20 @@ class Attendance(models.Model):
             gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
         
         elif self.cambodia:
+            # Calculate the pay rate as usual and add an extra 300THB if the
+            # employee is working in Cambodia
+            self.regular_pay = self._calculate_regular_pay_rate()
+            logger.debug(self.regular_pay)
             gross_wage = self.regular_pay + Decimal('300')
+            logger.debug("Cambodia shift on {0}".format(self.date))
                 
         # If attendance is for vacation or sick leave pay only regular wage
         else:
             gross_wage = self.regular_pay
             
         self.gross_wage = gross_wage
+        
+        logger.debug("Gross wage for {0}: {1}".format(self.date, self.gross_wage))
         
         return self.gross_wage
        
@@ -261,6 +278,8 @@ class Attendance(models.Model):
         - 3. Calculate deductions
         -   3.1 Calculate if late
         """
+        logger.debug('\n\nCalculating Attendance Net Wage for {0}\n'.format(self.date))
+        
         self.remarks = ''
         
         gross_wage = self.calculate_gross_wage()
@@ -287,7 +306,12 @@ class Attendance(models.Model):
             
             # Add a note incentive pay
             self.remarks += u'- Reimbursed {0}THB for incentive pay \n'.format(self.incentive_pay)
-        
+        else:
+            logger.debug("No incentive pay on {0}: Vacation: {1} | Sick Leave: {2} | Hours: {3}".format(self.date,
+                                                                                                        self.vacation,
+                                                                                                        self.sick_leave,
+                                                                                                        self.regular_time))
+            logger.debug("start_time: {0} | end_time: {1}".format(self.start_time, self.end_time))
         
         self.reimbursement = reimbursements
         
@@ -344,7 +368,7 @@ class Attendance(models.Model):
         if self.enable_overtime:
             
             # Calculate the minium end time for overtime to actually take place
-            minimum_end_time = datetime.combine(self.date, self.shift.end_time.replace(tzinfo=self.tz))
+            minimum_end_time = datetime.combine(self.date, self.shift.end_time)
             minimum_end_time = self.tz.normalize(minimum_end_time)
             minimum_end_time += (timedelta(hours=1) - timedelta(minutes=18))
 
@@ -525,6 +549,8 @@ class PayRecord(models.Model):
         This method will loop through all the attendances and
         calculate the total gross wage
         """
+        logger.debug('\n\nCalculating Pay Record Gross Wage\n');
+        
         gross_wage = 0
         
         if self.employee.pay_period.lower() == 'monthly':
@@ -550,13 +576,20 @@ class PayRecord(models.Model):
                                                           employee=self.employee,
                                                           cambodia=True,
                                                           shift=self.employee.shift)
-                            a.start_time = datetime.combine(c_date, time(8, 0, 0, tzinfo=timezone('Asia/Bangkok')))
-                            a.end_time = datetime.combine(c_date, time(17, 0, 0, tzinfo=timezone('Asia/Bangkok')))
+                            
+                            # Create start and end times for shift
+                            a.start_time = datetime.combine(c_date, time(8, 0, 0))
+                            if a.start_time.tzinfo == None:
+                                a.start_time = timezone('Asia/Bangkok').localize(a.start_time)
+                            a.end_time = datetime.combine(c_date, time(17, 0, 0))
+                            if a.end_time.tzinfo == None:
+                                a.end_time = timezone('Asia/Bangkok').localize(a.end_time)
+                            
                             a.calculate_net_wage()
                             a.save()
                             gross_wage += a.gross_wage
-
-                    
+                            
+                            
                     # Add regular times to total
                     self.regular_hours += a.regular_time or 0
                     self.overtime_hours += a.overtime or 0
@@ -564,7 +597,9 @@ class PayRecord(models.Model):
                     # Advance the day
                     c_date = c_date + timedelta(days=1)
                     
-                logger.debug("Gross wage for employee in cambodia: {0}".format(gross_wage))
+                logger.debug("Gross wage for employee in cambodia {0} to {1}: {2}".format(self.start_date,
+                                                                                          self.end_date,
+                                                                                          gross_wage))
                 
             else:
                 attendances = self._get_employee_attendances()
@@ -599,6 +634,8 @@ class PayRecord(models.Model):
         - 4. Calculate the manager stipend if it exists
         - 5. Calculate the net wage
         """
+        logger.debug('\n\nCalculating Pay Record Net Wage\n')
+        
         gross_wage = self.calculate_gross_wage() or 0
         logger.debug("Gross Wage: {0}".format(gross_wage))
         
@@ -662,7 +699,7 @@ class PayRecord(models.Model):
                                 25)
                                 
                 if self.employee.location.lower() == 'cambodia':
-                    month_wage = 0
+                    monthly_wage = 0
                     
                     # Automatically calculate the days worked for 
                     # employees in cambodia
@@ -677,10 +714,9 @@ class PayRecord(models.Model):
                                 dates.append(c_date)
                             
                         c_date = c_date + timedelta(days=1)
-                        logger.debug("{0} : {1}".format(end_date, c_date))
                     
-                    month_wage += len(dates) * (self.employee.wage + Decimal('300'))
-                    ss_w = month_wage * Decimal('0.05')
+                    monthly_wage += len(dates) * (self.employee.wage + Decimal('300'))
+                    ss_w = monthly_wage * Decimal('0.05')
                     
                 else:
                     
@@ -718,6 +754,24 @@ class PayRecord(models.Model):
         
         self.net_wage = net_wage
         
+        # Debug for net wage summary
+        summary_msg = """
+        
+        Net Wage Summary
+        
+        Gross Wage:       {0}
+        Manager Stipend:  {1}
+        Daily Stipend:    {2}
+        Social Security: -{3}
+        ___________________________
+        Net Wage:         {4}
+        """
+        logger.debug(summary_msg.format(gross_wage,
+                                        self.manager_stipend,
+                                        self.reimbursements,
+                                        self.social_security_withholding,
+                                        self.net_wage))
+                                        
         return self.net_wage
     
     def add_reimbursement(self, amount, note):

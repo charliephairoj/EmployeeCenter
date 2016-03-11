@@ -263,8 +263,10 @@ class PayRecordTest(APITestCase):
         - 3. Daily Manager
         -   3.1 Attendances
         """
-        self.shift = Shift(start_time=time(8, 0),
-                           end_time=time(17, 0))
+        logger.debug("\n\nBegin Setup\n\n")
+        
+        self.shift = Shift(start_time=time(8, 0, tzinfo=timezone('Asia/Bangkok')),
+                           end_time=time(17, 0, tzinfo=timezone('Asia/Bangkok')))
         self.shift.save()
         
         self.employee1 = Employee.objects.create(**employee2_data)
@@ -280,8 +282,8 @@ class PayRecordTest(APITestCase):
             
             # Create attendances for daily employee
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)), 
                                           employee=self.employee1,
                                           shift=self.shift)
             a.calculate_times()
@@ -290,8 +292,8 @@ class PayRecordTest(APITestCase):
              
             # Create attendances for monthly employee
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.employee2,
                                           shift=self.shift)
             a.calculate_times()
@@ -300,18 +302,19 @@ class PayRecordTest(APITestCase):
             
             # Create attendances for daily employee in cambodia
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.employee3,
-                                          shift=self.shift)
+                                          shift=self.shift,
+                                          cambodia=True)
             a.calculate_times()
             a.calculate_net_wage()
             a.save()
             
             # Create attendances for daily manager
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 1 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 1 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.manager,
                                           shift=self.shift)
             a.calculate_times()
@@ -324,8 +327,8 @@ class PayRecordTest(APITestCase):
             
             # Create attendances for daily employee
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 15 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 15 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.employee1,
                                           shift=self.shift)
             a.calculate_times()
@@ -334,8 +337,8 @@ class PayRecordTest(APITestCase):
              
             # Create attendances for monthly employee
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 15 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 15 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.employee2,
                                           shift=self.shift)
             a.calculate_times()
@@ -344,23 +347,27 @@ class PayRecordTest(APITestCase):
             
             # Create attendances for daily employee in cambodia
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 15 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 15 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.employee3,
-                                          shift=self.shift)
+                                          shift=self.shift,
+                                          cambodia=True)
             a.calculate_times()
             a.calculate_net_wage()
             a.save()
             
             # Create attendances for daily manager
             a = Attendance.objects.create(date=a_date,
-                                          start_time=datetime(2016, 2, 15 + i, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                          end_time=datetime(2016, 2, 15 + i, 17, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                          start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 7, 30, 0)),
+                                          end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 1 + i, 17, 15, 0)),
                                           employee=self.manager,
                                           shift=self.shift)
             a.calculate_times()
             a.calculate_net_wage()
             a.save()
+            
+        logger.debug("\n\nEnd Setup\n\n")
+        
         
     def test_gross_wage_hourly_employee(self):
         """Test calculate the gross wage of a pay record
@@ -413,11 +420,20 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                            end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
-        self.assertEqual(record.stipend, Decimal('180'))
+        self.assertEqual(record.stipend, Decimal('270'))
         self.assertEqual(record.manager_stipend, Decimal('0'))
         self.assertEqual(record.deductions, Decimal('0'))
         self.assertEqual(record.social_security_withholding, Decimal('0'))
-        self.assertEqual(nw, Decimal('7830'))
+        self.assertEqual(nw, Decimal('7920'))
+    
+    def test_gross_wage_hourly_employee_in_cambodia_end_month(self):
+        """Test calculate the net wage of a pay record
+        """
+        record = PayRecord.objects.create(self.employee3, 
+                                          start_date=date(2016, 2, 11),
+                                           end_date=date(2016, 2, 25))
+        gw = record.calculate_gross_wage()
+        self.assertEqual(gw, Decimal('11050'))
         
     def test_net_wage_hourly_employee_in_cambodia_end_month(self):
         """Test calculate the net wage of a pay record
@@ -426,11 +442,11 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 11),
                                            end_date=date(2016, 2, 25))
         nw = record.calculate_net_wage()
-        self.assertEqual(record.stipend, Decimal('180'))
+        self.assertEqual(record.stipend, Decimal('390'))
         self.assertEqual(record.manager_stipend, Decimal('0'))
         self.assertEqual(record.deductions, Decimal('0'))
         self.assertEqual(record.social_security_withholding, Decimal('750'))
-        self.assertEqual(nw, Decimal('10480'))
+        self.assertEqual(nw, Decimal('10690'))
         
     def test_gross_wage_salaried_employee(self):
         """Test calculate the gross wage of a pay record
