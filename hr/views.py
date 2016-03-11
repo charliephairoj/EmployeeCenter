@@ -207,7 +207,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         
         if status:
-            query.filter(status__icontains=status)
+            queryset.filter(status__icontains=status)
             
         if offset != None and limit == 0:
             queryset = queryset[offset:]
