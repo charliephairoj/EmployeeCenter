@@ -554,8 +554,17 @@ class PayRecord(models.Model):
         gross_wage = 0
         
         if self.employee.pay_period.lower() == 'monthly':
+            # Calculate base gross wage
             self.gross_wage = self.employee.wage / Decimal('2')
-        
+            
+            # Calculate Sunday wages
+            attendances = self.employee.attendances
+            attendances = attendances.filter(date__gte=self.start_date,
+                                             date__lte=self.end_date)
+            sundays_worked = [a for a in attendances if a.is_sunday == True]
+            sunday_wage = len(sundays_worked) * ((self.employee.wage / 30) * 2)
+            self.gross_wage += sunday_wage
+            
         elif self.employee.pay_period.lower() == 'daily':
             
             # Calculate the wage of an employee in cambodia

@@ -197,7 +197,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     
             if instance.pay_period == 'monthly':
                 gross_wage = instance.wage / Decimal('2')
-                net_wage += reimbursements + incentive_pay + (instance.manager_stipend / Decimal('2'))
+                net_wage = gross_wage + reimbursements + incentive_pay + (instance.manager_stipend / Decimal('2'))
                 
             ret['regular_time'] = regular_time / Decimal('8')
             ret['overtime'] = overtime

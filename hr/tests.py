@@ -277,7 +277,7 @@ class PayRecordTest(APITestCase):
         
         logger.warn(self.shift)
         # Create attendances for first half of the month
-        for i in xrange(0, 6):
+        for i in xrange(0, 7):
             a_date = date(2016, 2, 1 + i)
             
             # Create attendances for daily employee
@@ -376,7 +376,7 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         gw = record.calculate_gross_wage()
-        self.assertEqual(gw, Decimal('3300'))
+        self.assertEqual(gw, Decimal('4400'))
         
     def test_net_wage_hourly_employee(self):
         """Test calculate the net wage of a pay record
@@ -385,11 +385,11 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                            end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
-        self.assertEqual(record.stipend, Decimal('180'))
+        self.assertEqual(record.stipend, Decimal('210'))
         self.assertEqual(record.manager_stipend, Decimal('0'))
         self.assertEqual(record.deductions, Decimal('0'))
         self.assertEqual(record.social_security_withholding, Decimal('0'))
-        self.assertEqual(nw, Decimal('3480'))
+        self.assertEqual(nw, Decimal('4610'))
         
     def test_net_wage_hourly_employee_end_month(self):
         """Test calculate the net wage of a pay record
@@ -401,8 +401,8 @@ class PayRecordTest(APITestCase):
         self.assertEqual(record.stipend, Decimal('180'))
         self.assertEqual(record.manager_stipend, Decimal('0'))
         self.assertEqual(record.deductions, Decimal('0'))
-        self.assertEqual(record.social_security_withholding, Decimal('330'))
-        self.assertEqual(nw, Decimal('3150'))
+        self.assertEqual(record.social_security_withholding, Decimal('385'))
+        self.assertEqual(nw, Decimal('3095'))
         
     def test_gross_wage_hourly_employee_in_cambodia(self):
         """Test calculate the gross wage of a pay record
@@ -411,7 +411,7 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         gw = record.calculate_gross_wage()
-        self.assertEqual(gw, Decimal('7650'))
+        self.assertEqual(gw, Decimal('9050'))
         
     def test_net_wage_hourly_employee_in_cambodia(self):
         """Test calculate the net wage of a pay record
@@ -420,11 +420,11 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                            end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
-        self.assertEqual(record.stipend, Decimal('270'))
+        self.assertEqual(record.stipend, Decimal('300'))
         self.assertEqual(record.manager_stipend, Decimal('0'))
         self.assertEqual(record.deductions, Decimal('0'))
         self.assertEqual(record.social_security_withholding, Decimal('0'))
-        self.assertEqual(nw, Decimal('7920'))
+        self.assertEqual(nw, Decimal('9350'))
     
     def test_gross_wage_hourly_employee_in_cambodia_end_month(self):
         """Test calculate the net wage of a pay record
@@ -455,7 +455,7 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         gw = record.calculate_gross_wage()
-        self.assertEqual(gw, Decimal('9000'))
+        self.assertEqual(gw, Decimal('10200'))
         
     def test_net_wage_salaried_employee(self):
         """Test calculate the net wage of a pay record
@@ -464,9 +464,9 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
-        self.assertEqual(nw, Decimal('8850'))
-        self.assertEqual(record.reimbursements, Decimal('300'))
-        self.assertEqual(record.social_security_withholding, Decimal('450'))
+        self.assertEqual(nw, Decimal('10550'))
+        self.assertEqual(record.reimbursements, Decimal('350'))
+        self.assertEqual(record.social_security_withholding, Decimal('0'))
         
     def test_gross_wage_manager(self):
         """Test calculate the gross wage of a pay record
@@ -475,20 +475,20 @@ class PayRecordTest(APITestCase):
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         gw = record.calculate_gross_wage()
-        self.assertEqual(gw, Decimal('3900'))
+        self.assertEqual(gw, Decimal('5200'))
         
-    def test_net_wage_salaried_employee(self):
+    def test_net_wage_manager_employee(self):
         """Test calculate the net wage of a pay record
         """
         record = PayRecord.objects.create(self.manager, 
                                           start_date=date(2016, 2, 1),
                                           end_date=date(2016, 2, 10))
         nw = record.calculate_net_wage()
-        self.assertEqual(nw, Decimal('4200'))
-        self.assertEqual(record.reimbursements, Decimal('300'))
+        self.assertEqual(nw, Decimal('5550.00'))
+        self.assertEqual(record.reimbursements, Decimal('350'))
         self.assertEqual(record.social_security_withholding, Decimal('0'))
         
-    def test_net_wage_salaried_employee_end_month(self):
+    def test_net_wage_manager_end_month(self):
         """Test calculate the net wage of a pay record
         """
         record = PayRecord.objects.create(self.manager, 
@@ -496,8 +496,8 @@ class PayRecordTest(APITestCase):
                                           end_date=date(2016, 2, 25))
         nw = record.calculate_net_wage()
         self.assertEqual(record.reimbursements, Decimal('300'))
-        self.assertEqual(record.social_security_withholding, Decimal('390'))
-        self.assertEqual(nw, Decimal('5310'))
+        self.assertEqual(record.social_security_withholding, Decimal('455'))
+        self.assertEqual(nw, Decimal('5245'))
 
 
 class PayrollTest(APITestCase):
