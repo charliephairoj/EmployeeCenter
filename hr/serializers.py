@@ -197,7 +197,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     
             if instance.pay_period == 'monthly':
                 gross_wage = instance.wage / Decimal('2')
-                net_wage = gross_wage + reimbursements + incentive_pay + (instance.manager_stipend / Decimal('2'))
+                net_wage = gross_wage + reimbursements + incentive_pay
+                
+            if start_date.date() > 10 and start_date.date() < 26:
+                net_wage += instance.manager_stipend
                 
             ret['regular_time'] = regular_time / Decimal('8')
             ret['overtime'] = overtime
@@ -207,8 +210,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             ret['reimbursements']  =reimbursements
             ret['total_incentive_pay'] = incentive_pay
             ret['net_wage'] = net_wage
-        
-                     
+            
+        ret['equipments'] = [{'brand': e.brand,
+                              'description': e.description} for e in instance.equipments.all()]
+         
         return ret
         
         
