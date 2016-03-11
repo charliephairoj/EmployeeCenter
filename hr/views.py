@@ -122,7 +122,7 @@ def upload_attendance(request):
     
             e_conn = boto.ses.connect_to_region('us-east-1')
             e_conn.send_email('noreply@dellarobbiathailand.com',
-                              'Delivery Schedule',
+                              'Attendance Upload Report',
                               message,
                               ["charliep@dellarobbiathailand.com",
                                "mod@dellarobbiathailand.com"],

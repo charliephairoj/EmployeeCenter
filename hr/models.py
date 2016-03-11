@@ -369,7 +369,7 @@ class Attendance(models.Model):
             
             # Calculate the minium end time for overtime to actually take place
             minimum_end_time = datetime.combine(self.date, self.shift.end_time)
-            minimum_end_time = self.tz.normalize(minimum_end_time)
+            minimum_end_time = self.tz.localize(minimum_end_time)
             minimum_end_time += (timedelta(hours=1) - timedelta(minutes=18))
 
             if self.end_time > minimum_end_time:
