@@ -199,7 +199,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
                 gross_wage = instance.wage / Decimal('2')
                 net_wage = gross_wage + reimbursements + incentive_pay
                 
-            if start_date.date() > 10 and start_date.date() < 26:
+            if start_date.day() > 10 and start_date.day() < 26:
                 net_wage += instance.manager_stipend
                 
             ret['regular_time'] = regular_time / Decimal('8')
