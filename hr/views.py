@@ -202,7 +202,7 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
                                        Q(department__icontains=query) |
                                        Q(telephone__icontains=query))
                                        
-        status = self.request.query_params.get('status', None)
+        status = self.request.query_params.get('employee_status', None)
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         
