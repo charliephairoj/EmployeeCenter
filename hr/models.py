@@ -257,7 +257,11 @@ class Attendance(models.Model):
                 
         # If attendance is for vacation or sick leave pay only regular wage
         else:
-            gross_wage = self.regular_pay
+            
+            if self.is_sunday:
+                gross_wage = (self.regular_pay / 8) * math.floor(self.regular_time)
+            else:
+                gross_wage = self.regular_pay
             
         self.gross_wage = gross_wage
         
@@ -543,6 +547,10 @@ class PayRecord(models.Model):
     
     objects = PayRecordManager()
     
+    @property
+    def attendances(self):
+        return self._get_employee_attendances()
+        
     def calculate_gross_wage(self):
         """Calculate the total gross wage
         

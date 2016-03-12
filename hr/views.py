@@ -254,11 +254,11 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         
         try:
             o_time = parser.parse(request.data['overtime_request'])
-            o_time = o_time.astimezone(tz)
+            o_time = tz.localize(o_time)
             o_time = datetime.combine(a_date, o_time.timetz())
             request.data['overtime_request'] = o_time
         except Exception as e:
-            logger.error(e)
+            logger.warn(e)
         
         response = super(AttendanceList, self).post(request, *args, **kwargs)
         

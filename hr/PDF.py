@@ -94,6 +94,13 @@ class PayrollPDF(object):
         stories.append(Spacer(0, 50))
         stories.append(self._create_thailand_summary(records))
         
+        stories.append(PageBreak())
+        
+        stories.append(self._format_text("Attendance Summary",
+                                         font_size=30))
+        stories.append(Spacer(0, 50))
+        stories.append(self._create_employee_attendance(records))
+        
         doc.build(stories)
         
     def _create_primary_employee_summary(self, records):
@@ -478,6 +485,38 @@ class PayrollPDF(object):
         table.setStyle(style)
         
         return table
+        
+    def _create_employee_attendance(self, records):
+        """Create and overall detailed summary of all attendances
+        """
+        data = [['ID', 'Card ID', 'Name', 'Date', 'Start Time', 'End Time', 'Hours', 'Overtime']]
+        
+        for record in records:
+            data.append([record.employee.id,
+                         record.employee.card_id,
+                         self._format_text(record.employee.name),
+                         self._create_attendance_details(record)])
+                         
+        table = Table(data, colWidths=(100, 100, 500), repeatRows=1)
+        style = TableStyle([('SPAN', (3, 0), (-1, -1)),
+                            ('VALIGN', (0, 0), (-1, 0)), 'TOP'])
+        return table
+    
+    def _create_attendance_details(self, record):
+        
+        data = []
+        
+        for a in record.attendances.all().order_by('date'):
+            data.append([a.date, 
+                         a.start_time.time(),
+                         a.end_time.time(),
+                         a.regular_time,
+                         a.overtime])
+                    
+        table = Table(data, colWidths=(100, 100, 100, 100, 100))
+             
+        return table
+        
         
     def _format_text(self, description, font_size=12):
         """
