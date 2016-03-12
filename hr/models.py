@@ -346,7 +346,7 @@ class Attendance(models.Model):
         if self.start_time.time() >= (datetime.combine(self.date, self.shift.start_time) + timedelta(minutes=10)).time():
             start_time = self.start_time
         else:
-            start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time)
+            start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time))
             
         if self.end_time.time() < self.shift.end_time:
             end_time = self.end_time
