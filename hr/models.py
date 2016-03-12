@@ -244,6 +244,12 @@ class Attendance(models.Model):
                 self.lunch_pay = (self.pay_rate / Decimal('8')) * Decimal('1.5')
             else:
                 self.lunch_pay = 0
+                
+            # If attendance is for sunday, calculate wage by the hour not the day
+            if self.is_sunday:
+                gross_wage = (self.regular_pay / 8) * math.floor(self.regular_time)
+            else:
+                gross_wage = self.regular_pay
             
             gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
         
@@ -257,12 +263,7 @@ class Attendance(models.Model):
                 
         # If attendance is for vacation or sick leave pay only regular wage
         else:
-            
-            # If attendance is for sunday, calculate wage by the hour not the day
-            if self.is_sunday:
-                gross_wage = (self.regular_pay / 8) * math.floor(self.regular_time)
-            else:
-                gross_wage = self.regular_pay
+            gross_wage = self.regular_pay
             
         self.gross_wage = gross_wage
         
