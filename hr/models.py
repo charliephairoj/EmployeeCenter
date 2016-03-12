@@ -247,7 +247,7 @@ class Attendance(models.Model):
                 
             # If attendance is for sunday, calculate wage by the hour not the day
             if self.is_sunday:
-                gross_wage = (self.regular_pay / 8) * math.floor(self.regular_time)
+                gross_wage = (self.regular_pay / 8) * Decimal(str(math.floor(self.regular_time)))
             else:
                 gross_wage = self.regular_pay
             

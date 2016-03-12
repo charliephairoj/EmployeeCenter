@@ -499,7 +499,8 @@ class PayrollPDF(object):
                          
         table = Table(data, colWidths=(100, 100, 100, 100, 100, 100, 100, 100), repeatRows=1)
         style = TableStyle([('SPAN', (3, 0), (-1, -1)),
-                            ('VALIGN', (0, 0), (-1, 0)), 'TOP'])
+                            ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                            ('VALIGN', (0, 1), (2, -1)), 'TOP'])
         return table
     
     def _create_attendance_details(self, record):
@@ -510,8 +511,8 @@ class PayrollPDF(object):
             data.append([a.date, 
                          a.start_time.time() if a.start_time else '',
                          a.end_time.time() if a.end_time else '',
-                         a.regular_time,
-                         a.overtime])
+                         "{0:.2f}".format(a.regular_time),
+                         "{0:.2f}".format(a.overtime)])
                     
         table = Table(data, colWidths=(100, 100, 100, 100, 100))
              
