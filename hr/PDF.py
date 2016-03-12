@@ -497,7 +497,7 @@ class PayrollPDF(object):
                          self._format_text(record.employee.name),
                          self._create_attendance_details(record)])
                          
-        table = Table(data, colWidths=(100, 100, 500), repeatRows=1)
+        table = Table(data, colWidths=(100, 100, 100, 100, 100, 100, 100, 100), repeatRows=1)
         style = TableStyle([('SPAN', (3, 0), (-1, -1)),
                             ('VALIGN', (0, 0), (-1, 0)), 'TOP'])
         return table
@@ -508,8 +508,8 @@ class PayrollPDF(object):
         
         for a in record.attendances.all().order_by('date'):
             data.append([a.date, 
-                         a.start_time.time(),
-                         a.end_time.time(),
+                         a.start_time.time() if a.start_time else '',
+                         a.end_time.time() if a.end_time else '',
                          a.regular_time,
                          a.overtime])
                     
