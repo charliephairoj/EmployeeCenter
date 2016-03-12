@@ -247,7 +247,7 @@ class Attendance(models.Model):
                 
             # If attendance is for sunday, calculate wage by the hour not the day
             if self.is_sunday:
-                gross_wage = (self.regular_pay / 8) * Decimal(str(math.floor(self.regular_time)))
+                gross_wage = (self.regular_pay / Decimal('8')) * Decimal(str(math.floor(self.regular_time)))
             else:
                 gross_wage = self.regular_pay
             
@@ -508,11 +508,12 @@ class Payroll(models.Model):
         """Create all the corresponding documents for this payroll
         """
         
-        pdf = PayrollPDF(payroll=self, 
+        self.pdf = PayrollPDF(payroll=self, 
                          start_date=self.start_date, 
                          end_date=self.end_date)
-        pdf.create()
-        logger.debug('yay')
+        self.pdf.create()
+        
+        return self.pdf
     
     
 class PayRecordManager(models.Manager):

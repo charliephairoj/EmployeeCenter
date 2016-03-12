@@ -49,7 +49,8 @@ class PayrollPDF(object):
         
         if response is None:
             response = 'Payroll_{0}-{1}.pdf'.format(self.start_date, self.end_date)
-            
+            self.filename = response
+        
         doc = SimpleDocTemplate(response, 
                                 pagesize=landscape(A4), 
                                 leftMargin=12, 
@@ -489,7 +490,8 @@ class PayrollPDF(object):
     def _create_employee_attendance(self, records):
         """Create and overall detailed summary of all attendances
         """
-        data = [['ID', 'Card ID', 'Name', 'Date', 'Start Time', 'End Time', 'Hours', 'Overtime']]
+        data = [['ID', 'Card ID', 'Name', 
+                 Table([['Date', 'Start Time', 'End Time', 'Hours', 'Overtime']], colWidths=100)]]
         
         for record in records:
             data.append([record.employee.id,
@@ -497,25 +499,49 @@ class PayrollPDF(object):
                          self._format_text(record.employee.name),
                          self._create_attendance_details(record)])
                          
-        table = Table(data, colWidths=(100, 100, 100, 100, 100, 100, 100, 100), repeatRows=1)
-        style = TableStyle([('SPAN', (3, 0), (-1, -1)),
-                            ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
-                            ('VALIGN', (0, 1), (2, -1)), 'TOP'])
+        table = Table(data, colWidths=(100, 100, 100, 500), repeatRows=1)
+        style = TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                            ('VALIGN', (0, 1), (2, -1), 'TOP'),
+                            ('PADDING', (0, 0), (-1, -1), 0),
+                            ('GRID', (0, 0), (-1, -1),  1, colors.CMYKColor(black=60))
+                            ])
+        table.setStyle(style)
+        
         return table
     
     def _create_attendance_details(self, record):
         
         data = []
+        r_days = 0
+        r_ot = 0
+        sundays = 0
+        sunday_ot = 0
         
         for a in record.attendances.all().order_by('date'):
             data.append([a.date, 
                          a.start_time.time() if a.start_time else '',
                          a.end_time.time() if a.end_time else '',
-                         "{0:.2f}".format(a.regular_time),
-                         "{0:.2f}".format(a.overtime)])
+                         "{0:.2f}".format(Decimal(a.regular_time or 0)),
+                         "{0:.2f}".format(Decimal(a.overtime or 0))])
+                         
+            if a.is_sunday:
+                sundays += 1
+                sunday_ot += a.overtime
+            else:
+                r_days += (a.regular_time or Decimal('0')) / Decimal('8')
+                r_ot += a.overtime
+            
+        
+        data.append(['', '', '', 'Regular', '{0:.2f}'.format(r_days)])
+        data.append(['', '', '', 'Overtime', '{0:.2f}'.format(r_ot)])
+        data.append(['', '', '', 'Sundays', '{0:.2f}'.format(sundays)])
+        data.append(['', '', '', 'Sunday Overtime', '{0:.2f}'.format(sunday_ot)])
+        
                     
         table = Table(data, colWidths=(100, 100, 100, 100, 100))
-             
+        style = TableStyle([('BOX', (3, -4), (-1, -1), 1, colors.CMYKColor(black=60))])
+        table.setStyle(style)
+        
         return table
         
         
