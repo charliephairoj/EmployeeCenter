@@ -4,6 +4,7 @@ from decimal import Decimal
 import boto
 from rest_framework import serializers
 from rest_framework.fields import DictField
+from pytz import timezone
 
 from acknowledgements.models import Acknowledgement, Item, Pillow, File, Log as AckLog
 from contacts.serializers import CustomerSerializer
@@ -199,6 +200,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     fob = serializers.CharField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
                                   allow_null=True)
+    delivery_date = serializers.DateTimeField(required=True)
     
     class Meta:
         model = Acknowledgement
@@ -211,10 +213,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create nested items
         """
-        
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
-
+        employee = self.context['request'].user
+        
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
                 try:
@@ -225,9 +227,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                     pass
 
         discount = validated_data.pop('discount', None) or validated_data['customer'].discount
+        delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date'))
         
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount, 
-                                                  status='acknowledged',
+        instance = self.Meta.model.objects.create(employee=employee, discount=discount, 
+                                                  status='acknowledged', _delivery_date=delivery_date,
                                                   **validated_data)
         
         item_serializer = ItemSerializer(data=items_data, context={'acknowledgement': instance}, many=True)
@@ -238,7 +241,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
-        instance.create_and_upload_pdfs()
+        #instance.create_and_upload_pdfs()
         
         # Add pdfs to files list
         filenames = ['acknowledgement_pdf', 'production_pdf', 'label_pdf']
@@ -290,6 +293,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
            
+        # Create a calendar event
+        instance.create_calendar_event(employee)
+        
         # Log Opening of an order
         message = "Order #{0} was acknowledged.".format(instance.id)
         log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
@@ -297,14 +303,16 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         return instance
         
     def update(self, instance, validated_data):
-            
-        instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        
+        employee = self.context['request'].user
+        
+        instance.current_user = employee
+        instance.delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
         instance.project = validated_data.pop('project', instance.project)
         status = validated_data.pop('status', instance.status)
         
         if status.lower() != instance.status.lower():
             
-            employee = self.context['request'].user
             
             # Create a log for this status if it does not already exist
             if AckLog.objects.filter(message__icontains=status.lower(), acknowledgement=instance).count() == 0:
@@ -437,7 +445,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Create new pdf documents if the old total and new total are not the same
         if (old_total != instance.total) or old_qty != sum([item.quantity for item in instance.items.all()]):
             instance.create_and_upload_pdfs()
-                                    
+                           
+        instance.update_calendar_event()         
         instance.save()
         
         return instance

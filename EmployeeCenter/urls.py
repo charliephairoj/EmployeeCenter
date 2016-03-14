@@ -53,6 +53,7 @@ router.register(r'api/v1/shift', ShiftViewSet)
 #primary login and url routing
 urlpatterns = patterns('',
     url(r'^$', 'login.views.app_login'),
+    url(r'^main$', 'login.views.main'),
     url(r'^login$', 'login.views.app_login'),
     url(r'^oauth2callback$', 'login.views.auth_return'),
     url(r'^logout$', 'login.views.logout'),

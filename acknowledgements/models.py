@@ -3,6 +3,7 @@ import dateutil.parser
 import math
 import logging
 from decimal import *
+import httplib2
 
 from pytz import timezone
 from django.conf import settings
@@ -11,6 +12,8 @@ from django.contrib.auth.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
+from oauth2client.contrib.django_orm import Storage
+from apiclient import discovery
 
 from contacts.models import Customer
 from products.models import Product, Upholstery
@@ -18,7 +21,7 @@ from projects.models import Project, Room, Phase
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
-
+from administrator.models import CredentialsModel
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,7 @@ class Acknowledgement(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
+    _delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField(default='acknowledged')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
@@ -64,16 +67,18 @@ class Acknowledgement(models.Model):
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
     files = models.ManyToManyField(S3Object, through="File", related_name="acknowledgement")
-         
-    """
+    calendar_event_id = models.TextField(null=True)
+    
+    current_user = None 
+    calendar_service = None
+     
     @property
     def delivery_date(self):
         return self._delivery_date
-    
+        
     @delivery_date.setter
     def delivery_date(self, value):
         self._delivery_date = value
-    """
         
     @classmethod
     def create(cls, user, **kwargs):
@@ -129,7 +134,7 @@ class Acknowledgement(models.Model):
         if "decoroom" in acknowledgement.customer.name.lower():
             acknowledgement.email_decoroom()
         return acknowledgement
-    
+        
     def delete(self):
         """
         Overrides the standard delete method.
@@ -348,7 +353,111 @@ class Acknowledgement(models.Model):
         """Emails decoroom"""
         self._email(self.acknowledgement_pdf, ['praparat@decoroom.com'])
         self._email(self.acknowledgement_pdf, ['sales@decoroom.com'])
+    
+    def _get_calendar_service(self, user):
+        if self.calendar_service:
+            self.calendar_service
+        else:
+            
+            storage = Storage(CredentialsModel, 'id', user, 'credential')
+            credentials = storage.get()
+        
+            http = credentials.authorize(httplib2.Http())
+            self.calendar_service = discovery.build('calendar', 'v3', http=http)
+            
+        return self.calendar_service
+        
+    def _get_calendar(self, user):
+        service = self._get_calendar_service(user)
+        response = service.calendarList().list().execute()
+        
+        calendar_summaries = [cal['summary'].lower() for cal in response['items']]
+    
+        # Check if user does not already has account payables
+        if 'deliveries' not in calendar_summaries:
+            # Get calendar
+            cal_id = 'dellarobbiathailand.com_vl7drjcuulloicm0qlupgsr4ko@group.calendar.google.com'
+            calendar = service.calendars().get(calendarId=cal_id).execute()
+     
+            # Add calendar to user's calendarList
+            service.calendarList().insert(body={
+                'id': calendar['id']
+            }).execute()
+            
+        else:
+            # Get calendar is already in calendarList
+            for cal in response['items']:
+                if cal['summary'].lower() == 'deliveries':
+                    calendar = cal
+            
+        return calendar
+        
+    def create_calendar_event(self, user):
+        """Create a calendar event for the expected delivery date
+        
+        """
+        service = self._get_calendar_service(user)
+        calendar = self._get_calendar(user)
+        
+        response = service.events().insert(calendarId=calendar['id'], 
+                                           body=self._get_event_body()).execute()
+        self.calendar_event_id = response['id']
+        self.save()
+        
+    def update_calendar_event(self):
+        """Create a calendar event for the expected delivery date
+        
+        """
+        service = self._get_calendar_service(self.current_user or self.employee)
+        calendar = self._get_calendar(self.current_user or self.employee)
+        
+        service.events().update(calendarId=calendar['id'], 
+                                eventId=self.calendar_event_id, 
+                                body=self._get_event_body()).execute()
+                                
+    def _get_event_body(self):
+        evt = {
+            'summary': "Ack {0}".format(self.id),
+            'location': self._get_address_as_string(),
+            'description': self._get_description_as_string(),
+            'start': {
+                'date': self.delivery_date.strftime('%Y-%m-%d')
+            },
+            'end': {
+                'date': self.delivery_date.strftime('%Y-%m-%d')
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                  {'method': 'email', 'minutes': 24 * 60 * 2},
+                  {'method': 'email', 'minutes': 120},
+                ]
+            }
+        }
+        
+        return evt
 
+    def _get_address_as_string(self):
+        addr_str = ""
+        addr = self.customer.addresses.all()[0]
+        
+        addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
+        addr_str += ", " + addr.country + " " + addr.zipcode
+        
+        return addr_str
+        
+    def _get_description_as_string(self):
+        description = u"""
+        Acknowledgement: {0}
+        Customer: {1}
+        Qty     Items: 
+        """.format(self.id, self.customer.name)
+        
+        for i in self.items.all().order_by('id'):
+            description += "{0:.2f}  {1}".format(i.quantity, i.description)
+            
+        return description
+        
 
 class File(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)

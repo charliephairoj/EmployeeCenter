@@ -2,8 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User as AuthUser, UserManager
 from django.contrib import admin
-from oauth2client.django_orm import FlowField
-from oauth2client.django_orm import CredentialsField
+from oauth2client.contrib.django_orm import FlowField
+from oauth2client.contrib.django_orm import CredentialsField
 
 
 User = AuthUser

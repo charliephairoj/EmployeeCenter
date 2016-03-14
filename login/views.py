@@ -14,9 +14,9 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.shortcuts import render_to_response
-from oauth2client import xsrfutil
+from oauth2client.contrib import xsrfutil
 from oauth2client.client import flow_from_clientsecrets
-from oauth2client.django_orm import Storage
+from oauth2client.contrib.django_orm import Storage
 
 from auth.views import current_user
 from login.models import LoginForm
@@ -31,24 +31,37 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
-    redirect_uri='http://employee.dellarobbiathailand.com/oauth2callback')
+    redirect_uri='http://localhost:8000/oauth2callback')
     
     
 @csrf_protect
 @login_required
 @ensure_csrf_cookie
 def main(request):
-    serve(request, 'templates/auth/login.html')
+    return render(request, 'index.html')
 
 
+@login_required
+def check_google_authenticated(request):
+    storage = Storage(CredentialsModel, 'id', request.user, 'credential')
+    credentials = storage.get()
+    if credentials is None or credentials.invalid is True:
+    
+        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                       request.user)
+        authorize_url = FLOW.step1_get_authorize_url()
+        return HttpResponseRedirect(authorize_url)
+        
+    else:
+        return render(request, 'index.html')
+        
+    
 @csrf_exempt
-@ensure_csrf_cookie
 def app_login(request):
     #create the form object
     #to hand the inputs
     form = LoginForm()
 
-    logger.debug(request.method);
     #determines if this is get request
     if request.method == "GET":
         """Determines if the user is authenticated.
@@ -57,11 +70,14 @@ def app_login(request):
         if request.user.is_authenticated():
             #Gets user profile to do checks
 
-            #Get User data
-            user_data = {}
-            jsonStr = mark_safe(json.dumps(user_data))
-            #checks if authenticated for google
             
+            #Only require google login if not inventory
+            if request.user.first_name.lower() != 'inventory':
+                logger.debug('checking')
+                
+                return check_google_authenticated(request)
+            
+               
             #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
             return render(request, 'index.html')
 
@@ -93,29 +109,14 @@ def app_login(request):
                     #login the user
                     login(request, user)
                     
-                    """
+                    
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':
-                        pass
-                        
-                        storage = Storage(CredentialsModel, 'id', request.user, 'credential')
-                        credential = storage.get()
+                        logger.debug('checking')
+                        return check_google_authenticated(request)
                     
-                        if credential is None or credential.invalid == True:
-                            FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
-                                                                           request.user)
-                            authorize_url = FLOW.step1_get_authorize_url()
-                            return HttpResponseRedirect(authorize_url)
-                        
-                        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
-                                                                       request.user)
-                        authorize_url = FLOW.step1_get_authorize_url()
-                        return HttpResponseRedirect(authorize_url)
-                    """
-                    
-
                     #Gets user profile to do checks
-                    url = '/'#'http://localhost:9001/index.html' if settings.DEBUG else '/'
+                    url = '/'
                     return HttpResponseRedirect(url)
                
             return HttpResponseRedirect('/login')

@@ -6,16 +6,19 @@ import datetime
 import logging
 import math
 from decimal import Decimal
+import httplib2
 
 from django.db import models
 from django.contrib.auth.models import User
+from oauth2client.contrib.django_orm import Storage
+from apiclient import discovery
 
 from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
 from media.models import S3Object
 from po.PDF import PurchaseOrderPDF, InventoryPurchaseOrderPDF
 from projects.models import Project, Room, Phase
-
+from administrator.models import CredentialsModel
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +212,56 @@ class PurchaseOrder(models.Model):
         logger.info("Total calculated. \n")
         
         return self.grand_total
+        
+    def create_calendar_event(self, user):
+        """Create a calendar event for the expected delivery date
+        
+        """
+        storage = Storage(CredentialsModel, 'id', user, 'credential')
+        credential = storage.get()
+        
+        http = credentials.authorize(httplib2.Http())
+        service = discovery.build('calendar', 'v3', http=http)
+        
+        response = service.calendarList.list().execute()
+        
+        calendar_summaries = [cal['summary'].lower() for cal in response['items']]
+    
+        # Check if user does not already has account payables
+        if 'account payables' not in calendar_summaries:
+            # Get calendar
+            cal_id = 'dellarobbiathailand.com_aoaa6epe7cqnehh5jc5qrhr9ho@group.calendar.google.com'
+            calendar = service.calendars().get(calendarId=cal_id).execute()
+     
+            # Add calendar to user's calendarList
+            service.calendarList().insert(body={
+                'id': calendar['id']
+            }).execute()
+            
+        else:
+            # Get calendar is already in calendarList
+            for cal in response['items']:
+                if cal['summary'].lower() == 'account payables':
+                    calendar = cal
+    
+        evt = {
+            'summary': "Purchase Order {0}".format(self.id),
+            'start': {
+                'date': '2016-1-6'
+            },
+            'end': {
+                'date': '2016-1-6'
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                  {'method': 'email', 'minutes': 24 * 60},
+                  {'method': 'email', 'minutes': 10},
+                ]
+            }
+        }
+        
+        response = service.events().insert(calendarId=ap_cal['id'], body=evt).execute()
         
         
 class Item(models.Model):
