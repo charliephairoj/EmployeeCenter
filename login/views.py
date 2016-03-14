@@ -31,7 +31,7 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
-    redirect_uri='http://localhost:8000/oauth2callback')
+    redirect_uri='https://employee.dellarobbiathailand.com/oauth2callback')
     
     
 @csrf_protect
