@@ -522,7 +522,9 @@ class PayrollPDF(object):
                          a.start_time.time() if a.start_time else '',
                          a.end_time.time() if a.end_time else '',
                          "{0:.2f}".format(Decimal(a.regular_time or 0)),
-                         "{0:.2f}".format(Decimal(a.overtime or 0))])
+                         "{0:.2f}".format(Decimal(a.overtime or 0)),
+                         "{0:.2f}".format(a.gross_wage),
+                         "{0:.2f}".format(a.net_wage)])
                          
             if a.is_sunday:
                 sundays += 1
@@ -538,7 +540,7 @@ class PayrollPDF(object):
         data.append(['', '', '', 'Sunday Overtime', '{0:.2f}'.format(sunday_ot)])
         
                     
-        table = Table(data, colWidths=(100, 100, 100, 100, 100))
+        table = Table(data, colWidths=(80, 80, 80, 80, 80, 80, 80))
         style = TableStyle([('BOX', (3, -4), (-1, -1), 1, colors.CMYKColor(black=60))])
         table.setStyle(style)
         

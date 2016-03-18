@@ -35,6 +35,7 @@ if __name__ == "__main__":
     
     payroll = Payroll.objects.create(start_date, end_date)
 
+    """
     msg = MIMEMultipart()
     msg['Subject'] = 'Payroll: {0} - {1}'.format(start_date, end_date)
     msg['From'] = 'noreply@dellarobbiathailand.com'
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     connection = boto.connect_ses()
     result = connection.send_raw_email(msg.as_string(), source=msg['From'], destinations=[msg['To']])
     print result
-
+    """
 
 
 

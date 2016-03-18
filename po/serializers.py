@@ -29,6 +29,7 @@ class ItemSerializer(serializers.ModelSerializer):
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    units = serializers.CharField(required=False, allow_null=True, allow_blank=True, write_only=True)
     
     class Meta:
         model = Item
@@ -45,15 +46,22 @@ class ItemSerializer(serializers.ModelSerializer):
         description = validated_data.pop('description', None) or supply.description
         unit_cost = validated_data.pop('unit_cost', None) or supply.cost
         discount = validated_data.pop('discount', None) or supply.discount
+        units = validated_data.pop('units', supply.units)
         
         instance = self.Meta.model.objects.create(description=description, purchase_order=purchase_order,
-                                                  unit_cost=unit_cost, **validated_data)
+                                                  unit_cost=unit_cost, units=units, **validated_data)
         instance.calculate_total()
         
         instance.save()
         
         if unit_cost != supply.cost:
             self._change_supply_cost(supply, unit_cost)
+            
+        # Confirm that the supply has a product
+        if Product.objects.filter(supplier=purchase_order.supplier, supply=supply).count() == 0:
+            p = Product.objects.create(supplier=purchase_order.supplier, supply=supply, 
+                                       purchasing_units=instance.units, cost=unit_cost)
+            
             
         return instance
         
@@ -89,7 +97,7 @@ class ItemSerializer(serializers.ModelSerializer):
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
             
         if instance.unit_cost != instance.supply.cost:
-            self._change_supply_cost(instance.supply, instance.unit_cost)
+            self._change_supply_cost(instance.supply, instance.unit_cost, instance.units)
             
         return instance
     
@@ -114,7 +122,7 @@ class ItemSerializer(serializers.ModelSerializer):
             
         return ret
         
-    def _change_supply_cost(self, supply, cost):
+    def _change_supply_cost(self, supply, cost, units="pc"):
         """
         Method to change the cost of a supply
         
@@ -124,9 +132,10 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             product = Product.objects.get(supply=supply, supplier=supply.supplier)
         except Product.MultipleObjectsReturned:
-            logger.debug(supply.__dict__)
-            logger.debug(supply.supplier)
-            raise ValueError('ok')
+            product = Product.objects.filter(supply=supply, supplier=supply.supplier).order_by('id')[0]
+        except Product.DoesNotExist:
+            product = Product.objects.create(supplier=supply.supplier, supply=supply, 
+                                             purchasing_units=instance.units, cost=cost)
             
         old_price = product.cost
         product.cost = cost

@@ -130,7 +130,6 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'^api/v1/acknowledgement/file/$', 'acknowledgement_file'),
     url(r'^api/v1/acknowledgement/download', 'acknowledgement_download')
     
-    
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )

@@ -228,10 +228,10 @@ class Attendance(models.Model):
         if not self.sick_leave and not self.vacation and not self.cambodia:
             
             # Calculate the regular wage if not a salaried employee
-            if not self.salaried:
-                self.regular_pay = self._calculate_regular_pay_rate()
-            else: 
+            if self.salaried:
                 self.regular_pay = 0
+            else: 
+                self.regular_pay = self._calculate_regular_pay_rate()
 
             # Calculate the overtime wage if overtime is enabled
             if self.enable_overtime:
@@ -246,12 +246,9 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
                 
             # If attendance is for sunday, calculate wage by the hour not the day
-            if self.is_sunday:
-                gross_wage = (self.regular_pay / Decimal('8')) * Decimal(str(math.floor(self.regular_time)))
-            else:
-                gross_wage = self.regular_pay
-            
-            gross_wage = self.regular_pay + self.overtime_pay + self.lunch_pay
+            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) * Decimal('2')
+            gross_wage = corrected_time * (self.regular_pay / Decimal('8'))
+            gross_wage += self.overtime_pay + self.lunch_pay
         
         elif self.cambodia:
             # Calculate the pay rate as usual and add an extra 300THB if the
@@ -357,7 +354,9 @@ class Attendance(models.Model):
         t_delta = self._calculate_timedelta(start_time, end_time)
         
         # Calculate total amount of regular time worked
-        regular_time = (Decimal(str(t_delta.total_seconds())) / Decimal('3600'))
+        regular_time = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
+        
+        regular_time = Decimal(str(math.floor(regular_time * Decimal('2')))) / Decimal('2')
         
         # Subtract an hour if over 5 hours to account for lunch break
         if regular_time >= 5:
@@ -471,10 +470,11 @@ class PayrollManager(models.Manager):
                                                   payroll=payroll)
                                                   
         employees = Employee.objects.filter(status='active', 
+                                            pay_period="monthly",
                                             attendances__id__gt=0,
                                             attendances__date__gte=start_date,
                                             attendances__date__lte=end_date).distinct()
-        employees = employees.order_by('-nationality', 'id')
+        employees = employees.order_by('-nationality', 'id')[0:50]
         index = employees.count()
         threads = []
         
