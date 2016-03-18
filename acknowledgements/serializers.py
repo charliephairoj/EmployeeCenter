@@ -241,7 +241,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         instance.calculate_totals()
         
-        #instance.create_and_upload_pdfs()
+        instance.create_and_upload_pdfs()
         
         # Add pdfs to files list
         filenames = ['acknowledgement_pdf', 'production_pdf', 'label_pdf']

@@ -49,7 +49,7 @@ class ItemSerializer(serializers.ModelSerializer):
         units = validated_data.pop('units', supply.units)
         
         instance = self.Meta.model.objects.create(description=description, purchase_order=purchase_order,
-                                                  unit_cost=unit_cost, units=units, **validated_data)
+                                                  unit_cost=unit_cost, **validated_data)
         instance.calculate_total()
         
         instance.save()
