@@ -73,15 +73,10 @@ def app_login(request):
             
             #Only require google login if not inventory
             if request.user.first_name.lower() != 'inventory':
-                logger.debug('checking')
                 
                 return check_google_authenticated(request)
             
-               
-            #render(request, 'home.html', settings.STATIC_ROOT, {'user_data': jsonStr})
             return render(request, 'index.html')
-
-            #return render(request, 'home.html', {'user_data': jsonStr})
 
         else:
             #logout the request
@@ -89,6 +84,7 @@ def app_login(request):
             #create a new login form
             form = LoginForm()
             return render(request, 'login.html', {'form':form})
+            
     #what to do with a post request
     elif request.method == "POST":
         #initialize form with post data
@@ -112,12 +108,10 @@ def app_login(request):
                     
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':
-                        logger.debug('checking')
                         return check_google_authenticated(request)
                     
                     #Gets user profile to do checks
-                    url = '/'
-                    return HttpResponseRedirect(url)
+                    return HttpResponseRedirect('/')
                
             return HttpResponseRedirect('/login')
 
