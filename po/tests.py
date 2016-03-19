@@ -20,6 +20,7 @@ from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
 from supplies.models import Supply, Fabric, Product, Log
 from projects.models import Project
+from po.serializers import ItemSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -674,10 +675,173 @@ class ItemTest(TestCase):
     Tests the PO Item
     """
     def setUp(self):
-        self.supplier = Supplier(**base_supplier)
-        self.supply.save()
-        self.supply = Fabric.create(**base_fabric)
+        """
+        Set up dependent objects
+        """
+        super(ItemTest, self).setUp()
         
+        self.ct = ContentType(app_label="po")
+        self.ct.save()
+        self.p = Permission(codename="add_purchaseorder", content_type=self.ct)
+        self.p.save()
+        self.p2 = Permission(codename="change_purchaseorder", content_type=self.ct)
+        self.p2.save()
+        
+        #Create the user
+        self.username = 'tester'
+        self.password = 'pass'
+        self.user = User.objects.create_user(self.username, 'charliep@dellarobbiathailand.com', self.password)
+        self.user.save()
+        self.user.user_permissions.add(self.p)
+        self.user.user_permissions.add(self.p2)
+        self.client.login(username=self.username, password=self.password)
+        
+        
+        self.supplier = Supplier(**base_supplier)
+        self.supplier.save()
+        self.address = Address(**base_address)
+        self.address.contact = self.supplier
+        self.address.save()
+        self.contact = SupplierContact(name='test', email='test@yahoo.com', telephone=1234, primary=True)
+        self.contact.supplier = self.supplier
+        self.contact.save()
+        
+        
+        self.supply = Fabric.create(**base_fabric)
+       
+        #self.supply.units = "m^2"
+        self.supply.save()
+        
+        self.po = PurchaseOrder()
+        self.po.employee = self.user
+        self.po.supplier = self.supplier
+        self.po.terms = self.supplier.terms
+        self.po.vat = 7
+        self.po.order_date = datetime.datetime(2014, 3, 2)
+        self.po.save()
+        
+        self.item = Item(unit_cost=Decimal('13.55'), quantity=Decimal('10'), supply=self.supply)
+        self.item.description = self.supply.description
+        self.item.purchase_order = self.po
+        self.item.save()
+
+    def test_creating_item_with_no_product_with_unit_cost(self):
+        """Test creating a item via the serializer where there is no product
+        """
+        context = {'po': self.po,
+                   'supplier': self.supplier}
+        data = {'supply': self.supply.id,
+                'unit_cost': 10,
+                'quantity': 5,
+                'units': 'yd'}
+                
+        item_serializer = ItemSerializer(context=context, data=data)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+            
+        # Verify product is created
+        self.assertEqual(Product.objects.filter(supply=self.supply, supplier=self.supplier).count(), 1)
+        
+        # Verify item
+        resp_data = item_serializer.data
+        
+        self.assertEqual(resp_data['description'], 'Pattern: Maxx, Col: Blue')
+        self.assertEqual(resp_data['units'], 'yd')
+        self.assertEqual(Decimal(resp_data['quantity']), Decimal('5'))
+        self.assertEqual(Decimal(resp_data['total']), Decimal('50'))
+        
+    def test_creating_item_with_product_with_no_unit_cost(self):
+        """Test creating a item via the serializer where there is no product
+        """
+        Product.objects.create(supply=self.supply, supplier=self.supplier, cost=Decimal('12.11'), 
+                               purchasing_units="yd")
+        
+        context = {'po': self.po,
+                   'supplier': self.supplier}
+        data = {'supply': self.supply.id,
+                'quantity': 5,
+                'units': 'yd'}
+                
+        item_serializer = ItemSerializer(context=context, data=data)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+            
+        # Verify product is created
+        self.assertEqual(Product.objects.filter(supply=self.supply, supplier=self.supplier).count(), 1)
+        
+        # Verify item
+        resp_data = item_serializer.data
+        
+        self.assertEqual(resp_data['description'], 'Pattern: Maxx, Col: Blue')
+        self.assertEqual(resp_data['units'], 'yd')
+        self.assertEqual(Decimal(resp_data['quantity']), Decimal('5'))
+        self.assertEqual(Decimal(resp_data['total']), Decimal('60.55'))
+        
+    def test_updating_item_without_product(self):
+        
+        context = {'po': self.po,
+                   'supplier': self.supplier}
+        data = {'supply': self.supply.id,
+                'unit_cost': Decimal('11.22'),
+                'quantity': 4,
+                'units': 'yd'}
+        
+        # Verify there is no product
+        self.assertEqual(Product.objects.filter(supply=self.supply, supplier=self.supplier).count(), 0)
+        
+        # Update item
+        item_serializer = ItemSerializer(self.item, context=context, data=data)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+            
+        # Verify product is created
+        self.assertEqual(Product.objects.filter(supply=self.supply, supplier=self.supplier).count(), 1)
+        
+        # Verify item
+        resp_data = item_serializer.data
+        
+        self.assertEqual(resp_data['description'], 'Pattern: Maxx, Col: Blue')
+        self.assertEqual(resp_data['units'], 'yd')
+        self.assertEqual(Decimal(resp_data['quantity']), Decimal('4'))
+        self.assertEqual(Decimal(resp_data['total']), Decimal('44.88'))
+        
+    def test_updating_item_with_product(self):
+        Product.objects.create(supply=self.supply, supplier=self.supplier, cost=Decimal('12.11'), 
+                               purchasing_units="yd")
+                               
+        context = {'po': self.po,
+                   'supplier': self.supplier}
+        data = {'supply': self.supply.id,
+                'unit_cost': Decimal('11.22'),
+                'quantity': 4,
+                'units': 'm'}
+        
+        # Verify there is a product
+        products = Product.objects.filter(supply=self.supply, supplier=self.supplier)
+        self.assertEqual(products.count(), 1)
+        self.assertEqual(products[0].cost, Decimal('12.11'))
+        self.assertEqual(products[0].purchasing_units, 'yd')
+        
+        # Update item
+        item_serializer = ItemSerializer(self.item, context=context, data=data)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+            
+        # Verify product is created
+        products2 = Product.objects.filter(supply=self.supply, supplier=self.supplier)
+        self.assertEqual(products2.count(), 1)
+        self.assertEqual(products2[0].cost, Decimal('11.22'))
+        self.assertEqual(products2[0].purchasing_units, 'm')
+
+        # Verify item
+        resp_data = item_serializer.data
+        
+        self.assertEqual(resp_data['description'], 'Pattern: Maxx, Col: Blue')
+        self.assertEqual(resp_data['units'], 'm')
+        self.assertEqual(Decimal(resp_data['quantity']), Decimal('4'))
+        self.assertEqual(Decimal(resp_data['total']), Decimal('44.88'))
+    
+
    
     
    

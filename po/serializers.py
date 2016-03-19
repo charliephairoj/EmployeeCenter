@@ -43,9 +43,17 @@ class ItemSerializer(serializers.ModelSerializer):
         supply = validated_data['supply']
         supply.supplier = self.context['supplier']
         purchase_order = self.context['po']
-        description = validated_data.pop('description', None) or supply.description
-        unit_cost = validated_data.pop('unit_cost', None) or supply.cost
-        discount = validated_data.pop('discount', None) or supply.discount
+        
+        # Confirm that the supply has a product
+        if Product.objects.filter(supplier=purchase_order.supplier, supply=supply).count() == 0:
+            p = Product.objects.create(supplier=purchase_order.supplier, 
+                                       supply=supply, 
+                                       purchasing_units=validated_data.get('units', supply.units),
+                                       cost=validated_data.get('unit_cost', 0))
+        
+        description = validated_data.pop('description', supply.description)
+        unit_cost = validated_data.pop('unit_cost', supply.cost)
+        discount = validated_data.pop('discount', supply.discount)
         units = validated_data.pop('units', supply.units)
         
         instance = self.Meta.model.objects.create(description=description, purchase_order=purchase_order,
@@ -53,15 +61,9 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.calculate_total()
         
         instance.save()
-        
+                                       
         if unit_cost != supply.cost:
             self._change_supply_cost(supply, unit_cost)
-            
-        # Confirm that the supply has a product
-        if Product.objects.filter(supplier=purchase_order.supplier, supply=supply).count() == 0:
-            p = Product.objects.create(supplier=purchase_order.supplier, supply=supply, 
-                                       purchasing_units=instance.units, cost=unit_cost)
-            
             
         return instance
         
@@ -71,10 +73,18 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         
         instance.supply.supplier = self.context['supplier']
-        instance.description = validated_data.pop('description', None) or instance.description
+        
+        # Confirm that the supply has a product
+        if Product.objects.filter(supplier=instance.supply.supplier, supply=instance.supply).count() == 0:
+            p = Product.objects.create(supplier=instance.supply.supplier, 
+                                       supply=instance.supply, 
+                                       purchasing_units=validated_data.get('units', instance.supply.units),
+                                       cost=validated_data.get('unit_cost', 0))
+        
+        instance.description = validated_data.pop('description', instance.description) 
         instance.unit_cost = validated_data.pop('unit_cost', instance.supply.cost)
         instance.quantity = Decimal(validated_data.get('quantity'))
-        instance.discount = validated_data.get('discount', None) or instance.discount
+        instance.discount = validated_data.get('discount', instance.discount)
         instance.comments = validated_data.get('comments', instance.comments)   
         units = validated_data.pop('units', instance.supply.units)     
         
@@ -98,7 +108,7 @@ class ItemSerializer(serializers.ModelSerializer):
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
             
         if instance.unit_cost != instance.supply.cost:
-            self._change_supply_cost(instance.supply, instance.unit_cost, instance.units)
+            self._change_supply_cost(instance.supply, instance.unit_cost, units)
             
         return instance
     
@@ -136,10 +146,11 @@ class ItemSerializer(serializers.ModelSerializer):
             product = Product.objects.filter(supply=supply, supplier=supply.supplier).order_by('id')[0]
         except Product.DoesNotExist:
             product = Product.objects.create(supplier=supply.supplier, supply=supply, 
-                                             purchasing_units=instance.units, cost=cost)
+                                             purchasing_units=units, cost=cost)
             
         old_price = product.cost
         product.cost = cost
+        product.purchasing_units = units
         product.save()
         
         log = Log(supply=supply,
@@ -458,9 +469,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             product = Product.objects.get(supply=supply, supplier=supply.supplier)
         except Product.MultipleObjectsReturned:
-            logger.debug(supply.__dict__)
-            logger.debug(supply.supplier)
-            raise ValueError('ok')
+            product = Product.objects.filter(supply=supply, supplier=supply.supplier).order_by('id')[0]
             
         old_price = product.cost
         product.cost = cost
