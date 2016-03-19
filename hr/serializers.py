@@ -226,6 +226,10 @@ class PayrollSerializer(serializers.ModelSerializer):
         
         start_date = validated_data.pop('start_date')
         end_date = validated_data.pop('end_date')
+        
+        instance = Payroll.objects.create(start_date, end_date)
+        
+        return instance
     
     
     
