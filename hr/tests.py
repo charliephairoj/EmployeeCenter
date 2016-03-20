@@ -111,8 +111,8 @@ class AttendanceTest(APITestCase):
         
         # Regular attendance
         self.attendance = Attendance(date=date(2014, 7, 1),
-                                     start_time=datetime(2014, 7, 1, 7, 30, 0, tzinfo=timezone('Asia/Bangkok')),
-                                     end_time=datetime(2014, 7, 1, 23, 33, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                     start_time=timezone('Asia/Bangkok').localize(datetime(2014, 7, 1, 7, 30, 0)),
+                                     end_time=timezone('Asia/Bangkok').localize(datetime(2014, 7, 1, 23, 33, 0)), 
                                      employee=self.employee,
                                      shift=self.shift)
                                      
@@ -120,10 +120,45 @@ class AttendanceTest(APITestCase):
         
         # Sunday attendance
         self.sunday_attendance = Attendance(date=date(2016, 2, 7),
-                                            start_time=datetime(2016, 2, 7, 8, 02, 0, tzinfo=timezone('Asia/Bangkok')),
-                                            end_time=datetime(2016, 2, 7, 23, 15, 0, tzinfo=timezone('Asia/Bangkok')), 
+                                            start_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 7, 8, 02, 0)),
+                                            end_time=timezone('Asia/Bangkok').localize(datetime(2016, 2, 7, 23, 15, 0)), 
                                             employee=self.employee,
                                             shift=self.shift)
+        self.sunday_attendance.save()
+        
+        self.tz = timezone('Asia/Bangkok')
+        
+    def test_start_time_property(self):
+        """Test that the getter and setter for start time work properly
+        """
+        a = Attendance(employee=self.employee, date=date(2016, 3, 21))
+        d1 = datetime(2016, 3, 21, 8, 11, 0)
+        
+        # Test start time without timezone
+        a.start_time = d1
+        self.assertEqual(a._start_time, self.tz.localize(d1))
+        self.assertEqual(a.start_time, self.tz.localize(d1))
+        
+        # Test start time with timezone
+        a.start_time = self.tz.localize(d1)
+        self.assertEqual(a._start_time, self.tz.localize(d1))
+        self.assertEqual(a.start_time, self.tz.localize(d1))
+        
+    def test_end_time_property(self):
+        """Test that the getter and setter for start time work properly
+        """
+        a = Attendance(employee=self.employee, date=date(2016, 3, 21))
+        d1 = datetime(2016, 3, 21, 15, 29, 0)
+        
+        # Test start time without timezone
+        a.end_time = d1
+        self.assertEqual(a._end_time, self.tz.localize(d1))
+        self.assertEqual(a.end_time, self.tz.localize(d1))
+        
+        # Test start time with timezone
+        a.end_time = self.tz.localize(d1)
+        self.assertEqual(a._end_time, self.tz.localize(d1))
+        self.assertEqual(a.end_time, self.tz.localize(d1))
                                             
     def test_regular_attedance_regular_hours(self):
         """Test the regular hours of a regular attedance
@@ -194,23 +229,26 @@ class AttendanceTest(APITestCase):
     def test_regular_attendance_net_wage_where_clockin_late(self):
         """Test the net wage where an employee is late
         """
+        logger.debug("\n\n\n\nTesting late clocking for regular attendance\n\n\n")
+        
         # Change start time so employee is late
-        self.attendance.start_time = datetime(2014, 7, 1, 8, 15, 0, tzinfo=timezone('Asia/Bangkok'))
+        self.attendance.start_time = self.tz.localize(datetime(2014, 7, 1, 8, 15, 0))
         self.attendance.calculate_times()
         self.attendance.calculate_net_wage()
         
-        self.assertLess(self.attendance.regular_time, Decimal('8'))
+        self.assertEqual(self.attendance.regular_time, Decimal('7.5'))
         self.assertEqual(self.attendance.reimbursement, Decimal('0'))
-        self.assertEqual(self.attendance.net_wage, Decimal('550'))
+        self.assertEqual(self.attendance.net_wage, Decimal('515.625'))
     
-    def test_sunday_attedance_regular_hours(self):
+    def test_sunday_attendance_regular_hours(self):
         """Test the regular hours of a regular attedance
         """
+        logger.debug("\n\n\n\nTesting Sunday Regular attendance hours\n\n\n")
         self.sunday_attendance.calculate_times()
         self.assertEqual(self.sunday_attendance.regular_time, Decimal('8.0'))
         self.assertEqual(self.sunday_attendance.overtime, Decimal('0'))
         
-    def test_sunday_attedance_with_overtime_enabled(self):
+    def test_sunday_attendance_with_overtime_enabled(self):
         """Test the regular hours of a regular attedance
         """
         self.sunday_attendance.enable_overtime = True

@@ -75,7 +75,7 @@ class Timestamp(models.Model):
     @property
     def time(self):
         try:
-            return self.datetime.astimezone(self.tz)
+            return self.tz.normalize(self.datetime)
         except AttributeError as e:
             logger.warn(e)
             return None
@@ -139,7 +139,7 @@ class Attendance(models.Model):
     @property
     def start_time(self):
         try:
-            return self._start_time.astimezone(timezone('Asia/Bangkok'))
+            return self.tz.normalize(self._start_time)
         except AttributeError:
             return None
         
@@ -150,7 +150,7 @@ class Attendance(models.Model):
     @property
     def end_time(self):
         try:
-            return self._end_time.astimezone(timezone('Asia/Bangkok'))
+            return self.tz.normalize(self._end_time)
         except AttributeError as e:
             return None
         
@@ -246,10 +246,13 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
                 
             # If attendance is for sunday, calculate wage by the hour not the day
-            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) * Decimal('2')
+            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) / Decimal('2')
+            logger.debug((self.regular_pay / Decimal('8')))
+            logger.debug(corrected_time)
             gross_wage = corrected_time * (self.regular_pay / Decimal('8'))
+            logger.debug(gross_wage)
             gross_wage += self.overtime_pay + self.lunch_pay
-        
+                    
         elif self.cambodia:
             # Calculate the pay rate as usual and add an extra 300THB if the
             # employee is working in Cambodia
@@ -342,21 +345,37 @@ class Attendance(models.Model):
         
         # Determine the proper start time by testings if the clockin time was late
         if self.start_time.time() >= (datetime.combine(self.date, self.shift.start_time) + timedelta(minutes=10)).time():
-            start_time = self.start_time
+            try:
+                start_time = self.tz.localize(self.start_time)
+            except ValueError: 
+                start_time = self.tz.normalize(self.start_time)
         else:
-            start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time))
-            
+            try:
+                start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time))
+            except ValueError:
+                start_time = self.tz.normalize(datetime.combine(self.date, self.shift.start_time))
+                        
         if self.end_time.time() < self.shift.end_time:
-            end_time = self.end_time
+            try:
+                end_time = self.tz.localize(self.end_time)
+            except ValueError: 
+                end_time = self.tz.normalize(self.end_time)
         else:
-            end_time = datetime.combine(self.date, self.shift.end_time).replace(tzinfo=self.tz)
-                
+            try:
+                end_time = self.tz.localize(datetime.combine(self.date, self.shift.end_time))
+            except ValueError:
+                end_time = self.tz.normalize(datetime.combine(self.date, self.shift.end_time))
+        logger.debug("{0} : {1}".format(self.start_time, self.end_time))
+        logger.debug("{0} : {1}".format(start_time, end_time))  
         t_delta = self._calculate_timedelta(start_time, end_time)
         
         # Calculate total amount of regular time worked
         regular_time = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
         
+        logger.debug(regular_time)
+        
         regular_time = Decimal(str(math.floor(regular_time * Decimal('2')))) / Decimal('2')
+        logger.debug(regular_time)
         
         # Subtract an hour if over 5 hours to account for lunch break
         if regular_time >= 5:
