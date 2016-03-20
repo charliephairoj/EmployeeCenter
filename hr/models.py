@@ -57,7 +57,9 @@ class Employee(models.Model):
     location = models.TextField(default="thailand")
     
     class Meta:
-        permissions = (('can_view_pay_rate', 'Can view pay rate'),)
+        permissions = (('can_view_pay_rate', 'Can view pay rate'),
+                       ('can_view_office_pay_rate', 'Can view office pay rate'),
+                       ('can_view_management_pay_rate', 'Can view management pay rate'))
                        
     @property
     def xname(self):
