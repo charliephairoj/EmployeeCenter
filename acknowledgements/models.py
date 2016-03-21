@@ -454,7 +454,7 @@ class Acknowledgement(models.Model):
         """.format(self.id, self.customer.name)
         
         for i in self.items.all().order_by('id'):
-            description += "{0:.2f}  {1}".format(i.quantity, i.description)
+            description += u"{0:.2f}  {1}".format(i.quantity, i.description)
             
         return description
         
