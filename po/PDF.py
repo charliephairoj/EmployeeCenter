@@ -418,8 +418,9 @@ class PurchaseOrderPDF():
             currency = "US Dollar(USD)"
         elif self.po.currency.lower() == "rmb":
             currency = "Renminbi(RMB)"
+        elif self.po.currency.lower() == "sgd":
+            currency = "Singapore Dollar(SGD)"
             
-        logger.debug(self.po.currency)
         # return currency
         return currency
 

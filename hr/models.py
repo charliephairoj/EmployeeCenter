@@ -1,3 +1,4 @@
+
 """
 Models to be use in the HR application
 """
@@ -58,9 +59,9 @@ class Employee(models.Model):
     
     class Meta:
         permissions = (('can_view_pay_rate', 'Can view pay rate'),
-                       ('can_view_office_pay_rate', 'Can view office pay rate'),
-                       ('can_view_management_pay_rate', 'Can view management pay rate'))
-                       
+                       ('view_office_pay_rate', 'Can view office pay rate'),
+                       ('view_management_pay_rate', 'Can view management pay rate'))
+
     @property
     def xname(self):
         try:
@@ -77,7 +78,7 @@ class Timestamp(models.Model):
     @property
     def time(self):
         try:
-            return self.tz.normalize(self.datetime)
+            return self.datetime.astimezone(self.tz)
         except AttributeError as e:
             logger.warn(e)
             return None
@@ -141,7 +142,7 @@ class Attendance(models.Model):
     @property
     def start_time(self):
         try:
-            return self.tz.normalize(self._start_time)
+            return self._start_time.astimezone(timezone('Asia/Bangkok'))
         except AttributeError:
             return None
         
@@ -152,7 +153,7 @@ class Attendance(models.Model):
     @property
     def end_time(self):
         try:
-            return self.tz.normalize(self._end_time)
+            return self._end_time.astimezone(timezone('Asia/Bangkok'))
         except AttributeError as e:
             return None
         
@@ -248,13 +249,10 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
                 
             # If attendance is for sunday, calculate wage by the hour not the day
-            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) / Decimal('2')
-            logger.debug((self.regular_pay / Decimal('8')))
-            logger.debug(corrected_time)
+            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) * Decimal('2')
             gross_wage = corrected_time * (self.regular_pay / Decimal('8'))
-            logger.debug(gross_wage)
             gross_wage += self.overtime_pay + self.lunch_pay
-                    
+        
         elif self.cambodia:
             # Calculate the pay rate as usual and add an extra 300THB if the
             # employee is working in Cambodia
@@ -347,37 +345,21 @@ class Attendance(models.Model):
         
         # Determine the proper start time by testings if the clockin time was late
         if self.start_time.time() >= (datetime.combine(self.date, self.shift.start_time) + timedelta(minutes=10)).time():
-            try:
-                start_time = self.tz.localize(self.start_time)
-            except ValueError: 
-                start_time = self.tz.normalize(self.start_time)
+            start_time = self.start_time
         else:
-            try:
-                start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time))
-            except ValueError:
-                start_time = self.tz.normalize(datetime.combine(self.date, self.shift.start_time))
-                        
+            start_time = self.tz.localize(datetime.combine(self.date, self.shift.start_time))
+            
         if self.end_time.time() < self.shift.end_time:
-            try:
-                end_time = self.tz.localize(self.end_time)
-            except ValueError: 
-                end_time = self.tz.normalize(self.end_time)
+            end_time = self.end_time
         else:
-            try:
-                end_time = self.tz.localize(datetime.combine(self.date, self.shift.end_time))
-            except ValueError:
-                end_time = self.tz.normalize(datetime.combine(self.date, self.shift.end_time))
-        logger.debug("{0} : {1}".format(self.start_time, self.end_time))
-        logger.debug("{0} : {1}".format(start_time, end_time))  
+            end_time = datetime.combine(self.date, self.shift.end_time).replace(tzinfo=self.tz)
+                
         t_delta = self._calculate_timedelta(start_time, end_time)
         
         # Calculate total amount of regular time worked
         regular_time = Decimal(str(t_delta.total_seconds())) / Decimal('3600')
         
-        logger.debug(regular_time)
-        
         regular_time = Decimal(str(math.floor(regular_time * Decimal('2')))) / Decimal('2')
-        logger.debug(regular_time)
         
         # Subtract an hour if over 5 hours to account for lunch break
         if regular_time >= 5:
@@ -845,7 +827,3 @@ class PayRecord(models.Model):
     
         
         
-        
-        
-        
-                
