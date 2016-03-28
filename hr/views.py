@@ -45,7 +45,6 @@ def upload_attendance(request):
             for index, d in enumerate(data):
                 employee = None
                 timestamp = timezone.localize(parser.parse(d[-1]))
-           
                 card_id = d[2]
                 
                 # Find the employee with the corresponding card
@@ -55,7 +54,7 @@ def upload_attendance(request):
                     employee.save()
                 except Employee.DoesNotExist:
                     missing_employees.append({'id': d[2], 'timestamp': timestamp})
-                    logger.warn('No employee for card ID {0}'.format(card_id))
+                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
                 except Employee.MultipleObjectsReturned as e:
                     duplicate_employees.append({'id': d[2], 'timestamp': timestamp})
                     logger.warn(e)
@@ -74,22 +73,27 @@ def upload_attendance(request):
             
         def create_attendances(timestamps):
             for t in timestamps:
-                if Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).count() == 0:
+                count = Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).count()
+                if count == 0:
                     attendance = Attendance.objects.create(employee=t.employee, date=t.datetime.date(), 
-                                                           shift=t.employee.shift, pay_rate  =t.employee.wage)
-
-                    if t.time.hour < t.employee.shift.start_time.hour + 4:
-                        attendance.start_time = t.time
-                    else:
-                        attendance.end_time = t.time
-                else:
+                                                           shift=t.employee.shift, pay_rate=t.employee.wage)
+                elif count == 1:
                     attendance = Attendance.objects.get(employee=t.employee, date=t.datetime.date())
-                    if t.time.hour < t.employee.shift.start_time.hour + 4:
-                        attendance.start_time = t.time
-                    else:
-                        attendance.end_time = t.time
+                elif count > 1:
+                    Attendance.objects.filter(employee=t.employee, date=t.datetime.date()).delete()
+                    attendance = Attendance.objects.create(employee=t.employee, date=t.datetime.date(), 
+                                                           shift=t.employee.shift, pay_rate=t.employee.wage)
+                    
             
+                if t.time.hour < t.employee.shift.start_time.hour + 4:
+                    attendance.start_time = t.time
+                else:
+                    attendance.end_time = t.time
                 attendance.save()
+                
+                assert attendance.id is not None
+                assert attendance.date is not None
+                logger.debug("{0}: {1} | {2}".format(attendance.date, attendance.employee.id, attendance.id))
         
             
         def create_timestamps_and_attendances(data):
@@ -105,6 +109,8 @@ def upload_attendance(request):
                 sleep(100)
                 
             create_attendances(timestamps)
+            
+            logger.debug("Emailing Attenance Upload Report")
             
             heading = """Attendance Upload Report"""
             header_cell_style = """
