@@ -23,7 +23,7 @@ class ModelSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Model
-        field = ('id', 'model', 'images', 'has_back_pillows')
+        field = ('id', 'model', 'images', 'has_back_pillows', 'frame', 'upholstery', 'suspension', 'cushion', 'legs')
         exclude = ('image_url', 'bucket', 'image_key')
         
     def create(self, validated_data):
@@ -59,6 +59,7 @@ class ModelSerializer(serializers.ModelSerializer):
             # Update the image
             image.model = instance
             image.primary = image_data.pop('primary', False)
+            image.configuration = image_data.pop('configuration', False)
             image.save()
             
         return instance
@@ -74,7 +75,8 @@ class ModelSerializer(serializers.ModelSerializer):
         try:
             ret['images'] = [{'id': image.id,
                               'url': image.generate_url(key, secret),
-                              'primary': image.primary} for image in instance.images.all().order_by('-primary')]
+                              'primary': image.primary,
+                              'configuration': image.configuration} for image in instance.images.all().order_by('-primary')]
         except (AttributeError, IndexError):
             pass
             

@@ -249,7 +249,7 @@ class Attendance(models.Model):
                 self.lunch_pay = 0
                 
             # If attendance is for sunday, calculate wage by the hour not the day
-            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) * Decimal('2')
+            corrected_time = Decimal(str(math.floor(self.regular_time * Decimal('2')))) / Decimal('2')
             gross_wage = corrected_time * (self.regular_pay / Decimal('8'))
             gross_wage += self.overtime_pay + self.lunch_pay
         
@@ -473,18 +473,16 @@ class PayrollManager(models.Manager):
                                                   payroll=payroll)
                                                   
         employees = Employee.objects.filter(status='active', 
-                                            pay_period="monthly",
-                                            attendances__id__gt=0,
-                                            attendances__date__gte=start_date,
-                                            attendances__date__lte=end_date).distinct()
-        employees = employees.order_by('-nationality', 'id')[0:50]
+                                            pay_period="monthly").distinct()
+        employees = employees.order_by('-nationality', 'id')
         index = employees.count()
         threads = []
         
         # Make for threads 
-        for i in xrange(0, 4):
-            i1 = i * math.floor(index / 4)
-            i2 = (i + 1) * math.floor(index / 4)
+        """"
+        for i in xrange(0, 2):
+            i1 = i * math.floor(index / 2)
+            i2 = (i + 1) * math.floor(index / 2)
             t = Thread(target=calculate_payrecords, args=(employees[i1:i2],
                                                           payroll,
                                                           start_date,
@@ -497,8 +495,13 @@ class PayrollManager(models.Manager):
             sleep(10)   
         else:
             payroll.create_documents()
-            logger.debug('done')
             return payroll
+        """
+        
+        calculate_payrecords(employees, payroll, start_date, end_date)
+        
+        payroll.create_documents()
+        return payroll
         
         
 class Payroll(models.Model):

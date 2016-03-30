@@ -316,6 +316,13 @@ class Model(models.Model):
     arm_height = models.DecimalField(max_digits=15, decimal_places=2, default=300)
     base_height = models.DecimalField(max_digits=15, decimal_places=2, default=200)
     back_depth = models.DecimalField(max_digits=15, decimal_places=2, default=200)
+    
+    #Descriptions
+    frame = models.TextField()
+    suspension = models.TextField()
+    cushions = models.TextField()
+    upholstery = models.TextField()
+    legs = models.TextField()
 
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -350,8 +357,8 @@ class ModelImage(models.Model):
 
 class Image(S3Object):
     model = models.ForeignKey(Model, related_name='images')
-    primary = models.BooleanField(default=True, db_column='primary_image')
-
+    primary = models.BooleanField(default=False, db_column='primary_image')
+    configuration = models.BooleanField(default=False)
 
 class Configuration(models.Model):
     configuration = models.CharField(max_length=200)
@@ -391,7 +398,7 @@ class Upholstery(Product):
     is for all upholstered furniture, which means furniture that one can 
     sit on.
     """
-    model = models.ForeignKey(Model, on_delete=models.PROTECT)
+    model = models.ForeignKey(Model, on_delete=models.PROTECT, related_name="upholsteries")
     configuration = models.ForeignKey(Configuration, on_delete=models.PROTECT)
     category = models.CharField(max_length=50, null=True)
 
