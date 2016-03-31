@@ -7,6 +7,7 @@ from rest_framework import generics
 from django.db.models import Q
 from django.conf import settings
 from django.http import HttpResponse
+from django.utils.datastructures import MultiValueDictKeyError
 
 from products.models import Upholstery, Table, Model, Configuration, Supply as ProductSupply
 from products.serializers import UpholsterySerializer, TableSerializer, ModelSerializer, ConfigurationSerializer, ProductSupplySerializer
@@ -35,12 +36,21 @@ def product_image(request):
         key = credentials.access_key_id
         secret = credentials.secret_access_key
         
-        filename = save_upload(request)
+        try:
+            filename = request.FILES['file'].name
+        except MultiValueDictKeyError:
+            filename = request.FILES['image'].name
+
+        filename = save_upload(request, filename=filename)
+        logger.debug(filename)
         obj = S3Object.create(filename,
-                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        "acknowledgement/item/image/{0}_{1}".format(time.time(), filename.split('/')[-1]),
                         'media.dellarobbiathailand.com',
                         key,
                         secret)
+                        
+        logger.debug(obj.__dict__)
+        
         response = HttpResponse(json.dumps({'id': obj.id,
                                             'url': obj.generate_url(key, secret)}),
                                 content_type="application/json")

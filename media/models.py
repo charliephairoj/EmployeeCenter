@@ -36,16 +36,21 @@ class S3Object(models.Model):
         obj.access_key = access_key
         obj.secret_key = secret
         
-        if key:
-            obj.key = key
-        else:
-            raise AttributeError("Missing object key")
-        if bucket:
-            obj.bucket = bucket
-        else:
-            raise AttributeError("Missing object bucket")
+        obj.key = key
+        assert obj.key is not None
+        assert obj.key != ''
+        assert obj.key
+        
+        obj.bucket = bucket
+        assert obj.bucket is not None
+        assert obj.bucket != ''
+        assert obj.bucket
+        
+        obj.save()
+        
         if upload:
             obj._upload(filename, delete_original, encrypt_key=encrypt_key)
+            
         obj.save()
         return obj
 
@@ -86,8 +91,12 @@ class S3Object(models.Model):
         return self.dict()
 
     def delete(self, **kwargs):
-        bucket = self._get_bucket()
-        bucket.delete_key(self.key)
+        try:
+            bucket = self._get_bucket()
+            bucket.delete_key(self.key)
+        except Exception as e:
+            logger.warn(e)
+            
         super(S3Object, self).delete(**kwargs)
 
     def _get_connection(self, key, secret):

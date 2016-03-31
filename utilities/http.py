@@ -193,14 +193,14 @@ def save_upload(request, filename=None):
     Saves an uploaded file to disk and returns the filename
     """
     if filename is None:
-        filename = "{0}{1}.jpg".format(settings.MEDIA_ROOT,time.time())
+        filename = "{1}.jpg".format(time.time())
 
     #Save File to disk
     try:
         image = request.FILES['image']
     except MultiValueDictKeyError:
         image = request.FILES['file']
-    filename = settings.MEDIA_ROOT+str(time.time())+'.jpg' 
+    filename = settings.MEDIA_ROOT + filename 
     with open(filename, 'wb+' ) as destination:
         for chunk in image.chunks():
             destination.write(chunk)

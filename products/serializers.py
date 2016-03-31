@@ -53,13 +53,30 @@ class ModelSerializer(serializers.ModelSerializer):
             # Retrieve or create if it does not exist
             try:
                 image = Image.objects.get(id=image_data['id'])
+                
+                if not image.key:
+                    obj = S3Object.objects.get(pk=image_data['id'])
+                    image.key = obj.key
+                    image.id = obj.id
+                    image.bucket = obj.bucket
             except Image.DoesNotExist:
-                image = Image.objects.create(id=image_data['id'], model=instance)
+                obj = S3Object.objects.get(pk=image_data['id'])
+                image = Image()
+                image.key = obj.key
+                image.id = obj.id
+                image.bucket = obj.bucket
+                
+            assert image.key
+            assert image.bucket
             
             # Update the image
             image.model = instance
             image.primary = image_data.pop('primary', False)
             image.configuration = image_data.pop('configuration', False)
+            
+            assert image.key
+            assert image.bucket
+            
             image.save()
             
         return instance
@@ -69,12 +86,14 @@ class ModelSerializer(serializers.ModelSerializer):
         ret = super(ModelSerializer, self).to_representation(instance)
         
         iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
+        key = None #iam_credentials.access_key_id
+        secret = None #iam_credentials.secret_access_key
         
         try:
             ret['images'] = [{'id': image.id,
                               'url': image.generate_url(key, secret),
+                              'key': image.key,
+                              'bucket': image.bucket,
                               'primary': image.primary,
                               'configuration': image.configuration} for image in instance.images.all().order_by('-primary')]
         except (AttributeError, IndexError):
