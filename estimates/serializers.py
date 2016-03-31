@@ -69,7 +69,7 @@ class ItemSerializer(serializers.ModelSerializer):
         estimate = self.context['estimate']
         pillow_data = validated_data.pop('pillows', None)      
         product = validated_data['product']
-        unit_price = validated_data.pop('unit_price', product.price) 
+        unit_price = validated_data.pop('unit_price', validated_data.pop('price', product.price))
         width = validated_data.pop('width', product.width)
         depth = validated_data.pop('depth', product.depth)
         height = validated_data.pop('height', product.height)
