@@ -359,6 +359,7 @@ class Image(S3Object):
     model = models.ForeignKey(Model, related_name='images')
     primary = models.BooleanField(default=False, db_column='primary_image')
     configuration = models.BooleanField(default=False)
+    web_active = models.BooleanField(default=False)
 
 class Configuration(models.Model):
     configuration = models.CharField(max_length=200)

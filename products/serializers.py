@@ -72,6 +72,7 @@ class ModelSerializer(serializers.ModelSerializer):
             # Update the image
             image.model = instance
             image.primary = image_data.pop('primary', False)
+            image.web_active = image_data.pop('web_active', False)
             image.configuration = image_data.pop('configuration', False)
             
             assert image.key
@@ -95,6 +96,7 @@ class ModelSerializer(serializers.ModelSerializer):
                               'key': image.key,
                               'bucket': image.bucket,
                               'primary': image.primary,
+                              'web_active': image.web_active,
                               'configuration': image.configuration} for image in instance.images.all().order_by('-primary')]
         except (AttributeError, IndexError):
             pass
