@@ -193,7 +193,7 @@ def save_upload(request, filename=None):
     Saves an uploaded file to disk and returns the filename
     """
     if filename is None:
-        filename = "{1}.jpg".format(time.time())
+        filename = "{0}.jpg".format(time.time())
 
     #Save File to disk
     try:

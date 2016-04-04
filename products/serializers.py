@@ -49,6 +49,10 @@ class ModelSerializer(serializers.ModelSerializer):
         
         instance = super(ModelSerializer, self).update(instance, validated_data)
         
+        # Maps of image id
+        id_list = [image_data.get('id', None) for image_data in images]
+        
+        # Update and create new images
         for image_data in images:
             # Retrieve or create if it does not exist
             try:
@@ -79,6 +83,11 @@ class ModelSerializer(serializers.ModelSerializer):
             assert image.bucket
             
             image.save()
+            
+        # Delete Images
+        for image in instance.images.all():
+            if image.id not in id_list:
+                image.delete()
             
         return instance
         
