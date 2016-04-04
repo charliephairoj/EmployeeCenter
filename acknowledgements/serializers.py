@@ -294,7 +294,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
            
         # Create a calendar event
-        instance.create_calendar_event(employee)
+        try:
+            instance.create_calendar_event(employee)
+        except Exception as e:
+            logger.warn(e)
         
         # Log Opening of an order
         message = "Order #{0} was acknowledged.".format(instance.id)
@@ -445,8 +448,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Create new pdf documents if the old total and new total are not the same
         if (old_total != instance.total) or old_qty != sum([item.quantity for item in instance.items.all()]):
             instance.create_and_upload_pdfs()
-                           
-        instance.update_calendar_event()         
+                  
+                  
+        try:         
+            instance.update_calendar_event()         
+        except Exception as e:
+            logger.warn(e)
+            
         instance.save()
         
         return instance
