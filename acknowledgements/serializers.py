@@ -92,9 +92,9 @@ class ItemSerializer(serializers.ModelSerializer):
         fabric = validated_data.pop('fabric', None)
         
         try:
-            unit_price = validated_data.pop('custom_price', None) or product.calculate_price(self._grades[fabric.grade])
+            unit_price = validated_data.pop('price', None) or product.calculate_price(self._grades[fabric.grade])
         except AttributeError:
-            unit_price = validated_data.pop('custom_price', product.price)
+            unit_price = validated_data.pop('price', product.price)
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height
@@ -129,7 +129,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """ 
         # Update attributes from client side details
         instance.quantity = validated_data.pop('quantity', instance.quantity)
-        instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
+        instance.unit_price = validated_data.pop('price', instance.unit_price)
         instance.fabric = validated_data.pop('fabric', None)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         

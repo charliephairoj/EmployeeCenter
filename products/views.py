@@ -182,7 +182,12 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
         """
         queryset = self.queryset.all()
         
-        #Filter based on query
+        # Filter by model id
+        model_id = self.request.query_params.get('model_id', None)
+        if model_id:
+            queryset = queryset.filter(model_id=model_id)
+        
+        # Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(description__icontains=query) |

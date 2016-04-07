@@ -76,7 +76,8 @@ class PricelistDocTemplate(BaseDocTemplate):
 class PricelistPDF(object):
     queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-'))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
-    queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
+    #queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
+    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-'))
     
     _display_retail_price = False
     _overhead_percent = 30
@@ -172,18 +173,25 @@ class PricelistPDF(object):
             return data
                 
     def _add_upholstery_data(self, model, data):
-        for upholstery in Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description'):
+        for upholstery in Upholstery.objects.filter(model=model).distinct('description').order_by('description'):
            
             if upholstery.supplies.count() > 0:
                 uphol_data = {'id': upholstery.id,
                               'description': upholstery.description,
                               'width': upholstery.width,
                               'depth': upholstery.depth,
-                              'height': upholstery.height}
+                              'height': upholstery.height,
+                              'price': upholstery.price}
                 prices = upholstery.get_prices()
                 uphol_data['prices'] = prices
             else:
-                logger.debug("{0} has {1} supplies".format(product.description, product.supplies))
+                uphol_data = {'id': upholstery.id,
+                              'description': upholstery.description,
+                              'width': upholstery.width,
+                              'depth': upholstery.depth,
+                              'height': upholstery.height,
+                              'price': upholstery.price,
+                              'prices': []}
         
         
             data[model].append(uphol_data)
@@ -196,14 +204,14 @@ class PricelistPDF(object):
         #products = Upholstery.objects.filter(model=model, supplies__id__gt=0).distinct('description').order_by('description')
         
         # Initial array and image of product
-        images = model.images.all().order_by('-id')
+        images = model.images.all().order_by('-primary')
        
         try:
             data = [[self._prepare_text(model.model,
                                         fontname='Helvetica',
                                         alignment=TA_LEFT,
                                         font_size=24,
-                                        left_indent=12)]]#,[self._get_image(images[0].generate_url(), width=500)]]
+                                        left_indent=12)],[self._get_image(images[0].generate_url(), height=150)]]
         except IndexError:
             data = []
             
@@ -240,7 +248,7 @@ class PricelistPDF(object):
     def _create_section(self, products, index):
         
         header = [self._prepare_text('Grade', font_size=12)]
-        titles = Table([[i] for i in ['', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
+        titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
         data = [titles]
@@ -268,10 +276,14 @@ class PricelistPDF(object):
         #data  = []
         prices = product['prices']
         
+        data.append(["{0:.2f}".format(product['price'])])
+        
+        """
         for grade in sorted(prices.keys()):            
             price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
             data.append(["{0:.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
-                
+        """
+             
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                    ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))]))
@@ -541,8 +553,8 @@ if __name__ == "__main__":
     
     p1 = multiprocessing.Process(target=create_pricelist, args=(directory + '/Pricelist.pdf', ))
     p1.start()
-    p2 = multiprocessing.Process(target=create_fabriclist, args=(directory + '/Fabrics.pdf', fabrics ))
-    p2.start()
+    #p2 = multiprocessing.Process(target=create_fabriclist, args=(directory + '/Fabrics.pdf', fabrics ))
+    #p2.start()
     
     
     

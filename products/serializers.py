@@ -136,6 +136,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
     units = serializers.CharField(required=False, allow_null=True)
+    category = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Upholstery
