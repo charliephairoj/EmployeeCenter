@@ -76,10 +76,15 @@ class ConfigurationViewSet(viewsets.ModelViewSet):
         if query:
             queryset = queryset.filter(Q(configuration__icontains=query))
                                       
-        offset = int(self.request.query_params.get('offset', 0))
+        offset = self.request.query_params.get('offset', None)
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+        logger.debug(offset)
+        logger.debug(limit)
+        if offset is not None and limit:
+            logger.debug('yay')
+            queryset = queryset[int(offset) - 1:limit + (offset - 1)]
+        elif limit == 0:
+            queryset = queryset[0:]
         else:
             queryset = queryset[0:50]
             
