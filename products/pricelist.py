@@ -74,10 +74,10 @@ class PricelistDocTemplate(BaseDocTemplate):
         
 
 class PricelistPDF(object):
-    queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-'))
+    queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-') | Q(model__istartswith='ps-'))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
-    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-'))
+    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-')).exclude(model__icontains="DA-")
     
     _display_retail_price = False
     _overhead_percent = 30
@@ -183,6 +183,10 @@ class PricelistPDF(object):
                               'height': upholstery.height,
                               'price': upholstery.price}
                 prices = upholstery.get_prices()
+                
+                if "DW" in upholstery.model.model:
+                    upholstery.price = prices['A3']
+                    upholstery.save()
                 uphol_data['prices'] = prices
             else:
                 uphol_data = {'id': upholstery.id,
@@ -192,7 +196,6 @@ class PricelistPDF(object):
                               'height': upholstery.height,
                               'price': upholstery.price,
                               'prices': []}
-        
         
             data[model].append(uphol_data)
     
@@ -276,13 +279,12 @@ class PricelistPDF(object):
         #data  = []
         prices = product['prices']
         
-        data.append(["{0:.2f}".format(product['price'])])
-        
-        """
-        for grade in sorted(prices.keys()):            
-            price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
-            data.append(["{0:.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
-        """
+        if "dw" in product['description']:
+            for grade in sorted(prices.keys()):            
+                price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
+                data.append(["{0:.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
+        else:
+            data.append(["{0:.2f}".format(product['price'])])
              
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),

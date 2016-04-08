@@ -141,7 +141,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
     class Meta:
         model = Upholstery
         read_only_fields = ('description', 'type')
-        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
+        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url', 'export_price')
     
     def to_representation(self, instance):
         """
