@@ -49,6 +49,7 @@ def check_google_authenticated(request):
     
         FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
                                                        request.user)
+        FLOW.params['access_type'] = 'offline'
         authorize_url = FLOW.step1_get_authorize_url()
         return HttpResponseRedirect(authorize_url)
         

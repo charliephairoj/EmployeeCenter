@@ -77,7 +77,7 @@ class PricelistPDF(object):
     queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-') | Q(model__istartswith='ps-'))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
-    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-')).exclude(model__icontains="DA-")
+    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-')).exclude(model__icontains="DA-").exclude(model='DW-1217').exclude(model='DW-1212')
     
     _display_retail_price = False
     _overhead_percent = 30
@@ -173,10 +173,11 @@ class PricelistPDF(object):
             return data
                 
     def _add_upholstery_data(self, model, data):
-        for upholstery in Upholstery.objects.filter(model=model).distinct('description').order_by('description'):
+        for upholstery in Upholstery.objects.filter(model=model).exclude(description__icontains="pillow").distinct('description').order_by('description'):
            
             if upholstery.supplies.count() > 0:
                 uphol_data = {'id': upholstery.id,
+                              'configuration': upholstery.configuration.configuration,
                               'description': upholstery.description,
                               'width': upholstery.width,
                               'depth': upholstery.depth,
@@ -190,6 +191,7 @@ class PricelistPDF(object):
                 uphol_data['prices'] = prices
             else:
                 uphol_data = {'id': upholstery.id,
+                              'configuration': upholstery.configuration.configuration,
                               'description': upholstery.description,
                               'width': upholstery.width,
                               'depth': upholstery.depth,
@@ -250,21 +252,21 @@ class PricelistPDF(object):
         
     def _create_section(self, products, index):
         
-        header = [self._prepare_text('Grade', font_size=12)]
+        header = []#[self._prepare_text('Grade', font_size=12)]
         titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
-        data = [titles]
+        data = []#[titles]
         
         assert len(products) <= 4, "There are {0} in this set.".format(len(products))
 
         for product in products:
     
-            header.append(self._prepare_text(product['description'], font_size=12))
+            header.append(self._prepare_text(product['configuration'], font_size=12))
                 
             data.append(self._create_product_price_table(product))           
                 
-        table = Table([header, data], colWidths=[50] + [120 for i in xrange(0, len(header) - 1)])
+        table = Table([header, data], colWidths=[120 for i in xrange(0, len(header))])
         table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)), 
                                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
@@ -279,12 +281,12 @@ class PricelistPDF(object):
         #data  = []
         prices = product['prices']
         
-        if "dw" in product['description']:
+        if "dw" in product['configuration']:
             for grade in sorted(prices.keys()):            
                 price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
-                data.append(["{0:.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
+                data.append(["{0:,.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
         else:
-            data.append(["{0:.2f}".format(product['price'])])
+            data.append(["{0:,.2f}".format(product['price'])])
              
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
