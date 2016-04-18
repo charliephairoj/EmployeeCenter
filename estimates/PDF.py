@@ -79,9 +79,9 @@ class AckDocTemplate(BaseDocTemplate):
 
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
-        canvas.drawRightString(550, 800, 'Estimate')
+        canvas.drawRightString(550, 800, 'Quotation')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 780, 'Estimate #: {0}'.format(self.id))
+        canvas.drawRightString(550, 780, 'Quotation #: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
         code = "E-{0}".format(self.id)
@@ -328,7 +328,7 @@ class EstimatePDF(object):
         if product.image:
             data.append(['', self.get_image(product.image.generate_url(), height=100, max_width=290)])
         #Create table
-        table = Table(data, colWidths=(80, 300, 60, 40, 65))
+        table = Table(data, colWidths=(80, 290, 70, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=80)),
@@ -416,8 +416,14 @@ class EstimatePDF(object):
         #calculate the totals
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
+            
+            quotation_details = "Terms: 50% deposit / Balance before Delivery, Transfer deposit to:\n"
+            quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
+            quotation_details += "294-3-006361\n"
+            quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
+            
             #get subtotal and add to pdf
-            data.append(['', '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
+            data.append([quotation_details, '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
             total = self.ack.subtotal
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
@@ -440,19 +446,22 @@ class EstimatePDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
         data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total])
-        table = Table(data, colWidths=(70, 280, 10, 100, 85))
+        table = Table(data, colWidths=(150, 140, 80, 70, 105))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
-                            ('LINEBELOW', (-2, -1), (-1, -1), 1,
+                            ('LINEBELOW', (0, -1), (-1, -1), 1,
                              colors.CMYKColor(black=80)),
+                            ('LINEBEFORE', (0, 0), (0, -1), 1,
+                             colors.CMYKColor(black=60)),
                             ('LINEAFTER', (-2, 0), (-1, -1), 1,
                              colors.CMYKColor(black=60)),
                             ('LINEBEFORE', (-2, 0), (-2, -1), 1,
                              colors.CMYKColor(black=60)),
                             #General alignment
-                            ('ALIGNMENT', (-2, 0), (-2, -1), 'LEFT'),
+                            ('ALIGNMENT', (0, 0), (-2, -1), 'LEFT'),
                             #Align description
-                            ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT')])
+                            ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT'),
+                            ('SPAN', (0, 0), (2, -1))])
         table.setStyle(style)
         style = TableStyle()
 
