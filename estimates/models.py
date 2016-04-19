@@ -150,7 +150,7 @@ class Estimate(models.Model):
     
     def create_and_upload_pdf(self, delete_original=True):
         ack_filename = self.create_pdf()
-        ack_key = "estimate/Estimate-{0}.pdf".format(self.id)
+        ack_key = "estimate/Quotation-{0}.pdf".format(self.id)
         
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)

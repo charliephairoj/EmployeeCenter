@@ -265,7 +265,7 @@ class EstimatePDF(object):
 
     def _create_products_title_section(self):
         titles = ['Product ID', 'Description', 'Unit Price', 'Qty', 'Total']
-        table = Table([titles], colWidths=(80, 300, 60, 40, 65))
+        table = Table([titles], colWidths=(80, 290, 70, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
                       ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
