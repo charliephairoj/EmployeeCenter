@@ -88,6 +88,16 @@ class ShippingSerializer(serializers.ModelSerializer):
         
         instance.save()
         
+        # Update the delivery date for the acknowledgement
+        instance.acknowledgement.delivery_date = instance.delivery_date
+        instance.acknowledgement.save()
+        
+        # Update the calendar event
+        try:
+            instance.acknowledgement.update_calendar_event()
+        except Exception as e:
+            logger.warn(e)
+        
         return instance
         
     def update(self, instance, validated_data):
@@ -116,6 +126,17 @@ class ShippingSerializer(serializers.ModelSerializer):
             instance.acknowledgement.delivery_date = delivery_date
             instance.create_and_upload_pdf()
             instance.save()
+            
+            # Update the delivery date for the acknowledgement
+            instance.acknowledgement.delivery_date = instance.delivery_date
+            instance.acknowledgement.save()
+        
+            # Update the calendar event
+            try:
+                instance.acknowledgement.update_calendar_event()
+            except Exception as e:
+                logger.warn(e)
+            
         
         return instance
         

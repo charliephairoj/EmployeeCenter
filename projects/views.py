@@ -69,6 +69,9 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         status_exclusions = self.request.query_params.get('status__exclude', None)
         if status_exclusions:
             queryset = queryset.exclude(status__icontains=status_exclusions)
+            
+        # Exclude projects that are completed and order than 30 days
+        queryset = queryset.exclude(status__icontains="completed")
         
         # Enfore ordering by codename    
         queryset = queryset.order_by('-codename')
