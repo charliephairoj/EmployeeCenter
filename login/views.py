@@ -31,7 +31,7 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
-    redirect_uri='https://localhost:8000/oauth2callback')
+    redirect_uri='https://employee.dellarobbiathailand.com/oauth2callback')
     
     
 @csrf_protect
@@ -45,21 +45,17 @@ def main(request):
 def check_google_authenticated(request):
     storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     credentials = storage.get()
-    
-    FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
-                                                   request.user)
-    FLOW.params['access_type'] = 'offline'
-    authorize_url = FLOW.step1_get_authorize_url()
-    return HttpResponseRedirect(authorize_url)
-    """
     if credentials is None or credentials.invalid is True:
     
-       
+        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                       request.user)
+        FLOW.params['access_type'] = 'offline'
+        authorize_url = FLOW.step1_get_authorize_url()
+        return HttpResponseRedirect(authorize_url)
         
     else:
         return render(request, 'index.html')
-    """
-     
+        
     
 @csrf_exempt
 def app_login(request):
@@ -119,11 +115,6 @@ def app_login(request):
                     return HttpResponseRedirect('/')
                
             return HttpResponseRedirect('/login')
-            
-        else:
-            
-            return HttpResponseRedirect('/login')
-            
 
 
 @login_required
