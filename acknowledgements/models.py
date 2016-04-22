@@ -411,10 +411,10 @@ class Acknowledgement(models.Model):
         service = self._get_calendar_service(self.current_user or self.employee)
         calendar = self._get_calendar(self.current_user or self.employee)
         
-        service.events().update(calendarId=calendar['id'], 
-                                eventId=self.calendar_event_id, 
-                                body=self._get_event_body()).execute()
-                                
+        resp = service.events().update(calendarId=calendar['id'], 
+                                       eventId=self.calendar_event_id, 
+                                       body=self._get_event_body()).execute()
+                                                                       
     def _get_event_body(self):
         evt = {
             'summary': "Ack {0}".format(self.id),

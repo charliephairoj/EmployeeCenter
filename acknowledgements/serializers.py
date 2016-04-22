@@ -555,28 +555,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         # Save log                                               
         log.save()
-        
-        """
-        # Determine how much to cut
-        if log.quantity > original_qty:
-            #Cut fabric from stock
-            qty = log.quantity - original_qty
-            try:
-                fabric.quantity -= float(qty)
-            except TypeError:
-                fabric.quantity -= Decimal(qty)
-                
-        elif log.quantity < original_qty:
-            # Cut fabric from stock
-            qty = original_qty - log.quantity
-            try:
-                fabric.quantity += float(qty)
-            except TypeError:
-                fabric.quantity += Decimal(qty)
-        
-        fabric.save()
-        """
-        
+    
         
         
     
