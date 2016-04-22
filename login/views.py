@@ -45,17 +45,21 @@ def main(request):
 def check_google_authenticated(request):
     storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     credentials = storage.get()
+    
+    FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
+                                                   request.user)
+    FLOW.params['access_type'] = 'offline'
+    authorize_url = FLOW.step1_get_authorize_url()
+    return HttpResponseRedirect(authorize_url)
+    
+    """
     if credentials is None or credentials.invalid is True:
     
-        FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
-                                                       request.user)
-        FLOW.params['access_type'] = 'offline'
-        authorize_url = FLOW.step1_get_authorize_url()
-        return HttpResponseRedirect(authorize_url)
+        
         
     else:
         return render(request, 'index.html')
-        
+    """ 
     
 @csrf_exempt
 def app_login(request):

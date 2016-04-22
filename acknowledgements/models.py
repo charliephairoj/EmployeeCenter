@@ -404,16 +404,25 @@ class Acknowledgement(models.Model):
         self.calendar_event_id = response['id']
         self.save()
         
-    def update_calendar_event(self):
+    def update_calendar_event(self, user=None):
         """Create a calendar event for the expected delivery date
         
         """
-        service = self._get_calendar_service(self.current_user or self.employee)
-        calendar = self._get_calendar(self.current_user or self.employee)
+        if user is None:
+            user = self.current_user or self.employee
         
-        resp = service.events().update(calendarId=calendar['id'], 
-                                       eventId=self.calendar_event_id, 
-                                       body=self._get_event_body()).execute()
+        if self.calendar_event_id:
+            
+            service = self._get_calendar_service(user)
+            calendar = self._get_calendar(user)
+        
+            resp = service.events().update(calendarId=calendar['id'], 
+                                           eventId=self.calendar_event_id, 
+                                           body=self._get_event_body()).execute()
+                                          
+        else:
+            
+            self.create_calendar_event(user)
                                                                        
     def _get_event_body(self):
         evt = {
@@ -438,13 +447,17 @@ class Acknowledgement(models.Model):
         return evt
 
     def _get_address_as_string(self):
-        addr_str = ""
-        addr = self.customer.addresses.all()[0]
+        try:
+            addr_str = ""
+            addr = self.customer.addresses.all()[0]
         
-        addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
-        addr_str += ", " + addr.country + " " + addr.zipcode
+            addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
+            addr_str += ", " + addr.country + " " + addr.zipcode
         
-        return addr_str
+            return addr_str
+        except Exception as e:
+            logger.warn(e)
+            return ""
         
     def _get_description_as_string(self):
         description = u"""
