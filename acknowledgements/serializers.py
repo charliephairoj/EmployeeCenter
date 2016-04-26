@@ -129,7 +129,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """ 
         # Update attributes from client side details
         instance.quantity = validated_data.pop('quantity', instance.quantity)
-        instance.unit_price = validated_data.pop('price', instance.unit_price)
+        instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
         instance.fabric = validated_data.pop('fabric', None)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         
