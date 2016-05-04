@@ -78,7 +78,8 @@ class PricelistPDF(object):
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
     queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-')).exclude(model__icontains="DA-").exclude(model='DW-1217').exclude(model='DW-1212')
-    
+    data = [m for m in queryset.filter(model__istartswith='dw-')]
+    data += [m for m in queryset.exclude(model__istartswith='dw-').order_by('model')]
     _display_retail_price = False
     _overhead_percent = 30
     _profit_percent = 35
@@ -141,7 +142,10 @@ class PricelistPDF(object):
 
         models = self._prepare_data(self.queryset)
         
-        for model in sorted(models.keys(), key=lambda model: model.model):
+        models_name = [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" in model.model]
+        models_name += [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" not in model.model]
+        
+        for model in models_name:
                 
             stories.append(self._create_model_section(model, models[model]))
             stories.append(PageBreak())
@@ -252,11 +256,11 @@ class PricelistPDF(object):
         
     def _create_section(self, products, index):
         
-        header = []#[self._prepare_text('Grade', font_size=12)]
+        header = [[]]#[self._prepare_text('Grade', font_size=12)]
         titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
-        data = []#[titles]
+        data = [Table([[], ["Before Discount"], ["After Discount"]])]#[titles]
         
         assert len(products) <= 4, "There are {0} in this set.".format(len(products))
 
@@ -266,7 +270,7 @@ class PricelistPDF(object):
                 
             data.append(self._create_product_price_table(product))           
                 
-        table = Table([header, data], colWidths=[120 for i in xrange(0, len(header))])
+        table = Table([header, data], colWidths=[80] + [120 for i in xrange(0, len(header) - 1)])
         table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)), 
                                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
@@ -281,16 +285,26 @@ class PricelistPDF(object):
         #data  = []
         prices = product['prices']
         
-        if "dw" in product['configuration']:
+        if "dw-" in product['configuration']:
+            price = prices['A3']
+            data.append(["{0:,.2f}".format(price)])
+            """
+            
             for grade in sorted(prices.keys()):            
                 price_modifier = Decimal('1') if self._display_retail_price else Decimal('0.5')
                 data.append(["{0:,.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
+            """
         else:
-            data.append(["{0:,.2f}".format(product['price'])])
+            price = product['price']
+            price = math.ceil(price / Decimal('35'))
+            data.append([price])
+            new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
+            data.append([new_price])
              
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
-                                   ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))]))
+                                   ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
+                                   ('TEXTCOLOR', (0, -1), (-1, -1), 'red')]))
         return table
         
     def _prepare_text(self, description, font_size=12, alignment=TA_CENTER, left_indent=0, fontname='Garuda', leading=12):

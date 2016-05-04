@@ -294,9 +294,10 @@ class EstimatePDF(object):
         except Exception as e:
             print e
             
-        if product.is_custom_size:
-            dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
-            data.append(['', dimension_str])
+        #if product.is_custom_size:
+        dimension_str = u'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
+        data.append(['', dimension_str])
+        
         #increase the item number
         if len(product.pillows.all()) > 0:
             for pillow in product.pillows.all():
