@@ -78,22 +78,24 @@ class ContactMixin(object):
             address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
             if address_serializer.is_valid(raise_exception=True):
                 address_serializer.save()
-                
         if contacts_data:
-            contact_serializer = ContactSerializer(data=contacts_data, context={'supplier': instance}, many=True)
-            if contact_serializer.is_valid(raise_exception=True):
-                contact_serializer.save()
+            self._sync_contacts(instance, contacts_data)
                         
         field = 'is_customer' if isinstance(instance, Customer) else 'is_supplier'
         setattr(instance, field, True)
         
         instance.save()
+        
+        try:
+            instance.sync_google_contacts()
+        except Exception as e:
+            logger.warn(e)
 
         return instance
         
     def _update_addresses(self, instance, addresses_data):
         """
-        Create, Update and Deletes contacts
+        Create, Update and Deletes addresses
         """
         #Get list of ids
         id_list = [address_data.get('id', None) for address_data in addresses_data]
@@ -115,6 +117,25 @@ class ContactMixin(object):
         for address in instance.addresses.all():
             if address.id not in id_list:
                 address.delete()
+                
+    def _sync_contacts(self, instance, contacts_data):
+        """
+        Create, Update and Delete contacts
+        """
+        # List of 
+        id_list = [c.id for d in instance.contacts.all()]
+        
+        # Create and update contacts
+        for contact_data in contacts_data:
+            # Get or create new contact
+            try:
+                contact = Contact.objects.get(pk=contact_data['id'])
+            except KeyError:
+                contact = Contact()
+            
+            contact.name = contact_data.pop('name', None)
+            contact.email = contact_data.pop("email", None)
+            contact.telephone = contact_data.pop('telephone', None)
         
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
@@ -126,6 +147,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    contacts = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
     
     class Meta:
         model = Customer
@@ -140,13 +162,23 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
             
         addresses_data = self.context['request'].data.get('addresses', None)
         
+        contacts_data = validated_data.pop('contacts', None)
+        
         if addresses_data:
             self._update_addresses(instance, addresses_data)
         
+        if contacts_data:
+            self._sync_contacts(instance, contacts_data)
+            
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
             
         instance.save()
+        
+        try:
+            instance.sync_google_contacts()
+        except Exception as e:
+            logger.warn(e)
         
         return instance
     

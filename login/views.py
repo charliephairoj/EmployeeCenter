@@ -28,10 +28,14 @@ logger = logging.getLogger(__name__)
 
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
+# List of scopes to request access to
+scopes = 'https://www.googleapis.com/auth/calendar'
+scopes += ' https://www.googleapis.com/auth/calendar.readonly'
+scopes += ' https://www.google.com/m8/feeds/'
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
-    scope='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.readonly',
-    redirect_uri='https://employee.dellarobbiathailand.com/oauth2callback')
+    scope=scopes,
+    redirect_uri='http://localhost:9001/oauth2callback')
     
     
 @csrf_protect

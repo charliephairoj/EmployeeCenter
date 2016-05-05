@@ -1,5 +1,13 @@
 from decimal import Decimal
+
 from django.db import models
+from oauth2client.contrib.django_orm import Storage
+from apiclient import discovery
+import gdata.contacts.client
+import gdata.contacts.data
+
+from administrator.models import CredentialsModel, OAuth2TokenFromCredentials
+
 
 
 class Contact(models.Model):
@@ -15,8 +23,73 @@ class Contact(models.Model):
     notes = models.TextField(null=True, default="", blank=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
+    contact = models.ForeignKey('self', related_name="contacts")
+    contact_service = None
+    website = models.TextField(null=True, blank=True)
     #class Meta:
         #ordering = ['name']
+
+    @classmethod   
+    def get_google_contacts_service(self, user):
+        if self.contact_service is None:
+            storage = Storage(CredentialsModel, 'id', user, 'credential')
+            auth_token = OAuth2TokenFromCredentials(storage.get())
+            self.contact_service = gdata.contacts.client.ContactsClient()
+            auth_token.authorize(self.contact_service)
+            
+        return self.contact_service
+        
+    def sync_google_contacts(self, user):
+        # Make the service availabel via the self.contact_service attribute
+        self._get_goolge_contacts_service(user)
+        
+        # Loop through all the contacts
+        for contact in self.contacts.all():
+            if contact.google_contact_id:
+                self._update_google_contact(contact)
+            else:
+                self._create_google_contact(contact)
+                
+    def _create_google_contact(self, contact):
+        """Create a new google contact
+        """
+        new_contact = gdata.contacts.data.ContactEntry()
+        new_contact.name.full_name = contact.name
+        
+        if contact.email:
+            new_contact.email.append(gdata.data.Email(address=contact.email, 
+                                                      primary=True))
+        if contact.telephone:
+            new_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone))
+            
+        g_contact = self.contact_service.CreateContact(new_contact)
+        
+        # Save and the contact ID
+        contact.google_contact_id = g_contact.id.text
+        contact.save()
+        
+    def _update_google_contact(self, contact):
+        """Update the google contact
+        """
+        g_contact = self.contact_service.GetContact(contact.google_contact_id)
+        g_contact.name.full_name = contact.name
+        
+        if contact.email:
+            try:
+                g_contact.email[0].address = contact.email
+                g_contact.email[0].primary = True
+            except IndexError:
+                g_contact.email.append(gdata.data.Email(address=contact.email,
+                                                        primary=True))
+        
+        if contact.telephone:
+            try:
+                g_contact.phone_number[0].text = contact.telephone
+            except IndexError:
+                g_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone))
+                
+        # Update the google contact
+        g_contact = self.contact_service.Update(g_contact)
 
     
 
@@ -122,7 +195,7 @@ class SupplierContact(models.Model):
     name = models.TextField()
     email = models.TextField(null=True, blank=True)
     telephone = models.TextField(null=True, blank=True)
-    supplier = models.ForeignKey(Supplier, related_name='contacts')
+    supplier = models.ForeignKey(Supplier)
     primary = models.BooleanField(db_column='primary_contact', default=False)
 
     

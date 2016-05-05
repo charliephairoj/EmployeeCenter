@@ -14,6 +14,14 @@ from contacts.serializers import CustomerSerializer, SupplierSerializer
 logger = logging.getLogger(__name__)
 
 
+def sync_customers(request):
+    
+    service = Customer.get_google_contacts_service(request.user)
+    query = gdata.contacts.client.ContactsQuery()
+    query.max_results = 10000
+    feed = gd_client.GetContacts(q = query)
+    print len(feed.entry)
+    
 class CustomerViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows acknowledgements to be view or editted
