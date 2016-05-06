@@ -472,8 +472,7 @@ class PayrollManager(models.Manager):
                                                   end_date=end_date,
                                                   payroll=payroll)
                                                   
-        employees = Employee.objects.filter(status='active', 
-                                            pay_period="monthly").distinct()
+        employees = Employee.objects.filter(attendances__date__gte=start_date).distinct()
         employees = employees.order_by('-nationality', 'id')
         index = employees.count()
         threads = []

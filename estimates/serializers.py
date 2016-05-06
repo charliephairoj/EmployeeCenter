@@ -156,34 +156,35 @@ class EstimateSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create nested items
         """
-        
-        items_data = validated_data.pop('items')
-        #files = validated_data.pop('files', [])
+        try:
+            items_data = validated_data.pop('items')
+            #files = validated_data.pop('files', [])
 
-        for item_data in items_data:
-            for field in ['product', 'fabric', 'image']:
-                try:
-                    item_data[field] = item_data[field].id
-                except KeyError:
-                    pass
-                except AttributeError:
-                    pass
+            for item_data in items_data:
+                for field in ['product', 'fabric', 'image']:
+                    try:
+                        item_data[field] = item_data[field].id
+                    except KeyError:
+                        pass
+                    except AttributeError:
+                        pass
 
-        discount = validated_data.pop('discount', None) or validated_data['customer'].discount
+            discount = validated_data.pop('discount', None) or validated_data['customer'].discount
         
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
-                                                  **validated_data)
-        instance.status = "open"
+            instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
+                                                      **validated_data)
+            instance.status = "open"
         
-        item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
+            item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
         
-        if item_serializer.is_valid(raise_exception=True):
-            item_serializer.save()
+            if item_serializer.is_valid(raise_exception=True):
+                item_serializer.save()
         
-        instance.calculate_totals()
+            instance.calculate_totals()
         
-        instance.create_and_upload_pdf()
-        
+            instance.create_and_upload_pdf()
+        except Exception as e:
+            logger.warn(e)
         #Assign files
         #for file in files:
         #    File.objects.create(file=S3Object.objects.get(pk=file['id']),
@@ -208,31 +209,35 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
         
     def update(self, instance, validated_data):
+        try:
+            
+            instance.vat = validated_data.pop('vat', instance.vat)
+            instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+            instance.project = validated_data.pop('project', instance.project)
+            #Update attached files
+            #files = validated_data.pop('files', [])
+            #for file in files:
+            #    try: 
+            #        File.objects.get(file_id=file['id'], acknowledgement=instance)
+            #    except File.DoesNotExist:
+            #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
+            #                            acknowledgement=instance)
         
-        instance.vat = validated_data.pop('vat', instance.vat)
-        instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
-        instance.project = validated_data.pop('project', instance.project)
-        #Update attached files
-        #files = validated_data.pop('files', [])
-        #for file in files:
-        #    try: 
-        #        File.objects.get(file_id=file['id'], acknowledgement=instance)
-        #    except File.DoesNotExist:
-        #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
-        #                            acknowledgement=instance)
+            instance.status = validated_data.pop('status', instance.status)
         
-        instance.status = validated_data.pop('status', instance.status)
+            items_data = validated_data.pop('items')
         
-        items_data = validated_data.pop('items')
+            self._update_items(instance, items_data)
         
-        self._update_items(instance, items_data)
+            if instance.status.lower() != 'cancelled':
+                instance.calculate_totals()
         
-        if instance.status.lower() != 'cancelled':
-            instance.calculate_totals()
-        
-            instance.create_and_upload_pdf()
+                instance.create_and_upload_pdf()
                                  
-        instance.save()
+            instance.save()
+        
+        except Exception as e:
+            logger.warn(e)
         
         return instance
         
@@ -258,17 +263,18 @@ class EstimateSerializer(serializers.ModelSerializer):
         
         try:
             ret['files'] = [{'id': instance.id,
+                             'filename': instance.pdf.key.split('/')[-1],
                              'url': instance.pdf.generate_url()}]
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            logger.warn(e)
             
         try:
             ret['files'] += [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
                              'url': file.generate_url()} for file in instance.files.all()]
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            logger.warn(e)
             
         return ret
         

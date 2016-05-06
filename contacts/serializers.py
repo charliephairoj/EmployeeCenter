@@ -1,6 +1,6 @@
 import logging
 
-from contacts.models import Customer, Supplier, Address, SupplierContact
+from contacts.models import Customer, Supplier, Address, SupplierContact, Contact
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
@@ -92,7 +92,7 @@ class ContactMixin(object):
             logger.warn(e)
 
         return instance
-        
+    
     def _update_addresses(self, instance, addresses_data):
         """
         Create, Update and Deletes addresses
@@ -123,19 +123,30 @@ class ContactMixin(object):
         Create, Update and Delete contacts
         """
         # List of 
-        id_list = [c.id for d in instance.contacts.all()]
-        
+        id_list = [c.get('id', None) for c in contacts_data]
+
         # Create and update contacts
         for contact_data in contacts_data:
             # Get or create new contact
             try:
                 contact = Contact.objects.get(pk=contact_data['id'])
             except KeyError:
-                contact = Contact()
+                contact = Contact.objects.create(name=contact_data['name'],
+                                                 contact=instance)
+                id_list.append(contact.id)
+                
             
             contact.name = contact_data.pop('name', None)
             contact.email = contact_data.pop("email", None)
             contact.telephone = contact_data.pop('telephone', None)
+            contact.contact = instance
+            contact.save()
+            logger.debug(contact.__dict__)
+            
+        # Delete contacts
+        for contact in instance.contacts.all():
+            if contact.id not in id_list:
+                contact.delete()
         
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
@@ -151,6 +162,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Customer
+        exclude = ('contact', 'google_contact_id')
         
     def update(self, instance, validated_data):
         """
@@ -163,7 +175,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         addresses_data = self.context['request'].data.get('addresses', None)
         
         contacts_data = validated_data.pop('contacts', None)
-        
+
         if addresses_data:
             self._update_addresses(instance, addresses_data)
         
@@ -176,11 +188,22 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         instance.save()
         
         try:
-            instance.sync_google_contacts()
+            instance.sync_google_contacts(self.context['request'].user)
         except Exception as e:
             logger.warn(e)
         
         return instance
+        
+    def to_representation(self, instance):
+        
+        ret = super(CustomerSerializer, self).to_representation(instance)
+        
+        ret['contacts'] = [{'id': c.id,
+                            'name': c.name,
+                            'telephone': c.telephone,
+                            'email': c.email} for c in instance.contacts.all()]
+                            
+        return ret
     
                 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
@@ -194,7 +217,8 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Supplier
-        
+        exclude = ('contact', 'google_contact_id')
+
     def to_representation(self, instance):
         
         ret = super(SupplierSerializer, self).to_representation(instance)

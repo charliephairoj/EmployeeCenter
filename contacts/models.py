@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 
 from django.db import models
 from oauth2client.contrib.django_orm import Storage
@@ -8,6 +9,8 @@ import gdata.contacts.data
 
 from administrator.models import CredentialsModel, OAuth2TokenFromCredentials
 
+
+logger = logging.getLogger(__name__)
 
 
 class Contact(models.Model):
@@ -26,6 +29,7 @@ class Contact(models.Model):
     contact = models.ForeignKey('self', related_name="contacts")
     contact_service = None
     website = models.TextField(null=True, blank=True)
+    google_contact_id = models.TextField(null=True, blank=True)
     #class Meta:
         #ordering = ['name']
 
@@ -41,12 +45,16 @@ class Contact(models.Model):
         
     def sync_google_contacts(self, user):
         # Make the service availabel via the self.contact_service attribute
-        self._get_goolge_contacts_service(user)
+        self.get_google_contacts_service(user)
         
         # Loop through all the contacts
         for contact in self.contacts.all():
             if contact.google_contact_id:
-                self._update_google_contact(contact)
+                try:
+                    self._update_google_contact(contact)
+                except gdata.client.RequestError, e:
+                    if e.status == 404:
+                        self._create_google_contact(contact)
             else:
                 self._create_google_contact(contact)
                 
@@ -54,43 +62,55 @@ class Contact(models.Model):
         """Create a new google contact
         """
         new_contact = gdata.contacts.data.ContactEntry()
-        new_contact.name.full_name = contact.name
+        new_contact.name = gdata.data.Name(full_name=gdata.data.FullName(text=contact.name))
         
         if contact.email:
-            new_contact.email.append(gdata.data.Email(address=contact.email, 
-                                                      primary=True))
+            new_contact.email.append(gdata.data.Email(address=contact.email,
+                                                      primary='true',
+                                                      rel=gdata.data.WORK_REL))
         if contact.telephone:
-            new_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone))
+            new_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone,
+                                                                   rel=gdata.data.WORK_REL, 
+                                                                   primary='true'))
             
         g_contact = self.contact_service.CreateContact(new_contact)
         
         # Save and the contact ID
         contact.google_contact_id = g_contact.id.text
         contact.save()
+        assert contact.google_contact_id
         
     def _update_google_contact(self, contact):
         """Update the google contact
         """
         g_contact = self.contact_service.GetContact(contact.google_contact_id)
-        g_contact.name.full_name = contact.name
+        g_contact.name.full_name.text = contact.name
         
         if contact.email:
             try:
                 g_contact.email[0].address = contact.email
-                g_contact.email[0].primary = True
-            except IndexError:
+                g_contact.email[0].primary = 'true'
+                g_contact.email[0].rel = rel=gdata.data.WORK_REL
+            except IndexError as e:
+                logger.warn(e)
                 g_contact.email.append(gdata.data.Email(address=contact.email,
-                                                        primary=True))
+                                                        primary='true',
+                                                        rel=gdata.data.WORK_REL))
         
         if contact.telephone:
             try:
                 g_contact.phone_number[0].text = contact.telephone
-            except IndexError:
-                g_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone))
+            except (IndexError, Exception) as e:
+                logger.warn(e)
+                logger.debug(contact.telephone)
+                logger.debug(g_contact.phone_number)
+                g_contact.phone_number.append(gdata.data.PhoneNumber(text=contact.telephone,
+                                                                     rel=gdata.data.WORK_REL, 
+                                                                     primary='true'))
                 
         # Update the google contact
         g_contact = self.contact_service.Update(g_contact)
-
+        assert contact.google_contact_id
     
 
 

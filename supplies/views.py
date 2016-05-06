@@ -240,8 +240,11 @@ class FabricList(FabricMixin, SupplyList):
 
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', self.request.query_params.get('page_size', settings.REST_FRAMEWORK['PAGINATE_BY'])))
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+        
+        if offset == 0 and limit == 0:
+            queryset = queryset
+        elif offset and limit:
+            queryset = queryset[offset:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
             
