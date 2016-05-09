@@ -41,7 +41,7 @@ class DealSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         
         description = validated_data.pop('description', 'New Deal')
-        employee = self.content('request').user
+        employee = self.context['request'].user
         
         instance = self.Meta.model.objects.create(description=description, employee=employee, **validated_data)
         
