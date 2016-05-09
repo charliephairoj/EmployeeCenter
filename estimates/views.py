@@ -202,21 +202,27 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=0)
-        logger.debug(max_date)
-        queryset = self.queryset.exclude(status__icontains='cancelled', last_modified__gt=max_date)
-        
+        max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=30)
+        queryset = self.queryset.exclude(status__icontains='cancelled', last_modified__lt=max_date)
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
             queryset = queryset.filter(Q(customer__name__icontains=query) | 
                                        Q(pk__icontains=query)).distinct('id')
+                                       
+        # Filter by customer
+        customer_id = self.request.query_params.get('customer_id', None)
+        if customer_id:
+            queryset = queryset.filter(customer_id=customer_id)
                                       
-        offset = int(self.request.query_params.get('offset', 0))
+        offset = self.request.query_params.get('offset', None)
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
+        if offset is not None and limit:
+            queryset = queryset[int(offset):int(limit) + (int(offset))]
+        elif offset is not None and limit == 0:
+            queryset = queryset[int(offset):]
         else:
             queryset = queryset[0:50]
             

@@ -41,9 +41,7 @@ class Estimate(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, related_name='estimates')
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
-    pdf = models.ForeignKey(S3Object,
-                                            null=True,
-                                            related_name='+')
+    pdf = models.ForeignKey(S3Object, null=True, related_name='+')
     
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimate")
               

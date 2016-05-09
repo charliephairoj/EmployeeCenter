@@ -30,7 +30,7 @@ from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail
 from equipment.views import EquipmentList, EquipmentDetail
 from hr.views import PayrollList
-
+from deals.views import DealList, DealDetail
 
 """
 API Section
@@ -110,7 +110,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/equipment/(?P<pk>[0-9]+)/$', EquipmentDetail.as_view()),
     url(r'^api/v1/log/$', LogList.as_view()),
     url(r'^api/v1/log/(?P<pk>[0-9]+)/$', LogDetail.as_view()),
-    
+    url(r'^api/v1/deal/$', DealList.as_view()),
+    url(r'^api/v1/deal/(?P<pk>[0-9]+)/$', DealDetail.as_view()),
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
 )
 
