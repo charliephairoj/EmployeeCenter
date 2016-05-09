@@ -162,7 +162,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        exclude = ('contact', 'google_contact_id')
+        exclude = ('contact', 'google_contact_id', 'type')
         
     def update(self, instance, validated_data):
         """
