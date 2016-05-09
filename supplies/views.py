@@ -217,7 +217,7 @@ class FabricList(FabricMixin, SupplyList):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = self.queryset.all().order_by('status')
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
