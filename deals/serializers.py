@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 import logging
 from decimal import Decimal
+from pytz import timezone
 
 import boto
 from rest_framework import serializers
 from rest_framework.fields import DictField
-from pytz import timezone
+from django.contrib.auth.models import User
 
 from deals.models import Deal
 from contacts.models import Contact, Customer
@@ -26,6 +27,7 @@ class DealSerializer(serializers.ModelSerializer):
     contact = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Contact.objects.all())
     acknowledgement = AcknowledgementSerializer(required=False, allow_null=True)
     quotation = EstimateSerializer(required=False, allow_null=True)
+    #employee = serializers.PrimaryKeyRelatedField(read_only=True, queryset=User.objects.all())
     status = serializers.CharField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_null=True)
     last_contacted = serializers.DateField(required=False, allow_null=True)
@@ -33,14 +35,15 @@ class DealSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deal
-        read_only_fields = ('last_modified',)
+        read_only_fields = ('last_modified', 'employee')
         exclude = ()
         
     def create(self, validated_data):
         
         description = validated_data.pop('description', 'New Deal')
+        employee = self.content('request').user
         
-        instance = self.Meta.model.objects.create(description=description, **validated_data)
+        instance = self.Meta.model.objects.create(description=description, employee=employee, **validated_data)
         
         return instance
         
@@ -49,10 +52,10 @@ class DealSerializer(serializers.ModelSerializer):
         ret = super(DealSerializer, self).to_representation(instance)
         
         try:
-            ret['customer'] = {'id': instance.customer.id,
-                               'name': instance.customer.name}
+            serializer = CustomerSerializer(instance.customer)
+            ret['customer'] = serializer.data
         except AttributeError as e:
-            pass
+            logger.debug(e)
         
         try:
             ret['contact'] = {'id': instance.contact.id,

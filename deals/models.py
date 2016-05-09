@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import logging
+
 from datetime import datetime, date
 from django.db import models
+from django.contrib.auth.models import User
 
 from contacts.models import Contact, Customer
 from acknowledgements.models import Acknowledgement
@@ -19,6 +21,8 @@ class Deal(models.Model):
     contact = models.ForeignKey(Contact, related_name="deals", null=True)
     acknowledgement = models.ForeignKey(Acknowledgement, null=True)
     quotation = models.ForeignKey(Estimate, null=True)
+    employee = models.ForeignKey(User)
+    currency = models.TextField(default="THB")
     status = models.TextField(null=True)
     notes = models.TextField(null=True)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
