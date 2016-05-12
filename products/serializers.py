@@ -137,11 +137,12 @@ class UpholsterySerializer(serializers.ModelSerializer):
     height = serializers.IntegerField(required=False, allow_null=True)
     units = serializers.CharField(required=False, allow_null=True)
     category = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    #export_price = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True, allow_blank=True)
     
     class Meta:
         model = Upholstery
         read_only_fields = ('description', 'type')
-        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url', 'export_price')
+        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
     
     def to_representation(self, instance):
         """
