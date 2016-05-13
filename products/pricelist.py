@@ -77,7 +77,7 @@ class PricelistPDF(object):
     queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__istartswith='fc-') | Q(model__istartswith='as-') | Q(model__istartswith='ac-') | Q(model__istartswith='ps-'))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__supplies__id__gt=0).distinct('model').order_by('model')
-    queryset = queryset.filter(Q(web_active=True) | Q(model__istartswith='dw-')).exclude(model__icontains="DA-").exclude(model='DW-1217').exclude(model='DW-1212')
+    queryset = queryset.filter(model__istartswith='dw-').exclude(model__icontains="DA-").exclude(model='DW-1217').exclude(model='DW-1212')
     data = [m for m in queryset.filter(model__istartswith='dw-')]
     data += [m for m in queryset.exclude(model__istartswith='dw-').order_by('model')]
     _display_retail_price = False
@@ -102,11 +102,14 @@ class PricelistPDF(object):
                    ('PADDING', (0,0), (-1,-1), 0),
                    ('FONTSIZE', (0,0),(-1,-1), 10)]
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, export=False, *args, **kwargs):
         
+        self.export = export
         self.fabrics = fabrics
         
     def create(self, filename='Pricelist.pdf'):
+        filename = filename if not self.export else "Pricelist_Export.pdf"
+        
         doc = PricelistDocTemplate(filename, 
                                    pagesize=A4, 
                                    leftMargin=12, 
@@ -186,7 +189,8 @@ class PricelistPDF(object):
                               'width': upholstery.width,
                               'depth': upholstery.depth,
                               'height': upholstery.height,
-                              'price': upholstery.price}
+                              'price': upholstery.price,
+                              'export_price': upholstery.export_price}
                 prices = upholstery.get_prices()
                 
                 if "DW" in upholstery.model.model:
@@ -201,6 +205,7 @@ class PricelistPDF(object):
                               'depth': upholstery.depth,
                               'height': upholstery.height,
                               'price': upholstery.price,
+                              'export_price': upholstery.export_price,
                               'prices': []}
         
             data[model].append(uphol_data)
@@ -260,7 +265,10 @@ class PricelistPDF(object):
         titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
-        data = [Table([[], ["Before Discount"], ["After Discount"]])]#[titles]
+        if self.export:
+            data = [Table([[], ["MSRP"], ["Export Price"]])]#[titles]
+        else:
+            data = [Table([[], ["Before Discount"], ["After Discount"]])]#[titles]
         
         assert len(products) <= 4, "There are {0} in this set.".format(len(products))
 
@@ -295,11 +303,18 @@ class PricelistPDF(object):
                 data.append(["{0:,.2f}".format(math.ceil((prices[grade] * price_modifier) / 10) * 10)])
             """
         else:
-            price = product['price']
-            price = math.ceil(price / Decimal('35'))
-            data.append([price])
-            new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
-            data.append([new_price])
+            if self.export:
+                price = product['export_price']
+                msrp = "{0:,.2f}".format(math.ceil(Decimal(str(price)) / Decimal('0.6')))
+                data.append([msrp])
+                new_price = "{0:,.2f}".format(price)
+                data.append([new_price])
+            else:
+                price = product['price'] 
+                price = math.ceil(price / Decimal('35')) 
+                data.append([price])
+                new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
+                data.append([new_price])
              
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
@@ -554,6 +569,15 @@ class FabricPDF(object):
 if __name__ == "__main__":
     
     directory = sys.argv[1]
+    
+    try:
+        export = sys.argv[2].replace('--', "")
+        export = True
+        print export
+    except IndexError as e:
+        export = False
+        logger.warn(e)
+        
     fabrics = {}
     data = {}
     f_list = []
@@ -562,7 +586,7 @@ if __name__ == "__main__":
         os.makedirs(directory)
         
     def create_pricelist(filename):
-        pdf = PricelistPDF()
+        pdf = PricelistPDF(export=True)
         pdf.create(filename)
     
     def create_fabriclist(filename, fabrics):
