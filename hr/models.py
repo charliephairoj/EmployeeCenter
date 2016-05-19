@@ -643,7 +643,7 @@ class PayRecord(models.Model):
             self.gross_wage = gross_wage
             
             if self.employee.location != 'cambodia':
-                assert self.gross_wage > 0, u"Wage Error for {0} : {1}".format(self.employee.id, self.employee.name)
+                pass #assert self.gross_wage > 0, u"Wage Error for {0} : {1}".format(self.employee.id, self.employee.name)
 
         return self.gross_wage
         

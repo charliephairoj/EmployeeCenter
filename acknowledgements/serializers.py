@@ -187,14 +187,16 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
+    project = serializers.PrimaryKeyRelatedField(required=False,
+                                                 allow_null=True,
+                                                 queryset=Project.objects.all())
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
                                               allow_null=True,
                                               required=False)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
                                                allow_null=True,
                                                required=False)
-    items = ItemSerializer(many=True)
+    items = ItemSerializer(many=True, write_only=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
@@ -205,6 +207,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created') 
+        write_only_fields = ('customer', 'employee', 'project', 'room', 'phase', 'items')
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf')
         depth = 3
        
@@ -467,63 +470,71 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         ret['customer'] = {'id': instance.customer.id, 
                            'name': instance.customer.name}
-                           
-        try:
-            address = instance.customer.addresses.all()[0]
-            ret['customer']['latitude'] = address.latitude
-            ret['customer']['longitude'] = address.longitude
-        except (IndexError, KeyError):
-            pass
-                           
-        ret['employee'] = {'id': instance.employee.id,
-                           'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
-                           
+            
         try:
             ret['project'] = {'id': instance.project.id,
                               'codename': instance.project.codename}
         except AttributeError:
             pass
-            
-        try:
-            ret['phase'] = {'id': instance.phase.id,
-                            'description': instance.phase.description}
-        except AttributeError:
-            pass
-            
-        try:
-            ret['room'] = {'id': instance.room.id,
-                           'description': instance.room.description}
-        except AttributeError:
-            pass
-            
-        try:
-            iam_credentials = self.context['request'].user.aws_credentials
-            key = iam_credentials.access_key_id
-            secret = iam_credentials.secret_access_key
-        except:
-            key, secret = ('', '')
-        
+                           
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
             try:
                 return "{0} {1}".format(log.employee.first_name, log.employee.last_name)
             except Exception as e:
                 return "NA"
-                
+            
         try:
             ret['logs'] = [{'message': log.message,
                             'employee': get_employee(log),
                             'timestamp': log.timestamp} for log in instance.logs.all()]
         except Exception as e:
             logger.warn(e)
+        
+        # Retrieve more acknowledgement data if the request is specific
+        pk = self.context['view'].kwargs.get('pk', None)
+        if pk or self.context['request'].method.lower() in ['post', 'put']:
+                      
+            ret['items'] = ItemSerializer(instance.items.all(), many=True).data
+                     
+            try:
+                address = instance.customer.addresses.all()[0]
+                ret['customer']['latitude'] = address.latitude
+                ret['customer']['longitude'] = address.longitude
+            except (IndexError, KeyError):
+                pass
+                           
+            ret['employee'] = {'id': instance.employee.id,
+                               'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
+                           
             
-        try:
-            ret['files'] = [{'id': file.id,
-                             'filename': file.key.split('/')[-1],
-                             'type': file.key.split('.')[-1],
-                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
-        except AttributeError:
-            pass
+            
+            try:
+                ret['phase'] = {'id': instance.phase.id,
+                                'description': instance.phase.description}
+            except AttributeError:
+                pass
+            
+            try:
+                ret['room'] = {'id': instance.room.id,
+                               'description': instance.room.description}
+            except AttributeError:
+                pass
+            
+            try:
+                iam_credentials = self.context['request'].user.aws_credentials
+                key = iam_credentials.access_key_id
+                secret = iam_credentials.secret_access_key
+            except:
+                key, secret = ('', '')
+            
+            try:
+                ret['files'] = [{'id': file.id,
+                                 'filename': file.key.split('/')[-1],
+                                 'type': file.key.split('.')[-1],
+                                 'url': file.generate_url(key, secret)} for file in instance.files.all()]
+            except AttributeError:
+                pass
             
         return ret
         

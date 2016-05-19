@@ -128,7 +128,7 @@ class SupplySerializer(serializers.ModelSerializer):
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    suppliers = ProductSerializer(source="products", required=False, many=True)
+    suppliers = ProductSerializer(source="products", required=False, many=True, write_only=True)
     employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False)
     id = serializers.IntegerField(required=False)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -151,7 +151,7 @@ class SupplySerializer(serializers.ModelSerializer):
         secret = iam_credentials.secret_access_key
         
         view = self.context['view']
-        if view.lookup_field in view.kwargs or self.context['request'].method.lower() in ['put', 'post', 'get']:
+        if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post']:
             ret['suppliers'] = [{'id': product.id,
                                  'supplier': {'id': product.supplier.id,
                                               'name': product.supplier.name},
@@ -302,9 +302,11 @@ class FabricSerializer(SupplySerializer):
     grade = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     handling = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     repeat = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    suppliers = ProductSerializer(source="products", required=False, many=True, write_only=True)
     
     class Meta:
         model = Fabric
+        write_only_fields = ('suppliers', )
         
     def create(self, validated_data):
         """

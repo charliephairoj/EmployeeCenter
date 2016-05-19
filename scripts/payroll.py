@@ -28,8 +28,8 @@ from hr.models import Payroll
             
             
 if __name__ == "__main__":
-    start_date = date(2016, 4, 9)
-    end_date = date(2016, 5, 6)
+    start_date = date(2016, 4, 26)
+    end_date = date(2016, 5, 10)
     
     print "\n\nRunning Payroll...\n\n"
     
