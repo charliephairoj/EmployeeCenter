@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import logging
-
 from datetime import datetime, date
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -26,5 +26,14 @@ class Deal(models.Model):
     status = models.TextField(null=True)
     notes = models.TextField(null=True)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    last_modified = models.DateTimeField(auto_now=True)
     last_contacted = models.DateField(default=date.today())
+    last_modified = models.DateTimeField(auto_now=True)
+    
+
+class Event(models.Model):
+    deal = models.ForeignKey(Deal, related_name="events")
+    description = models.TextField()
+    notes = models.TextField()
+    occured_at = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    

@@ -139,9 +139,9 @@ class ContactMixin(object):
             contact.name = contact_data.pop('name', None)
             contact.email = contact_data.pop("email", None)
             contact.telephone = contact_data.pop('telephone', None)
+            contact.job_title = contact_data.pop('job_title', None)
             contact.contact = instance
             contact.save()
-            logger.debug(contact.__dict__)
             
         # Delete contacts
         for contact in instance.contacts.all():
@@ -162,7 +162,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        exclude = ('contact', 'google_contact_id', 'type')
+        exclude = ('contact', 'google_contact_id', 'type', 'job_title')
         
     def update(self, instance, validated_data):
         """
@@ -201,7 +201,8 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         ret['contacts'] = [{'id': c.id,
                             'name': c.name,
                             'telephone': c.telephone,
-                            'email': c.email} for c in instance.contacts.all()]
+                            'email': c.email,
+                            'job_title': c.job_title} for c in instance.contacts.all()]
                             
         return ret
     
