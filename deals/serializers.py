@@ -4,6 +4,7 @@ import logging
 from decimal import Decimal
 from pytz import timezone
 from datetime import datetime, date
+from dateutil import parser
 
 import boto
 from rest_framework import serializers
@@ -60,27 +61,39 @@ class DealSerializer(serializers.ModelSerializer):
         # Create any new events
         for event_data in events_data:
             if 'id' not in event_data:
-                DealEvent.objects.create(description=event_data['description'],
-                                         notes=event_data.get('notes', None),
-                                         occured_at=event_data['occured_at'],
-                                         deal=instance)
-
+                oa = parser.parse(event_data['occurred_at'])
+                e = DealEvent.objects.create(description=event_data['description'],
+                                             notes=event_data.get('notes', None),
+                                             occurred_at=oa,
+                                             deal=instance)
+                                         
+                # Set the new 'last contacted' date if applicable
+                eoa = e.occurred_at
+                ilc = instance.last_contacted
+                last_contacted =  eoa if eoa > ilc else ilc
+                instance.last_contacted = last_contacted
         # Log change in deal stage
         if new_status != old_status:
-            description = "Moved deal from {0} to {1}".format(old_status.capitalize(),
-                                                              instance.status.capitalize())
+            description = "Moved deal from {0} to {1}".format(old_status.title(),
+                                                              instance.status.title())
             DealEvent.objects.create(deal=instance,
                                      description=description)
         
+        # Final save
+        instance.save()
+
         return instance
         
     def to_representation(self, instance):
         
         ret = super(DealSerializer, self).to_representation(instance)
-                
+        
+        ret['customer'] = {'id': instance.customer.id,
+                           'name': instance.customer.name}
+                           
         # Actions to take if the a single resource is requested
         pk = self.context['view'].kwargs.get('pk', None)
-        if pk:        
+        if pk or self.context['request'].method.lower() in ['put', 'post']:        
             try:
                 serializer = CustomerSerializer(instance.customer)
                 ret['customer'] = serializer.data
@@ -99,7 +112,7 @@ class DealSerializer(serializers.ModelSerializer):
                 ret['events'] = [{'id': e.id,
                                   'description': e.description,
                                   'notes': e.notes,
-                                  'occured_at': e.occured_at} for e in instance.events.all()]
+                                  'occurred_at': e.occurred_at} for e in instance.events.all()]
             except Exception as e:
                 logger.warn(e)
                           

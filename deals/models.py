@@ -34,6 +34,6 @@ class Event(models.Model):
     deal = models.ForeignKey(Deal, related_name="events")
     description = models.TextField()
     notes = models.TextField()
-    occured_at = models.DateTimeField(auto_now_add=True)
+    occurred_at = models.DateTimeField(default=datetime.now())
     last_modified = models.DateTimeField(auto_now=True)
     
