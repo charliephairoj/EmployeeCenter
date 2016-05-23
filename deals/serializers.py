@@ -40,24 +40,24 @@ class DealSerializer(serializers.ModelSerializer):
         model = Deal
         read_only_fields = ('last_modified', 'employee')
         exclude = ()
-        
+
     def create(self, validated_data):
-        
+
         description = validated_data.pop('description', 'New Deal')
         employee = self.context['request'].user
-        
+
         instance = self.Meta.model.objects.create(description=description, employee=employee, **validated_data)
-        
+
         return instance
-        
+
     def update(self, instance, validated_data):
         # Extract deal stage for later comparison
         new_status = validated_data.get('status', instance.status)
         old_status = instance.status
         events_data = validated_data.pop('events', [])
-        
+
         instance = super(DealSerializer, self).update(instance, validated_data)
-        
+
         # Create any new events
         for event_data in events_data:
             if 'id' not in event_data:
@@ -66,7 +66,7 @@ class DealSerializer(serializers.ModelSerializer):
                                              notes=event_data.get('notes', None),
                                              occurred_at=oa,
                                              deal=instance)
-                                         
+
                 # Set the new 'last contacted' date if applicable
                 eoa = e.occurred_at
                 ilc = instance.last_contacted
@@ -78,28 +78,28 @@ class DealSerializer(serializers.ModelSerializer):
                                                               instance.status.title())
             DealEvent.objects.create(deal=instance,
                                      description=description)
-        
+
         # Final save
         instance.save()
 
         return instance
-        
+
     def to_representation(self, instance):
-        
+
         ret = super(DealSerializer, self).to_representation(instance)
-        
+
         ret['customer'] = {'id': instance.customer.id,
                            'name': instance.customer.name}
-                           
+
         # Actions to take if the a single resource is requested
         pk = self.context['view'].kwargs.get('pk', None)
-        if pk or self.context['request'].method.lower() in ['put', 'post']:        
+        if pk or self.context['request'].method.lower() in ['put', 'post']:
             try:
                 serializer = CustomerSerializer(instance.customer)
                 ret['customer'] = serializer.data
             except AttributeError as e:
                 logger.debug(e)
-        
+
             try:
                 ret['contact'] = {'id': instance.contact.id,
                                   'name': instance.contact.name,
@@ -107,7 +107,7 @@ class DealSerializer(serializers.ModelSerializer):
                                   'telephone': instance.contact.telephone}
             except AttributeError as e:
                 pass
-                
+
             try:
                 ret['events'] = [{'id': e.id,
                                   'description': e.description,
@@ -115,10 +115,6 @@ class DealSerializer(serializers.ModelSerializer):
                                   'occurred_at': e.occurred_at} for e in instance.events.all()]
             except Exception as e:
                 logger.warn(e)
-                          
+
         return ret
-        
-        
-        
-        
-        
+         
