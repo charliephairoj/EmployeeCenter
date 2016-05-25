@@ -16,7 +16,7 @@ from reportlab.lib import colors, utils
 from reportlab.lib.units import mm
 from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import createBarcodeDrawing
@@ -88,10 +88,10 @@ class SingleStickerDocTemplate(BaseDocTemplate):
                       0,
                       self.width,
                       self.height,
-                      leftPadding=0 * mm,
-                      bottomPadding=0 * mm,
-                      rightPadding=0 * mm,
-                      topPadding=1 * mm)
+                      leftPadding=1 * mm,
+                      bottomPadding=2 * mm,
+                      rightPadding=1 * mm,
+                      topPadding=4 * mm)
         template = PageTemplate('Normal', [frame])
         return template
 
@@ -168,9 +168,9 @@ class Sticker(object):
 class FabricSticker(object):
 
     sticker_width = 62 * mm
-    sticker_height = 80 * mm
-    barcode_height = (sticker_height / 2) - 1 * mm
-    barcode_width = 0.4 * mm
+    sticker_height = 62 * mm
+    content_width = 58 * mm
+    content_height = 58 * mm
 
     def __init__(self, fabric, *args, **kwargs):
         """
@@ -204,21 +204,22 @@ class FabricSticker(object):
         data = []
 
         # Get Logo
-        logo = self.get_image("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", width=self.sticker_width - 5 * mm)
+        logo = self.get_image("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", width=self.content_width - 5 * mm)
         data.append([logo, ''])
         data.append(['Pattern', self.fabric.pattern])
         data.append(['Color', self.fabric.color])
+        data.append(['Grade', self.fabric.grade])
 
         content = self._format_content(self.fabric.content)
         for index, content in enumerate(content.split(' ')):
             if index == 0:
-                data.append(['Content', content])
+                data.append(['Content', "{0}: {1}".format(*content.split(':'))])
             else:
-                data.append(['', content])
+                data.append(['', "{0}: {1}".format(*content.split(':'))])
 
         # Create fabric table
-        col_widths = (self.sticker_width * 0.3 - 1 * mm,
-                      self.sticker_width * 0.7 - 1 * mm)
+        col_widths = ((self.content_width * 0.3) - 1 * mm,
+                      (self.content_width * 0.7) - 1 * mm)
         table = Table(data, colWidths=col_widths)
 
         style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
@@ -229,9 +230,9 @@ class FabricSticker(object):
                             ('BOTTOMPADDING', (1, 0), (-1, 0), 3 * mm),
                             ('MARGIN', (0, 0), (-1, -1), 0),
                             ('SPAN', (0, 0), (1, 0)),
-                            ('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(cyan=60)),
+                            #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(cyan=60)),
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+                            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
                             ('ALIGN', (0, 1), (-1, -1), 'LEFT')])
         table.setStyle(style)
 
@@ -247,6 +248,8 @@ class FabricSticker(object):
                 if index % 2 == 0:
                     formatted_content += "{1}:{0} ".format(contents[index],
                                                            contents[index + 1])
+        else:
+            formatted_content = content
 
         return formatted_content.strip()
 
