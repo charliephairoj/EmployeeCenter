@@ -225,6 +225,7 @@ class FabricSticker(object):
         style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING', (0, 0), (0, 0), 4 * mm),
                             ('TOPPADDING', (0, 0), (-1, -1), 0),
                             ('BOTTOMPADDING', (0, 0), (0, 0), 5 * mm),
                             ('BOTTOMPADDING', (1, 0), (-1, 0), 3 * mm),
