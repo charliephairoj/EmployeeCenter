@@ -35,8 +35,8 @@ from deals.views import DealList, DealDetail
 """
 API Section
 
-This area deals with the registration of the 
-resources with the api 
+This area deals with the registration of the
+resources with the api
 """
 
 
@@ -62,10 +62,10 @@ urlpatterns = patterns('',
     url(r'^api/v1/change_password', 'auth.views.change_password'),
     url(r'^api/v1/change_password/', 'auth.views.change_password'),
     url(r'^api/v1/client/log/$', 'administrator.views.log'),
-    
-    
+
+
     url(r'^', include(router.urls)),
-    
+
     url(r'^api/v1/supplier/$', SupplierList.as_view()),
     url(r'^api/v1/supplier/(?P<pk>[0-9]+)/$', SupplierDetail.as_view()),
     url(r'^api/v1/supply/$', SupplyList.as_view()),
@@ -130,7 +130,7 @@ urlpatterns += patterns('acknowledgements.views',
     url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
     url(r'^api/v1/acknowledgement/file/$', 'acknowledgement_file'),
     url(r'^api/v1/acknowledgement/download', 'acknowledgement_download')
-    
+
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 )
@@ -145,7 +145,7 @@ urlpatterns += patterns('products.views',
     url(r'^api/v1/model/image/$', 'product_image'),
     url(r'^api/v1/model/image/$', 'product_image'),
     url(r'^api/v1/model/public/$', 'model_public')
-    
+
 )
 
 urlpatterns += patterns('supplies.views',
@@ -153,13 +153,15 @@ urlpatterns += patterns('supplies.views',
     url(r'^api/v1/supply/image/$', 'supply_image'),
     url(r'api/v1/supply/(?P<pk>\d+)/sticker$', 'sticker'),
     url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', 'sticker'),
-    
+    url(r'api/v1/fabric/(?P<pk>\d+)/sticker$', 'fabric_sticker'),
+    url(r'api/v1/fabric/(?P<pk>\d+)/sticker/$', 'fabric_sticker'),
+
 )
 
 urlpatterns += patterns('equipment.views',
     url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', 'sticker'),
     url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', 'sticker'),
-    
+
 )
 
 urlpatterns += patterns('po.views',
@@ -264,7 +266,7 @@ urlpatterns += patterns('supplies.views',
     url(r'^fabric/(?P<supply_id>\d+)/reset$', 'reset'),
     url(r'^fabric/(?P<supply_id>\d+)/log$', 'supply_log'),
     url(r'^fabric/(?P<fabric_id>\d+)/image$', 'supply_image'),
-    
+
     url(r'^screw$', 'screw'),
     url(r'^screw/(?P<screw_id>\d+)$', 'screw'),
 

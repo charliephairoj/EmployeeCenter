@@ -38,12 +38,12 @@ class AckDocTemplate(BaseDocTemplate):
     def __init__(self, filename, **kwargs):
         if "id" in kwargs:
             self.id = kwargs["id"]
-            
+
         try:
             self.company = kwargs['company']
         except KeyError:
             pass
-            
+
         BaseDocTemplate.__init__(self, filename, **kwargs)
         self.addPageTemplates(self._create_page_template())
 
@@ -89,7 +89,7 @@ class AckDocTemplate(BaseDocTemplate):
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
         barcode.drawOn(canvas, x_position, 750)
-        
+
 
 class EstimatePDF(object):
     """Class to create PO PDF"""
@@ -98,7 +98,7 @@ class EstimatePDF(object):
 
     def __init__(self, customer=None, products=None,
                  ack=None, connection=None):
-       
+
         self.width, self.height = A4
         stylesheet = getSampleStyleSheet()
         normalStyle = stylesheet['Normal']
@@ -178,7 +178,7 @@ class EstimatePDF(object):
             data.append(['', "%s %s" % (country, zipcode)])
         except IndexError:
             pass
-            
+
         #Create Table
         table = Table(data, colWidths=(80, 440))
         #Create and apply Table Style
@@ -198,7 +198,7 @@ class EstimatePDF(object):
         #create table for supplier and recipient data
         contact = Table([[t1]])
         #Create Style and apply
-        style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0), 
+        style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT')])
         contact.setStyle(style)
         #Return table
@@ -216,10 +216,10 @@ class EstimatePDF(object):
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
-            
+
         if self.ack.project:
             data.append(['Project:', self.ack.project.codename])
-            
+
         if self.ack.remarks is not None and self.ack.remarks != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
@@ -284,20 +284,20 @@ class EstimatePDF(object):
     def _create_products_item_section(self, product):
         data = []
         #add the data
-        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
+        data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20),
                      product.description,
-                     product.unit_price, 
-                     product.quantity, 
+                     product.unit_price,
+                     product.quantity,
                      product.total])
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except Exception as e:
             print e
-            
+
         #if product.is_custom_size:
         dimension_str = u'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
         data.append(['', dimension_str])
-        
+
         #increase the item number
         if len(product.pillows.all()) > 0:
             for pillow in product.pillows.all():
@@ -417,12 +417,12 @@ class EstimatePDF(object):
         #calculate the totals
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
-            
+
             quotation_details = "Terms: 50% deposit / Balance before Delivery, Transfer deposit to:\n"
             quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
             quotation_details += "294-3-006361\n"
             quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
-            
+
             #get subtotal and add to pdf
             data.append([quotation_details, '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
             total = self.ack.subtotal
@@ -438,11 +438,11 @@ class EstimatePDF(object):
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                     total -= discount
                     data.append(['', '', '', 'Total', "%.2f" % total])
-                    
+
                     prevat_total = total
                 else:
                     prevat_total = self.ack.subtotal
-                    
+
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
@@ -523,4 +523,3 @@ class EstimatePDF(object):
         bkkTz = timezone('Asia/Bangkok')
         bkkDateTime = dateTimeObj.astimezone(bkkTz)
         return bkkDateTime.strftime(fmt), bkkDateTime
-        
