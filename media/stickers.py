@@ -89,9 +89,9 @@ class SingleStickerDocTemplate(BaseDocTemplate):
                       self.width,
                       self.height,
                       leftPadding=1 * mm,
-                      bottomPadding=1 * mm,
+                      bottomPadding=0.5 * mm,
                       rightPadding=1 * mm,
-                      topPadding=4 * mm)
+                      topPadding=0.5 * mm)
         template = PageTemplate('Normal', [frame])
         return template
 
@@ -297,6 +297,79 @@ class FabricSticker(object):
                 new_height = (float(imgHeight) / float(imgWidth)) * max_width
 
         return Image(path, width=new_width, height=new_height)
+
+
+class FabricSticker2(object):
+
+    sticker_width = 62 * mm
+    sticker_height = 29 * mm
+    barcode_height = (sticker_height / 2) - 1 * mm
+    barcode_width = 0.4 * mm
+
+    def __init__(self, fabric, *args, **kwargs):
+        """
+        Constructor
+        """
+        super(FabricSticker2, self).__init__()
+
+        #Set attribute
+        self.fabric = fabric
+
+    def create(self, response=None):
+        """
+        Main method to create a sticker page
+        """
+
+        if response is None:
+            response = '{0}.pdf'.format(self.fabric.description)
+
+        doc = SingleStickerDocTemplate(response, (self.sticker_width,
+                                                  self.sticker_height))
+        stories = [self._create_sticker()]
+        doc.build(stories)
+
+        return "{0}.pdf".format(self.fabric.description)
+
+    def _create_sticker(self):
+        """
+        Creates a single sticker page.
+        """
+
+        data = [['Pattern :', self._format_description(self.fabric.pattern)],
+                ['Color :', self._format_description(self.fabric.color)],
+                ['Grade :', self._format_description(self.fabric.grade)]]
+        table = Table(data, colWidths=(self.sticker_width * 0.34,
+                                       self.sticker_width * 0.66),
+                            rowHeights=((self.sticker_height - 2 * mm) / 3))
+        style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 14),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 2),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING', (0, 0), (-1, -1), 0),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                            #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(cyan=60)),
+                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                            ('FONT', (0, 0), (-1, -1), 'Tahoma')])
+        table.setStyle(style)
+
+        return table
+
+    def _format_description(self, description):
+        """
+        Formats the description into a paragraph
+        with the paragraph style
+        """
+        style = ParagraphStyle(name='Normal',
+                               fontName='Tahoma',
+                               leading=12,
+                               wordWrap='CJK',
+                               allowWidows=1,
+                               alignment=0,
+                               allowOrphans=1,
+                               fontSize=14,
+                               textColor=colors.CMYKColor(black=60))
+
+        return Paragraph(description, style)
 
 
 class StickerPage(object):

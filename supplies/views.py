@@ -4,7 +4,6 @@ from decimal import Decimal
 import json
 import time
 
-
 from rest_framework import viewsets
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -21,7 +20,7 @@ from supplies.PDF import SupplyPDF
 from utilities.http import save_upload
 from auth.models import S3Object
 from supplies.serializers import SupplySerializer, FabricSerializer, LogSerializer
-from media.stickers import StickerPage, Sticker, FabricSticker
+from media.stickers import StickerPage, Sticker, FabricSticker2
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ def sticker(request, pk=None):
 def fabric_sticker(request, pk=None):
     response = HttpResponse(content_type='application/pdf; charset=utf-8')
     fabric = Fabric.objects.get(pk=pk)
-    pdf = FabricSticker(fabric=fabric)
+    pdf = FabricSticker2(fabric=fabric)
     pdf.create(response)
 
     return response
