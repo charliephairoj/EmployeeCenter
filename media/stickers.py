@@ -89,9 +89,9 @@ class SingleStickerDocTemplate(BaseDocTemplate):
                       self.width,
                       self.height,
                       leftPadding=1 * mm,
-                      bottomPadding=2 * mm,
+                      bottomPadding=1 * mm,
                       rightPadding=1 * mm,
-                      topPadding=4 * mm)
+                      topPadding=1 * mm)
         template = PageTemplate('Normal', [frame])
         return template
 
@@ -204,7 +204,7 @@ class FabricSticker(object):
         data = []
 
         # Get Logo
-        logo = self.get_image("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", width=self.content_width - 5 * mm)
+        logo = self.get_image("https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg", width=self.content_width - 6 * mm)
         data.append([logo, ''])
         data.append(['Pattern', self.fabric.pattern])
         data.append(['Color', self.fabric.color])
@@ -227,7 +227,7 @@ class FabricSticker(object):
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                             ('TOPPADDING', (0, 0), (0, 0), 4 * mm),
                             ('TOPPADDING', (0, 0), (-1, -1), 0),
-                            ('BOTTOMPADDING', (0, 0), (0, 0), 5 * mm),
+                            ('BOTTOMPADDING', (0, 0), (0, 0), 3.5 * mm),
                             ('BOTTOMPADDING', (1, 0), (-1, 0), 3 * mm),
                             ('MARGIN', (0, 0), (-1, -1), 0),
                             ('SPAN', (0, 0), (1, 0)),
