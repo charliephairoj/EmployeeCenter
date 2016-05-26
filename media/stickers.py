@@ -91,7 +91,7 @@ class SingleStickerDocTemplate(BaseDocTemplate):
                       leftPadding=1 * mm,
                       bottomPadding=1 * mm,
                       rightPadding=1 * mm,
-                      topPadding=1 * mm)
+                      topPadding=4 * mm)
         template = PageTemplate('Normal', [frame])
         return template
 
