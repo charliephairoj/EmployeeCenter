@@ -165,6 +165,40 @@ class Sticker(object):
         return Paragraph(description, style)
 
 
+class FabricStickerDocTemplate(BaseDocTemplate):
+
+    def __init__(self, filename, page_size=A4, **kwargs):
+        """
+        Constructor
+
+        Set the page size in the kwargs then
+        Call the parent constructor of the base doc template
+        and then apply addition settings
+        """
+        self.width, self.height = page_size
+        kwargs['pagesize'] = page_size
+        kwargs['leftMargin'] = 0 * mm
+        kwargs['rightMargin'] = 0 * mm
+        kwargs['topMargin'] = 0 * mm
+        kwargs['bottomMargin'] = 0 * mm
+
+        BaseDocTemplate.__init__(self, filename, **kwargs)
+
+        self.addPageTemplates(self._create_page_template())
+
+    def _create_page_template(self):
+        frame = Frame(mm,
+                      0,
+                      self.width,
+                      self.height,
+                      leftPadding=1 * mm,
+                      bottomPadding=0.5 * mm,
+                      rightPadding=1 * mm,
+                      topPadding=2 * mm)
+        template = PageTemplate('Normal', [frame])
+        return template
+
+
 class FabricSticker(object):
 
     sticker_width = 62 * mm
@@ -189,7 +223,7 @@ class FabricSticker(object):
         if response is None:
             response = '{0}.pdf'.format(filename)
 
-        doc = SingleStickerDocTemplate(response, (self.sticker_width,
+        doc = FabricStickerDocTemplate(response, (self.sticker_width,
                                                   self.sticker_height))
         stories = [self._create_sticker()]
         stories[0].hAlign = 'CENTER'
