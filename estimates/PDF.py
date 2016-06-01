@@ -104,7 +104,7 @@ class EstimatePDF(object):
         normalStyle = stylesheet['Normal']
         #Set Var
         self.customer = customer
-        self.products = products
+        self.products = products.order_by('id')
         self.ack = ack
         self.employee = self.ack.employee
 
