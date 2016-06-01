@@ -194,7 +194,7 @@ class FabricStickerDocTemplate(BaseDocTemplate):
                       leftPadding=1 * mm,
                       bottomPadding=0.5 * mm,
                       rightPadding=1 * mm,
-                      topPadding=2 * mm)
+                      topPadding=3.5 * mm)
         template = PageTemplate('Normal', [frame])
         return template
 

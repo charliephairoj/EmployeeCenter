@@ -35,10 +35,11 @@ scopes += ' https://www.google.com/m8/feeds/'
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope=scopes,
-    redirect_uri='http://employee.dellarobbiathailand.com/oauth2callback')
-    
-    
-    
+    #redirect_uri='http://employee.dellarobbiathailand.com/oauth2callback')
+    redirect_uri='http://localhost:8000/oauth2callback')
+
+
+
 @csrf_protect
 @login_required
 @ensure_csrf_cookie
@@ -50,19 +51,19 @@ def main(request):
 def check_google_authenticated(request):
     storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     credentials = storage.get()
- 
+
     if credentials is None or credentials.invalid is True:
         FLOW.params['state'] = xsrfutil.generate_token(settings.SECRET_KEY,
                                                        request.user)
         FLOW.params['access_type'] = 'offline'
         authorize_url = FLOW.step1_get_authorize_url()
         return HttpResponseRedirect(authorize_url)
-        
-        
+
+
     else:
-        return render(request, 'index.html')
-    
-    
+        return HttpResponseRedirect('/main')
+
+
 @csrf_exempt
 def app_login(request):
     #create the form object
@@ -77,13 +78,13 @@ def app_login(request):
         if request.user.is_authenticated():
             #Gets user profile to do checks
 
-            
+
             #Only require google login if not inventory
             if request.user.first_name.lower() != 'inventory':
-                
+
                 return check_google_authenticated(request)
-            
-            return render(request, 'index.html')
+
+            return HttpResponseRedirect('/main')
 
         else:
             #logout the request
@@ -91,50 +92,51 @@ def app_login(request):
             #create a new login form
             form = LoginForm()
             return render(request, 'login.html', {'form':form})
-            
+
     #what to do with a post request
     elif request.method == "POST":
         #initialize form with post data
         form = LoginForm(request.POST)
         #check if form is valid
         if form.is_valid():
-            
+
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
-           
+
             user = authenticate(username=cleanUsername, password=cleanPassword)
 
             #checks whether user authennticated
             if user is not None:
+
                 #checks if user is still active
                 if user.is_active:
 
                     #login the user
                     login(request, user)
-                    
-                    
+
+
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':
                         return check_google_authenticated(request)
-                    
+
                     #Gets user profile to do checks
-                    return HttpResponseRedirect('/')
-               
-            return HttpResponseRedirect('/login')
+                    return HttpResponseRedirect('/main')
+
+            return HttpResponseRedirect('/')
 
 
 @login_required
 def auth_return(request):
-    if not xsrfutil.validate_token(settings.SECRET_KEY, 
-                                   str(request.GET['state']), 
+    if not xsrfutil.validate_token(settings.SECRET_KEY,
+                                   str(request.GET['state']),
                                    request.user):
-                                   
+
         return  HttpResponseBadRequest()
-  
+
     credential = FLOW.step2_exchange(request.GET)
     storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     storage.put(credential)
-    return HttpResponseRedirect("/")
+    return HttpResponseRedirect("/main")
 
 
 #Logs user out
@@ -142,5 +144,3 @@ def logout(request):
     from django.contrib.auth import logout
     logout(request)
     return HttpResponseRedirect('/')
-
-
