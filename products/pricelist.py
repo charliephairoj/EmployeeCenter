@@ -102,6 +102,8 @@ class PricelistPDF(object):
         'AC-2142',
         'AC-2157',
         'AC-2159',
+        'PS-905',
+        'PS-605',
         'PS-1019',
         'PS-1024',
         'PS-1028',
@@ -112,7 +114,6 @@ class PricelistPDF(object):
     queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__in=models))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__id__gt=0).distinct('model').order_by('model')
-    #queryset = queryset.filter(model__istartswith='dw-')
     queryset = queryset.exclude(model__icontains="DA-")
     queryset = queryset.exclude(model='DW-1217').exclude(model='DW-1212')
     data = [m for m in queryset.filter(model__istartswith='dw-')]
@@ -219,6 +220,16 @@ class PricelistPDF(object):
     def _add_upholstery_data(self, model, data):
         for upholstery in Upholstery.objects.filter(model=model).exclude(description__icontains="pillow").distinct('description').order_by('description'):
 
+            uphol_data = {'id': upholstery.id,
+                          'configuration': upholstery.configuration.configuration,
+                          'description': upholstery.description,
+                          'width': upholstery.width,
+                          'depth': upholstery.depth,
+                          'height': upholstery.height,
+                          'price': upholstery.price,
+                          'export_price': upholstery.export_price}
+
+            """
             if upholstery.supplies.count() > 0:
                 uphol_data = {'id': upholstery.id,
                               'configuration': upholstery.configuration.configuration,
@@ -244,6 +255,7 @@ class PricelistPDF(object):
                               'price': upholstery.price,
                               'export_price': upholstery.export_price,
                               'prices': []}
+            """
 
             data[model].append(uphol_data)
 
@@ -328,7 +340,7 @@ class PricelistPDF(object):
         """
         data  = [["W:{0} x D:{1} x H:{2}".format(product['width'], product['depth'], product['height'])]]
         #data  = []
-        prices = product['prices']
+        #prices = product['prices']
 
         if "dw-" in product['configuration'].lower():
             price = product['export_price']

@@ -100,7 +100,7 @@ class ItemSerializer(serializers.ModelSerializer):
         height = validated_data.pop('height', None) or product.height
         fabric_quantity = validated_data.pop('fabric_quantity', None)
 
-        instance = self.Meta.model.objects.create(acknowledgement=acknowledgement, 
+        instance = self.Meta.model.objects.create(acknowledgement=acknowledgement,
                                                   width=width, depth=depth,
                                                   height=height, fabric=fabric, **validated_data)
 
@@ -111,7 +111,7 @@ class ItemSerializer(serializers.ModelSerializer):
         if instance.is_custom_size and product.price == unit_price:
             instance._calculate_custom_price()
         else:
-            instance.total = instance.quantity * instance.unit_price
+            instance.total = (instance.quantity or 1) * (instance.unit_price or 0)
 
         instance.save()
 

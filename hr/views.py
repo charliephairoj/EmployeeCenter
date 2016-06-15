@@ -263,7 +263,7 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
             o_time = tz.localize(o_time)
             o_time = datetime.combine(a_date, o_time.timetz())
             request.data['overtime_request'] = o_time
-        except Exception as e:
+        except KeyError as e:
             logger.warn(e)
         
         response = super(AttendanceList, self).post(request, *args, **kwargs)
@@ -300,9 +300,7 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
             queryset = queryset[offset - 1:]
         else:
             queryset = queryset[0:]
-            
-        logger.warn(queryset.count())
-              
+                          
         return queryset
     
     
@@ -336,7 +334,7 @@ class AttendanceDetail(AttendanceMixin, generics.RetrieveUpdateDestroyAPIView):
             o_time = o_time.astimezone(tz)
             o_time = datetime.combine(a_date, o_time.timetz())
             request.data['overtime_request'] = o_time
-        except Exception as e:
+        except KeyError as e:
             logger.warn(e)
         
         response = super(AttendanceDetail, self).put(request, *args, **kwargs)

@@ -177,39 +177,40 @@ class AcknowledgementMixin(object):
         Condense the pillows by combining pillows of the same type and fabric
         """
         #Condense pillow data
-        for item in request.data['items']:
-            #Sort pillows
-            if "pillows" in item:
-                pillows = {}
-                for pillow in item['pillows']:
-                    try:
-                        fabric_id = pillow['fabric']['id'] if 'id' in pillow['fabric'] else pillow['fabric']
-                    except (KeyError, TypeError):
-                        fabric_id = None
-
-                    if (pillow['type'], fabric_id) in pillows:
-                        pillows[(pillow['type'], fabric_id)]['quantity'] += 1
-                        pillows[(pillow['type'], fabric_id)]['fabric_quantity'] += pillow['fabric_quantity']
-                    else: 
+        if "items" in request.data:
+            for item in request.data['items']:
+                #Sort pillows
+                if "pillows" in item:
+                    pillows = {}
+                    for pillow in item['pillows']:
                         try:
-                            pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': pillow['fabric_quantity']}
-                        except KeyError:
-                            pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': 0}
-                
-                item['pillows'] = []
-                for pillow in pillows:
-                    pillow_data = {'type': pillow[0],
-                                   'fabric': pillow[1]}
-                                   
-                    if pillows[pillow]['quantity']:
-                        pillow_data['quantity'] = pillows[pillow]['quantity']
+                            fabric_id = pillow['fabric']['id'] if 'id' in pillow['fabric'] else pillow['fabric']
+                        except (KeyError, TypeError):
+                            fabric_id = None
+
+                        if (pillow['type'], fabric_id) in pillows:
+                            pillows[(pillow['type'], fabric_id)]['quantity'] += 1
+                            pillows[(pillow['type'], fabric_id)]['fabric_quantity'] += pillow['fabric_quantity']
+                        else: 
+                            try:
+                                pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': pillow['fabric_quantity']}
+                            except KeyError:
+                                pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': 0}
                     
-                    try:
-                        pillow_data['fabric_quantity'] = pillows[pillow]['fabric_quantity']
-                    except KeyError:
-                        pass
+                    item['pillows'] = []
+                    for pillow in pillows:
+                        pillow_data = {'type': pillow[0],
+                                    'fabric': pillow[1]}
+                                    
+                        if pillows[pillow]['quantity']:
+                            pillow_data['quantity'] = pillows[pillow]['quantity']
                         
-                    item['pillows'].append(pillow_data)
+                        try:
+                            pillow_data['fabric_quantity'] = pillows[pillow]['fabric_quantity']
+                        except KeyError:
+                            pass
+                            
+                        item['pillows'].append(pillow_data)
                     
         return request
         
