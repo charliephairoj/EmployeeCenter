@@ -254,7 +254,7 @@ class Acknowledgement(models.Model):
         if not items:
             items = self.items.all()
         for product in items:
-            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(product.unit_price, product.quantity, product.total))
+            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(Decimal(str(product.unit_price)), product.quantity, Decimal(str(product.total))))
             running_total += product.total
             
         #Set the subtotal
