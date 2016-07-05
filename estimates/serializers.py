@@ -105,9 +105,9 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         instance = super(ItemSerializer, self).update(instance, validated_data)
 
-        instance.image = validated_data.get('image', instance.image)
+        #instance.image = validated_data.get('image', instance.image)
         instance.save()
-        
+
         return instance
 
     def to_representation(self, instance):
