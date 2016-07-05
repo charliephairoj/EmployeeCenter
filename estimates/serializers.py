@@ -54,6 +54,7 @@ class ItemSerializer(serializers.ModelSerializer):
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12,
                                                write_only=True, required=False,
                                                allow_null=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = Item
@@ -104,6 +105,9 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         instance = super(ItemSerializer, self).update(instance, validated_data)
 
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+        
         return instance
 
     def to_representation(self, instance):
@@ -143,6 +147,8 @@ class EstimateSerializer(serializers.ModelSerializer):
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
+    #vat = serializers.DecimalField(required=False, allow_null=True)
+    discount = serializers.IntegerField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
     #                              allow_null=True)
 
@@ -156,35 +162,37 @@ class EstimateSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create nested items
         """
-        try:
-            items_data = validated_data.pop('items')
-            #files = validated_data.pop('files', [])
+        items_data = validated_data.pop('items')
+        #files = validated_data.pop('files', [])
 
-            for item_data in items_data:
-                for field in ['product', 'fabric', 'image']:
-                    try:
-                        item_data[field] = item_data[field].id
-                    except KeyError:
-                        pass
-                    except AttributeError:
-                        pass
+        for item_data in items_data:
+            for field in ['product', 'fabric', 'image']:
+                try:
+                    item_data[field] = item_data[field].id
+                except KeyError:
+                    pass
+                except AttributeError:
+                    pass
+                
+        logger.debug(validated_data)
+        
+        customer_discount = validated_data['customer'].discount
+        discount = validated_data.pop('discount', customer_discount)
+       
 
-            discount = validated_data.pop('discount', None) or validated_data['customer'].discount
+        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
+                                                    **validated_data)
+        instance.status = "open"
 
-            instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
-                                                      **validated_data)
-            instance.status = "open"
+        item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
 
-            item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
+        if item_serializer.is_valid(raise_exception=True):
+            item_serializer.save()
+        logger.debug(instance.discount)
+        instance.calculate_totals()
 
-            if item_serializer.is_valid(raise_exception=True):
-                item_serializer.save()
-
-            instance.calculate_totals()
-
-            instance.create_and_upload_pdf()
-        except Exception as e:
-            logger.warn(e)
+        instance.create_and_upload_pdf()
+     
         #Assign files
         #for file in files:
         #    File.objects.create(file=S3Object.objects.get(pk=file['id']),
@@ -209,30 +217,27 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        try:
 
-            instance.vat = validated_data.pop('vat', instance.vat)
-            instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
-            instance.project = validated_data.pop('project', instance.project)
-            #Update attached files
-            #files = validated_data.pop('files', [])
-            #for file in files:
-            #    try:
-            #        File.objects.get(file_id=file['id'], acknowledgement=instance)
-            #    except File.DoesNotExist:
-            #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
-            #                            acknowledgement=instance)
+        instance.vat = validated_data.pop('vat', instance.vat)
+        instance.discount = validated_data.pop('discount', instance.discount)
+        instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        instance.project = validated_data.pop('project', instance.project)
+        #Update attached files
+        #files = validated_data.pop('files', [])
+        #for file in files:
+        #    try:
+        #        File.objects.get(file_id=file['id'], acknowledgement=instance)
+        #    except File.DoesNotExist:
+        #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
+        #                            acknowledgement=instance)
 
-            instance.status = validated_data.pop('status', instance.status)
+        instance.status = validated_data.pop('status', instance.status)
 
-            items_data = validated_data.pop('items')
+        items_data = validated_data.pop('items')
 
-            self._update_items(instance, items_data)
+        self._update_items(instance, items_data)
 
-            instance.save()
-
-        except Exception as e:
-            logger.warn(e)
+        instance.save()
 
         if instance.status.lower() != 'cancelled':
             instance.calculate_totals()
@@ -289,14 +294,34 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         #Update or Create Item
         for item_data in items_data:
+            logger.debug(item_data)
+            try:
+                item = Item.objects.get(pk=item_data['id'], estimate=instance)
+            except KeyError as e:
+                logger.debug(e)
+                item = Item(product=Product.objects.get(pk=item_data['product']))
+
+            item.description = item_data.get('description', item.description)
+            item.quantity = item_data.get('quantity', item.quantity)
+            item.unit_price = item_data.get('unit_price', item.unit_price)
+            item.total = item.quantity * item.unit_price
+
+            try:
+                item.image = S3Object.objects.get(pk=item_data['image'])
+            except KeyError as e:
+                logger.debug(e)
+                
+            item.save()
+                
+            """
             try:
 
                 item = Item.objects.get(pk=item_data['id'])
                 serializer = ItemSerializer(item, context={'customer': instance.customer, 'estimate': instance}, data=item_data)
                 if serializer.is_valid(raise_exception=True):
-                    item = serializer.save()
+                    serializer.save()
 
-                """
+                
                 item.supply.supplier = instance.supplier
                 item.discount = item_data.get('discount', None) or item.discount
                 item.quantity = item_data.get('quantity', None) or item.quantity
@@ -308,14 +333,15 @@ class EstimateSerializer(serializers.ModelSerializer):
 
                 item.calculate_total()
                 item.save()
-                """
+                
             except KeyError:
                 item_data['product'] = item_data['product'].id
                 serializer = ItemSerializer(data=item_data, context={'customer': instance.customer, 'estimate': instance})
                 if serializer.is_valid(raise_exception=True):
                     item = serializer.save()
                     id_list.append(item.id)
-
+            """
+            
         #Delete Items
         for item in instance.items.all():
             if item.id not in id_list:
