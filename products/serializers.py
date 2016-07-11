@@ -131,6 +131,8 @@ class UpholsterySerializer(serializers.ModelSerializer):
     pillows = PillowSerializer(required=False, many=True, write_only=True)
     image = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all(),
                                                allow_null=True)
+    schematic = serializers.PrimaryKeyRelatedField(required=False, queryset=S3Object.objects.all(),
+                                               allow_null=True)
     collection = serializers.CharField(required=False, allow_null=True)
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
@@ -142,7 +144,7 @@ class UpholsterySerializer(serializers.ModelSerializer):
     class Meta:
         model = Upholstery
         read_only_fields = ('description', 'type')
-        exclude = ('image_key', 'bucket', 'schematic', 'schematic_key', 'image_url')
+        exclude = ('image_key', 'bucket', 'schematic_key', 'image_url')
 
     def to_representation(self, instance):
         """

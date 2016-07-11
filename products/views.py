@@ -157,7 +157,7 @@ class UpholsteryMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['model', 'configuration', 'image']
+        fields = ['model', 'configuration', 'image', 'schematic']
         try:
             del request.data['pillows']
         except KeyError:
@@ -171,7 +171,7 @@ class UpholsteryMixin(object):
                 except TypeError as e:
                     logger.warn(e)
                         
-                    
+        logger.debug(request.data)       
         return request
         
                     

@@ -149,13 +149,16 @@ class EmployeeSerializer(serializers.ModelSerializer):
         """
         ret = super(EmployeeSerializer, self).to_representation(instance)
         
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
-        
+        try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
+        except AttributeError as e:
+            pass
+
         try:
             ret['image'] = {'id': instance.image.id,
-                            'url': instance.image.generate_url(key, secret)}
+                            'url': instance.image.generate_url()}
         except AttributeError: 
             pass
             

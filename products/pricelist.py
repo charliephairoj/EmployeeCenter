@@ -80,7 +80,7 @@ class PricelistPDF(object):
         'AC-2008',
         'AC-2015',
         'AC-2021',
-        'AC-2023',
+        #'AC-2023',
         'AC-2027',
         'AC-2029',
         'AC-2033',
@@ -88,16 +88,17 @@ class PricelistPDF(object):
         'AC-2043',
         'AC-2051',
         'AC-2055',
-        'AC-2080',
+        #'AC-2080',
         'AC-2082',
         'AC-2086',
         'AC-2090',
-        'AC-2093',
+        'AC-2091',
+        #'AC-2093',
         'AC-2106',
         'AC-2108',
         'AC-2110',
         'AC-2118',
-        'AC-2123',
+        #'AC-2123',
         'AC-2137',
         'AC-2142',
         'AC-2157',
@@ -310,14 +311,14 @@ class PricelistPDF(object):
 
     def _create_section(self, products, index):
 
-        header = [[]]#[self._prepare_text('Grade', font_size=12)]
+        header = []#[self._prepare_text('Grade', font_size=12)]
         titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
         if self.export:
-            data = [Table([[], ["MSRP"], ["Export Price"]])]#[titles]
+            data = [Table([[], ["Price"], ["Export Price"]])]#[titles]
         else:
-            data = [Table([[], ["Before Discount"], ["After Discount"]])]#[titles]
+            data = []#Table([[], ["Price"]])]#[titles]
 
         assert len(products) <= 4, "There are {0} in this set.".format(len(products))
 
@@ -327,7 +328,7 @@ class PricelistPDF(object):
 
             data.append(self._create_product_price_table(product))
 
-        table = Table([header, data], colWidths=[80] + [120 for i in xrange(0, len(header) - 1)])
+        table = Table([header, data], colWidths=[120 for i in xrange(0, len(header))])
         table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
                                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
@@ -343,7 +344,7 @@ class PricelistPDF(object):
         #prices = product['prices']
 
         if "dw-" in product['configuration'].lower():
-            price = product['export_price']
+            price = product['price']
             data.append(["{0:,.2f}".format(price)])
             """
 
@@ -353,11 +354,11 @@ class PricelistPDF(object):
             """
         else:
 
-            price = product['price']
-            price = math.ceil(price / Decimal('35'))
+            price = "{0:,.2f}".format(product['price'])
+            #price = math.ceil(price / Decimal('35'))
             data.append([price])
-            new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
-            data.append([new_price])
+            #new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
+            #data.append([new_price])
 
             """
             if self.export:
@@ -377,7 +378,8 @@ class PricelistPDF(object):
         table = Table(data, colWidths=(120,))
         table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                    ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
-                                   ('TEXTCOLOR', (0, -1), (-1, -1), 'red')]))
+                                   #('TEXTCOLOR', (0, -1), (-1, -1), 'red')
+                                   ]))
         return table
 
     def _prepare_text(self, description, font_size=12, alignment=TA_CENTER, left_indent=0, fontname='Garuda', leading=12):
@@ -644,7 +646,7 @@ if __name__ == "__main__":
         os.makedirs(directory)
 
     def create_pricelist(filename):
-        pdf = PricelistPDF(export=True)
+        pdf = PricelistPDF()
         pdf.create(filename)
 
     def create_fabriclist(filename, fabrics):
