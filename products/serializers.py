@@ -178,6 +178,10 @@ class UpholsterySerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
 
+        try:
+            ret['schematic'] = {'url': instance.schematic.generate_url(key, secret)}
+        except AttributeError:
+            pass
 
         try:
             ret['prices'] = [{'grade': price.grade, 'price':price.price} for price in instance.prices.all()]
@@ -271,11 +275,6 @@ class TableSerializer(serializers.ModelSerializer):
 
         try:
             ret['image'] = {'url': instance.image.generate_url(key, secret)}
-        except AttributeError:
-            pass
-
-        try:
-            ret['schematic'] = {'url': instance.image.generate_url(key, secret)}
         except AttributeError:
             pass
 
