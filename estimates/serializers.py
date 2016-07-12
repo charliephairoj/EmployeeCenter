@@ -294,12 +294,15 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         #Update or Create Item
         for item_data in items_data:
-            logger.debug(item_data)
+
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
             except KeyError as e:
                 logger.debug(e)
-                item = Item(product=Product.objects.get(pk=item_data['product']))
+                try:
+                    item = Item(product=Product.objects.get(pk=item_data['product']))
+                except TypeError as e:
+                    item = Item(product=item_data['product'])
 
             item.description = item_data.get('description', item.description)
             item.quantity = item_data.get('quantity', item.quantity)
@@ -308,8 +311,9 @@ class EstimateSerializer(serializers.ModelSerializer):
 
             try:
                 item.image = S3Object.objects.get(pk=item_data['image'])
-            except KeyError as e:
-                logger.debug(e)
+            except (S3Object.DoesNotExist, KeyError) as e:
+                logger.warn(item_data['image'])
+                logger.warn(e)
                 
             item.save()
                 
