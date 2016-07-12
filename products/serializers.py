@@ -274,7 +274,7 @@ class TableSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
 
-         try:
+        try:
             ret['schematic'] = {'url': instance.image.generate_url(key, secret)}
         except AttributeError:
             pass
