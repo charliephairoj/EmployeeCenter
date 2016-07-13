@@ -179,7 +179,8 @@ class UpholsterySerializer(serializers.ModelSerializer):
             pass
 
         try:
-            ret['schematic'] = {'url': instance.schematic.generate_url(key, secret)}
+            ret['schematic'] = {'id': instance.schematic.id,
+                                'url': instance.schematic.generate_url(key, secret)}
         except AttributeError:
             pass
 
