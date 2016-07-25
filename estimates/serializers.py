@@ -298,12 +298,16 @@ class EstimateSerializer(serializers.ModelSerializer):
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
             except KeyError as e:
-                logger.debug(e)
                 try:
                     item = Item(product=Product.objects.get(pk=item_data['product']))
                 except TypeError as e:
                     item = Item(product=item_data['product'])
-
+                
+                
+            item.estimate = instance
+            item.width = item_data.get('width', item.width)
+            item.depth = item_data.get('depth', item.depth)
+            item.height = item_data.get('height', item.height)
             item.description = item_data.get('description', item.description)
             item.quantity = item_data.get('quantity', item.quantity)
             item.unit_price = item_data.get('unit_price', item.unit_price)
