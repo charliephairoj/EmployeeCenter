@@ -22,6 +22,8 @@ class Log(models.Model):
 
 
 class S3Object(models.Model):
+    access_key = ''
+    secret_key = ''
     bucket = models.TextField()
     key = models.TextField()   
     
@@ -60,6 +62,14 @@ class S3Object(models.Model):
         """
         self._upload(filename, delete_original, encrypt_key)
         self.save()
+
+    def download(self, filename):
+        bucket = self._get_bucket()
+        k = Key(bucket)
+        k.key = self.key
+        k.get_contents_to_filename(filename)
+       
+        return filename
 
     def generate_url(self, key=None, secret=None, time=1800):
         """

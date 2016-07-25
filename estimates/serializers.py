@@ -311,6 +311,8 @@ class EstimateSerializer(serializers.ModelSerializer):
 
             try:
                 item.image = S3Object.objects.get(pk=item_data['image'])
+            except TypeError as e:
+                item.image = item_data['image']
             except (S3Object.DoesNotExist, KeyError) as e:
                 logger.warn(item_data['image'])
                 logger.warn(e)
