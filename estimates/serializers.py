@@ -239,10 +239,9 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        if instance.status.lower() != 'cancelled':
-            instance.calculate_totals()
+        instance.calculate_totals()
 
-            instance.create_and_upload_pdf()
+        instance.create_and_upload_pdf()
 
         instance.save()
 
