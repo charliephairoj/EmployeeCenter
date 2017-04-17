@@ -425,7 +425,7 @@ class EstimatePDF(object):
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
             # Provide account details for 'Dellarobbia Thailand'
-            if self.company.lower() == 'dellarobbia thailand':
+            if self.ack.company.lower() == 'dellarobbia thailand':
                 quotation_details = "Terms: 50% deposit / Balance before Delivery, Transfer deposit to:\n"
                 quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
                 quotation_details += "294-3-006361\n"
