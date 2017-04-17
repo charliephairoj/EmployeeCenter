@@ -295,10 +295,6 @@ class Estimate(models.Model):
                         recipients,
                         format='html')
 
-    def email_decoroom(self):
-        """Emails decoroom"""
-        self._email(self.acknowledgement_pdf, ['praparat@decoroom.com'])
-        self._email(self.acknowledgement_pdf, ['sales@decoroom.com'])
 
 """
 class File(models.Model):
