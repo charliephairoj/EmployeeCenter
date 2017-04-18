@@ -126,10 +126,11 @@ class ConfirmationDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'pacific carpet':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/pci-logo.jpg"""
-        else:
+        if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        else:
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+        
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
@@ -137,14 +138,18 @@ class ConfirmationDocTemplate(BaseDocTemplate):
         new_width = (img_width * 30) / img_height
         canvas.drawImage(path, 42, 780, height=30, width=new_width)
 
-        #Add Company Information in under the logo
-        canvas.setFont('Helvetica', 8)
-        canvas.setFillColorCMYK(0, 0, 0, 60)
-        canvas.drawString(42, 760,
-                          "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
-        canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
-        canvas.drawString(42, 740, "+66 2 998 7490")
-        canvas.drawString(42, 730, "www.dellarobbiathailand.com")
+        #Add Company Information in under the logo if dellarobbia
+        if self.company.lower() == 'dellarobbia thailand':
+            canvas.drawString(42, 760,
+                            "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
+            canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
+            canvas.drawString(42, 740, "+66 2 998 7490")
+        else:
+            canvas.drawString(42, 760,
+                            "386/2 Hathai Rat Rd., Samwa, Samwa")
+            canvas.drawString(42, 750, "Bangkok, Thailand, 10510")
+            canvas.drawString(42, 740, "+66 2 998 7490")
+        #canvas.drawString(42, 730, "www.dellarobbiathailand.com")
 
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
@@ -165,10 +170,12 @@ class ProductionDocTemplate(AckDocTemplate):
     top_padding = 120
 
     def _create_header(self, canvas, doc):
-        if self.company.lower() == 'pacific carpet':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/pci-logo.jpg"""
-        else:
+        #Draw the logo in the upper left
+        if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        else:
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
