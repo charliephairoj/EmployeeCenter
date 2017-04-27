@@ -49,6 +49,7 @@ class ItemSerializer(serializers.ModelSerializer):
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
+    quantity = serializers.DecimalField(decimal=2, max_digits=12, default=1)
     custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
                                             allow_null=True)
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12,

@@ -27,6 +27,7 @@ class Estimate(models.Model):
     po_id = models.TextField(default=None, null=True, blank=True)
     company = models.TextField(default="Dellarobbia Thailand")
     discount = models.IntegerField(default=0)
+    second_discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
@@ -211,7 +212,14 @@ class Estimate(models.Model):
         discount = (Decimal(self.discount) / 100) * running_total
         running_total -= discount
         logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount))
+
+        # Calculate and apply a second discount
+        second_discount = (Decimal(self.second_discount) / 100) * running_total
+        running_total -= second_discount
+        logger.debug("second discount {0}%: - {1:.2f}".format(self.second_discount, second_discount))
+        
         logger.debug("total: = {0:.2f}".format(running_total))
+
         
         #Calculate and apply vat
         vat = (Decimal(self.vat) / 100) * running_total

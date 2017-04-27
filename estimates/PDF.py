@@ -445,6 +445,13 @@ class EstimatePDF(object):
                 discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                 data.append(['', '', '',
                              'Discount %s%%' % self.ack.discount, "%.2f" % discount])
+
+            #add discount area if discount greater than 0
+            if self.ack.second_discount != 0:
+                discount = self.ack.subtotal * (Decimal(self.ack.second_discount) / Decimal(100))
+                data.append(['', '', '',
+                             'Additional Discount %s%%' % self.ack.second_discount, "%.2f" % discount])
+
             #add vat if vat is greater than 0
             if self.ack.vat != 0:
                 if self.ack.discount != 0:
@@ -468,7 +475,7 @@ class EstimatePDF(object):
                              colors.CMYKColor(black=80)),
                             ('LINEBEFORE', (0, 0), (0, -1), 1,
                              colors.CMYKColor(black=60)),
-                            ('LINEAFTER', (-2, 0), (-1, -1), 1,
+                            ('LINEAFTER', (-1, 0), (-1, -1), 1,
                              colors.CMYKColor(black=60)),
                             ('LINEBEFORE', (-2, 0), (-2, -1), 1,
                              colors.CMYKColor(black=60)),
