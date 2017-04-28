@@ -181,8 +181,8 @@ class EstimatePDF(object):
             zipcode = address.zipcode if address.zipcode != None else ''
             #add supplier address data
             data.append(['', addr])
-            data.append(['', '%s, %s' % (city, territory)])
-            data.append(['', "%s %s" % (country, zipcode)])
+            data.append(['', '{0}, {1}'.format(city, territory)])
+            data.append(['', "{0} {1}".format(country, zipcode)])
         except IndexError:
             pass
 
@@ -293,9 +293,9 @@ class EstimatePDF(object):
         #add the data
         data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20),
                      product.description,
-                     product.unit_price,
+                     "{0:,.2f}".format(product.unit_price),
                      product.quantity,
-                     product.total])
+                     "{0:,.2f}".format(product.total)])
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except Exception as e:
@@ -426,31 +426,35 @@ class EstimatePDF(object):
         if self.ack.vat > 0 or self.ack.discount > 0:
             # Provide account details for 'Dellarobbia Thailand'
             if self.ack.company.lower() == 'dellarobbia thailand':
-                quotation_details = "Terms: 50% deposit / Balance before Delivery, Transfer deposit to:\n"
+                quotation_details = "Terms: 50% deposit / Balance before Delivery."
+                quotation_details += "Prices are valid for 30 Days"
+                quotation_details += "Transfer deposit to:\n"
                 quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
                 quotation_details += "294-3-006361\n"
                 quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
             # Provide account details for 'Alinea Group'
             else: 
-                quotation_details = "Terms: 50% deposit / Balance before Delivery, Transfer deposit to:\n"
+                quotation_details = "Terms: 50% deposit / Balance before Delivery."
+                quotation_details += "Prices are valid for 30 Days"
+                quotation_details += "Transfer deposit to:\n"
                 quotation_details += "Alinea Group Co., Ltd.\n"
                 quotation_details += "023-1-67736-4\n"
                 quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
 
             #get subtotal and add to pdf
-            data.append([quotation_details, '', '', 'Subtotal', "%.2f" % self.ack.subtotal])
+            data.append([quotation_details, '', '', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
             total = self.ack.subtotal
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
                 discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                 data.append(['', '', '',
-                             'Discount %s%%' % self.ack.discount, "%.2f" % discount])
+                             'Discount {0}%'.format(self.ack.discount), "{:,.2f}".format(discount)])
 
             #add discount area if discount greater than 0
             if self.ack.second_discount != 0:
                 discount = self.ack.subtotal * (Decimal(self.ack.second_discount) / Decimal(100))
                 data.append(['', '', '',
-                             'Additional Discount %s%%' % self.ack.second_discount, "%.2f" % discount])
+                             'Additional Discount {0}%'.format(self.ack.second_discount), "{0:,.2f}".format(discount)])
 
             #add vat if vat is greater than 0
             if self.ack.vat != 0:
@@ -458,7 +462,7 @@ class EstimatePDF(object):
                     #append total to pdf
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                     total -= discount
-                    data.append(['', '', '', 'Total', "%.2f" % total])
+                    data.append(['', '', '', 'Total', "{0:,.2f}".format(total)])
 
                     prevat_total = total
                 else:
@@ -466,8 +470,8 @@ class EstimatePDF(object):
 
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
-                data.append(['', '', '', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
-        data.append(['', '', '', 'Grand Total', "%.2f" % self.ack.total])
+                data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
+        data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
         table = Table(data, colWidths=(150, 140, 80, 70, 105))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
@@ -491,15 +495,15 @@ class EstimatePDF(object):
 
     def _create_signature_section(self):
         #create the signature
-        signature = Table([['x', '', ''],['Customer Signature', '', '']],
+        signature = Table([['x', '', 'x'],['Customer Signature', '', 'Authorized Signature']],
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
                               colors.CMYKColor(black=60)),
                              ('LINEBELOW', (0,0), (0,0), 1,
                               colors.CMYKColor(black=60)),
-                             #('LINEBELOW', (-1,0), (-1,0), 1,
-                             # colors.CMYKColor(black=60)),
+                             ('LINEBELOW', (-1,0), (-1,0), 1,
+                              colors.CMYKColor(black=60)),
                              ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)

@@ -296,8 +296,8 @@ class AcknowledgementPDF(object):
             zipcode = address.zipcode if address.zipcode != None else ''
             #add supplier address data
             data.append(['', addr])
-            data.append(['', '%s, %s' % (city, territory)])
-            data.append(['', "%s %s" % (country, zipcode)])
+            data.append(['', '{0}, {1}'.format(city, territory)])
+            data.append(['', "{0} {1}".format(country, zipcode)])
         except IndexError:
             pass
             
@@ -556,9 +556,8 @@ class AcknowledgementPDF(object):
         #If there is a discount then append
         # original price string
         if supply.discount > 0:
-            description += " (discounted %s%% from %s)" %(supply.description,
-                                                          supply.discount,
-                                                          supply.cost)
+            description += " (discounted {0}% from {1})".format(supply.discount,
+                                                                supply.cost)
         #return description
         return description
 
@@ -580,19 +579,19 @@ class AcknowledgementPDF(object):
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
             #get subtotal and add to pdf
-            data.append(['', 'Subtotal', "%.2f" % self.ack.subtotal])
+            data.append(['', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
             total = self.ack.subtotal
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
                 discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
-                data.append(['', 'Discount %s%%' % self.ack.discount, "%.2f" % discount])
+                data.append(['', 'Discount {0}%'.format(self.ack.discount), "{0:,.2f}".format(discount)])
             #add vat if vat is greater than 0
             if self.ack.vat != 0:
                 if self.ack.discount != 0:
                     #append total to pdf
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
                     total -= discount
-                    data.append(['', 'Total', "%.2f" % total])
+                    data.append(['', 'Total', "{0:,.2f}".format(total)])
                     
                     prevat_total = total
                 else:
@@ -600,8 +599,8 @@ class AcknowledgementPDF(object):
                     
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
-                data.append(['', 'Vat %s%%' % self.ack.vat, "%.2f" % vat])
-        data.append(['', 'Grand Total', "%.2f" % self.ack.total])
+                data.append(['', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
+        data.append(['', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
         table = Table(data, colWidths=(80, 300, 165))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
