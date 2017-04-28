@@ -171,11 +171,13 @@ class ProductionDocTemplate(AckDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
-        else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+        #if self.company.lower() == 'dellarobbia thailand':
+        #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        #else:
+        #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
 
+        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
