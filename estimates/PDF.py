@@ -181,8 +181,8 @@ class EstimatePDF(object):
             zipcode = address.zipcode if address.zipcode != None else ''
             #add supplier address data
             data.append(['', addr])
-            data.append(['', '{0}, {1}'.format(city, territory)])
-            data.append(['', "{0} {1}".format(country, zipcode)])
+            data.append(['', u'{0}, {1}'.format(city, territory)])
+            data.append(['', u"{0} {1}".format(country, zipcode)])
         except IndexError:
             pass
 
