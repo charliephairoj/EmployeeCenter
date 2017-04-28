@@ -215,7 +215,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = ('vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
+        fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments')
 
