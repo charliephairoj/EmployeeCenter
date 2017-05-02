@@ -15,8 +15,8 @@ from django.core.wsgi import get_wsgi_application
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 application = get_wsgi_application()
 
-from estimates.models import Estimate as E
+from trcloud.models import PurchaseOrder as PO
 
-e = E.objects.all().order_by('-id')[0]
-e.create_and_upload_pdf()
-print e.pdf.generate_url()
+po = PO()
+
+po.create()

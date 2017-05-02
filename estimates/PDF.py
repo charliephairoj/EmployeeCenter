@@ -426,16 +426,16 @@ class EstimatePDF(object):
         if self.ack.vat > 0 or self.ack.discount > 0:
             # Provide account details for 'Dellarobbia Thailand'
             if self.ack.company.lower() == 'dellarobbia thailand':
-                quotation_details = "Terms: 50% deposit / Balance before Delivery."
-                quotation_details += "Prices are valid for 30 Days"
+                quotation_details = "Prices are valid for 30 Days\n"
+                quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
                 quotation_details += "Transfer deposit to:\n"
                 quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
                 quotation_details += "294-3-006361\n"
                 quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
             # Provide account details for 'Alinea Group'
             else: 
-                quotation_details = "Terms: 50% deposit / Balance before Delivery."
-                quotation_details += "Prices are valid for 30 Days"
+                quotation_details = "Prices are valid for 30 Days\n"
+                quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
                 quotation_details += "Transfer deposit to:\n"
                 quotation_details += "Alinea Group Co., Ltd.\n"
                 quotation_details += "023-1-67736-4\n"

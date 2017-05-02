@@ -4,6 +4,7 @@ import requests
 import json
 import hashlib
 import time
+from datetime import datetime
 import math
 
 from django.db import models
@@ -73,6 +74,56 @@ class BaseTRModelMixin(object):
 
         response = cls._send_request(url, cls._prepare_body_for_request(data))
         return response
+
+
+class Supply(BaseTRModelMixin, models.Model):
+    trcloud_id = models.IntegerField()
+
+
+class PurchaseOrder(BaseTRModelMixin):
+    reference = ""
+    date = datetime.now()
+    invoice_note = ""
+    payment_term = "cash"
+    company_format = "PO"
+    document_number = ""
+    discount = "0"
+    tax = "7%"
+    total = ""
+    grand_total = ""
+    tax_option = "ex"
+    url = ""
+    status = "New"
+    staff = ""
+    department = ""
+    project = ""
+    customer = {}
+    products = []
+
+    @classmethod
+    def search(cls, keyword):
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-po/search-po.php"
+        data = cls._search(url=url, keyword=keyword)
+         
+        return data
+    
+    @classmethod
+    def retrieve(cls, id):
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-po/retrieve-po.php"
+        data = cls._retrieve(url, id)
+
+        return data
+
+    def create(self):
+        """Create a new purchase order in the TRCloud Accounting system"""
+        data = {}
+        for i in dir(self):
+            if not i.startswith('_') and not callable(getattr(self, i)):
+                data[i] = getattr(self, i)
+            
+        print data
+       
+
 
 class Quotation(BaseTRModelMixin, models.Model):
     trcloud_id = models.IntegerField()
