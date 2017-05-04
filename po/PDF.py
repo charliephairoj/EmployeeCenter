@@ -40,6 +40,8 @@ class PODocTemplate(BaseDocTemplate):
     top_padding = 150
 
     def __init__(self, filename, **kw):
+        if "po" in kw:
+            self.po = kw['po']
         if "id" in kw:
             self.id = kw["id"]
         if "revision" in kw:
@@ -60,7 +62,7 @@ class PODocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.po.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
@@ -76,7 +78,7 @@ class PODocTemplate(BaseDocTemplate):
         canvas.setFont('Helvetica', 8)
         canvas.setFillColorCMYK(0, 0, 0, 60)
         #Add Company Information in under the logo if dellarobbia
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.po.company.lower() == 'dellarobbia thailand':
             canvas.drawString(42, 760,
                             "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
             canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
@@ -140,7 +142,7 @@ class PurchaseOrderPDF():
     def create(self):
         self.location = "{0}/{1}".format(settings.MEDIA_ROOT, self.filename)
         # Create the doc template
-        doc = PODocTemplate(self.location, id=self.po.id, pagesize=A4,
+        doc = PODocTemplate(self.location, po=self.po, id=self.po.id, pagesize=A4,
                             leftMargin=36, rightMargin=36, topMargin=36,
                             revision=self.revision, revision_date=self.revision_date)
         # Build the document with stories
