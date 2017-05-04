@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 def sticker(request, pk=None):
     response = HttpResponse(content_type='application/pdf; charset=utf-8')
     equipment = Equipment.objects.get(pk=pk)
-    pdf = Sticker(code="DRE-{0}".format(equipment.id), 
-                  description="{0} ({1})".format(equipment.description, (equipment.brand or "").capitalize()))
+    pdf = Sticker(code=u"DRE-{0}".format(equipment.id), 
+                  description=u"{0} ({1})".format(equipment.description, (equipment.brand or "").capitalize()))
     pdf.create(response)
     
     return response
