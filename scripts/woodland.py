@@ -15,10 +15,16 @@ from django.core.wsgi import get_wsgi_application
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 application = get_wsgi_application()
 
-from po.models import PurchaseOrder as PO
+from contacts.models import Customer
+from acknowledgements.models import Acknowledgement as A
+from trcloud.models import TRSalesOrder as SO
 
-po = PO.objects.all()[0]
+a = A.objects.all()[0]
+a.create_in_trcloud()
 
-po.create_and_upload_pdf()
-print po.pdf.generate_url()
+#data = SO.search('holbrook')
+#for i in data:
+#    print i['id']
+
+
 

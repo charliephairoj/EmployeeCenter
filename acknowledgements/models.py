@@ -6,6 +6,7 @@ from decimal import *
 import httplib2
 
 from pytz import timezone
+from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
@@ -22,11 +23,12 @@ from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
 from administrator.models import CredentialsModel
-
+from trcloud.models import TRSalesOrder
 logger = logging.getLogger(__name__)
 
 
 class Acknowledgement(models.Model):
+    trcloud_id = models.IntegerField(null=True, default=0)
     po_id = models.TextField(default=None, null=True)
     company = models.TextField(default="Dellarobbia Thailand")
     discount = models.IntegerField(default=0)
@@ -89,7 +91,15 @@ class Acknowledgement(models.Model):
         Object is required to authorize certain data
         """
         acknowledgement = cls()
+
+        # Get Customer and create in TRCloud if necessary
         acknowledgement.customer = Customer.objects.get(id=kwargs['customer']['id'])
+        try:
+            if not acknowledgement.customer.trcloud_id == 0:
+                acknowledgement.customer.create_in_trcloud()
+        except Exception as e:
+            logger.warn(e)
+
         acknowledgement.employee = user
 
         acknowledgement.delivery_date = dateutil.parser.parse(kwargs['delivery_date'])
@@ -171,6 +181,36 @@ class Acknowledgement(models.Model):
 
         self.save()
 
+    def create_in_trcloud(self):
+        """Create a Sales Order in TRCloud"""
+        # Create customer if does not already exist
+        if not self.customer.trcloud_id:
+            self.customer.type = "client"
+            self.customer.create_in_trcloud()
+
+        tr_so = TRSalesOrder()
+        tr_so.document_number = "SO170013"
+        # Set Date
+        d = datetime.now()
+        tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
+        tr_so.delivery_date = self.delivery_date.strftime("%Y-%m-%d")
+        tr_so.company_format = "SO"
+        tr_so.tax = "{0}".format(self.vat)
+        tr_so.total = "{0:,.2f}".format(self.subtotal)
+        tr_so.grand_total = "{0:,.2f}".format(self.total)
+        tr_so.customer_id = self.customer.trcloud_id
+
+        tr_so.products.append({'id': '00001BO',
+                      'product': 'test',
+                      'price': '10',
+                      'quantity': '5',
+                      'before': '10',
+                      'amount':'10.7'})
+        tr_so.create()
+
+        self.trcloud_id = tr_so.id
+        self.save()
+        
     def ship(self, delivery_date, employee):
         """Changes status to 'SHIPPED'
 

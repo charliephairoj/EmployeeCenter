@@ -8,12 +8,13 @@ import gdata.contacts.client
 import gdata.contacts.data
 
 from administrator.models import CredentialsModel, OAuth2TokenFromCredentials
-
+from trcloud.models import TRContact
 
 logger = logging.getLogger(__name__)
 
 
 class Contact(models.Model):
+    trcloud_id = models.IntegerField(null=True, default=0)
     name = models.TextField()
     name_th = models.TextField(null=True, blank=True)
     telephone = models.TextField()
@@ -112,6 +113,34 @@ class Contact(models.Model):
         # Update the google contact
         g_contact = self.contact_service.Update(g_contact)
         assert contact.google_contact_id
+
+    def create_in_trcloud(self):
+        """Create the contact in trcloud"""
+        tr_contact = TRContact()
+
+        # Populate data for submission from Attributes
+        for i in dir(self):
+            logger.debug(i)
+            attrs = dir(tr_contact)
+            logger.debug(attrs)
+            if not i.startswith('_') and i.lower() in attrs:
+                logger.debug(i)
+                setattr(tr_contact, i, getattr(self, i))
+            #if not i.startswith('_') and not callable(getattr(self, i)) and hasattr(tr_contact, i):
+            #    setattr(tr_contact, i, getattr(self, i))
+
+        # Populate address data
+        address = self.addresses.all()[0]
+        tr_address = "{0}, {1}, {2}, {3} {4}".format(address.address1,
+                                                     address.city,
+                                                     address.territory,
+                                                     address.country,
+                                                     address.zipcode)
+        tr_contact.address = tr_address
+        tr_contact.create()
+
+        self.trcloud_id = tr_contact.contact_id
+        self.save()
     
 
 

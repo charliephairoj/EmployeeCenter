@@ -38,15 +38,17 @@ class BaseTRModelMixin(object):
 
         # Change response from text to data
         data = json.loads(response.text)
-        print data
+
         # If the response is a success return it
         if int(data['success']) == 1:
             if 'head' in data:
                 return data['head']
             elif 'result' in data:
                 return data['result']
+            else:
+                return data
         else:
-            pass
+            raise Exception("The submission failed")
 
     @classmethod
     def _send_request(cls, url, data):
@@ -63,7 +65,7 @@ class BaseTRModelMixin(object):
 
         data = {'index': index,
                 'keyword': keyword}
-
+                
         response = cls._send_request(url, cls._prepare_body_for_request(data))
         return response
 
@@ -75,6 +77,67 @@ class BaseTRModelMixin(object):
         response = cls._send_request(url, cls._prepare_body_for_request(data))
         return response
 
+    def _create(self, url, data):
+        data = self._prepare_body_for_request(data)
+
+        response = self._send_request(url, data)
+        return response
+
+
+class TRContact(BaseTRModelMixin):
+    contact_id = ""
+    title = ""
+    name = ""
+    organization = ""
+    contact_type = "normal",
+    branch = "Headquarter",
+    tax_id  = "",
+    source  = "",
+    
+    address = "",
+    telephone  = "",
+    email ="",
+    
+    shipping_address = "",
+    shipping_email = "",
+    shipping_telephone = "",
+    
+    bn_credit_limit = "0",
+    iv_credit_limit = "0",
+    
+    credit_expense = "0",
+    credit_revenue = "0",
+    remark = "",
+    condition ="",
+    
+    bill = "",
+    expense = "",
+    invoice = "",
+    payment = "",
+    receipt = ""
+
+    @classmethod
+    def retrieve(cls, id):
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-contact/retrieve-contact.php"
+        data = cls._retrieve(url, id)
+
+        return data
+
+    def create(self):
+        data = {}
+        
+        # Populate data for submission from Attributes
+        for i in dir(self):
+            if not i.startswith('_') and not callable(getattr(self, i)):
+                data[i] = getattr(self, i)
+        
+        # Delete contact_id as this is a creation
+        del data['contact_id']
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-contact/contact.php"
+        data = self._create(url, data)
+        logger.debug(data)
+        self.contact_id = data['contact_id']
+       
 
 class Supply(BaseTRModelMixin, models.Model):
     trcloud_id = models.IntegerField()
@@ -163,12 +226,17 @@ class Quotation(BaseTRModelMixin, models.Model):
         # Send the data to TRCloud endpoint for Alinea
 
 
-class SaleOrder(BaseTRModelMixin, models.Model):
-    trcloud_id = models.IntegerField()
-    issue_date = models.DateField()
-    payment_term = models.TextField()
-    company_format = models.TextField()
-    
+class TRSalesOrder(BaseTRModelMixin):
+    id = ""
+    document_number = ""
+    issue_date = ""
+    delivery_date = ""
+    payment_term = "Cash"
+    company_format = "SO"
+    tax_option = "ex"
+    status = "New"
+    customer_id = ""
+    products = []
     
     @classmethod
     def search(cls, keyword):
@@ -185,14 +253,27 @@ class SaleOrder(BaseTRModelMixin, models.Model):
         return data
 
     def create(self):
-        pass
-        # Reconcile customer with TRCloud
+        data = {}
+        
+        # Populate data for submission from Attributes
+        for i in dir(self):
+            if not i.startswith('_') and not callable(getattr(self, i)):
+                data[i] = getattr(self, i)
+        
+        # Populate the customer data
+        data["customer"] = {"contact_id": self.customer_id,
+                            "add_contact": False,
+                            "update_contact": False}
+        
+        data["product"] = self.products
+        # Delete id as this is a creation
+        del data['id']
+        del data['customer_id']
 
-        # Prepare the data package
-
-        # Convert to JSON
-
-        # Send the data to TRCloud endpoint for Alinea
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/so.php"
+        data = self._create(url, data)
+        logger.debug(data)
+        self.id = data['id']
 
     def _update_in_trcloud(self):
         pass
