@@ -108,7 +108,7 @@ class ShippingPDF(object):
             self.ack = shipping.acknowledgement
         except AttributeError as e:
             self.ack = None
-        self.employee = self.employee
+        self.employee = employee
     
     
     #create method
@@ -297,7 +297,7 @@ class ShippingPDF(object):
                     except: pass
         except AttributeError as e:
             logger.info(e)
-            
+
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
