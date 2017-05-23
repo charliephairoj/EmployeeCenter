@@ -8,6 +8,7 @@ from contacts.models import Customer
 from contacts.serializers import CustomerSerializer
 from projects.models import Project, Phase
 
+
 logger = logging.getLogger(__name__)
 
 

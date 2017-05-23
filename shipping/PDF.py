@@ -11,6 +11,7 @@ production"""
 
 from decimal import Decimal
 from pytz import timezone
+import logging
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -27,6 +28,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 
+
+logger = logging.getLogger(__name__)
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT+'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT+'Garuda.ttf'))
