@@ -30,7 +30,7 @@ class ShippingMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['acknowledgement', 'project', 'phase']
+        fields = ['acknowledgement', 'project', 'phase', 'customer']
         
         for field in fields:
             if field in request.data:
@@ -41,14 +41,17 @@ class ShippingMixin(object):
         
         
         for index, item in enumerate(request.data['items']):
-            request.data['items'][index]['item'] = item['id']
-            del request.data['items'][index]['id']
+            try:
+                request.data['items'][index]['item'] = item['id']
+                del request.data['items'][index]['id']
+            except KeyError as e:
+                logger.warn(e)
         
         try:                
             request.data['customer'] = Acknowledgement.objects.get(pk=request.data['acknowledgement']).customer.id
         except Exception:
             pass
-            
+        logger.debug(request.data)
         return request
     
     

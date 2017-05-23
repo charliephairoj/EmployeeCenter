@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from shipping.models import Shipping, Item
 from acknowledgements.models import Acknowledgement, Item as AckItem
+from contacts.models import Customer
 from contacts.serializers import CustomerSerializer
 from projects.models import Project, Phase
 
@@ -37,7 +38,9 @@ class ItemSerializer(serializers.ModelSerializer):
     
 class ShippingSerializer(serializers.ModelSerializer):
     items = ItemSerializer(many=True)
-    customer = CustomerSerializer(read_only=True)
+    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), 
+                                                  required=True, allow_null=False)
+    #customer = CustomerSerializer(read_only=True)
     acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), allow_null=True, required=False)
@@ -54,11 +57,15 @@ class ShippingSerializer(serializers.ModelSerializer):
         """ 
         items_data = validated_data.pop('items')
         for item_data in items_data:
-            item_data['item'] = item_data['item'].id
-        
+            # add try and except that so new items no longer require a preapprove
+            # product before creation
+            try:
+                item_data['item'] = item_data['item'].id
+            except KeyError as e:
+                item_data['item'] = None
+        logger.debug(validated_data)
         try:
-            instance = self.Meta.model.objects.create(customer=validated_data['acknowledgement'].customer, 
-                                                      employee=self.context['request'].user,
+            instance = self.Meta.model.objects.create(employee=self.context['request'].user,
                                                       **validated_data)
         except AttributeError:
             instance = self.Meta.model.objects.create(employee=self.context['request'].user, **validated_data)
@@ -89,8 +96,13 @@ class ShippingSerializer(serializers.ModelSerializer):
         instance.save()
         
         # Update the delivery date for the acknowledgement
-        instance.acknowledgement.delivery_date = instance.delivery_date
-        instance.acknowledgement.save()
+        # Tries as there maybe shipping documents with no corresponding 
+        # Acknowledgements
+        try:
+            instance.acknowledgement.delivery_date = instance.delivery_date
+            instance.acknowledgement.save()
+        except AttributeError as e:
+            pass
         
         # Update the calendar event
         try:
@@ -147,6 +159,9 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         ret = super(ShippingSerializer, self).to_representation(instance)
         
+        ret['customer'] = {'id': instance.customer.id,
+                           'name': instance.customer.name}
+
         try:
             ret['employee'] = {'id': instance.employee.id,
                                'name': instance.employee.name}
@@ -164,14 +179,15 @@ class ShippingSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
         
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
+        
         
         try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
             ret['pdf'] = {'url': instance.pdf.generate_url(key, secret)}
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            logger.warn(e)
        
         return ret
                          
