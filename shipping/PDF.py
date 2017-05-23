@@ -213,10 +213,10 @@ class ShippingPDF(object):
         #Add Data
         try:
             order_date, od_obj = self.outputBKKTime(self.shipping.acknowledgement.time_created, '%B %d, %Y')
+            data.append(['Order Date:', order_date])
         except AttributeError as e:
             logger.info(e)
         delivery_date, dd_obj = self.outputBKKTime(self.shipping.delivery_date, '%B %d, %Y')
-        data.append(['Order Date:', order_date])
         data.append(['Delivery Date:', delivery_date])
         try:
             # Add the acknowledgement number
