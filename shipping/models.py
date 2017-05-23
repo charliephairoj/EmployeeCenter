@@ -132,7 +132,8 @@ class Shipping(models.Model):
         #shipping.update_acknowledgement_data()
         #Initialize and create pdf
         pdf = ShippingPDF(customer=self.customer, shipping=self,
-                          products=self.items.all().order_by('id'))
+                          products=self.items.all().order_by('id'),
+                          employee=self.employee)
         filename = pdf.create()
         
         return filename

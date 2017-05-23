@@ -94,7 +94,7 @@ class ShippingPDF(object):
     document_type = "Shipping"
     
     #def methods
-    def __init__(self, customer=None, products=None, shipping=None):
+    def __init__(self, customer=None, products=None, shipping=None, employee=None):
         
         #Set Defaults
         self.width, self.height = A4
@@ -104,8 +104,11 @@ class ShippingPDF(object):
         self.customer = customer  
         self.products = products
         self.shipping = shipping
-        self.ack = shipping.acknowledgement
-        self.employee = self.ack.employee
+        try:
+            self.ack = shipping.acknowledgement
+        except AttributeError as e:
+            self.ack = None
+        self.employee = self.employee
     
     
     #create method
@@ -209,11 +212,15 @@ class ShippingPDF(object):
         delivery_date, dd_obj = self.outputBKKTime(self.shipping.delivery_date, '%B %d, %Y')
         data.append(['Order Date:', order_date])
         data.append(['Delivery Date:', delivery_date])
-        # Add the acknowledgement number
-        data.append(['Acknowledgement #', self.shipping.acknowledgement.id])
-        #Adds po if exists
-        if self.shipping.acknowledgement.po_id != None:
-            data.append(['PO #:', self.ack.po_id])
+        try:
+            # Add the acknowledgement number
+            data.append(['Acknowledgement #', self.shipping.acknowledgement.id])
+            #Adds po if exists
+            if self.shipping.acknowledgement.po_id != None:
+                data.append(['PO #:', self.ack.po_id])
+        except AttributeError as e:
+            logger.info(e)
+
         if self.shipping.comments is not None and self.shipping.comments != '':
             data.append(['Comments', self.shipping.comments])
         #Create table
@@ -273,18 +280,24 @@ class ShippingPDF(object):
             data.append(['', self._get_fabric_table(product.item.fabric, "   Fabric:")])
         except:
             pass
-        if product.item.is_custom_size:
-            dimension_str = '   Width: {0}mm Depth: {1}mm Height: {2}mm'
-            dimension_str = dimension_str.format(product.item.width, product.item.depth, product.item.height)
-            data.append(['', dimension_str])
-        #increase the item number
-        pillows = product.item.pillows.all()
-        if len(pillows) > 0:
-            for pillow in pillows:
-                data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])
-                try:
-                    data.append(['', self._get_fabric_table(pillow.fabric.description, '       - Fabric:'), '',])
-                except: pass
+        
+        # Wrap in try, in case there is no preceding item
+        try:
+            if product.item.is_custom_size:
+                dimension_str = '   Width: {0}mm Depth: {1}mm Height: {2}mm'
+                dimension_str = dimension_str.format(product.item.width, product.item.depth, product.item.height)
+                data.append(['', dimension_str])
+            #increase the item number
+            pillows = product.item.pillows.all()
+            if len(pillows) > 0:
+                for pillow in pillows:
+                    data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])
+                    try:
+                        data.append(['', self._get_fabric_table(pillow.fabric.description, '       - Fabric:'), '',])
+                    except: pass
+        except AttributeError as e:
+            logger.info(e)
+            
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
