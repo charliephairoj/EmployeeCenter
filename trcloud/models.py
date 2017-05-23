@@ -139,8 +139,8 @@ class TRContact(BaseTRModelMixin):
         self.contact_id = data['contact_id']
        
 
-class Supply(BaseTRModelMixin, models.Model):
-    trcloud_id = models.IntegerField()
+class Supply(BaseTRModelMixin):
+    pass
 
 
 class PurchaseOrder(BaseTRModelMixin):
@@ -188,8 +188,7 @@ class PurchaseOrder(BaseTRModelMixin):
        
 
 
-class Quotation(BaseTRModelMixin, models.Model):
-    trcloud_id = models.IntegerField()
+class Quotation(BaseTRModelMixin):
     
     @classmethod
     def search(cls, keyword):
