@@ -318,9 +318,13 @@ class ShippingPDF(object):
                                           ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
             data.append(['', comments, ''])
         #Get Image url and add image
-        if product.item.image is not None:
-            image_url = product.item.image.generate_url('', '', time=3600)
-            data.append(['', self.get_image(image_url, height=100)])
+        try:
+            if product.item.image is not None:
+                image_url = product.item.image.generate_url('', '', time=3600)
+                data.append(['', self.get_image(image_url, height=100)])
+        except AttributeError as e:
+            logger.info(e)
+            
         #Create table
         table = Table(data, colWidths=(65, 240, 40, 90, 90))
         style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
