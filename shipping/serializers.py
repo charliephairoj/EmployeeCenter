@@ -29,9 +29,10 @@ class ItemSerializer(serializers.ModelSerializer):
         
         instance = self.Meta.model.objects.create(shipping=shipping, **validated_data)
         
-        if instance.quantity == instance.item.quantity:
-            instance.item.status = "SHIPPED"
-            instance.item.save()
+        if instance.item:
+            if instance.quantity == instance.item.quantity:
+                instance.item.status = "SHIPPED"
+                instance.item.save()
         
         return instance
     
