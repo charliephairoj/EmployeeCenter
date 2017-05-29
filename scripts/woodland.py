@@ -19,7 +19,9 @@ from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
-a = A.objects.all()[0]
+a = A.objects.get(pk=56703)
+a.customer.trcloud_id = None
+a.customer.save()
 a.create_in_trcloud()
 
 #data = SO.search('holbrook')

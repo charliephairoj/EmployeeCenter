@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import dateutil.parser
 import math
@@ -23,7 +25,7 @@ from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
 from administrator.models import CredentialsModel
-from trcloud.models import TRSalesOrder
+from trcloud.models import TRSalesOrder, TRContact
 logger = logging.getLogger(__name__)
 
 
@@ -140,9 +142,9 @@ class Acknowledgement(models.Model):
         #Save Ack with pdf data
         acknowledgement.save()
 
-        #Email decoroom
-        if "decoroom" in acknowledgement.customer.name.lower():
-            acknowledgement.email_decoroom()
+        if acknowledgement.vat > 0:
+            acknowledgement.create_in_trcloud()
+
         return acknowledgement
         
     def delete(self):
@@ -185,27 +187,20 @@ class Acknowledgement(models.Model):
         """Create a Sales Order in TRCloud"""
         # Create customer if does not already exist
         if not self.customer.trcloud_id:
-            self.customer.type = "client"
-            self.customer.create_in_trcloud()
+            # Search current clients
+            contacts = TRContact.search(self.customer.name)
+            if len(contacts) == 0:
+                self.customer.contact_type = "normal"
+                self.customer.create_in_trcloud()
+            else: 
+                self.customer.trcloud_id = contacts[0]['contact_id']
+                self.customer.tax_id = contacts[0]['tax_id']
+                self.customer.save()
 
         tr_so = TRSalesOrder()
-        tr_so.document_number = "SO170013"
-        # Set Date
-        d = datetime.now()
-        tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
-        tr_so.delivery_date = self.delivery_date.strftime("%Y-%m-%d")
-        tr_so.company_format = "SO"
-        tr_so.tax = "{0}".format(self.vat)
-        tr_so.total = "{0:,.2f}".format(self.subtotal)
-        tr_so.grand_total = "{0:,.2f}".format(self.total)
-        tr_so.customer_id = self.customer.trcloud_id
 
-        tr_so.products.append({'id': '00001BO',
-                      'product': 'test',
-                      'price': '10',
-                      'quantity': '5',
-                      'before': '10',
-                      'amount':'10.7'})
+        tr_so = self._populate_for_trcloud(tr_so)
+        
         tr_so.create()
 
         self.trcloud_id = tr_so.id
@@ -316,6 +311,51 @@ class Acknowledgement(models.Model):
         #Apply total
         self.total = running_total
 
+    def _populate_for_trcloud(self, tr_so):
+
+        # Add customer to data package
+        tr_so.customer['contact_id'] = self.customer.trcloud_id
+        tr_so.customer['name'] = self.customer.name
+        # Set Orgnization name 
+        if u"co.," or u"บริษัท" in self.name.lower():
+            tr_so.customer['organization'] = self.customer.name
+        
+        tr_so.customer['branch'] = u"สำนักงานใหญ่"
+        tr_so.customer['email'] = self.customer.email
+        tr_so.customer['telephone'] = self.customer.telephone
+
+        #Set Address
+        address = self.customer.addresses.all()[0]
+        tr_address = u"{0}, {1}, {2}, {3} {4}".format(address.address1,
+                                                      address.city or "",
+                                                      address.territory or "",
+                                                      address.country or "",
+                                                      address.zipcode or "")
+        tr_so.customer['address'] = tr_address
+        tr_so.customer['tax_id'] = self.customer.tax_id or ""
+
+        tr_so.document_number = ""
+        # Set Date
+        d = datetime.now()
+        tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
+        tr_so.delivery_due = self.delivery_date.strftime("%Y-%m-%d")
+        tr_so.company_format = "SO"
+        tr_so.tax = "{0}".format(self.vat)
+        tr_so.total = float(self.subtotal)
+        tr_so.grand_total = float(self.total)
+        tr_so.customer_id = self.customer.trcloud_id
+
+        # Add Products
+        for item in self.items.all():
+            tr_so.products.append({'id': item.id,
+                                   'product': item.description,
+                                   'price': float(item.unit_price),
+                                   'quantity': float(item.quantity),
+                                   'before': float(item.total),
+                                   'amount': float(item.total)})
+        
+        return tr_so
+
     def _change_fabric(self, product, fabric, employee=None):
         """Changes the fabric for a product
 
@@ -388,11 +428,6 @@ class Acknowledgement(models.Model):
                         body,
                         recipients,
                         format='html')
-
-    def email_decoroom(self):
-        """Emails decoroom"""
-        self._email(self.acknowledgement_pdf, ['praparat@decoroom.com'])
-        self._email(self.acknowledgement_pdf, ['sales@decoroom.com'])
     
     def _get_calendar_service(self, user):
         if self.calendar_service:

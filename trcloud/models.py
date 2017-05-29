@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import logging
 import requests
@@ -122,6 +124,13 @@ class TRContact(BaseTRModelMixin):
         data = cls._retrieve(url, id)
 
         return data
+    
+    @classmethod
+    def search(cls, keyword):
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-contact/search-contact.php"
+        data = cls._search(url=url, keyword=keyword)
+         
+        return data
 
     def create(self):
         data = {}
@@ -235,6 +244,8 @@ class TRSalesOrder(BaseTRModelMixin):
     tax_option = "ex"
     status = "New"
     customer_id = ""
+    customer = {"add_contact": False,
+                "update_contact": False}
     products = []
     
     @classmethod
@@ -260,9 +271,7 @@ class TRSalesOrder(BaseTRModelMixin):
                 data[i] = getattr(self, i)
         
         # Populate the customer data
-        data["customer"] = {"contact_id": self.customer_id,
-                            "add_contact": False,
-                            "update_contact": False}
+        data["customer"] = self.customer
         
         data["product"] = self.products
         # Delete id as this is a creation

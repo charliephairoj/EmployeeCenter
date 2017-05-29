@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 import logging
 
@@ -32,6 +34,8 @@ class Contact(models.Model):
     contact_service = None
     website = models.TextField(null=True, blank=True)
     google_contact_id = models.TextField(null=True, blank=True)
+    tax_id = models.TextField(null=True, blank=True)
+    
     #class Meta:
         #ordering = ['name']
 
@@ -118,6 +122,10 @@ class Contact(models.Model):
         """Create the contact in trcloud"""
         tr_contact = TRContact()
 
+        # Set Type
+        tr_contact.contact_type = "Client"
+        tr_contact.branch = u"สำนักงานใหญ่"
+
         # Populate data for submission from Attributes
         for i in dir(self):
             logger.debug(i)
@@ -128,7 +136,11 @@ class Contact(models.Model):
                 setattr(tr_contact, i, getattr(self, i))
             #if not i.startswith('_') and not callable(getattr(self, i)) and hasattr(tr_contact, i):
             #    setattr(tr_contact, i, getattr(self, i))
-
+        
+        # Set Orgnization name 
+        if u"co.," or u"บริษัท" in self.name.lower():
+            tr_contact.organization = self.name
+        
         # Populate address data
         address = self.addresses.all()[0]
         tr_address = "{0}, {1}, {2}, {3} {4}".format(address.address1,
@@ -138,7 +150,7 @@ class Contact(models.Model):
                                                      address.zipcode)
         tr_contact.address = tr_address
         tr_contact.create()
-
+        logger.debug(tr_contact.contact_id)
         self.trcloud_id = tr_contact.contact_id
         self.save()
     
