@@ -112,7 +112,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         
         try:
             ed = timezone('Asia/Bangkok').normalize(validated_data.pop('employment_date'))
-        except AttributeError as e:
+        except (AttributeError, KeyError) as e:
             ed = None
             logger.warn(e)
 
@@ -127,7 +127,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         shift_data = validated_data.pop('shift')
         try:
             ed = timezone('Asia/Bangkok').normalize(validated_data.pop('employment_date'))
-        except AttributeError as e:
+        except (AttributeError, KeyError) as e:
             ed = None
             logger.info(e)
 

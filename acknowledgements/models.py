@@ -348,11 +348,11 @@ class Acknowledgement(models.Model):
         # Add Products
         for item in self.items.all():
             tr_so.products.append({'id': item.id,
-                                   'product': item.description,
-                                   'price': float(item.unit_price),
-                                   'quantity': float(item.quantity),
-                                   'before': float(item.total),
-                                   'amount': float(item.total)})
+                                   'product': item.description or '',
+                                   'price': float(item.unit_price or 0),
+                                   'quantity': float(item.quantity or 0),
+                                   'before': float(item.total or 0),
+                                   'amount': float(item.total or 0)})
         
         return tr_so
 
