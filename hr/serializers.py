@@ -3,6 +3,7 @@ from dateutil import parser
 from decimal import Decimal
 
 from rest_framework import serializers
+from pytz import timezone
 
 from hr.models import Employee, Attendance, Shift, PayRecord, Payroll
 from media.models import S3Object
@@ -93,13 +94,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
     incentive_pay = serializers.DecimalField(required=False, decimal_places=2, max_digits=15, allow_null=True)
     shift = ShiftSerializer(required=False)
     card_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    employment_date = serializers.DateTimeField(required=False, allow_null=True)
     
     class Meta:
         model = Employee
         fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'wage', 'department', 'shift',
                   'pay_period', 'image', 'telephone', 'nickname', 'social_security_id', 'government_id', 'card_id',
                   'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend', 'title',
-                  'location')
+                  'location', 'employment_date')
     
     def create(self, validated_data):
         """Create a new instance of Employee
@@ -107,17 +109,31 @@ class EmployeeSerializer(serializers.ModelSerializer):
         shift = validated_data.pop('shift', None)
         if shift:
             shift = Shift.objects.get(pk=shift['id'])
-            
-        instance = self.Meta.model.objects.create(shift=shift, **validated_data)
+        
+        try:
+            ed = timezone('Asia/Bangkok').normalize(validated_data.pop('employment_date'))
+        except AttributeError as e:
+            ed = None
+            logger.warn(e)
+
+        instance = self.Meta.model.objects.create(shift=shift,
+                                                  employment_date=ed,
+                                                  **validated_data)
         
         return instance
         
     def update(self, instance, validated_data):
         
         shift_data = validated_data.pop('shift')
-        
+        try:
+            ed = timezone('Asia/Bangkok').normalize(validated_data.pop('employment_date'))
+        except AttributeError as e:
+            ed = None
+            logger.info(e)
+
+        instance.employment_date = ed
         instance.name = validated_data.pop('name', instance.name)
-        instance.title = validated_data.pop('title', instance.title)
+        instance.title = validated_data.pop('title', instance.title) 
         instance.shift = Shift.objects.get(start_time=shift_data['start_time'], end_time=shift_data['end_time'])
         instance.pay_period = validated_data.pop('pay_period', instance.pay_period)
         instance.nationality = validated_data.pop('nationality', instance.nationality)
