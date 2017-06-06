@@ -85,8 +85,15 @@ class BaseTRModelMixin(object):
         response = self._send_request(url, data)
         return response
 
+    def _update(self, url, data):
+        data = self._prepare_body_for_request(data)
+
+        response = self._send_request(url, data)
+        return response
+
 
 class TRContact(BaseTRModelMixin):
+    id = ""
     contact_id = ""
     title = ""
     name = ""
@@ -279,6 +286,25 @@ class TRSalesOrder(BaseTRModelMixin):
         del data['customer_id']
 
         url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/so.php"
+        data = self._create(url, data)
+        logger.debug(data)
+        self.id = data['id']
+
+    def update(self):
+        data = {}
+        
+        # Populate data for submission from Attributes
+        for i in dir(self):
+            if not i.startswith('_') and not callable(getattr(self, i)):
+                data[i] = getattr(self, i)
+        
+        # Populate the customer data
+        data["customer"] = self.customer
+        
+        data["product"] = self.products
+        
+
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/edit-so.php"
         data = self._create(url, data)
         logger.debug(data)
         self.id = data['id']

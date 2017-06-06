@@ -37,10 +37,12 @@ pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT+'Garuda.ttf'))
 class ShippingDocTemplate(BaseDocTemplate):
     
     id = 0
+    company = "alinea group"
     top_padding = 150
     
     def __init__(self, filename, **kw):
         if "id" in kw: self.id = kw["id"]
+        if "company" in kw: self.company = kw["company"]
         BaseDocTemplate.__init__(self, filename, **kw)
         self.addPageTemplates([self._create_page_template(template_id="main"),
                                self._create_page_template(template_id="labels", header=False)])
@@ -59,7 +61,11 @@ class ShippingDocTemplate(BaseDocTemplate):
   
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        if self.company.lower() == 'dellarobbia thailand':
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        else:
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
@@ -70,10 +76,19 @@ class ShippingDocTemplate(BaseDocTemplate):
         #Add Company Information in under the logo
         canvas.setFont('Helvetica', 8)
         canvas.setFillColorCMYK(0, 0, 0, 60)
-        canvas.drawString(42, 760, "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
-        canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
-        canvas.drawString(42, 740, "+66 2 998 7490")
-        canvas.drawString(42, 730, "www.dellarobbiathailand.com")
+        
+         #Add Company Information in under the logo if dellarobbia
+        if self.company.lower() == 'dellarobbia thailand':
+            canvas.drawString(42, 760,
+                            "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
+            canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
+            canvas.drawString(42, 740, "+66 2 998 7490")
+        else:
+            canvas.drawString(42, 760,
+                            "386/2 Hathai Rat Rd., Samwa, Samwa")
+            canvas.drawString(42, 750, "Bangkok, Thailand, 10510")
+            canvas.drawString(42, 740, "+66 2 998 7490")
+        #canvas.drawString(42, 730, "www.dellarobbiathailand.com")
         
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
@@ -119,7 +134,13 @@ class ShippingPDF(object):
         self.filename = "Shipping-{0}.pdf".format(self.shipping.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
-        doc = ShippingDocTemplate(self.location, id=self.shipping.id, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
+        try:
+            company = self.shipping.acknowledgement.company
+        except AttributeError as e:
+            company = "alinea group"
+
+        doc = ShippingDocTemplate(self.location, id=self.shipping.id, company=company,
+                                  pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
         doc.build(stories)

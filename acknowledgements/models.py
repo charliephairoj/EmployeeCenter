@@ -205,6 +205,16 @@ class Acknowledgement(models.Model):
 
         self.trcloud_id = tr_so.id
         self.save()
+
+    def update_in_trcloud(self):
+        """Create a Sales Order in TRCloud"""
+        tr_so = TRSalesOrder()
+
+        tr_so = self._populate_for_trcloud(tr_so)
+        tr_so.id = self.id
+        tr_so.update()
+
+        self.save()
         
     def ship(self, delivery_date, employee):
         """Changes status to 'SHIPPED'
