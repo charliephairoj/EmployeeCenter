@@ -61,10 +61,8 @@ class ShippingDocTemplate(BaseDocTemplate):
   
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
-        else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+        
+        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
 
         #Read image from link
         img = utils.ImageReader(path)
@@ -78,16 +76,11 @@ class ShippingDocTemplate(BaseDocTemplate):
         canvas.setFillColorCMYK(0, 0, 0, 60)
         
          #Add Company Information in under the logo if dellarobbia
-        if self.company.lower() == 'dellarobbia thailand':
-            canvas.drawString(42, 760,
-                            "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
-            canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
-            canvas.drawString(42, 740, "+66 2 998 7490")
-        else:
-            canvas.drawString(42, 760,
-                            "386/2 Hathai Rat Rd., Samwa, Samwa")
-            canvas.drawString(42, 750, "Bangkok, Thailand, 10510")
-            canvas.drawString(42, 740, "+66 2 998 7490")
+        
+        canvas.drawString(42, 760,
+                        "386/2 Hathai Rat Rd., Samwa, Samwa")
+        canvas.drawString(42, 750, "Bangkok, Thailand, 10510")
+        canvas.drawString(42, 740, "+66 2 998 7490")
         #canvas.drawString(42, 730, "www.dellarobbiathailand.com")
         
         #Create The document type and document number
