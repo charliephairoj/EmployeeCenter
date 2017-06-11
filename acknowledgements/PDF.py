@@ -25,6 +25,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code39
 from reportlab.graphics.barcode import code128
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+
 
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
@@ -60,7 +62,7 @@ class AckDocTemplate(BaseDocTemplate):
         if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Updated.png"""
     
         #Read image from link
         img = utils.ImageReader(path)
@@ -176,7 +178,7 @@ class ProductionDocTemplate(AckDocTemplate):
         #else:
         #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
 
-        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Updated.png"""
         
         #Read image from link
         img = utils.ImageReader(path)
@@ -1225,7 +1227,9 @@ class ProductionPDF(AcknowledgementPDF):
 
         if len(product.components.all()) > 0:
             for component in product.components.all():
-                data.append(['', '   {0}'.format(component.description), '{0}'.format(component.quantity)])
+                data.append([code128.Code128("DRAIC-{0}".format(component.id), barHeight=20),
+                             '   {0}'.format(component.description),
+                             '{0}'.format(component.quantity)])
 
 
         #Add comments
@@ -1290,6 +1294,39 @@ class ProductionPDF(AcknowledgementPDF):
         signature.setStyle(style)
         return signature
     
+
+class SingleStickerDocTemplate(BaseDocTemplate):
+
+    def __init__(self, filename, **kwargs):
+        """
+        Constructor
+
+        Set the page size in the kwargs then
+        Call the parent constructor of the base doc template
+        and then apply addition settings
+        """
+        self.width, self.height = (62 * mm, 160 * mm)
+        kwargs['pagesize'] = (self.width, self.height)
+        kwargs['leftMargin'] = 0 * mm
+        kwargs['rightMargin'] = 0 * mm
+        kwargs['topMargin'] = 0 * mm
+        kwargs['bottomMargin'] = 0 * mm
+
+        BaseDocTemplate.__init__(self, filename, **kwargs)
+
+        self.addPageTemplates(self._create_page_template())
+
+    def _create_page_template(self):
+        frame = Frame(mm,
+                      0,
+                      self.width,
+                      self.height,
+                      leftPadding=1 * mm,
+                      bottomPadding=0.5 * mm,
+                      rightPadding=1 * mm,
+                      topPadding=0.5 * mm)
+        template = PageTemplate('Normal', [frame])
+        return template
     
 class ShippingLabelPDF(object):
     """Class to create PO PDF"""
@@ -1309,14 +1346,14 @@ class ShippingLabelPDF(object):
         self.products = products
         self.ack = ack
         self.employee = self.ack.employee
-    
+        self.width = 57 * mm
     
     #create method
     def create(self):
         self.filename = "ShippingLabel-{0}.pdf".format(self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
-        doc = ShippingLabelDocTemplate(self.location, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=12)
+        doc = SingleStickerDocTemplate(self.location)
         #Build the document with stories
         stories = self._get_stories()
         doc.build(stories)
@@ -1327,85 +1364,169 @@ class ShippingLabelPDF(object):
         #initialize story array
         story = []
         
-        story.append(self._create_packing_labels_section())
-        return story
+        story = self._create_packing_labels_section(story)
+        for a_story in story:
+            a_story.hAlign = 'CENTER'
+
+        return story    
     
-    
-    
+    def _create_logo(self):
+        """Creates the logo to be used in the labels
+        """
+        logo_path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Updated.png"
+        logo = self.get_image(logo_path, width=150)
+
+        table = Table([[logo]], colWidths=(self.width))
+        style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                            ('TOPPADDING', (0, 0), (-1, -1), 10),
+                            ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                            ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
+                            ('LINEBELOW', (0, 0), (-1, -1),1, colors.CMYKColor(black=100)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+        table.setStyle(style)
+
+        return table
+
+    def _create_description_section(self, description):
+        """Create the primary description for this label
+        """
+         #Add the product information to the array
+        #print product.product.image9
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=24,
+                               leading=24,
+                               alignment=TA_CENTER,
+                               textColor=colors.CMYKColor(black=60))
+        paragraph = Paragraph(u"{0}".format(description), style)
+        data = [[paragraph]]
+        
+        table = Table(data, colWidths=(self.width))
+        style = TableStyle([('FONTSIZE', (0,0), (-1, -1), 16),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 20),
+                            ('TOPPADDING', (0, 0), (-1, -1), 10),
+                            ('FONT', (0,0), (-1,-1), 'Garuda'),
+                            ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                            ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
+                            ('LINEBELOW', (-1, -1), (-1, -1),1, colors.CMYKColor(black=100)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+        table.setStyle(style)
+
+        return table
+
+    def _create_quantity_section(self, quantity):
+        """Create the primary description for this label
+        """
+         #Add the product information to the array
+        #print product.product.image9
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=18,
+                               leading=18,
+                               alignment=TA_CENTER,
+                               textColor=colors.CMYKColor(black=60))
+        paragraph = Paragraph(u"QTY: {0}".format(quantity), style)
+        data = [[paragraph]]
+        
+        table = Table(data, colWidths=(self.width))
+        style = TableStyle([('FONTSIZE', (0,0), (-1, -1), 16),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 20),
+                            ('TOPPADDING', (0, 0), (-1, -1), 10),
+                            ('FONT', (0,0), (-1,-1), 'Garuda'),
+                            ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                            ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
+                            ('LINEBELOW', (-1, -1), (-1, -1),1, colors.CMYKColor(black=100)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+        table.setStyle(style)
+
+        return table
+
+    def _create_barcode_section(self, template_str, id):
+        """Create and returns a barcode
+        """
+        code = template_str.format(id)
+        barcode = code128.Code128(code, barHeight=50)
+
+        code_table = Table([[barcode], [code]], colWidths=(self.width))
+        code_style = TableStyle([('FONTSIZE', (0, 1), (0 , 1), 8), #Font size for code
+                                 #Set code next to barcode
+                                 ('BOTTOMPADDING', (-1, -1), (-1, -1), 10),
+                                 ('TOPPADDING', (0, 0), (0, 0), 10),
+                                 ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'), #Alignment for barcode, code, and qty
+                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+        code_table.setStyle(code_style)
+
+        return code_table
+
+    def _create_details_section(self, item=None):
+        """Creates a table with the order details
+        """
+
+        if item:
+            data = [[u"Item:", u"{0}".format(item.description)]]
+        else:
+            data = []
+
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               fontSize=10,
+                               leading=10,
+                               textColor=colors.CMYKColor(black=60))
+        customer_paragraph = Paragraph(u"{0}".format(self.ack.customer.name), style)
+        
+        try:
+            project = u"{0}".format(self.ack.project.codename)
+        except AttributeError:
+            project = ""
+            
+        data  += [["Ack#:", u"{0}".format(self.ack.id)],
+                  ["Customer:", customer_paragraph],
+                  ["Project:", project]]
+        
+        details_table = Table(data, colWidths=(self.width * .3, self.width * .7))
+        style = TableStyle([('FONTSIZE', (0, 0), (-1 , -1), 10), #Font size for order data
+                            ('TOPPADDING', (0, 0), (-1, 0), 10),
+                            ('BOTTOMPADDING', (0, -1), (-1, -1), 20),
+                            ('FONT', (0,0), (-1,-1), 'Garuda'), #Font for all text
+                            ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'), #Alignment for barcode, code, and qty
+                            ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                            ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=100)),
+                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+        details_table.setStyle(style)
+
+        return details_table
+
+
     def _create_packing_label(self, product):
         """
         Creates an individual packing label as a 
         Table.
+        """ 
+        label_data = [[self._create_logo()],
+                      [self._create_description_section(product.description)], 
+                      [self._create_quantity_section(1)],
+                      [self._create_details_section()],
+                      [self._create_barcode_section("DRAI-{0}", product.id)]]
+        label = Table(label_data, colWidths=(self.width))
+        label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                                  ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
+        label.setStyle(label_style)
+        
+        return label
+
+    def _create_component_label(self, component):
         """
-        logo_path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
-        logo = self.get_image(logo_path, width=200)
-        
-        
-        #Add the product information to the array
-        #print product.product.image9
-        description_data = [[logo],
-                            [product.description]]
-        
-        if product.image:
-            image_url = product.image.generate_url('', '', time=3600)
-            description_data.append([self.get_image(image_url, height=125)])
-        
-        description_table = Table(description_data, colWidths=(360))
-        description_style = TableStyle([('FONTSIZE', (0,0), (-1, -1), 16),
-                                        ('BOTTOMPADDING', (0, 0), (0, 1), 10),
-                                        ('FONT', (0,0), (-1,-1), 'Garuda'),
-                                        ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'),
-                                        ('VALIGN', (0, 0), (0, 0), 'TOP'),
-                                        ('VALIGN', (0, 1), (-1,-1), 'MIDDLE'),
-                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
-        description_table.setStyle(description_style)
-        
-        code = "DRAI-{0}".format(product.id)
-        barcode = code128.Code128(code, barHeight=20)
-        style = ParagraphStyle(name='Normal',
-                               fontName='Garuda',
-                               fontSize=12,
-                               leading=16,
-                               textColor=colors.CMYKColor(black=60))
-        customer_paragraph = Paragraph(u"Customer: {0}".format(self.ack.customer.name), style)
-        
-        try:
-            project = u"Project: {0}".format(self.ack.project.codename)
-        except AttributeError:
-            project = ""
-            
-        code_data = [[barcode],
-                     [code],
-                     ["Ack#: {0}".format(self.ack.id)],
-                     [customer_paragraph],
-                     [project],
-                     ["Qty: {0}".format(1)]]
-        
-        code_table = Table(code_data, colWidths=(150))
-        code_style = TableStyle([('FONTSIZE', (0, 1), (0 , 1), 8), #Font size for code
-                                 ('FONTSIZE', (0, 2), (0 , -2), 12), #Font size for order data
-                                 ('FONTSIZE', (0, -1), (0, -1), 16), #Font size for quantity
-                                 #Set code next to barcode
-                                 ('BOTTOMPADDING', (0, 0), (0, 0), 0),
-                                 ('TOPPADDING', (0, 1), (0, 1), 0),
-                                 
-                                 ('BOTTOMPADDING', (0, 1), (0, 1), 15), #Margin after barcode and code
-                                 
-                                 ('BOTTOMPADDING', (0, -2), (0, -2), 25), #Margin after order data
-                                 
-                                 ('FONT', (0,0), (-1,-1), 'Garuda'), #Font for all text
-                                 ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'), #Alignment for barcode, code, and qty
-                                 ('ALIGNMENT', (0, 2), (0,-2), 'LEFT'), #Alignment for order data
-                                 ('VALIGN', (0, 1), (0, 1), 'TOP'),
-                                 ('VALIGN', (0, 2), (0, -1), 'MIDDLE'),
-                                 ('BOTTOMPADDING', (0, -1), (0, -1), 10), #Toppadding for quantity box
-                                 ('TOPPADDING', (0, -1), (0, -1), 10), #Bottompadding for quantity box
-                                 ('BOX', (0, -1), (0, -1), 1, colors.CMYKColor(black=60)),
-                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
-        code_table.setStyle(code_style)
-        
-        label_data = [[description_table, code_table]]
-        label = Table(label_data, colWidths=(360, 160))
+        Creates an individual component label as a 
+        Table.
+        """
+        label_data = [[self._create_logo()],
+                      [self._create_description_section(component.description)],
+                      [self._create_quantity_section(component.quantity)],
+                      [self._create_details_section(item=component.item)],
+                      [self._create_barcode_section("DRAC-{0}", component.id)]]
+        label = Table(label_data, colWidths=self.width)
         label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                                   ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                   ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
@@ -1413,20 +1534,21 @@ class ShippingLabelPDF(object):
         
         return label
     
-    def _create_packing_labels_section(self):
+    def _create_packing_labels_section(self, story):
         
         product_data = []
         
         #Produces a label for each quantity of each product
         for product in self.products:
             for i in range(0, product.quantity):
-                product_data.append([self._create_packing_label(product)])
-        
-        product_table = Table(product_data, colWidths=(500))
-        product_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER')])
-        product_table.setStyle(product_style)
+                story.append(self._create_packing_label(product))
+                story.append(PageBreak())
+                for component in product.components.all():
+                    story.append(self._create_component_label(component))
+                    story.append(PageBreak())
+      
     
-        return product_table
+        return story
         
     #helps change the size and maintain ratio
     def get_image(self, path, width=None, height=None):

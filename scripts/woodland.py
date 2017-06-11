@@ -7,6 +7,7 @@ import json
 import hashlib
 import time
 import math
+import subprocess
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
 
@@ -19,10 +20,13 @@ from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
-a = A.objects.get(pk=56703)
-a.customer.trcloud_id = None
-a.customer.save()
-a.create_in_trcloud()
+a = A.objects.all().order_by('-id')[0]
+a.create_and_upload_pdfs()
+
+cmd = "open {0}".format(a.label_pdf.generate_url())
+
+print cmd
+#subprocess.call(cmd, shell=True)
 
 #data = SO.search('holbrook')
 #for i in data:

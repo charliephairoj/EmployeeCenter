@@ -236,9 +236,9 @@ class Acknowledgement(models.Model):
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
         #confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
         prod_pdf = S3Object.create(production_filename, production_key, bucket, delete_original=delete_original)
-        #label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
+        label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
 
-        #self.label_pdf = label_pdf
+        self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf
         #self.confirmation_pdf = confirmation_pdf
         self.production_pdf = prod_pdf
@@ -261,11 +261,8 @@ class Acknowledgement(models.Model):
         #confirmation_filename = confirmation_pdf.create()
         production_filename = production_pdf.create()
         
-        try:
-            label_filename = None #label_filename = label_pdf.create()
-        except Exception as e:
-            logger.warn(e)
-            label_filename = None
+        label_filename = label_pdf.create()
+        
             
         return ack_filename, production_filename, label_filename
     
