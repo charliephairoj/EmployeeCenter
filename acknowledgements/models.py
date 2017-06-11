@@ -850,7 +850,7 @@ class Pillow(models.Model):
 
 
 class Component(models.Model):
-    item = models.ForeignKey(Item, related_name="component")
+    item = models.ForeignKey(Item, related_name="components")
     description = models.TextField()
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
 

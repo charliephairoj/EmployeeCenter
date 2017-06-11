@@ -34,6 +34,11 @@ class ComponentSerializer(serializers.ModelSerializer):
         instance = self.Meta.model.objects.create(item=item, **validated_data)
         return instance
 
+    def to_representation(self, instance):
+        ret = super(ComponentSerializer, self).to_representation(instance)
+        
+        return ret
+
 
 class PillowSerializer(serializers.ModelSerializer):
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
