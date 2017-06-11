@@ -470,6 +470,7 @@ class AcknowledgementPDF(object):
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), '', '', ''])
                 else:
                     data.append(['', '       - Fabric: unspecified', '', '', ''])
+
         #Add comments if they exists
         if product.comments:
             style = ParagraphStyle(name='Normal',
@@ -1221,6 +1222,11 @@ class ProductionPDF(AcknowledgementPDF):
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
                 except:
                     data.append(['', '       - Fabric:unspecified', ''])
+
+        if len(product.components.all()) > 0:
+            for component in product.components.all():
+                data.append(['', '   {0}'.format(component.description), '', '{0}'.format(component.quantity), ''])
+                
         #Add comments
 
         if product.comments is not None and product.comments != '':
