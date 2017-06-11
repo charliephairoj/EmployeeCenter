@@ -318,6 +318,14 @@ class ShippingPDF(object):
         except AttributeError as e:
             logger.info(e)
 
+        try:
+            components = product.item.components.all()
+            if len(components) > 0:
+                for component in components:
+                    data.append(['', '   {0}'.format(component.description), '{0}'.format(component.quantity)])
+        except AttributeError as e:
+            logger.info(e)
+
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
             style = ParagraphStyle(name='Normal',
