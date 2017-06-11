@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.fields import DictField
 from pytz import timezone
 
-from acknowledgements.models import Acknowledgement, Item, Pillow, File, Log as AckLog
+from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -18,6 +18,21 @@ from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
+
+
+class ComponentSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Component
+        fields = ('id', 'description', 'quantity')
+
+    def create (self, validated_data):
+        """
+        Override the 'create' method in order to assign the item pass via the context
+        """
+        item = self.context['item']
+        instance = self.Meta.model.objects.create(item=item, **validated_data)
+        return instance
 
 
 class PillowSerializer(serializers.ModelSerializer):
@@ -53,6 +68,7 @@ class PillowSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
+    components = ComponentSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #location = serializers.CharField(required=False, allow_null=True)
@@ -78,7 +94,7 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product',
-                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity')
+                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components')
         read_only_fields = ('total', 'type')
 
     def create(self, validated_data):
@@ -87,6 +103,7 @@ class ItemSerializer(serializers.ModelSerializer):
         called.
         """
         acknowledgement = self.context['acknowledgement']
+        components_data = validated_data.pop('components', None)
         pillow_data = validated_data.pop('pillows', None)
         product = validated_data['product']
         fabric = validated_data.pop('fabric', None)
@@ -120,6 +137,12 @@ class ItemSerializer(serializers.ModelSerializer):
 
             if pillow_serializer.is_valid(raise_exception=True):
                 pillow_serializer.save()
+
+        if components_data:
+            component_serializer = ComponentSerializer(data=components_data, context={'item': instance}, many=True)
+
+            if component_serializer.is_valid(raise_exception=True):
+                component_serializer.save()
 
         return instance
 

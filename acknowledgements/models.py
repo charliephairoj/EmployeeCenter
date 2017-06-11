@@ -849,6 +849,12 @@ class Pillow(models.Model):
         return pillow
 
 
+class Component(models.Model):
+    item = models.ForeignKey(Item, related_name="component")
+    description = models.TextField()
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
+
+
 class Log(models.Model):
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
@@ -907,3 +913,5 @@ class Delivery(models.Model):
         return {'id': self.id,
                 'description': self.description,
                 'delivery_date': self.delivery_date.isoformat()}
+
+
