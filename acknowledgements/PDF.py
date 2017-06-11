@@ -1221,12 +1221,12 @@ class ProductionPDF(AcknowledgementPDF):
                 try:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
                 except:
-                    data.append(['', '       - Fabric:unspecified', ''])
+                    data.append(['', '       - Fabric:unspecified', '', '', ''])
 
         if len(product.components.all()) > 0:
             for component in product.components.all():
                 data.append(['', '   {0}'.format(component.description), '', '{0}'.format(component.quantity), ''])
-                
+
         #Add comments
 
         if product.comments is not None and product.comments != '':
