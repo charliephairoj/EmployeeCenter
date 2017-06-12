@@ -32,6 +32,7 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
+logo_height = 70
 
 class AckDocTemplate(BaseDocTemplate):
     id = 0
@@ -62,14 +63,14 @@ class AckDocTemplate(BaseDocTemplate):
         if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Updated.png"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
     
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
-        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
 
         #Add Company Information in under the logo
         canvas.setFont('Helvetica', 8)
@@ -131,14 +132,14 @@ class ConfirmationDocTemplate(BaseDocTemplate):
         if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
-        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
 
         #Add Company Information in under the logo if dellarobbia
         if self.company.lower() == 'dellarobbia thailand':
@@ -178,14 +179,14 @@ class ProductionDocTemplate(AckDocTemplate):
         #else:
         #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
 
-        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Updated.png"""
+        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"""
         
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
-        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
         canvas.setFont('Helvetica', 8)
         canvas.setFillColorCMYK(0, 0, 0, 60)
         canvas.setFont("Helvetica", 16)
@@ -248,7 +249,7 @@ class AcknowledgementPDF(object):
         return self.location
 
     def firstPage(self, canvas, doc):
-        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
@@ -712,7 +713,7 @@ class ConfirmationPDF(object):
         return self.location
 
     def firstPage(self, canvas, doc):
-        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"
+        path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         #Read image from link
         img = utils.ImageReader(path)
         #Get Size
