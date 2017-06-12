@@ -1182,12 +1182,14 @@ class ProductionPDF(AcknowledgementPDF):
 
     def _create_products_title_section(self):
         table = Table([['Product ID', 'Description', 'Qty']],
-                      colWidths=(80, 420, 40))
+                      colWidths=(80, 400, 60), rowHeights=48)
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
                       ('GRID', (0,0), (-1, 0), 1, colors.CMYKColor(black=60)),
                       #General alignment
-                      ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
+                      ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+                      ('FONTSIZE', (0,0), (-1,-1), 16),
+                      ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                       #Align description
                       ('ALIGNMENT', (1,0), (1,-1), 'LEFT')]
         style = TableStyle(style_data)
@@ -1228,7 +1230,7 @@ class ProductionPDF(AcknowledgementPDF):
 
         if len(product.components.all()) > 0:
             for component in product.components.all():
-                data.append([code128.Code128("DRAIC-{0}".format(component.id), barHeight=20),
+                data.append([code128.Code128("DRAIC-{0}".format(component.id), barHeight=15),
                              '   {0}'.format(component.description),
                              '{0}'.format(component.quantity)])
 
@@ -1258,7 +1260,7 @@ class ProductionPDF(AcknowledgementPDF):
         if product.image:
             data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=100, max_width=400)])
         #Create table
-        table = Table(data, colWidths=(80, 420, 40), splitByRow=True)
+        table = Table(data, colWidths=(80, 400, 60), splitByRow=True)
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),
                        colors.CMYKColor(black=60)),
                             #Lines around content
@@ -1274,7 +1276,14 @@ class ProductionPDF(AcknowledgementPDF):
                             ('FONT', (0,0), (-1,-1), 'Garuda'),
                             #Align description
                             ('ALIGNMENT', (1,0), (1,-1), 'LEFT'),
-                            ('FONTSIZE', (0,0), (-1,-1), 16)]
+                            # ALIGN QUANTITY
+                            ('ALIGNMENT', (-1,0), (-1,-1), 'RIGHT'),
+                            ('FONTSIZE', (0,0), (-1,-1), 12),
+                            #('GRID', (0, 0), (-1, -1), 1, 'blue'),
+                            #('GRID', (1, 0), (-1, -1), 1, 'red'),
+                            ('TOPPADDING', (0, 0), (-1, -1), 5),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]
         style = TableStyle(style_data)
         table.setStyle(style)
         return table
@@ -1306,7 +1315,7 @@ class SingleStickerDocTemplate(BaseDocTemplate):
         Call the parent constructor of the base doc template
         and then apply addition settings
         """
-        self.width, self.height = (62 * mm, 160 * mm)
+        self.width, self.height = (62 * mm, 180 * mm)
         kwargs['pagesize'] = (self.width, self.height)
         kwargs['leftMargin'] = 0 * mm
         kwargs['rightMargin'] = 0 * mm

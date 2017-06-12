@@ -27,6 +27,7 @@ a.create_and_upload_pdfs()
 
 print "\n"+a.acknowledgement_pdf.generate_url()
 print "\n"+a.production_pdf.generate_url()
+print "\n"+a.label_pdf.generate_url()
 
 
 #subprocess.call(cmd, shell=True)

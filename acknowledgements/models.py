@@ -257,7 +257,7 @@ class Acknowledgement(models.Model):
         confirmation_pdf = ConfirmationPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
         label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
-        ack_filename = ack_pdf.create()
+        ack_filename = None # ack_pdf.create()
         #confirmation_filename = confirmation_pdf.create()
         production_filename = production_pdf.create()
         
