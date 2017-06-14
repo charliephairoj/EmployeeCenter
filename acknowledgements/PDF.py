@@ -1564,9 +1564,8 @@ class ShippingLabelPDF(object):
         
         #Produces a label for each quantity of each product
         for product in self.products:
-            for i in range(0, product.quantity):
-                story.append(self._create_packing_label(product))
-                story.append(PageBreak())
+            story.append(self._create_packing_label(product))
+            story.append(PageBreak())
 
             for component in product.components.all():
                 story.append(self._create_component_label(component))
