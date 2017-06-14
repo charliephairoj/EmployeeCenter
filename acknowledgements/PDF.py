@@ -1474,16 +1474,20 @@ class ShippingLabelPDF(object):
         """Creates a table with the order details
         """
 
-        if item:
-            data = [[u"Item:", u"{0}".format(item.description)]]
-        else:
-            data = []
+        
 
         style = ParagraphStyle(name='Normal',
                                fontName='Garuda',
                                fontSize=10,
                                leading=10,
                                textColor=colors.CMYKColor(black=60))
+
+        if item:
+            item_paragraph = Paragraph(u"{0}".format(item.description), style)
+            data = [[u"Item:", item_paragraph]]
+        else:
+            data = []
+
         customer_paragraph = Paragraph(u"{0}".format(self.ack.customer.name), style)
         
         try:
@@ -1563,9 +1567,10 @@ class ShippingLabelPDF(object):
             for i in range(0, product.quantity):
                 story.append(self._create_packing_label(product))
                 story.append(PageBreak())
-                for component in product.components.all():
-                    story.append(self._create_component_label(component))
-                    story.append(PageBreak())
+
+            for component in product.components.all():
+                story.append(self._create_component_label(component))
+                story.append(PageBreak())
       
     
         return story
