@@ -248,7 +248,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
         employee = self.context['request'].user
-
+        logger.debug(validated_data)
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
                 try:
@@ -274,7 +274,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.calculate_totals()
 
         instance.create_and_upload_pdfs()
-
+        
         # Add pdfs to files list
         filenames = ['acknowledgement_pdf', 'production_pdf', 'label_pdf']
         for filename in filenames:
@@ -334,7 +334,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Log Opening of an order
         message = "Order #{0} was acknowledged.".format(instance.id)
         log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
-
+        logger.debug(instance.room)
         return instance
 
     def update(self, instance, validated_data):

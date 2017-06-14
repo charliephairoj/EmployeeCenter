@@ -219,10 +219,18 @@ class AcknowledgementMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['project', 'customer', 'fabric', 'items', 'room', 'phase']
+        fields = ['project', 'customer', 'fabric', 'items', 'phase']
         
         for field in fields:
             if field in request.data:
+
+                if field == 'project':
+                    try:
+                        request.data['room'] = request.data[field]['room']['id']
+                        logger.debug(request.data)
+                    except KeyError as e:
+                        logger.debug(e)
+                        
                 if 'id' in request.data[field]:
                     request.data[field] = request.data[field]['id']
                

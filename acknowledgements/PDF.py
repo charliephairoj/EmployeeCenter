@@ -1139,6 +1139,8 @@ class ProductionPDF(AcknowledgementPDF):
         
         if self.ack.project:
             data.append(['Project:', self.ack.project.codename])
+        if self.ack.room:
+            data.append(['Room:', self.ack.room.description])
             
         if self.ack.remarks is not None and self.ack.remarks != '':
             style = ParagraphStyle(name='Normal',
@@ -1488,10 +1490,18 @@ class ShippingLabelPDF(object):
             project = u"{0}".format(self.ack.project.codename)
         except AttributeError:
             project = ""
+
+        try:
+            room = u"{0}".format(self.ack.room.description)
+        except AttributeError:
+            room = ""
             
         data  += [["Ack#:", u"{0}".format(self.ack.id)],
                   ["Customer:", customer_paragraph],
-                  ["Project:", project]]
+                  ["Project:", project],
+                  ["Room:", room]]
+
+        
         
         details_table = Table(data, colWidths=(self.width * .3, self.width * .7))
         style = TableStyle([('FONTSIZE', (0, 0), (-1 , -1), 10), #Font size for order data
