@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class ComponentSerializer(serializers.ModelSerializer):
-    
+    id = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = Component
         fields = ('id', 'description', 'quantity')
@@ -155,6 +156,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Updates the instance after the parent method is called
         """
+
         # Update attributes from client side details
         instance.quantity = validated_data.pop('quantity', instance.quantity)
         instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
@@ -173,6 +175,18 @@ class ItemSerializer(serializers.ModelSerializer):
                 serializer = PillowSerializer(pillow, data=pillow_data)
             except Pillow.DoesNotExist as e:
                 serializer = PillowSerializer(data=pillow_data, context={'item': instance})
+
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+
+        components = validated_data.pop('components', [])
+        for component_data in components:
+            try:
+                component = Component.objects.get(id=component_data['id'], item=instance)
+                serializer = ComponentSerializer(component, data=component_data)
+            except KeyError as e:
+                logger.debug(e)
+                serializer = ComponentSerializer(data=component_data, context={'item': instance})
 
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -344,6 +358,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.current_user = employee
         instance.delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
         instance.project = validated_data.pop('project', instance.project)
+        instance.room = validated_data.pop('room', instance.room)
         status = validated_data.pop('status', instance.status)
 
         if status.lower() != instance.status.lower():

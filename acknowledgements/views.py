@@ -18,7 +18,7 @@ from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializer
 from contacts.serializers import CustomerSerializer
 from contacts.models import Customer
-from projects.models import Project
+from projects.models import Project, Room
 from utilities.http import save_upload
 from media.models import S3Object
 
@@ -230,6 +230,15 @@ class AcknowledgementMixin(object):
                         logger.debug(request.data)
                     except KeyError as e:
                         logger.debug(e)
+
+                    try: 
+                        room = Room(description=request.data['project']['room']['description'],
+                                    project_id=request.data["project"]["id"])
+                        room.save()
+                        request.data["room"] = room.id
+                    except (KeyError, AttributeError) as e:
+                        logger.debug(e)
+
                         
                 if 'id' in request.data[field]:
                     request.data[field] = request.data[field]['id']
@@ -292,6 +301,15 @@ class AcknowledgementMixin(object):
                             request.data['items'][index]['image'] = None
                             
                 elif field == 'project':
+
+                    try: 
+                        room = Room(description=request.data['project']['room']['description'],
+                                    project_id=request.data["project"]["id"])
+                        room.save()
+                        request.data["room"] = room.id
+                    except (KeyError, TypeError) as e:
+                        logger.debug(e)
+
                     try:
                         if "codename" in request.data['project'] and "id" not in request.data['project']:
                             project = Project(codename=request.data['project']['codename'])
@@ -299,7 +317,18 @@ class AcknowledgementMixin(object):
                             request.data['project'] = project.id
                     except TypeError:
                         pass
-                   
+
+                elif field == 'room':
+                    try:
+                        if "description" in request.data['room'] and "id" not in request.data['room']:
+                            room = Room(description=request.data['room']['description'],
+                                        project_id=request.data["project"])
+                            room.save()
+                            request.data['room'] = room.id
+                    except (TypeError, KeyError) as e:
+                        logger.debug(e)
+
+        logger.debug(request.data['room'])
         return request
 
         

@@ -1224,17 +1224,17 @@ class ProductionPDF(AcknowledgementPDF):
                     pillow_type = "Lumbar Pillow"
                 else:
                     pillow = "Pillow"
-                data.append(['', '   {0}'.format(pillow_type), pillow.quantity])
+                data.append(['', u'   {0}'.format(pillow_type), pillow.quantity])
                 try:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
                 except:
-                    data.append(['', '       - Fabric:unspecified', ''])
+                    data.append(['', u'       - Fabric:unspecified', ''])
 
         if len(product.components.all()) > 0:
             for component in product.components.all():
                 data.append([code128.Code128("DRAIC-{0}".format(component.id), barHeight=15),
-                             '   {0}'.format(component.description),
-                             '{0}'.format(component.quantity)])
+                             u'   {0}'.format(component.description),
+                             u'{0}'.format(component.quantity)])
 
 
         #Add comments
