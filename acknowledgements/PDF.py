@@ -74,7 +74,7 @@ class AckDocTemplate(BaseDocTemplate):
 
         #Add Company Information in under the logo
         canvas.setFont('Helvetica', 8)
-        canvas.setFillColorCMYK(0, 0, 0, 60)
+        canvas.setFillColorCMYK(0, 0, 0, 100)
 
         #Add Company Information in under the logo if dellarobbia
         if self.company.lower() == 'dellarobbia thailand':
@@ -312,7 +312,7 @@ class AcknowledgementPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda')])
         table.setStyle(style)
         #Return the Recipient Table
@@ -356,7 +356,7 @@ class AcknowledgementPDF(object):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             paragraph = Paragraph(self.ack.remarks.replace('\n', '<br/>'),
                                   style)
             data.append(['Remarks', paragraph])
@@ -366,9 +366,9 @@ class AcknowledgementPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100)),
                             ('FONT', (0,0), (-1, -1), 'Garuda')])
-                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=100))])
         table.setStyle(style)
         #Return Table
         return table
@@ -383,7 +383,7 @@ class AcknowledgementPDF(object):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             project_paragraph = Paragraph(project, style)
             data.append(['Project:', project_paragraph])
            
@@ -399,9 +399,9 @@ class AcknowledgementPDF(object):
             style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                 ('TOPPADDING', (0,0), (-1,-1), 1),
-                                ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                                ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100)),
                                 ('FONT', (0,0), (-1, -1), 'Garuda')])
-                                #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                                #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=100))])
             table.setStyle(style)
             #Return Table
             return table
@@ -422,7 +422,7 @@ class AcknowledgementPDF(object):
         table = Table(data, colWidths=(535), repeatRows=1)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
-                       colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
                       ('TOPPADDING', (0, 0), (-1, -1), 0),
                       ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                       ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')]
@@ -435,8 +435,8 @@ class AcknowledgementPDF(object):
         titles = ['Product ID', 'Description', 'Unit Price', 'Qty', 'Total']
         table = Table([titles], colWidths=(80, 300, 60, 40, 65))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
-                       colors.CMYKColor(black=60)),
-                      ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
+                      ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=100)),
                       #General alignment
                       ('ALIGNMENT', (0, 0), (1, -1), 'CENTER'),
                       #Align description
@@ -483,7 +483,7 @@ class AcknowledgementPDF(object):
                                    allowWidows=1,
                                    allowOrphans=1,
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
                                   style)
             comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
@@ -491,18 +491,18 @@ class AcknowledgementPDF(object):
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                           ('TEXTCOLOR', (0, 0), (-1, -1),
-                                           colors.CMYKColor(black=60))]))
+                                           colors.CMYKColor(black=100))]))
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
             data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=100, max_width=290)])
         #Create table
         table = Table(data, colWidths=(80, 300, 60, 40, 65))
-        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=80)),
-                            ('LINEAFTER', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
-                            ('LINEBEFORE', (0, 0), (0, -1), 1, colors.CMYKColor(black=60)),
+                            ('LINEAFTER', (0, 0), (-1, -1), 1, colors.CMYKColor(black=100)),
+                            ('LINEBEFORE', (0, 0), (0, -1), 1, colors.CMYKColor(black=100)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda'),
                             #General alignment
                             ('ALIGNMENT', (0, 0), (1, -1), 'CENTER'),
@@ -530,7 +530,7 @@ class AcknowledgementPDF(object):
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                           ('TEXTCOLOR', (0, 0), (-1, -1),
-                                           colors.CMYKColor(black=60))]))
+                                           colors.CMYKColor(black=100))]))
         return fabric_table
 
     def _get_payment_terms(self):
@@ -608,14 +608,14 @@ class AcknowledgementPDF(object):
                 data.append(['', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append(['', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
         table = Table(data, colWidths=(80, 300, 165))
-        style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+        style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100)),
                             #Lines around content
                             ('LINEBELOW', (-2, -1), (-1, -1), 1,
                              colors.CMYKColor(black=80)),
                             ('LINEAFTER', (-2, 0), (-1, -1), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('LINEBEFORE', (-2, 0), (-2, -1), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             #General alignment
                             ('ALIGNMENT', (-2, 0), (-2, -1), 'LEFT'),
                             #Align description
@@ -631,11 +631,11 @@ class AcknowledgementPDF(object):
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('LINEBELOW', (0,0), (0,0), 1,
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('LINEBELOW', (-1,0), (-1,0), 1,
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)
@@ -783,7 +783,7 @@ class ConfirmationPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda')])
         table.setStyle(style)
         #Return the Recipient Table
@@ -823,7 +823,7 @@ class ConfirmationPDF(object):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             paragraph = Paragraph(self.ack.remarks.replace('\n', '<br/>'),
                                   style)
             data.append(['Remarks', paragraph])
@@ -833,9 +833,9 @@ class ConfirmationPDF(object):
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100)),
                             ('FONT', (0,0), (-1, -1), 'Garuda')])
-                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=100))])
         table.setStyle(style)
         #Return Table
         return table
@@ -852,7 +852,7 @@ class ConfirmationPDF(object):
         table = Table(data, colWidths=(535), repeatRows=1)
         #Create table style data and merge with totals style data
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
-                       colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
                       ('TOPPADDING', (0, 0), (-1, -1), 0),
                       ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                       ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')]
@@ -865,8 +865,8 @@ class ConfirmationPDF(object):
         titles = ['Product ID', 'Description', 'Qty']
         table = Table([titles], colWidths=(80, 425, 40))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
-                       colors.CMYKColor(black=60)),
-                      ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
+                      ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=100)),
                       #General alignment
                       ('ALIGNMENT', (0, 0), (1, -1), 'CENTER'),
                       #Align description
@@ -908,7 +908,7 @@ class ConfirmationPDF(object):
                                    allowWidows=1,
                                    allowOrphans=1,
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
                                   style)
             comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
@@ -916,18 +916,18 @@ class ConfirmationPDF(object):
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                           ('TEXTCOLOR', (0, 0), (-1, -1),
-                                           colors.CMYKColor(black=60))]))
+                                           colors.CMYKColor(black=100))]))
             data.append(['', comments, ''])
         #Get Image url and add image
         if product.image:
             data.append(['', self.get_image(product.image.generate_url('', '', time=3600), height=75, max_width=290)])
         #Create table
         table = Table(data, colWidths=(80, 425, 40))
-        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=80)),
-                            ('LINEAFTER', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
-                            ('LINEBEFORE', (0, 0), (0, -1), 1, colors.CMYKColor(black=60)),
+                            ('LINEAFTER', (0, 0), (-1, -1), 1, colors.CMYKColor(black=100)),
+                            ('LINEBEFORE', (0, 0), (0, -1), 1, colors.CMYKColor(black=100)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda'),
                             #General alignment
                             ('ALIGNMENT', (0, 0), (1, -1), 'CENTER'),
@@ -952,7 +952,7 @@ class ConfirmationPDF(object):
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                           ('TEXTCOLOR', (0, 0), (-1, -1),
-                                           colors.CMYKColor(black=60))]))
+                                           colors.CMYKColor(black=100))]))
         return fabric_table
 
     def _get_payment_terms(self):
@@ -1014,7 +1014,7 @@ class ConfirmationPDF(object):
                                allowWidows=1,
                                allowOrphans=1,
                                fontSize=10,
-                               textColor=colors.CMYKColor(black=60))
+                               textColor=colors.CMYKColor(black=100))
         paragraph = Paragraph(terms.replace('\n', '<br/>'), style)
                            
         return paragraph   
@@ -1030,13 +1030,13 @@ class ConfirmationPDF(object):
                           
         style = TableStyle([('PADDING', (0,0), (-1,-1), 1),
                             ('TEXTCOLOR', (0,0), (-1,-1),
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('LINEBELOW', (-3,0), (-3,0), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('LINEBELOW', (-3,-2), (-3,-2), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('LINEBELOW', (-1,-2), (-1,-2), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('ALIGNMENT', (0,0), (-1,-2), 'LEFT'),
                             #Style for last line
                             ('FONT', (0,-1), (0,-1), 'Garuda'),
@@ -1146,7 +1146,7 @@ class ProductionPDF(AcknowledgementPDF):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.CMYKColor(black=100))
             paragraph = Paragraph(self.ack.remarks.replace('\n', '<br/>'),
                                   style)
             data.append(['Remarks', paragraph])
@@ -1156,7 +1156,7 @@ class ProductionPDF(AcknowledgementPDF):
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda')])
         table.setStyle(style)
         #Return Table
@@ -1174,7 +1174,7 @@ class ProductionPDF(AcknowledgementPDF):
         #Create Table
         table = Table(data, colWidths=(535), repeatRows=1, splitByRow=True)
         #Create table style data and merge with totals style data
-        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100)),
                       ('TOPPADDING', (0, 0), (-1, -1), 0),
                       ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                       ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER')]
@@ -1186,8 +1186,8 @@ class ProductionPDF(AcknowledgementPDF):
         table = Table([['Product ID', 'Description', 'Qty']],
                       colWidths=(80, 400, 60), rowHeights=48)
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
-                       colors.CMYKColor(black=60)),
-                      ('GRID', (0,0), (-1, 0), 1, colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
+                      ('GRID', (0,0), (-1, 0), 1, colors.CMYKColor(black=100)),
                       #General alignment
                       ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                       ('FONTSIZE', (0,0), (-1,-1), 16),
@@ -1255,7 +1255,7 @@ class ProductionPDF(AcknowledgementPDF):
                                           ('FONTSIZE', (0, 0), (-1, -1), 16),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                                           ('TEXTCOLOR', (0, 0), (-1, -1),
-                                           colors.CMYKColor(black=60))]))
+                                           colors.CMYKColor(black=100))]))
             data.append(['', comments, ''])
         #Get Image url and add image
         data.append([''])
@@ -1264,14 +1264,14 @@ class ProductionPDF(AcknowledgementPDF):
         #Create table
         table = Table(data, colWidths=(80, 400, 60), splitByRow=True)
         style_data = [('TEXTCOLOR', (0,0), (-1,-1),
-                       colors.CMYKColor(black=60)),
+                       colors.CMYKColor(black=100)),
                             #Lines around content
                             ('LINEBELOW', (0,-1), (-1,-1), 1,
                              colors.CMYKColor(black=80)),
                             ('LINEAFTER', (0,0), (-1,-1), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             ('LINEBEFORE', (0,0), (0,-1), 1,
-                             colors.CMYKColor(black=60)),
+                             colors.CMYKColor(black=100)),
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
                             #Font
@@ -1296,11 +1296,11 @@ class ProductionPDF(AcknowledgementPDF):
                           colWidths=(200, 100, 200))
         style = TableStyle([
                              ('TEXTCOLOR', (0,0), (-1,-1),
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('LINEBELOW', (0,0), (0,0), 1,
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('LINEBELOW', (-1,0), (-1,0), 1,
-                              colors.CMYKColor(black=60)),
+                              colors.CMYKColor(black=100)),
                              ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)
@@ -1394,7 +1394,7 @@ class ShippingLabelPDF(object):
                             ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                             ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
                             ('LINEBELOW', (0, 0), (-1, -1),1, colors.CMYKColor(black=100)),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100))])
         table.setStyle(style)
 
         return table
@@ -1409,7 +1409,7 @@ class ShippingLabelPDF(object):
                                fontSize=24,
                                leading=24,
                                alignment=TA_CENTER,
-                               textColor=colors.CMYKColor(black=60))
+                               textColor=colors.CMYKColor(black=100))
         paragraph = Paragraph(u"{0}".format(description), style)
         data = [[paragraph]]
         
@@ -1421,7 +1421,7 @@ class ShippingLabelPDF(object):
                             ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                             ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
                             ('LINEBELOW', (-1, -1), (-1, -1),1, colors.CMYKColor(black=100)),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100))])
         table.setStyle(style)
 
         return table
@@ -1436,7 +1436,7 @@ class ShippingLabelPDF(object):
                                fontSize=18,
                                leading=18,
                                alignment=TA_CENTER,
-                               textColor=colors.CMYKColor(black=60))
+                               textColor=colors.CMYKColor(black=100))
         paragraph = Paragraph(u"QTY: {0}".format(quantity), style)
         data = [[paragraph]]
         
@@ -1448,7 +1448,7 @@ class ShippingLabelPDF(object):
                             ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                             ('VALIGN', (0, 0), (-1,-1), 'MIDDLE'),
                             ('LINEBELOW', (-1, -1), (-1, -1),1, colors.CMYKColor(black=100)),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=100))])
         table.setStyle(style)
 
         return table
@@ -1465,7 +1465,7 @@ class ShippingLabelPDF(object):
                                  ('BOTTOMPADDING', (-1, -1), (-1, -1), 10),
                                  ('TOPPADDING', (0, 0), (0, 0), 10),
                                  ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'), #Alignment for barcode, code, and qty
-                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100))])
         code_table.setStyle(code_style)
 
         return code_table
@@ -1480,7 +1480,7 @@ class ShippingLabelPDF(object):
                                fontName='Garuda',
                                fontSize=10,
                                leading=10,
-                               textColor=colors.CMYKColor(black=60))
+                               textColor=colors.CMYKColor(black=100))
 
         if item:
             item_paragraph = Paragraph(u"{0}".format(item.description), style)
@@ -1516,7 +1516,7 @@ class ShippingLabelPDF(object):
                             ('LEFTPADDING', (0, 0), (-1, -1), 5),
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                             ('LINEBELOW', (0, -1), (-1, -1), 1, colors.CMYKColor(black=100)),
-                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+                            ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=100))])
         details_table.setStyle(style)
 
         return details_table
@@ -1535,7 +1535,7 @@ class ShippingLabelPDF(object):
         label = Table(label_data, colWidths=(self.width))
         label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                                   ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
+                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=100))])
         label.setStyle(label_style)
         
         return label
@@ -1553,7 +1553,7 @@ class ShippingLabelPDF(object):
         label = Table(label_data, colWidths=self.width)
         label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                                   ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
+                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=100))])
         label.setStyle(label_style)
         
         return label

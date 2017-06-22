@@ -58,7 +58,6 @@ class ShippingMixin(object):
 class ShippingList(ShippingMixin, generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
-        print request.data
         request = self._format_primary_key_data(request)
         
         return super(ShippingList, self).post(request, *args, **kwargs)
