@@ -297,7 +297,7 @@ class ShippingPDF(object):
                      u"{0} kg".format(product.net_weight),
                      u"{0} kg".format(product.gross_weight)])
         try:
-            data.append(['', self._get_fabric_table(product.item.fabric, "   Fabric:")])
+            data.append([u'', self._get_fabric_table(product.item.fabric, u"   Fabric:")])
         except:
             pass
         
@@ -311,9 +311,9 @@ class ShippingPDF(object):
             pillows = product.item.pillows.all()
             if len(pillows) > 0:
                 for pillow in pillows:
-                    data.append(['', '   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])
+                    data.append([u'', u'   {0} Pillow'.format(pillow.type.capitalize()), pillow.quantity])
                     try:
-                        data.append(['', self._get_fabric_table(pillow.fabric.description, '       - Fabric:'), '',])
+                        data.append([u'', self._get_fabric_table(pillow.fabric.description, u'       - Fabric:'), u'',])
                     except: pass
         except AttributeError as e:
             logger.info(e)
@@ -322,7 +322,7 @@ class ShippingPDF(object):
             components = product.item.components.all()
             if len(components) > 0:
                 for component in components:
-                    data.append(['', '   {0}'.format(component.description), '{0}'.format(component.quantity)])
+                    data.append([u'', u'   {0}'.format(component.description), u'{0}'.format(component.quantity)])
         except AttributeError as e:
             logger.info(e)
 
