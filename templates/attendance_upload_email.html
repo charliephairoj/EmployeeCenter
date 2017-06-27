@@ -167,11 +167,10 @@
 				Card IDs without matching Employee
 				</td>
 			</tr>
-			{% for employee in missing_employees %}
+			{% for card_id in missing_employees %}
 			<tr>
-				<td style="padding-left:1em;">{{employee.id}}</td>
-				<td style="padding-left:1em;">{{employee.timestamp.date}}</td>
-				<td style="padding-left:1em;">{{employee.timestamp.time}}</td>
+				<td style="padding-left:1em;" colspan="3">{{card_id}}</td>
+			
 				
 			</tr>
 			{% endfor %}

@@ -36,7 +36,8 @@ def upload_attendance(request):
 
         timestamps = []
         error_times = []
-        missing_employees = []
+        employees = {}
+        missing_employees = {}
         duplicate_employees = []
         timezone = pytz.timezone('Asia/Bangkok')
 
@@ -49,15 +50,20 @@ def upload_attendance(request):
                 
                 # Find the employee with the corresponding card
                 try:
-                    employee = Employee.objects.get(card_id=card_id)
-                    employee.shift = Shift.objects.all()[0]
-                    employee.save()
+                    if card_id in employees:
+                        employee = employees[card_id]
+                    else:
+                        employee = Employee.objects.get(card_id=card_id)
+                        employee.shift = Shift.objects.all()[0]
+                        employee.save()
+                        employees[employee.card_id] = employee
+
                 except Employee.DoesNotExist:
-                    missing_employees.append({'id': d[2], 'timestamp': timestamp})
-                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
+                    missing_employees[card_id] = {'id': d[2], 'timestamp': timestamp, 'card_id': card_id}
+                    #logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
                 except Employee.MultipleObjectsReturned as e:
                     duplicate_employees.append({'id': d[2], 'timestamp': timestamp})
-                    logger.warn(e)
+                    #logger.warn(e)
                 
                 if employee:
                     try:
@@ -93,7 +99,7 @@ def upload_attendance(request):
                 
                 assert attendance.id is not None
                 assert attendance.date is not None
-                logger.debug("{0}: {1} | {2}".format(attendance.date, attendance.employee.id, attendance.id))
+                #logger.debug("{0}: {1} | {2}".format(attendance.date, attendance.employee.id, attendance.id))
         
             
         def create_timestamps_and_attendances(data):
@@ -130,14 +136,13 @@ def upload_attendance(request):
             e_conn.send_email('noreply@dellarobbiathailand.com',
                               'Attendance Upload Report',
                               message,
-                              ["charliep@dellarobbiathailand.com",
-                               "mod@dellarobbiathailand.com"],
+                              ["charliep@dellarobbiathailand.com"],
                               format='html')
             
             
             
         # Primary parallel thread
-        primary_thread = Thread(target=create_timestamps_and_attendances, args=(data, ))
+        primary_thread = Thread(target=create_timestamps_and_attendances, args=(data[0:50], ))
         primary_thread.start()
         
                 

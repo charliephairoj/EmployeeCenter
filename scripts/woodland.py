@@ -21,8 +21,7 @@ from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
 a = A.objects.all().order_by('-id')[0]
-a.company = "alinea group"
-a.save()
+
 a.create_and_upload_pdfs()
 
 print "\n"+a.acknowledgement_pdf.generate_url()

@@ -200,9 +200,9 @@ class ShippingPDF(object):
         #Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
                             ('FONT', (0,0), (-1,-1), 'Garuda')])
-                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                            #('GRID', (0,0), (-1,-1), 1, colors.black)])
         table.setStyle(style)
         #Return the Recipient Table
         return table
@@ -216,7 +216,7 @@ class ShippingPDF(object):
         #Create Style and apply
         style = TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0), 
                             ('ALIGNMENT', (0,0), (-1,-1), 'LEFT')])
-                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                            #('GRID', (0,0), (-1,-1), 1, colors.black)])
         contact.setStyle(style)
         #Return table
         return contact
@@ -248,9 +248,9 @@ class ShippingPDF(object):
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
                             ('FONT', (0,0), (-1, -1), 'Garuda')])
-                            #('GRID', (0,0), (-1,-1), 1, colors.CMYKColor(black=60))])
+                            #('GRID', (0,0), (-1,-1), 1, colors.black)])
         table.setStyle(style)
         #Return Table
         return table
@@ -267,7 +267,7 @@ class ShippingPDF(object):
         #Create Table
         table = Table(data, colWidths=(520), repeatRows=1)
         #Create table style data and merge with totals style data
-        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.black),
                       ('TOPPADDING', (0,0), (-1,-1), 0),
                       ('BOTTOMPADDING', (0,0), (-1,-1), 0),
                       ('ALIGNMENT', (0,0), (-1,-1), 'CENTER')]
@@ -278,8 +278,8 @@ class ShippingPDF(object):
     
     def _create_products_title_section(self):
         table = Table([['Product ID', 'Description', 'Qty', 'Net Weight', 'Gross Weight']], colWidths=(65, 240, 40, 90, 90))
-        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                      ('GRID', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+                      ('GRID', (0,0), (-1,0), 1, colors.black),
                       #General alignment
                       ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                       #Align description
@@ -331,13 +331,13 @@ class ShippingPDF(object):
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
-                                   textColor=colors.CMYKColor(black=60))
+                                   textColor=colors.black)
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
             comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
             comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),
                                           ('FONTSIZE', (0,0), (-1, -1), 10),
                                           ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
+                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.black)]))
             data.append(['', comments, ''])
         #Get Image url and add image
         try:
@@ -349,11 +349,11 @@ class ShippingPDF(object):
             
         #Create table
         table = Table(data, colWidths=(65, 240, 40, 90, 90))
-        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+        style_data = [('TEXTCOLOR', (0,0), (-1,-1), colors.black),
                             #Lines around content
                             ('LINEBELOW', (0,-1), (-1,-1), 1, colors.CMYKColor(black=80)),
-                            ('LINEAFTER', (0,0), (-1,-1), 1, colors.CMYKColor(black=60)),
-                            ('LINEBEFORE', (0,0), (0,-1), 1, colors.CMYKColor(black=60)),
+                            ('LINEAFTER', (0,0), (-1,-1), 1, colors.black),
+                            ('LINEBEFORE', (0,0), (0,-1), 1, colors.black),
                             ('FONT', (0,0), (-1,-1), 'Garuda'),
                             #General alignment
                             ('ALIGNMENT', (0,0), (1,-1), 'CENTER'),
@@ -371,17 +371,17 @@ class ShippingPDF(object):
         fabric_table.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),
                                           ('FONTSIZE', (0,0), (-1, -1), 10),
                                           ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))]))
+                                          ('TEXTCOLOR', (0,0), (-1,-1), colors.black)]))
         return fabric_table
     
     def _create_signature_section(self, sig1='Delivery Agent', sig2='Recipient'):
         #create the signature
         signature = Table([['x', '', 'x'], [sig1, '', sig2]], colWidths=(200,100,200))
         style = TableStyle([
-                             ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
-                             #('LINEABOVE', (0,0), (-1,0), 1, colors.CMYKColor(black=60)),
-                             ('LINEBELOW', (0,0), (0,0), 1, colors.CMYKColor(black=60)),
-                             ('LINEBELOW', (-1,0), (-1,0), 1, colors.CMYKColor(black=60)),
+                             ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+                             #('LINEABOVE', (0,0), (-1,0), 1, colors.black),
+                             ('LINEBELOW', (0,0), (0,0), 1, colors.black),
+                             ('LINEBELOW', (-1,0), (-1,0), 1, colors.black),
                              ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                              ('ALIGNMENT', (0,0), (-1,0), 'LEFT')])
         signature.setStyle(style)
@@ -404,7 +404,7 @@ class ShippingPDF(object):
                                     ('FONT', (0,0), (-1,-1), 'Garuda'),
                                     ('ALIGNMENT', (-1,0), (-1,-1), 'CENTER'),
                                     ('VALIGN', (0,1), (-1,-1), 'MIDDLE'),
-                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+                                    ('TEXTCOLOR', (0,0), (-1,-1), colors.black)])
         product_table.setStyle(product_style)
         data = Table([['Authorization'], 
                       [Spacer(0, 25)],
@@ -420,7 +420,7 @@ class ShippingPDF(object):
                             ('FONT', (0,0), (0, 0), 'Tahoma'),
                             ('FONT', (0,1), (0,2), 'Garuda'),
                             ('FONTSIZE', (0,2), (0,2), 14),
-                            ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))
+                            ('TEXTCOLOR', (0,0), (-1,-1), colors.black)
                              
                              ])
         data.setStyle(style)
@@ -452,7 +452,7 @@ class ShippingPDF(object):
                                         ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'),
                                         ('VALIGN', (0, 0), (0, 0), 'TOP'),
                                         ('VALIGN', (0, 1), (-1,-1), 'MIDDLE'),
-                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60))])
+                                        ('TEXTCOLOR', (0,0), (-1,-1), colors.black)])
         description_table.setStyle(description_style)
         
         code = "DRAI-{0}".format(product.item.id)
@@ -466,7 +466,7 @@ class ShippingPDF(object):
                                fontName='Garuda',
                                fontSize=12,
                                leading=16,
-                               textColor=colors.CMYKColor(black=60))
+                               textColor=colors.black)
         customer_paragraph = Paragraph(u"Customer: {0}".format(self.ack.customer.name), style)
         code_data = [[barcode],
                      [code],
@@ -494,15 +494,15 @@ class ShippingPDF(object):
                                  ('VALIGN', (0, 2), (0, -1), 'MIDDLE'),
                                  ('BOTTOMPADDING', (0, -1), (0, -1), 10), #Toppadding for quantity box
                                  ('TOPPADDING', (0, -1), (0, -1), 10), #Bottompadding for quantity box
-                                 ('BOX', (0, -1), (0, -1), 1, colors.CMYKColor(black=60)),
-                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60))])
+                                 ('BOX', (0, -1), (0, -1), 1, colors.black),
+                                 ('TEXTCOLOR', (0, 0), (-1, -1), colors.black)])
         code_table.setStyle(code_style)
         
         label_data = [[description_table, code_table]]
         label = Table(label_data, colWidths=(360, 160))
         label_style = TableStyle([('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
                                   ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                  ('BOX', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))])
+                                  ('BOX', (0, 0), (-1, -1), 1, colors.black)])
         label.setStyle(label_style)
         
         return label
