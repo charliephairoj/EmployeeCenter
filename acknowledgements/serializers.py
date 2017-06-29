@@ -492,9 +492,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         old_total = instance.total
         instance.calculate_totals()
 
-        # Create new pdf documents if the old total and new total are not the same
-        if (old_total != instance.total) or old_qty != sum([item.quantity for item in instance.items.all()]):
-            instance.create_and_upload_pdfs()
+        
+        instance.create_and_upload_pdfs()
 
 
         try:
