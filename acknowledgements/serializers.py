@@ -521,6 +521,18 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
 
+        try:
+            ret['phase'] = {'id': instance.phase.id,
+                            'description': instance.phase.description}
+        except AttributeError:
+            pass
+
+        try:
+            ret['room'] = {'id': instance.room.id,
+                            'description': instance.room.description}
+        except AttributeError:
+            pass
+
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
             try:
@@ -553,17 +565,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
 
 
-            try:
-                ret['phase'] = {'id': instance.phase.id,
-                                'description': instance.phase.description}
-            except AttributeError:
-                pass
-
-            try:
-                ret['room'] = {'id': instance.room.id,
-                               'description': instance.room.description}
-            except AttributeError:
-                pass
+            
 
             try:
                 iam_credentials = self.context['request'].user.aws_credentials

@@ -287,6 +287,8 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         end_date = self.request.query_params.get('end_date', None)
         employee_id = self.request.query_params.get('employee_id', None)
         
+        if employee_id or start_date or end_date:
+            query = "SELECT * FROM hr_attendances WHERE "
         # Search only attendances for selected employee
         if employee_id:
             queryset = queryset.filter(employee_id=employee_id)
