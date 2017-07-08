@@ -492,7 +492,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         old_total = instance.total
         instance.calculate_totals()
 
-        
         instance.create_and_upload_pdfs()
 
 

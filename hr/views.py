@@ -23,6 +23,32 @@ from hr.models import Employee, Attendance, Timestamp, Shift, Payroll
 logger = logging.getLogger(__name__)
 
 
+def employee_stats(request):
+    employees = Employee.objects.filter(status="active", company="alinea group")
+    
+    cursor = connection.cursor()
+    query = """
+    SELECT SUM(SELECT )
+    """
+    
+    cursor.execute(query)
+    row = cursor.fetchone()
+    
+    data = {'acknowledged': {'count': row[0], 'amount': str(row[1])},
+            'in_production': {'count':row[2], 'amount': str(row[3])},
+            'ready_to_ship': {'count': row[4], 'amount': str(row[5])},
+            'shipped': {'count':row[6], 'amount': str(row[7])},
+            'invoiced': {'count': row[8], 'amount': str(row[9])},
+            'paid': {'count': row[10], 'amount': str(row[11])},
+            'deposit_received': {'count': row[12], 'amount': str(row[13])},
+            'total': {'count': row[-2], 'amount': str(row[-1])}}
+            
+    response = HttpResponse(json.dumps(data),
+                            content_type="application/json")
+    response.status_code = 200
+    return response
+    
+
 def upload_attendance(request):
     if request.method == "POST":
         file = request.FILES.get('file')

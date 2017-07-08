@@ -9,6 +9,7 @@ production
 """
 
 from decimal import Decimal
+import logging
 from pytz import timezone
 
 from django.conf import settings
@@ -27,6 +28,8 @@ from reportlab.graphics.barcode import code39
 from reportlab.graphics.barcode import code128
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
+
+logger = logging.getLogger(__name__)
 
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
@@ -1216,15 +1219,17 @@ class ProductionPDF(AcknowledgementPDF):
         #increase the item number
         if len(product.pillows.all()) > 0:
             for pillow in product.pillows.all():
-                if pillow.type == "back":
-                    pillow_type = 'หมอนพิงหลัง'
-                elif pillow.type == "accent":
-                    pillow_type = 'หมอนโยน'
-                elif pillow.type == "lumbar":
-                    pillow_type = "Lumbar Pillow"
+                if pillow.type == u"back":
+                    pillow_type = u'หมอนพิงหลัง'
+                elif pillow.type == u"accent":
+                    pillow_type = u'หมอนโยน'
+                elif pillow.type == u"lumbar":
+                    pillow_type = u"Lumbar Pillow"
                 else:
-                    pillow = "Pillow"
-                data.append(['', u'   {0}'.format(pillow_type), pillow.quantity])
+                    pillow_type = u"Pillow"
+                logger.debug(u'    {0}'.format(pillow_type))
+                logger.debug(pillow.quantity)
+                data.append([u'', u'   {0}'.format(pillow_type), u'{0}'.format(pillow.quantity or 0)])
                 try:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
                 except:

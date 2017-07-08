@@ -177,6 +177,7 @@ urlpatterns += patterns('projects.views',
 )
 
 urlpatterns += patterns('hr.views',
+    url(r'^api/v1/employee/stats/$', 'employee_stats'),
     url(r'^api/v1/employee/image/$', 'employee_image'),
     url(r'^api/v1/employee/attendance/$', 'upload_attendance')
 )
