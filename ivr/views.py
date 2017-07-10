@@ -34,13 +34,13 @@ def route_call(request):
 
     if digits == 1:
         message = "Routing to sales"
-        number = '+19498294996'
+        number = '+66819189145'
     elif digits == 2:
         message = "Routing to customer service"
         number = '+19498294996'
     elif digits == 3:
         message = "Routing to accounting"
-        number = '+19498294996'
+        number = '+66990041468'
     else:
         message = "Routing to customer service"
         number = '+19498294996'
