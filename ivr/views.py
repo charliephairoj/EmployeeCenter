@@ -33,19 +33,19 @@ def route_call(request):
     digits = int(request.POST.get('Digits', '0'))
 
     if digits == 1:
-        message = "Routing to sales"
+        message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-sales.mp3"
         number = '+66819189145'
     elif digits == 2:
-        message = "Routing to customer service"
+        message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
         number = '+19498294996'
     elif digits == 3:
-        message = "Routing to accounting"
+        message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
         number = '+66990041468'
     else:
         message = "Routing to customer service"
         number = '+19498294996'
     resp = VoiceResponse()
-    resp.say(message)
+    resp.play(message)
     resp.dial(number)
-    logger.debug(number)
+
     return HttpResponse(resp)
