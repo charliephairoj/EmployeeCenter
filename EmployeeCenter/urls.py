@@ -184,6 +184,8 @@ urlpatterns += patterns('hr.views',
 
 
 urlpatterns += patterns('ivr.views',
+    url(r'^api/v1/ivr/voice/$', 'voice'),
+    url(r'^api/v1/ivr/token/$', 'get_token'),
     url(r'^api/v1/ivr/test/$', 'test'),
     url(r'^api/v1/ivr/test/route_call/$', 'route_call')
 )
