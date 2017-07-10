@@ -31,7 +31,7 @@ from administrator.views import PermissionList, PermissionDetail
 from equipment.views import EquipmentList, EquipmentDetail
 from hr.views import PayrollList
 from deals.views import DealList, DealDetail
-
+from ivr.views import test
 """
 API Section
 
@@ -180,6 +180,12 @@ urlpatterns += patterns('hr.views',
     url(r'^api/v1/employee/stats/$', 'employee_stats'),
     url(r'^api/v1/employee/image/$', 'employee_image'),
     url(r'^api/v1/employee/attendance/$', 'upload_attendance')
+)
+
+
+urlpatterns += patterns('ivr.views',
+    url(r'^api/v1/ivr/test/$', 'test'),
+    url(r'^api/v1/ivr/test/route_call/$', 'route_call')
 )
 
 

@@ -328,7 +328,6 @@ class AcknowledgementMixin(object):
                     except (TypeError, KeyError) as e:
                         logger.debug(e)
 
-        logger.debug(request.data['room'])
         return request
 
         
