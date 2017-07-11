@@ -41,7 +41,6 @@ def get_token(request):
     # If the user is on the support dashboard page, we allow them to accept
     # incoming calls to "support_agent"
     # (in a real app we would also require the user to be authenticated)
-    logger.debug(request.user.username)
     capability.allow_client_incoming(request.user.username)
 
     # Generate the capability token
@@ -55,14 +54,12 @@ def test(request):
     logger.debug(request.GET)
     resp = VoiceResponse()
 
-    gather = Gather(action="/api/v1/ivr/test/route_call/", method="POST", num_digits=1, timeout=5)
+    gather = Gather(action="/api/v1/ivr/test/route_call/", method="POST", num_digits=1, timeout=10)
     gather.play(url="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-welcome.mp3")
     gather.play(url="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-sales.mp3")
     gather.play(url="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-customer-service.mp3")
     gather.play(url="https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-accounting.mp3")
     resp.append(gather)
-    
-    logger.debug(resp)
 
     return HttpResponse(resp)
 
@@ -74,26 +71,37 @@ def route_call(request):
 
     if digits == 1:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-sales.mp3"
-        number = '+66819189145'
-        client = "charliephairoj"
+        numbers = ['+66819189145']
+        clients = ["sidarat"]
 
     elif digits == 2:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
-        number = '+19498294996'
-        client = "charliephairoj"
+        numbers = ['+66914928558', '+66952471426']
+        clients = ["chutima", 'oil']
 
     elif digits == 3:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
-        number = '+66990041468'
-        client = "charliephairoj"
+        number = ['+66988325610']
+        client = ["may"]
+    elif digits == 8:
+        message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
+        number = ['+66990041468']
+        client = ["charliephairoj"]
     else:
-        message = "Routing to customer service"
-        number = '+19498294996'
+        message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
+        numbers = ['+66914928558', '+66952471426']
+        clients = ["chutima", 'oil']
+
     resp = VoiceResponse()
     resp.play(message)
+
     dial = Dial(caller_id='+6625088681')
-    dial.number(number)
-    dial.client(client)
+    for number in numbers:
+        dial.number(number)
+    
+    for client in clients:
+        dial.client(client)
+
     resp.append(dial)
 
     return HttpResponse(resp)
