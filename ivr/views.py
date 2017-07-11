@@ -81,12 +81,12 @@ def route_call(request):
 
     elif digits == 3:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
-        number = ['+66988325610']
-        client = ["may"]
+        numbers = ['+66988325610']
+        clients = ["may"]
     elif digits == 8:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
-        number = ['+66990041468']
-        client = ["charliephairoj"]
+        numbers = ['+66990041468']
+        clients = ["charliephairoj"]
     else:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
         numbers = ['+66914928558', '+66952471426']
