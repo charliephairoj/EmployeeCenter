@@ -12,22 +12,23 @@ from twilio.jwt.client import ClientCapabilityToken
 
 logger = logging.getLogger(__name__)
 
-
+@csrf_exempt
 def voice(request):
+    """Returns TwiML instructions to Twilio's POST requests"""
     resp = VoiceResponse()
-    if "To" in request.form and request.form["To"] != '':
-        dial = Dial(caller_id=os.environ['TWILIO_CALLER_ID'])
-        # wrap the phone number or client name in the appropriate TwiML verb
-        # by checking if the number given has only digits and format symbols
-        if phone_pattern.match(request.form["To"]):
-            dial.number(request.form["To"])
-        else:
-            dial.client(request.form["To"])
-        resp.append(dial)
-    else:
-        resp.say("Thanks for calling!")
+    dial = Dial(caller_id='+6625088681')
 
-    return Response(str(resp), mimetype='text/xml')
+    # If the browser sent a phoneNumber param, we know this request
+    # is a support agent trying to call a customer's phone
+    if 'phoneNumber' in request.POST:
+        dial.number(request.POST['phoneNumber'])
+    else:
+        # Otherwise we assume this request is a customer trying
+        # to contact support from the home page
+        dial.client('support_agent')
+    
+    resp.append(dial)
+    return HttpResponse(resp)
 
 
 @csrf_exempt
@@ -42,7 +43,8 @@ def get_token(request):
     # incoming calls to "support_agent"
     # (in a real app we would also require the user to be authenticated)
     capability.allow_client_incoming(request.user.username)
-
+    # Allow our users to make outgoing calls with Twilio Client
+    capability.allow_client_outgoing(settings.TWIML_APPLICATION_SID)
     # Generate the capability token
     token = capability.to_jwt()
 
@@ -77,12 +79,12 @@ def route_call(request):
     elif digits == 2:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
         numbers = ['+66914928558', '+66952471426']
-        clients = ["chutima", 'oil']
+        clients = ["chup", 'apaporn']
 
     elif digits == 3:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
         numbers = ['+66988325610']
-        clients = ["may"]
+        clients = ["mays"]
     elif digits == 8:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
         numbers = ['+66990041468']
@@ -90,7 +92,7 @@ def route_call(request):
     else:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
         numbers = ['+66914928558', '+66952471426']
-        clients = ["chutima", 'oil']
+        clients = ["chup", 'apaporn']
 
     resp = VoiceResponse()
     resp.play(message)
