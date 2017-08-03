@@ -6,7 +6,7 @@ import json
 import logging
 
 
-logger = logging.getLogger('EmployeeCenter');
+logger = logging.getLogger('EmployeeCenter')
 
 
 @login_required

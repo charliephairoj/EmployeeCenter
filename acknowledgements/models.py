@@ -24,8 +24,10 @@ from projects.models import Project, Room, Phase
 from supplies.models import Fabric
 from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
 from media.models import Log, S3Object
-from administrator.models import CredentialsModel
+from administrator.models import CredentialsModel, Log as BaseLog
 from trcloud.models import TRSalesOrder, TRContact
+
+
 logger = logging.getLogger(__name__)
 
 
