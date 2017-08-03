@@ -124,6 +124,11 @@ def app_login(request):
 
             return HttpResponseRedirect('/')
 
+    else:
+        #create a new login form
+        form = LoginForm()
+        return render(request, 'login.html', {'form':form})
+
 
 @login_required
 def auth_return(request):

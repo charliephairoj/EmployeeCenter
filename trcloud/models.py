@@ -19,12 +19,27 @@ class BaseTRModelMixin(object):
     @classmethod
     def _prepare_body_for_request(cls, data):
         timestamp = str(int(math.floor(time.time())))
+        
+        """
+        Test Settings
+        """
+        predata = {
+            "company_id":"6",
+            "passkey":"65da331b0d94e45a910fb88e1d29cdc7",
+            "securekey": hashlib.md5("0d94e4" +"t" + timestamp).hexdigest(),
+            "timestamp": timestamp,
+        }
+
+        """
         predata = {
             "company_id":"5",
             "passkey":"b01ebdb1ce5a28f803de6973cd833fb4",
             "securekey": hashlib.md5("ce5a28" +"t" + timestamp).hexdigest(),
             "timestamp": timestamp,
         }
+        """
+
+
 
         # Merge the request keys and information with the body data
         data.update(predata)

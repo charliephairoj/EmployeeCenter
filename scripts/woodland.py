@@ -20,20 +20,7 @@ from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
-a = A.objects.get(pk=57670)
+a = A.objects.all().order_by('-id')[0]
 
-a.create_and_upload_pdfs()
-
-print "\n"+a.acknowledgement_pdf.generate_url()
-print "\n"+a.production_pdf.generate_url()
-print "\n"+a.label_pdf.generate_url()
-
-
-#subprocess.call(cmd, shell=True)
-
-#data = SO.search('holbrook')
-#for i in data:
-#    print i['id']
-
-
+a.create_in_trcloud()
 

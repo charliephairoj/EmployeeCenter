@@ -314,26 +314,44 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         employee_id = self.request.query_params.get('employee_id', None)
         
         if employee_id or start_date or end_date:
-            query = "SELECT * FROM hr_attendances WHERE "
-        # Search only attendances for selected employee
-        if employee_id:
-            queryset = queryset.filter(employee_id=employee_id)
-        
-        # Filter all records after the start_date
-        if start_date:
-            start_date = parser.parse(start_date)
-            queryset = queryset.filter(date__gte=start_date)
+            query = "SELECT * FROM hr_attendance WHERE"
+
+            # Search only attendances for selected employee
+            if employee_id:
+                query += " employee_id = {0}".format(employee_id)
             
-        # Filter all records before end_date
-        if end_date:
-            end_date = parser.parse(end_date)
-            queryset = queryset.filter(date__lte=end_date)
+            # Filter all records after the start_date
+            if start_date:
+                start_date = parser.parse(start_date)
+                start_date_str = start_date.strftime("%Y-%m-%d")
+
+                # Add a connector if employee id is present
+                if employee_id:
+                    query += " AND"
+                
+                query += " a_date >= '{0}'::date".format(start_date_str)
+                
+            # Filter all records before end_date
+            if end_date:
+                end_date = parser.parse(end_date)
+                end_date_str = end_date.strftime("%Y-%m-%d")
+
+                # Add a connector if employee id is present
+                if employee_id or start_date:
+                    query += " AND"
+                
+                query += " a_date <= '{0}'::date".format(end_date_str)
+                
+            query += " ORDER BY a_date DESC"
+            logger.debug(query)
+            queryset = Attendance.objects.raw(query)
     
+       
         if offset:
             queryset = queryset[offset - 1:]
         else:
             queryset = queryset[0:]
-                          
+                        
         return queryset
     
     
@@ -367,7 +385,7 @@ class AttendanceDetail(AttendanceMixin, generics.RetrieveUpdateDestroyAPIView):
             o_time = o_time.astimezone(tz)
             o_time = datetime.combine(a_date, o_time.timetz())
             request.data['overtime_request'] = o_time
-        except KeyError as e:
+        except (KeyError, AttributeError) as e:
             logger.warn(e)
         
         response = super(AttendanceDetail, self).put(request, *args, **kwargs)
