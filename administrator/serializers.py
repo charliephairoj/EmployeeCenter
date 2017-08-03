@@ -11,16 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class LogSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
     
     class Meta:
         model = Log
-        fields = ('id', 'message', 'timestamp', 'user', 'type')
+        fields = ('message', 'timestamp', 'user', 'type')
         
     def to_representation(self, instance):
         
         ret = super(LogSerializer, self).to_representation(instance)
-        
+        logger.debug(ret)
         ret['user'] = instance.user.id
         
         return ret

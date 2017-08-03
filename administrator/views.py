@@ -6,6 +6,7 @@ from django.contrib.auth.models import Permission, Group, User
 from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
+from django.conf import settings
 from rest_framework import generics
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -99,13 +100,24 @@ class LogList(LogMixin, generics.ListAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = self.queryset.all().order_by('-timestamp')
         
         user_id = self.request.query_params.get('user_id', None)
-        
+
         if user_id:
             queryset = queryset.filter(user_id=user_id)
             
+        logger.debug(queryset)
+        logger.debug(queryset.count())
+        
+        offset = self.request.query_params.get('offset', None)
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        if offset != None and limit:
+            queryset = queryset[int(offset):limit + int(offset)]
+        else:
+            queryset = queryset[0:50]
+        
         return queryset
     
     
