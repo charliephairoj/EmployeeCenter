@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework.fields import DictField
 from pytz import timezone
 
+from django.contrib.auth.models import User
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
@@ -158,12 +159,28 @@ class ItemSerializer(serializers.ModelSerializer):
         """
 
         # Update attributes from client side details
-        instance.quantity = validated_data.pop('quantity', instance.quantity)
-        instance.unit_price = validated_data.pop('unit_price', instance.unit_price)
+        acknowledgement = self.context['acknowledgement']
+        employee = self.context['employee']
+        new_qty = validated_data.pop('quantity', instance.quantity)
+        new_price = validated_data.pop('unit_price', instance.unit_price)
         instance.fabric = validated_data.pop('fabric', instance.fabric)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         instance.comments = validated_data.pop('comments', instance.comments)
         
+        if new_qty != instance.quantity:
+            # Log Changing delivery date
+            message = "{0} quantity changed from {1} to {2}"
+            message = message.format(instance.description, instance.quantity, new_qty)
+            AckLog.objects.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+            instance.quantity = new_qty
+
+        if new_price != instance.unit_price:
+            # Log Changing delivery date
+            message = "{0} unit price changed from {1} to {2}"
+            message = message.format(instance.description, instance.unit_price, new_price)
+            AckLog.objects.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+            instance.unit_price = new_price
+
         # Set the price of the total for this item
         instance.total = instance.quantity * instance.unit_price
         instance.save()
@@ -262,7 +279,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
         employee = self.context['request'].user
-        logger.debug(validated_data)
+        
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
                 try:
@@ -346,55 +363,42 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             logger.warn(e)
 
         # Log Opening of an order
-        message = "Order #{0} was acknowledged.".format(instance.id)
-        log = AckLog.objects.create(message=message, acknowledgement=instance, employee=self.context['request'].user)
-        logger.debug(instance.room)
+        message = "Created Acknowledgement #{0}.".format(instance.id)
+        log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+
         return instance
 
     def update(self, instance, validated_data):
 
         employee = self.context['request'].user
 
+        #Testing only
+        employee = User.objects.get(pk=1)
+        
         instance.current_user = employee
-        instance.delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
+        dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         status = validated_data.pop('status', instance.status)
 
+        if instance.delivery_date != dd:
+            old_dd = instance.delivery_date
+            instance.delivery_date = dd
+           
+            # Log Changing delivery date
+            message = "Acknowledgement #{0} delivery date changed from {1} to {2}."
+            message = message.format(instance.id, old_dd.strftime('%d/%m/%Y'), dd.strftime('%d/%m/%Y'))
+            AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+
         if status.lower() != instance.status.lower():
 
+            message = "Updated Acknowledgement #{0} from {1} to {2}."
+            message = message.format(instance.id, instance.status.lower(), status.lower())
+            AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
 
-            # Create a log for this status if it does not already exist
-            if AckLog.objects.filter(message__icontains=status.lower(), acknowledgement=instance).count() == 0:
-                message = "Order #{0} is {1}.".format(instance.id, status.lower())
-                log = AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
-
-            # Check if a higher level event has ocurrred. If yes, then the status will change to the higher level
-            statuses = ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid', 'cancelled']
-            for status in statuses:
-                if instance.logs.filter(message__icontains=status).exists():
-                    instance.status = status
-
-            logger.debug("Log count for {0}: {1}".format(instance.status, AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count()))
-            if AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count() > 1:
-                # Email charlie if there are too many repeats of a log
-                message = "Too many '{0}' for ack# {1}".format(instance.status, instance.id)
-            elif AckLog.objects.filter(message__icontains=instance.status.lower(), acknowledgement=instance).count() == 0:
-                # Email if there are no logs for this status
-                message = "Status '{0}' does not match any logs for Ack# {1}".format(instance.status, instance.id)
-            else:
-                message = None
-
-            # Send an email if there is a valid message
-            if message:
-                e_conn = boto.ses.connect_to_region('us-east-1')
-                e_conn.send_email('noreply@dellarobbiathailand.com',
-                                  'Acknowledgement Log Error',
-                                  message,
-                                  ["charliep@dellarobbiathailand.com"],
-                                  format='html')
 
         old_qty = sum([item.quantity for item in instance.items.all()])
+        
         # Extract items data
         items_data = validated_data.pop('items')
         fabrics = {}
@@ -408,7 +412,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 pass
 
             item = Item.objects.get(pk=item_data['id'])
-            serializer = ItemSerializer(item, data=item_data, context={'acknowledgement': instance})
+            serializer = ItemSerializer(item, data=item_data, context={'acknowledgement': instance,
+                                                                       'employee': employee})
 
             if serializer.is_valid(raise_exception=True):
                 serializer.save()

@@ -27,7 +27,7 @@ from hr.views import AttendanceList, AttendanceDetail
 from hr.views import ShiftViewSet
 from administrator.views import UserList, UserDetail
 from administrator.views import GroupList, GroupDetail
-from administrator.views import PermissionList, PermissionDetail
+from administrator.views import PermissionList, PermissionDetail, LogList as ALogList
 from equipment.views import EquipmentList, EquipmentDetail
 from hr.views import PayrollList
 from deals.views import DealList, DealDetail
@@ -113,6 +113,8 @@ urlpatterns = patterns('',
     url(r'^api/v1/deal/$', DealList.as_view()),
     url(r'^api/v1/deal/(?P<pk>[0-9]+)/$', DealDetail.as_view()),
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
+
+    url(r'^api/v1/administrator/log/$', ALogList.as_view()),
 )
 
 

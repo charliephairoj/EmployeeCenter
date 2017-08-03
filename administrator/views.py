@@ -12,7 +12,7 @@ from boto.s3.key import Key
 import boto.ses
 
 #from administrator.models import User
-from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer
+from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer, LogSerializer
 from administrator.models import Log
 
 
@@ -29,7 +29,7 @@ def log(request):
             pass
             
         #Send an email if log is an error
-        if data['type'].lower() == 'xerror': 
+        if data['type'].lower() == 'error': 
             conn = boto.ses.connect_to_region('us-east-1')
             body = data['message']
             conn.send_email('no-replay@dellarobbiathailand.com',
@@ -85,6 +85,30 @@ class PermissionList(PermissionMixin, generics.ListCreateAPIView):
     
     
 class PermissionDetail(PermissionMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+
+
+class LogMixin(object):
+    queryset = Log.objects.all()
+    serializer_class = LogSerializer
+
+
+class LogList(LogMixin, generics.ListAPIView):
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset.all()
+        
+        user_id = self.request.query_params.get('user_id', None)
+        if queryset:
+            queryset = queryset.filter(user_id=user_id)
+            
+        return queryset
+    
+    
+class LogDetail(LogMixin, generics.RetrieveAPIView):
     pass
     
 

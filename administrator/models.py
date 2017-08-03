@@ -24,7 +24,8 @@ class AWSUser(models.Model):
 class Log(models.Model):
     type = models.TextField()
     message = models.TextField()
-    user = models.ForeignKey(User, related_name="UserLog")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, related_name='UserLogs')
     
     
 class CredentialsModel(models.Model):

@@ -854,20 +854,9 @@ class Component(models.Model):
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
 
 
-class Log(models.Model):
-    message = models.TextField()
-    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
-    delivery_date = models.DateField(null=True)
+class Log(BaseLog):
     acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs')
-    employee = models.ForeignKey(User, null=True, related_name="acknowledgement_logs")
-
-    def to_dict(self):
-        """Get the log data"""
-
-        return {'event': self.event,
-                'employee': "{0} {1}".format(self.employee.first_name, self.employee.last_name),
-                'timestamp': self.timestamp.isoformat()}
-
+    
 
 class Delivery(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement, null=True)

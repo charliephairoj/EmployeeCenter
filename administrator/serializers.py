@@ -4,10 +4,26 @@ from rest_framework import serializers
 from django.contrib.auth.models import Permission, Group
 import boto
 
-from administrator.models import User, AWSUser
+from administrator.models import User, AWSUser, Log
 
 
 logger = logging.getLogger(__name__)
+
+
+class LogSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    
+    class Meta:
+        model = Log
+        fields = ('id', 'message', 'timestamp', 'user', 'type')
+        
+    def to_representation(self, instance):
+        
+        ret = super(LogSerializer, self).to_representation(instance)
+        
+        ret['user'] = instance.user.id
+        
+        return ret
 
 
 class PermissionSerializer(serializers.ModelSerializer):
