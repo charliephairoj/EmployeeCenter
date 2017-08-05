@@ -19,8 +19,8 @@ class LogSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         
         ret = super(LogSerializer, self).to_representation(instance)
-        logger.debug(ret)
-        ret['user'] = instance.user.id
+        
+        ret['user'] = "{0} {1}".format(instance.user.first_name, instance.user.last_name)
         
         return ret
 
