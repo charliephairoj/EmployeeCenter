@@ -83,7 +83,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id', 'last_login']
+        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id', 'last_login', 'is_active']
         depth = 1
     
     def create(self, validated_data):
@@ -119,9 +119,29 @@ class UserSerializer(serializers.ModelSerializer):
         for group in server_groups:
             if group.id not in id_list:
                 instance.groups.remove(group)
+
+        # Update and Log attributes that have changed
+        update_fields = ['username', 'email', 'first_name', 'last_name', 'is_active']
+        for field in update_fields:
+            data = validated_data.get(field, getattr(instance, field))
+            if data != getattr(instance, field):
+                message = "Changed {0} from {1} to {2}.".format(field, 
+                                                                instance.username, 
+                                                                username)
+                Log.objects.create(message=message, 
+                                   type="ADMINISTRATION", 
+                                   user=self.context['request'].user)
+                setattr(instance, field, data)
         
         return instance
         
+    def to_representation(self, instance):
+
+        ret = super(UserSerializer, self).to_representation(instance)
+
+
+        return ret
+
     def _create_aws_credentials(self, user):
         aws_user = AWSUser(user=user).save()
         

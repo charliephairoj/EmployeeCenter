@@ -13,6 +13,7 @@ from time import sleep
 
 from django.db import models
 from django.db.models import Sum
+from django.contrib.auth.models import User
 from pytz import timezone
 
 from media.models import S3Object
@@ -29,7 +30,7 @@ class Shift(models.Model):
     
     
 class Employee(models.Model):
-    
+    user = models.OneToOneField(User, related_name='profile')
     title = models.TextField(null=True)
     name = models.TextField(db_column="name", null=True)
     first_name = models.TextField(null=True, blank=True)

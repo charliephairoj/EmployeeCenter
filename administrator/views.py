@@ -265,6 +265,7 @@ def group(request, group_id=0):
 #Deals with User
 @login_required
 def user(request, user_id=0):
+    logger.debug(request)
     if request.method == "GET":
         iam = boto.connect_iam()
         if user_id == 0:
@@ -282,25 +283,39 @@ def user(request, user_id=0):
                             'last_name': user.last_name,
                             'id': user.id,
                             'username': user.username,
+                            'is_active': user.is_active,
                             'email': user.email,
                             'last_login': user.last_login.isoformat(),
                             'groups': [{'id': group.id,
                                         'name': group.name} for group in user.groups.all()]
                             }
                 userData["aws_access_key_id"] = get_access_key(iam, user)
- 
+
+                if user.employee:
+                    userData['employee'] = {
+                        'telephone': user.employee.telephone
+                    }
+
                 data.append(userData)
 
         else:
             user = User.objects.get(id=user_id)
             data = {
-                            'id': user.id,
-                            'username': user.username,
-                            'email': user.email,
-                            'groups': [{'id': group.id, 'name': group.name} for group in user.groups.all()],
-                            'first_name': user.first_name,
-                            'last_name': user.last_name
-                            }
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'is_active': user.is_active,
+                    'groups': [{'id': group.id, 'name': group.name} for group in user.groups.all()],
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    
+                    
+            }
+
+            if user.employee:
+                data['employee'] = {
+                    'telephone': user.employee.telephone
+                }
 
             data["aws_access_key_id"] = get_access_key(iam, user)
 
