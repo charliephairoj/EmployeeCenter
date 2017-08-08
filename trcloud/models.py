@@ -25,9 +25,9 @@ class BaseTRModelMixin(object):
         Test Settings
         """
         predata = {
-            "company_id":"6",
-            "passkey":"65da331b0d94e45a910fb88e1d29cdc7",
-            "securekey": hashlib.md5("0d94e4" +"t" + timestamp).hexdigest(),
+            "company_id":"5",
+            "passkey":"0df14ff471e463ec3833e4880b113c58",
+            "securekey": hashlib.md5("71e463" +"t" + timestamp).hexdigest(),
             "timestamp": timestamp,
         }
 
