@@ -189,12 +189,21 @@ class Acknowledgement(models.Model):
         """Create a Sales Order in TRCloud"""
         # Create customer if does not already exist
         if not self.customer.trcloud_id:
-            # Search current clients
+
+            # Search current clients to double check if 
             contacts = TRContact.search(self.customer.name)
+
             if len(contacts) == 0:
-                self.customer.contact_type = "normal"
-                self.customer.create_in_trcloud()
-            else: 
+                try:
+
+                    self.customer.contact_type = "normal"
+                    self.customer.create_in_trcloud()
+                except Exception as e:
+                    message = "Unable to create contact in TRCloud"
+                    Log.objects.create(message=message
+                                       type="TRCLOUD",
+                                       user=self.employee)
+            else:  
                 self.customer.trcloud_id = contacts[0]['contact_id']
                 self.customer.tax_id = contacts[0]['tax_id']
                 self.customer.save()
@@ -203,8 +212,14 @@ class Acknowledgement(models.Model):
 
         tr_so = self._populate_for_trcloud(tr_so)
         
-        tr_so.create()
-
+        try:
+            tr_so.create()
+        except Exception as e:
+            message = "Unable to create Sales Order in TRCloud"
+            Log.objects.create(message=message
+                                       type="TRCLOUD",
+                                       user=self.employee)
+                                       
         self.trcloud_id = tr_so.id
         self.save()
 

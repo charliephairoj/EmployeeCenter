@@ -8,10 +8,11 @@ import hashlib
 import time
 from datetime import datetime
 import math
+import pprint
 
 from django.db import models
 
-
+pp = pprint.PrettyPrinter(indent=4, width=1)
 logger = logging.getLogger(__name__)
 
 
@@ -43,7 +44,7 @@ class BaseTRModelMixin(object):
 
         # Merge the request keys and information with the body data
         data.update(predata)
-
+        logger.debug(pp.pformat(data))
         # Transform data into JSON string per specification
         body = {"json" : json.dumps(data)}
 
@@ -55,7 +56,7 @@ class BaseTRModelMixin(object):
 
         # Change response from text to data
         data = json.loads(response.text)
-
+        
         # If the response is a success return it
         if int(data['success']) == 1:
             if 'head' in data:
@@ -69,11 +70,10 @@ class BaseTRModelMixin(object):
 
     @classmethod
     def _send_request(cls, url, data):
-
         headers = {'Content-Type': 'application/x-www-form-urlencoded',
                    'Origin': 'http://localhost'}
         response = requests.post(url, data=data, headers=headers)
-
+       
         data = cls._parse_response(response)
         return data
     
@@ -95,6 +95,7 @@ class BaseTRModelMixin(object):
         return response
 
     def _create(self, url, data):
+
         data = self._prepare_body_for_request(data)
 
         response = self._send_request(url, data)
@@ -113,31 +114,31 @@ class TRContact(BaseTRModelMixin):
     title = ""
     name = ""
     organization = ""
-    contact_type = "normal",
-    branch = "Headquarter",
-    tax_id  = "",
-    source  = "",
+    contact_type = "normal"
+    branch = "Headquarter"
+    tax_id  = ""
+    source  = ""
     
-    address = "",
-    telephone  = "",
-    email ="",
+    address = ""
+    telephone  = ""
+    email =""
     
-    shipping_address = "",
-    shipping_email = "",
-    shipping_telephone = "",
+    shipping_address = ""
+    shipping_email = ""
+    shipping_telephone = ""
     
-    bn_credit_limit = "0",
-    iv_credit_limit = "0",
+    bn_credit_limit = "0"
+    iv_credit_limit = "0"
     
-    credit_expense = "0",
-    credit_revenue = "0",
-    remark = "",
-    condition ="",
+    credit_expense = "0"
+    credit_revenue = "0"
+    remark = ""
+    condition =""
     
-    bill = "",
-    expense = "",
-    invoice = "",
-    payment = "",
+    bill = ""
+    expense = ""
+    invoice = ""
+    payment = ""
     receipt = ""
 
     @classmethod
@@ -164,6 +165,9 @@ class TRContact(BaseTRModelMixin):
         
         # Delete contact_id as this is a creation
         del data['contact_id']
+        # Delete the id as there should be no id until after creation
+        del data['id']
+
         url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-contact/contact.php"
         data = self._create(url, data)
         logger.debug(data)
@@ -299,7 +303,7 @@ class TRSalesOrder(BaseTRModelMixin):
         # Delete id as this is a creation
         del data['id']
         del data['customer_id']
-
+        logger.debug(data)
         url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/so.php"
         data = self._create(url, data)
         logger.debug(data)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
 import logging
+import pprint
 
 from django.db import models
 from oauth2client.contrib.django_orm import Storage
@@ -12,6 +13,8 @@ import gdata.contacts.data
 from administrator.models import CredentialsModel, OAuth2TokenFromCredentials
 from trcloud.models import TRContact
 
+
+pp = pprint.PrettyPrinter(width=1, indent=4)
 logger = logging.getLogger(__name__)
 
 
@@ -127,13 +130,11 @@ class Contact(models.Model):
         tr_contact.branch = u"สำนักงานใหญ่"
 
         # Populate data for submission from Attributes
+
         for i in dir(self):
-            logger.debug(i)
             attrs = dir(tr_contact)
-            logger.debug(attrs)
             if not i.startswith('_') and i.lower() in attrs:
-                logger.debug(i)
-                setattr(tr_contact, i, getattr(self, i))
+                setattr(tr_contact, i, getattr(self, i) or '')
             #if not i.startswith('_') and not callable(getattr(self, i)) and hasattr(tr_contact, i):
             #    setattr(tr_contact, i, getattr(self, i))
         
@@ -149,8 +150,9 @@ class Contact(models.Model):
                                                      address.country,
                                                      address.zipcode)
         tr_contact.address = tr_address
+
         tr_contact.create()
-        logger.debug(tr_contact.contact_id)
+        
         self.trcloud_id = tr_contact.contact_id
         self.save()
     
