@@ -200,7 +200,7 @@ class Acknowledgement(models.Model):
                     self.customer.create_in_trcloud()
                 except Exception as e:
                     message = "Unable to create contact in TRCloud"
-                    Log.objects.create(message=message
+                    Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
             else:  
@@ -216,7 +216,7 @@ class Acknowledgement(models.Model):
             tr_so.create()
         except Exception as e:
             message = "Unable to create Sales Order in TRCloud"
-            Log.objects.create(message=message
+            Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
                                        
