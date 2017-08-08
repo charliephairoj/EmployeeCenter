@@ -35,7 +35,7 @@ scopes += ' https://www.google.com/m8/feeds/'
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope=scopes,
-    redirect_uri='http://employee.dellarobbiathailand.com/oauth2callback')
+    redirect_uri='http://employee.alineagroup.co/oauth2callback')
     #redirect_uri='http://localhost:8000/oauth2callback')
 
 
