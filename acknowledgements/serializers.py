@@ -394,7 +394,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
             message = "Updated Acknowledgement #{0} from {1} to {2}."
             message = message.format(instance.id, instance.status.lower(), status.lower())
-            AckLog.objects.create(message=message, acknowledgement=instance, employee=employee)
+            AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
 
 
         old_qty = sum([item.quantity for item in instance.items.all()])
