@@ -124,7 +124,8 @@ class ItemSerializer(serializers.ModelSerializer):
             pass
 
         try:
-            ret['image'] = {'url': instance.image.generate_url()}
+            ret['image'] = {'id': instance.image.id,
+                            'url': instance.image.generate_url()}
         except AttributeError:
             pass
 

@@ -230,10 +230,12 @@ class ItemSerializer(serializers.ModelSerializer):
             key, secret = ('', '')
 
         try:
-            ret['image'] = {'url': instance.image.generate_url(key, secret)}
-        except AttributeError:
-            pass
+            ret['image'] = {'id': instance.image.id,
+                            'url': instance.image.generate_url(key, secret)}
 
+            logger.debug(ret['image'])
+        except AttributeError as e:
+            logger.debug(e)
         return ret
 
 class FileSerializer(serializers.ModelSerializer):
