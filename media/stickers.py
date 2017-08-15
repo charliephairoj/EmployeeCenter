@@ -140,6 +140,7 @@ class Sticker(object):
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                            ('FONT', (0, 0), (-1, -1), 'Tahoma'),
                             #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                             ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
@@ -153,7 +154,7 @@ class Sticker(object):
         with the paragraph style
         """
         style = ParagraphStyle(name='Normal',
-                               fontName='Garuda',
+                               fontName='Tahoma',
                                leading=12,
                                wordWrap='CJK',
                                allowWidows=1,
@@ -294,7 +295,7 @@ class FabricSticker(object):
         with the paragraph style
         """
         style = ParagraphStyle(name='Normal',
-                               fontName='Garuda',
+                               fontName='Tahoma',
                                leading=12,
                                wordWrap='CJK',
                                allowWidows=1,
