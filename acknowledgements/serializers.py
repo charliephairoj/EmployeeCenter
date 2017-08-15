@@ -270,7 +270,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created')
         write_only_fields = ('customer', 'employee', 'project', 'room', 'phase', 'items')
-        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf')
+        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id')
         depth = 3
 
 
@@ -369,18 +369,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
 
         if instance.vat > 0:
-            try:
-                instance.create_in_trcloud()
-                # Log Opening of an order
-                message = "Created Acknowledgement #{0}. in TRCloud".format(instance.id)
-           
-
-            except Exception as e:
-                logger.error("Unable to create in trcloud: {0}".format(e))
-                # Log Opening of an order 
-                message = "Unable to created Acknowledgement #{0}. in TRCloud".format(instance.id)
-
-            log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+            instance.create_in_trcloud() 
+                
         return instance
 
     def update(self, instance, validated_data):
@@ -523,11 +513,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.save()
 
         if instance.vat > 0 and instance.trcloud_id:
-            try:
-                instance.update_in_trcloud()
-            except Exception as e:
-                logger.error("Unable to update in trcloud: {0}".format(e))
-
+            instance.update_in_trcloud()
+           
         return instance
 
     def to_representation(self, instance):

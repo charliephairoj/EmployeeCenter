@@ -212,7 +212,8 @@ class Acknowledgement(models.Model):
         try:
             tr_so.create()
         except Exception as e:
-            message = "Unable to create Sales Order in TRCloud"
+            message = "Unable to create Sales Order in TRCloud because: {0}"
+            message = message.format(e)
             Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
@@ -226,7 +227,16 @@ class Acknowledgement(models.Model):
 
         tr_so = self._populate_for_trcloud(tr_so)
         tr_so.id = self.id
-        tr_so.update()
+
+        try:
+            tr_so.update()
+        except Exception as e:
+            message = "Unable to update Sales Order in TRCloud because: {0}"
+            message = message.format(e)
+            Log.objects.create(message=message,
+                                       type="TRCLOUD",
+                                       user=self.employee)
+       
 
         self.save()
         

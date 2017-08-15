@@ -61,9 +61,12 @@ class BaseTRModelMixin(object):
         """JSON parses the response and returns if the post was a success"""
         logger.debug(response.__dict__)
         logger.debug(response.text)
-        # Change response from text to data
-        data = json.loads(response.text)
-        
+        try:
+            # Change response from text to data
+            data = json.loads(response.text)
+        except ValueError as e:
+            raise Exception("Submission failed because {0}".format(response.text))
+            
         # If the response is a success return it
         if int(data['success']) == 1:
             if 'head' in data:
