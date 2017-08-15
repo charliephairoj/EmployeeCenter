@@ -144,9 +144,6 @@ class Acknowledgement(models.Model):
         #Save Ack with pdf data
         acknowledgement.save()
 
-        if acknowledgement.vat > 0:
-            acknowledgement.create_in_trcloud()
-
         return acknowledgement
         
     def delete(self):

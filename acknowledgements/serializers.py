@@ -368,6 +368,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         message = "Created Acknowledgement #{0}.".format(instance.id)
         log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
 
+        if instance.vat > 0:
+            try:
+                instance.create_in_trcloud()
+            except Exception as e:
+                logger.error("Unable to create in trcloud: {0}".format(e))
+
         return instance
 
     def update(self, instance, validated_data):
@@ -508,6 +514,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             logger.warn(e)
 
         instance.save()
+
+        if instance.vat > 0 and instance.trcloud_id:
+            try:
+                instance.update_in_trcloud()
+            except Exception as e:
+                logger.error("Unable to update in trcloud: {0}".format(e))
 
         return instance
 
