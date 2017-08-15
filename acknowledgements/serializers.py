@@ -371,9 +371,16 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         if instance.vat > 0:
             try:
                 instance.create_in_trcloud()
+                # Log Opening of an order
+                message = "Created Acknowledgement #{0}. in TRCloud".format(instance.id)
+           
+
             except Exception as e:
                 logger.error("Unable to create in trcloud: {0}".format(e))
+                # Log Opening of an order 
+                message = "Unable to created Acknowledgement #{0}. in TRCloud".format(instance.id)
 
+            log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
         return instance
 
     def update(self, instance, validated_data):

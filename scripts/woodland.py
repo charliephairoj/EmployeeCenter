@@ -8,6 +8,8 @@ import hashlib
 import time
 import math
 import subprocess
+import pprint
+import logging
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
 
@@ -15,12 +17,17 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 application = get_wsgi_application()
+pp = pprint.PrettyPrinter(width=1, indent=1)
+logger = logging.getLogger(__name__)
+
 
 from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
 a = A.objects.all().order_by('-id')[0]
+
+logger.debug(pp.pformat(a.__dict__))
 a.trcloud_id = None
 a.customer.trcloud_id = None
 

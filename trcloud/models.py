@@ -10,6 +10,7 @@ from datetime import datetime
 import math
 import pprint
 
+from django.conf import settings
 from django.db import models
 
 pp = pprint.PrettyPrinter(indent=4, width=1)
@@ -21,24 +22,29 @@ class BaseTRModelMixin(object):
     def _prepare_body_for_request(cls, data):
         timestamp = str(int(math.floor(time.time())))
         
+
         """
-        Test Settings
+        Auth Settings for TRCloud
         """
+        """
+        # Production
         predata = {
             "company_id":"5",
             "passkey":"0df14ff471e463ec3833e4880b113c58",
             "securekey": hashlib.md5("71e463" +"t" + timestamp).hexdigest(),
             "timestamp": timestamp,
         }
-
         """
+       
+
+        # Testing
         predata = {
             "company_id":"5",
-            "passkey":"b01ebdb1ce5a28f803de6973cd833fb4",
-            "securekey": hashlib.md5("ce5a28" +"t" + timestamp).hexdigest(),
+            "passkey":settings.TRCLOUD_PASSKEY,
+            "securekey": hashlib.md5(settings.TRCLOUD_ENCRYPT_HEAD +"t" + timestamp).hexdigest(),
             "timestamp": timestamp,
         }
-        """
+        
 
 
 
@@ -53,7 +59,8 @@ class BaseTRModelMixin(object):
     @classmethod
     def _parse_response(cls, response):
         """JSON parses the response and returns if the post was a success"""
-
+        logger.debug(response.__dict__)
+        logger.debug(response.text)
         # Change response from text to data
         data = json.loads(response.text)
         
