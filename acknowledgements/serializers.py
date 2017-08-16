@@ -76,7 +76,7 @@ class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
     components = ComponentSerializer(required=False, many=True)
-    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
+    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, default=0)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
@@ -270,7 +270,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created')
         write_only_fields = ('customer', 'employee', 'project', 'room', 'phase', 'items')
-        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id')
+        exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id',
+                   'trcloud_document_number')
         depth = 3
 
 
@@ -280,7 +281,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
-        employee = self.context['request'].user
+        employee = User.objects.get(pk=1)#self.context['request'].user
         
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
@@ -385,7 +386,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         status = validated_data.pop('status', instance.status)
-
+        logger.debug("{0} : {1}".format(status, instance.status))
         if instance.delivery_date != dd:
             old_dd = instance.delivery_date
             instance.delivery_date = dd
@@ -401,6 +402,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             message = message.format(instance.id, instance.status.lower(), status.lower())
             AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
 
+            instance.status = status
 
         old_qty = sum([item.quantity for item in instance.items.all()])
         

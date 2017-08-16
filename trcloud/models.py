@@ -66,7 +66,7 @@ class BaseTRModelMixin(object):
             data = json.loads(response.text)
         except ValueError as e:
             raise Exception("Submission failed because {0}".format(response.text))
-            
+
         # If the response is a success return it
         if int(data['success']) == 1:
             if 'head' in data:
@@ -76,7 +76,10 @@ class BaseTRModelMixin(object):
             else:
                 return data
         else:
-            raise Exception("The submission failed")
+            logger.debug(pp.pformat(data))
+            message = "The submission failed because {0}"
+            message = message.format(data['message'])
+            raise Exception(message)
 
     @classmethod
     def _send_request(cls, url, data):
@@ -273,8 +276,9 @@ class Quotation(BaseTRModelMixin):
 class TRSalesOrder(BaseTRModelMixin):
     id = ""
     document_number = ""
+    company_format = "SO"
     issue_date = ""
-    delivery_date = ""
+    delivery_due = ""
     payment_term = "Cash"
     company_format = "SO"
     tax_option = "ex"
@@ -318,6 +322,7 @@ class TRSalesOrder(BaseTRModelMixin):
         data = self._create(url, data)
         logger.debug(data)
         self.id = data['id']
+        self.document_number = data["document_number"]
 
     def update(self):
         data = {}
@@ -327,6 +332,9 @@ class TRSalesOrder(BaseTRModelMixin):
             if not i.startswith('_') and not callable(getattr(self, i)):
                 data[i] = getattr(self, i)
         
+        # Change id to TRCloud ID
+        data["id"] = self.id
+
         # Populate the customer data
         data["customer"] = self.customer
         
@@ -334,7 +342,7 @@ class TRSalesOrder(BaseTRModelMixin):
         
 
         url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/edit-so.php"
-        data = self._create(url, data)
+        data = self._update(url, data)
         logger.debug(data)
         self.id = data['id']
 

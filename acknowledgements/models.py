@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 class Acknowledgement(models.Model):
     trcloud_id = models.IntegerField(null=True, default=0)
+    trcloud_document_number = models.TextField(null=True, default="")
     po_id = models.TextField(default=None, null=True)
     company = models.TextField(default="Dellarobbia Thailand")
     discount = models.IntegerField(default=0)
@@ -219,6 +220,7 @@ class Acknowledgement(models.Model):
                                        user=self.employee)
                                        
         self.trcloud_id = tr_so.id
+        self.trcloud_document_number = tr_so.document_number
         self.save()
 
     def update_in_trcloud(self):
@@ -226,7 +228,8 @@ class Acknowledgement(models.Model):
         tr_so = TRSalesOrder()
 
         tr_so = self._populate_for_trcloud(tr_so)
-        tr_so.id = self.id
+        tr_so.document_number = self.trcloud_document_number
+        tr_so.id = self.trcloud_id
 
         try:
             tr_so.update()
