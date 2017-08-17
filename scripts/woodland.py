@@ -25,14 +25,12 @@ from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 
-a = A.objects.get(pk=57718)
-a.trcloud_document_number = "170065"
-a.save()
-"""
+a = A.objects.all().order_by('-id')[0]
+
 logger.debug(pp.pformat(a.__dict__))
 a.trcloud_id = None
-a.customer.trcloud_id = None
 
 a.create_in_trcloud()
 
-"""
+
+a.update_in_trcloud()

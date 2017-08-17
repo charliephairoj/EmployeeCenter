@@ -50,7 +50,7 @@ class BaseTRModelMixin(object):
 
         # Merge the request keys and information with the body data
         data.update(predata)
-        logger.debug(pp.pformat(data))
+
         # Transform data into JSON string per specification
         body = {"json" : json.dumps(data)}
 
@@ -59,8 +59,7 @@ class BaseTRModelMixin(object):
     @classmethod
     def _parse_response(cls, response):
         """JSON parses the response and returns if the post was a success"""
-        logger.debug(response.__dict__)
-        logger.debug(response.text)
+
         try:
             # Change response from text to data
             data = json.loads(response.text)
@@ -76,7 +75,6 @@ class BaseTRModelMixin(object):
             else:
                 return data
         else:
-            logger.debug(pp.pformat(data))
             message = "The submission failed because {0}"
             message = message.format(data['message'])
             raise Exception(message)
@@ -319,13 +317,28 @@ class TRSalesOrder(BaseTRModelMixin):
         del data['customer_id']
         logger.debug(data)
         url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/so.php"
+
+        """
+        Strange quick:
+
+        They do not implement rest. So when creating will only return id. 
+        Other information have to send a retrieve request, but a retrieve request doesn not 
+        return the id. So must store id, and then retrieve, and then store document number
+        """
         data = self._create(url, data)
         logger.debug(data)
         self.id = data['id']
+
+        #data = self.retrieve(data['id'])
+        logger.debug(pp.pformat(data))
         self.document_number = data["document_number"]
 
     def update(self):
-        data = {}
+
+        server_data = self.retrieve(self.id)
+
+        data = {document_number}
+
         
         # Populate data for submission from Attributes
         for i in dir(self):

@@ -185,6 +185,7 @@ class Acknowledgement(models.Model):
 
     def create_in_trcloud(self):
         """Create a Sales Order in TRCloud"""
+
         # Create customer if does not already exist
         if not self.customer.trcloud_id:
 
@@ -222,6 +223,14 @@ class Acknowledgement(models.Model):
         self.trcloud_id = tr_so.id
         self.trcloud_document_number = tr_so.document_number
         self.save()
+
+        # Set the trcloud_id for items
+        for product in tr_so.products:
+            item = self.items.get(description=product['product'],
+                                  quantity=product['quantity'])
+            logger.debug(product)
+            logger.debug(item.__dict__)
+            item.trcloud_id = product['id']
 
     def update_in_trcloud(self):
         """Create a Sales Order in TRCloud"""
@@ -371,6 +380,7 @@ class Acknowledgement(models.Model):
         tr_so.document_number = ""
         # Set Date
         d = datetime.now()
+        tr_so.document_number = self.trcloud_document_number
         tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
         tr_so.delivery_due = self.delivery_date.strftime("%Y-%m-%d")
         tr_so.company_format = "SO"
@@ -587,6 +597,7 @@ class File(models.Model):
     
     
 class Item(models.Model):
+    trcloud_id = models.IntegerField(null=True, blank=True)
     acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)
     type = models.CharField(max_length=20, null=True)
