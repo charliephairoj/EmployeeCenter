@@ -30,6 +30,8 @@ from reportlab.graphics.barcode import code128
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
+logo_height = 70
+
 
 class AckDocTemplate(BaseDocTemplate):
     id = 0
@@ -66,8 +68,8 @@ class AckDocTemplate(BaseDocTemplate):
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 50) / img_height
-        canvas.drawImage(path, 42, 780, height=50, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 780, height=logo_height, width=new_width)
 
         canvas.setFont('Helvetica', 8)
         canvas.setFillColorCMYK(0, 0, 0, 60)
@@ -104,7 +106,7 @@ class EstimatePDF(object):
     document_type = "Estimate"
 
     def __init__(self, customer=None, products=None,
-                 ack=None, connection=None):
+                 estimate=None, connection=None):
 
         self.width, self.height = A4
         stylesheet = getSampleStyleSheet()
@@ -112,7 +114,7 @@ class EstimatePDF(object):
         #Set Var
         self.customer = customer
         self.products = products.order_by('id')
-        self.ack = ack
+        self.ack = estimate
         self.employee = self.ack.employee
 
     #create method

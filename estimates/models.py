@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class Estimate(models.Model):
     po_id = models.TextField(default=None, null=True, blank=True)
-    company = models.TextField(default="Dellarobbia Thailand")
+    company = models.TextField(default="Alinea Group")
     discount = models.IntegerField(default=0)
     second_discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
@@ -57,8 +57,8 @@ class Estimate(models.Model):
     """
         
     @classmethod
-    def create(cls, user, **kwargs):
-        """Creates the acknowledgement
+    def xcreate(cls, user, **kwargs):
+        """Creates the acknowledgement (DEPRECATED)
 
         This method accept data to set and then creates
         an accompanying PDF and logs the event. A User
@@ -106,9 +106,7 @@ class Estimate(models.Model):
         #Save Ack with pdf data
         acknowledgement.save()
 
-        #Email decoroom
-        if "decoroom" in acknowledgement.customer.name.lower():
-            acknowledgement.email_decoroom()
+        
         return acknowledgement
     
     def delete(self):
@@ -166,24 +164,11 @@ class Estimate(models.Model):
         no arguments
         """
         products = self.items.all().order_by('description')
-        ack_pdf = EstimatePDF(customer=self.customer, ack=self, products=products)
-        ack_filename = ack_pdf.create()
+        estimate_pdf = EstimatePDF(customer=self.customer, estimate=self, products=products)
+        estimate_filename = estimate_pdf.create()
         
-        return ack_filename
-    
-    def create_and_upload_shipping_label(self):
-        """
-        Creates a shipping Label pdf and uploads to S3 service
-        """
-        products = self.items.all().order_by('id')
-        label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
-        label_filename = label_pdf.create()
-        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
-        bucket = "document.dellarobbiathailand.com"
-        label_pdf = S3Object.create(label_filename, label_key, bucket)
+        return estimate_filename
 
-        self.label_pdf = label_pdf
-        self.save()
         
     def calculate_totals(self, items=None):
         """Calculates the total of the order

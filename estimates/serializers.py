@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+import pprint
 
 from rest_framework import serializers
 from rest_framework.fields import DictField
@@ -16,6 +17,7 @@ from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
+pp = pprint.PrettyPrinter(indent=1, width=1)
 
 
 class PillowSerializer(serializers.ModelSerializer):
@@ -59,7 +61,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        field = ('description', 'id', 'width', 'depth', 'height')
+        field = ('description', 'id', 'width', 'depth', 'height', 'comments', 'unit_price')
         read_only_fields = ('total', 'type')
         exclude = ('estimate', )
 
@@ -149,6 +151,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
+    delivery_date = serializers.DateTimeField(required=True)
     #vat = serializers.DecimalField(required=False, allow_null=True)
     discount = serializers.IntegerField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
@@ -175,22 +178,19 @@ class EstimateSerializer(serializers.ModelSerializer):
                     pass
                 except AttributeError:
                     pass
-                
-        logger.debug(validated_data)
-        
-        customer_discount = validated_data['customer'].discount
-        discount = validated_data.pop('discount', customer_discount)
+                        
+        discount = validated_data.pop('discount', validated_data['customer'].discount)
        
 
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
-                                                    **validated_data)
-        instance.status = "open"
+        instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
+                                                  discount=discount,
+                                                  status="open",
+                                                  **validated_data)
 
         item_serializer = ItemSerializer(data=items_data, context={'estimate': instance}, many=True)
 
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
-        logger.debug(instance.discount)
         instance.calculate_totals()
 
         instance.create_and_upload_pdf()
@@ -222,6 +222,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         instance.vat = validated_data.pop('vat', instance.vat)
         instance.discount = validated_data.pop('discount', instance.discount)
+        instance.remarks = validated_data.pop('remarks', instance.remarks)
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.project = validated_data.pop('project', instance.project)
         #Update attached files
@@ -293,12 +294,21 @@ class EstimateSerializer(serializers.ModelSerializer):
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
 
+        logger.debug(pp.pformat(id_list))
+
+        #Delete Items
+        for item in instance.items.all():
+            if item.id not in id_list:
+                item.delete()
+
         #Update or Create Item
         for item_data in items_data:
-
+            logger.debug(pp.pformat(item_data))
+            logger.debug(pp.pformat(item_data['id']))
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
-            except KeyError as e:
+            except (KeyError, Item.DoesNotExist) as e:
+                logger.debug(e)
                 try:
                     item = Item(product=Product.objects.get(pk=item_data['product']))
                 except TypeError as e:
@@ -311,7 +321,9 @@ class EstimateSerializer(serializers.ModelSerializer):
             item.height = item_data.get('height', item.height)
             item.description = item_data.get('description', item.description)
             item.quantity = item_data.get('quantity', item.quantity)
-            item.unit_price = item_data.get('unit_price', item.unit_price)
+            item.unit_price = item_data.get('unit_price', item.unit_price or item.product.price)
+            item.comments = item_data.get('comments', item.comments)
+
             item.total = item.quantity * item.unit_price
 
             try:
@@ -353,7 +365,4 @@ class EstimateSerializer(serializers.ModelSerializer):
                     id_list.append(item.id)
             """
             
-        #Delete Items
-        for item in instance.items.all():
-            if item.id not in id_list:
-                item.delete()
+        

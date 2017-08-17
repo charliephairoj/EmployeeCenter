@@ -292,7 +292,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 except AttributeError:
                     pass
 
-        discount = validated_data.pop('discount', None) or validated_data['customer'].discount
+        discount = validated_data.pop('discount', validated_data['customer'].discount)
         delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date'))
 
         instance = self.Meta.model.objects.create(employee=employee, discount=discount,
@@ -377,9 +377,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         employee = self.context['request'].user
-
-        #Testing only
-        employee = User.objects.get(pk=1)
         
         instance.current_user = employee
         dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
