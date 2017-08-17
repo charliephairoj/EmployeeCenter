@@ -124,10 +124,11 @@ class UserSerializer(serializers.ModelSerializer):
         update_fields = ['username', 'email', 'first_name', 'last_name', 'is_active']
         for field in update_fields:
             data = validated_data.get(field, getattr(instance, field))
-            if data != getattr(instance, field):
+            current_data = getattr(instance, field)
+            if data != current_data:
                 message = "Changed {0} from {1} to {2}.".format(field, 
-                                                                instance.username, 
-                                                                username)
+                                                                current_data, 
+                                                                data)
                 Log.objects.create(message=message, 
                                    type="ADMINISTRATION", 
                                    user=self.context['request'].user)
