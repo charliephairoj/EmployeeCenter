@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
+from estimates.models import Estimate as E
+
+e = E.objects.get(pk=12959)
+
+e.create_and_upload_pdf()
+"""
 
 a = A.objects.all().order_by('-id')[0]
 
@@ -34,3 +40,4 @@ a.create_in_trcloud()
 
 
 a.update_in_trcloud()
+"""
