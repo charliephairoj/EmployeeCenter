@@ -230,7 +230,30 @@ class PurchaseOrder(BaseTRModelMixin):
             if not i.startswith('_') and not callable(getattr(self, i)):
                 data[i] = getattr(self, i)
             
-        print data
+        # Populate the customer data
+        data["customer"] = self.customer
+        
+        data["product"] = self.products
+        # Delete id as this is a creation
+        del data['id']
+        del data['customer_id']
+        logger.debug(data)
+        url = "https://alinea.trcloud.co/extension/api-connector/end-point/engine-so/so.php"
+
+        """
+        Strange quick:
+
+        They do not implement rest. So when creating will only return id. 
+        Other information have to send a retrieve request, but a retrieve request doesn not 
+        return the id. So must store id, and then retrieve, and then store document number
+        """
+        data = self._create(url, data)
+        logger.debug(data)
+        self.id = data['id']
+
+        #data = self.retrieve(data['id'])
+        logger.debug(pp.pformat(data))
+        self.document_number = data["document_number"]
        
 
 

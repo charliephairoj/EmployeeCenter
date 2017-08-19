@@ -57,7 +57,11 @@ class PurchaseOrder(models.Model):
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
     comments = models.TextField(null=True)
+    calendar_event_id = models.TextField(null=True)
     
+    current_user = None 
+    calendar_service = None
+
     @classmethod
     def create(cls, user=None, **kwargs):
         """
@@ -214,24 +218,29 @@ class PurchaseOrder(models.Model):
         
         return self.grand_total
         
-    def create_calendar_event(self, user):
-        """Create a calendar event for the expected delivery date
+    def _get_calendar_service(self, user):
+        if self.calendar_service:
+            self.calendar_service
+        else:
+            
+            storage = Storage(CredentialsModel, 'id', user, 'credential')
+            credentials = storage.get()
         
-        """
-        storage = Storage(CredentialsModel, 'id', user, 'credential')
-        credential = storage.get()
+            http = credentials.authorize(httplib2.Http())
+            self.calendar_service = discovery.build('calendar', 'v3', http=http)
+            
+        return self.calendar_service
         
-        http = credentials.authorize(httplib2.Http())
-        service = discovery.build('calendar', 'v3', http=http)
-        
-        response = service.calendarList.list().execute()
+    def _get_calendar(self, user):
+        service = self._get_calendar_service(user)
+        response = service.calendarList().list().execute()
         
         calendar_summaries = [cal['summary'].lower() for cal in response['items']]
     
         # Check if user does not already has account payables
-        if 'account payables' not in calendar_summaries:
+        if 'receivables' not in calendar_summaries:
             # Get calendar
-            cal_id = 'dellarobbiathailand.com_aoaa6epe7cqnehh5jc5qrhr9ho@group.calendar.google.com'
+            cal_id = 'dellarobbiathailand.com_vl7drjcuulloicm0qlupgsr4ko@group.calendar.google.com'
             calendar = service.calendars().get(calendarId=cal_id).execute()
      
             # Add calendar to user's calendarList
@@ -242,27 +251,89 @@ class PurchaseOrder(models.Model):
         else:
             # Get calendar is already in calendarList
             for cal in response['items']:
-                if cal['summary'].lower() == 'account payables':
+                if cal['summary'].lower() == 'receivables':
                     calendar = cal
-    
+            
+        return calendar
+        
+    def create_calendar_event(self, user):
+        """Create a calendar event for the expected delivery date
+        
+        """
+        service = self._get_calendar_service(user)
+        calendar = self._get_calendar(user)
+        
+        response = service.events().insert(calendarId=calendar['id'], 
+                                           body=self._get_event_body()).execute()
+        self.calendar_event_id = response['id']
+        self.save()
+        
+    def update_calendar_event(self, user=None):
+        """Create a calendar event for the expected delivery date
+        
+        """
+        if user is None:
+            user = self.current_user or self.employee
+        
+        if self.calendar_event_id:
+            
+            service = self._get_calendar_service(user)
+            calendar = self._get_calendar(user)
+        
+            resp = service.events().update(calendarId=calendar['id'], 
+                                           eventId=self.calendar_event_id, 
+                                           body=self._get_event_body()).execute()
+                                          
+        else:
+            
+            self.create_calendar_event(user)
+                                                                       
+    def _get_event_body(self):
         evt = {
             'summary': "Purchase Order {0}".format(self.id),
+            'location': self._get_address_as_string(),
+            'description': self._get_description_as_string(),
             'start': {
-                'date': '2016-1-6'
+                'date': self.receive_date.strftime('%Y-%m-%d')
             },
             'end': {
-                'date': '2016-1-6'
+                'date': self.receive_date.strftime('%Y-%m-%d')
             },
             'reminders': {
                 'useDefault': False,
                 'overrides': [
-                  {'method': 'email', 'minutes': 24 * 60},
-                  {'method': 'email', 'minutes': 10},
+                  {'method': 'email', 'minutes': 24 * 60 * 2},
+                  {'method': 'email', 'minutes': 120},
                 ]
             }
         }
         
-        response = service.events().insert(calendarId=ap_cal['id'], body=evt).execute()
+        return evt
+
+    def _get_address_as_string(self):
+        try:
+            addr_str = ""
+            addr = self.supplier.addresses.all()[0]
+        
+            addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
+            addr_str += ", " + addr.country + " " + addr.zipcode
+        
+            return addr_str
+        except Exception as e:
+            logger.warn(e)
+            return ""
+        
+    def _get_description_as_string(self):
+        description = u"""
+        Purchase Order: {0}
+        Supplier: {1}
+        Qty     Items: 
+        """.format(self.id, self.supplier.name)
+        
+        for i in self.items.all().order_by('id'):
+            description += u"{0:.2f}  {1}".format(i.quantity, i.description)
+            
+        return description
         
         
 class Item(models.Model):

@@ -383,7 +383,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         status = validated_data.pop('status', instance.status)
-        logger.debug("{0} : {1}".format(status, instance.status))
+
         if instance.delivery_date != dd:
             old_dd = instance.delivery_date
             instance.delivery_date = dd

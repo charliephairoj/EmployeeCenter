@@ -6,8 +6,10 @@ from datetime import datetime
 from pytz import timezone
 import httplib2
 
+from django.contrib.auth.models import User
 from rest_framework import serializers
 import boto.ses
+from pytz import timezone
 
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
@@ -290,8 +292,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         currency = validated_data.pop('currency', validated_data['supplier'].currency)
         discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
         terms = validated_data.pop('terms', validated_data['supplier'].terms)
+        receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
 
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, discount=discount,
+        instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
+                                                  discount=discount,
+                                                  receive_date=receive_date,
                                                   **validated_data)
         instance.currency = currency
         instance.terms = terms
@@ -307,6 +312,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        # Create a calendar event
+        try:
+            instance.create_calendar_event(employee)
+        except Exception as e:
+            logger.warn(e)
+
         # Log Opening of an order
         message = "Order #{0} was processed.".format(instance.id)
         log = POLog.objects.create(message=message, purchase_order=instance, employee=self.context['request'].user)
@@ -317,11 +328,21 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
+
+        employee = User.objects.get(pk=1)#self.context['request'].user
+        
+        instance.current_user = employee
+
         status = validated_data.pop('status', instance.status)
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
         instance.currency = validated_data.pop('currency', instance.currency)
+        receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
+
+        if receive_date != instance.receive_date:
+            #To implement logging
+            instance.receive_date = receive_date
 
         if status.lower() != instance.status.lower() and status.lower():
 
@@ -334,7 +355,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if status.lower() == 'cancelled':
                 instance.status = status
 
-            employee = self.context['request'].user
             message = "Purchase Order #{0} has been {1}.".format(instance.id, status.lower())
             log = POLog.objects.create(message=message, purchase_order=instance, employee=employee)
 
@@ -372,6 +392,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             instance.create_and_upload_pdf()
 
             instance.save()
+
+        try:
+            instance.update_calendar_event()
+        except Exception as e:
+            logger.warn(e)
+
+        logger.debug(instance.calendar_event_id)
 
         return instance
 

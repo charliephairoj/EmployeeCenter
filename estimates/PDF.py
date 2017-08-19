@@ -30,7 +30,7 @@ from reportlab.graphics.barcode import code128
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
-logo_height = 50
+logo_height = 70
 
 
 class AckDocTemplate(BaseDocTemplate):
