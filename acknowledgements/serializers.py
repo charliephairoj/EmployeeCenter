@@ -171,14 +171,14 @@ class ItemSerializer(serializers.ModelSerializer):
             # Log Changing delivery date
             message = "{0} quantity changed from {1} to {2}"
             message = message.format(instance.description, instance.quantity, new_qty)
-            AckLog.objects.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+            AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
             instance.quantity = new_qty
 
         if new_price != instance.unit_price:
             # Log Changing delivery date
             message = "{0} unit price changed from {1} to {2}"
             message = message.format(instance.description, instance.unit_price, new_price)
-            AckLog.objects.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+            AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
             instance.unit_price = new_price
 
         # Set the price of the total for this item
@@ -367,7 +367,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         # Log Opening of an order
         message = "Created Acknowledgement #{0}.".format(instance.id)
-        log = AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+        log = AckLog.create(message=message, acknowledgement=instance, user=employee)
 
         if instance.vat > 0:
             instance.create_in_trcloud() 
@@ -376,7 +376,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
 
-        employee = self.context['request'].user
+        employee = User.objects.get(pk=1)#self.context['request'].user
         
         instance.current_user = employee
         dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
@@ -391,13 +391,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             # Log Changing delivery date
             message = "Acknowledgement #{0} delivery date changed from {1} to {2}."
             message = message.format(instance.id, old_dd.strftime('%d/%m/%Y'), dd.strftime('%d/%m/%Y'))
-            AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+            AckLog.create(message=message, acknowledgement=instance, user=employee)
 
         if status.lower() != instance.status.lower():
 
             message = "Updated Acknowledgement #{0} from {1} to {2}."
             message = message.format(instance.id, instance.status.lower(), status.lower())
-            AckLog.objects.create(message=message, acknowledgement=instance, user=employee)
+            AckLog.create(message=message, acknowledgement=instance, user=employee)
 
             instance.status = status
 

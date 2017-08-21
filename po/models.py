@@ -13,12 +13,14 @@ from django.contrib.auth.models import User
 from oauth2client.contrib.django_orm import Storage
 from apiclient import discovery
 
+from administrator.models import Log as BaseLog
 from supplies.models import Supply, Log, Product
 from contacts.models import Supplier
 from media.models import S3Object
 from po.PDF import PurchaseOrderPDF, InventoryPurchaseOrderPDF
 from projects.models import Project, Room, Phase
 from administrator.models import CredentialsModel
+
 
 logger = logging.getLogger(__name__)
 
@@ -434,9 +436,13 @@ class Item(models.Model):
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
 
         
-class Log(models.Model):
-    message = models.TextField(default="")
-    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
-    receive_date = models.DateField(null=True)
+class Log(BaseLog):
+    log_ptr = models.OneToOneField(BaseLog, related_name='+')
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='logs')
-    employee = models.ForeignKey(User, null=True, related_name="purchase_order_logs")
+
+    @classmethod
+    def create(cls, **kwargs):
+        log = cls(type="PURCHASE ORDER", **kwargs)
+        log.save()
+
+        return log

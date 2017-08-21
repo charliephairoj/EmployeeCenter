@@ -891,7 +891,15 @@ class Component(models.Model):
 
 
 class Log(BaseLog):
+    log_ptr = models.OneToOneField(BaseLog, related_name='+')
     acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs')
+
+    @classmethod
+    def create(cls, **kwargs):
+        log = cls(type="ACKNOWLEDGEMENT", **kwargs)
+        log.save()
+
+        return log
     
 
 class Delivery(models.Model):

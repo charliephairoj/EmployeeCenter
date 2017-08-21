@@ -337,13 +337,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
-        instance.currency = validated_data.pop('currency', instance.currency)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
 
         if receive_date != instance.receive_date:
-            #To implement logging
+            old_rd = instance.receive_date
             instance.receive_date = receive_date
+           
+            # Log changing receive date
+            message = "Purchase Order #{0} receive date changed from {1} to {2}."
+            message = message.format(instance.id, old_rd.strftime('%d/%m/%Y'), receive_date.strftime('%d/%m/%Y'))
+            POLog.create(message=message, purchase_order=instance, user=employee)
 
+        # Process if status has changed
         if status.lower() != instance.status.lower() and status.lower():
 
             if status.lower() == "received" and instance.status.lower() != "received":
@@ -367,38 +372,51 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
             instance.save()
 
-        else:
-            items_data = validated_data.pop('items', self.context['request'].data['items'])
 
-            for item_data in items_data:
+        items_data = validated_data.pop('items', self.context['request'].data['items'])
+
+        for item_data in items_data:
+            try:
+                item_data['supply'] = item_data['supply'].id
+            except AttributeError:
                 try:
-                    item_data['supply'] = item_data['supply'].id
-                except AttributeError:
-                    try:
-                        item_data['supply'] = item_data['supply']['id']
-                    except TypeError:
-                        pass
+                    item_data['supply'] = item_data['supply']['id']
+                except TypeError:
+                    pass
 
-            self._update_items(instance, items_data)
+        self._update_items(instance, items_data)
 
-            instance.order_date = datetime.now(timezone('Asia/Bangkok'))
-            instance.revision += 1
-            instance.vat = validated_data.pop('vat', instance.vat)
-            instance.discount = validated_data.pop('discount', instance.discount)
-            instance.deposit = validated_data.pop('deposit', instance.deposit)
-            instance.status = status
-            instance.calculate_total()
+        instance.revision += 1
+        """
+        instance.vat = validated_data.pop('vat', instance.vat)
+        instance.discount = validated_data.pop('discount', instance.discount)
+        instance.deposit = validated_data.pop('deposit', instance.deposit)
+        """
 
-            instance.create_and_upload_pdf()
+        fields = ['vat', 'discount', 'deposit', 'currency', 'terms']
+        for field in fields:
+            old_val = getattr(instance, field)
+            new_val = validated_data.pop(field, old_val)
+            
+            if new_val != old_val:
+                setattr(instance, field, new_val)
 
-            instance.save()
+                # Log changing of values
+                message = "Purchase Order #{0}: {1} changed from {2} to {3}."
+                message = message.format(instance.id, field, old_val, new_val)
+                POLog.create(message=message, purchase_order=instance, user=employee)
+
+        instance.status = status
+        instance.calculate_total()
+
+        instance.create_and_upload_pdf()
+
+        instance.save()
 
         try:
             instance.update_calendar_event()
         except Exception as e:
             logger.warn(e)
-
-        logger.debug(instance.calendar_event_id)
 
         return instance
 
