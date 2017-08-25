@@ -81,10 +81,11 @@ class ShippingDocTemplate(BaseDocTemplate):
         
          #Add Company Information in under the logo if dellarobbia
         
+        
         canvas.drawString(42, 760,
-                        "386/2 Hathai Rat Rd., Samwa, Samwa")
-        canvas.drawString(42, 750, "Bangkok, Thailand, 10510")
-        canvas.drawString(42, 740, "+66 2 998 7490")
+                            "78/448 Moo.6 Lam Lukka Rd. Bueng Kham Phroi, Lam Lukka")
+        canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
+        canvas.drawString(42, 740, "+66 2 508 8681")
         #canvas.drawString(42, 730, "www.dellarobbiathailand.com")
         
         #Create The document type and document number
