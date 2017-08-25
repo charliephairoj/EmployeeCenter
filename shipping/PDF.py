@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT+'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT+'Garuda.ttf'))
 
+
+logo_height = 70
+
+
 class ShippingDocTemplate(BaseDocTemplate):
     
     id = 0
@@ -68,8 +72,8 @@ class ShippingDocTemplate(BaseDocTemplate):
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
-        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
         
         #Add Company Information in under the logo
         canvas.setFont('Helvetica', 8)
@@ -234,17 +238,27 @@ class ShippingPDF(object):
         data.append(['Delivery Date:', delivery_date])
         try:
             # Add the acknowledgement number
-            data.append(['Acknowledgement #', self.shipping.acknowledgement.id])
+            data.append(['Acknowledgement #:', self.shipping.acknowledgement.id])
             #Adds po if exists
             if self.shipping.acknowledgement.po_id != None:
                 data.append(['PO #:', self.ack.po_id])
         except AttributeError as e:
             logger.info(e)
 
+        try:
+            data.append(['Project:', self.shipping.acknowledgement.project.codename])
+        except AttributeError as e:
+            logger.warn(e)
+
+        try:
+            data.append(['Room:', self.shipping.acknowledgement.room.description])
+        except AttributeError as e:
+            logger.warn(e)
+
         if self.shipping.comments is not None and self.shipping.comments != '':
             data.append(['Comments', self.shipping.comments])
         #Create table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(110, 200))
         #Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),

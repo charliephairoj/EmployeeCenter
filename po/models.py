@@ -7,7 +7,12 @@ import logging
 import math
 from decimal import Decimal
 import httplib2
+import hashlib
+import random
+import string
 
+import boto.ses
+from django.template.loader import render_to_string
 from django.db import models
 from django.contrib.auth.models import User
 from oauth2client.contrib.django_orm import Storage
@@ -49,7 +54,7 @@ class PurchaseOrder(models.Model):
     grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
     employee = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True)
-    status = models.TextField(default="Processed")
+    status = models.TextField(default="AWAITING APPROVAL")
     pdf = models.ForeignKey(S3Object, null=True)
     auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")
     project = models.ForeignKey(Project, null=True, blank=True, related_name="purchase_orders")
@@ -60,6 +65,11 @@ class PurchaseOrder(models.Model):
     revision = models.IntegerField(default=0)
     comments = models.TextField(null=True)
     calendar_event_id = models.TextField(null=True)
+
+    # Approval fields
+    approval_key = models.TextField(null=True)
+    approval_salt = models.TextField(null=True)
+    approval_pass = models.TextField(null=True)
     
     current_user = None 
     calendar_service = None
@@ -171,6 +181,28 @@ class PurchaseOrder(models.Model):
                                               'document.dellarobbiathailand.com')
         
         self.save()
+
+    def email_approver(self):
+        
+        conn = boto.ses.connect_to_region('us-east-1')
+        recipients = ["charliep@alineagroup.co"]
+
+        approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
+        approval_url += "?pass={0}".format(self.create_approval_pass())
+        html_string = render_to_string('purchase_order_approval.html', {'po': self,
+                                                                       'items': self.items.all()})
+
+        
+
+        logger.debug(html_string)
+        #Send email
+        """
+        conn.send_email('no-reply@dellarobbiathailand.com',
+                        u'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
+                        body,
+                        recipients,
+                        format='html')
+        """
     
     def _calculate_subtotal(self):
         """
@@ -324,7 +356,7 @@ class PurchaseOrder(models.Model):
         except Exception as e:
             logger.warn(e)
             return ""
-        
+
     def _get_description_as_string(self):
         description = u"""
         Purchase Order: {0}
@@ -336,6 +368,51 @@ class PurchaseOrder(models.Model):
             description += u"{0:.2f}  {1}".format(i.quantity, i.description)
             
         return description
+
+    def create_approval_key(self):
+        key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        return key
+
+    def create_approval_pass(self):
+        """
+        Return approval_pass, which is created 
+        by the hash of the approval_key
+        """
+        return hashlib.sha512(self.approval_key + self.approval_salt).hexdigest()
+
+    def email_approver(self):
+        
+        conn = boto.ses.connect_to_region('us-east-1')
+        recipients = ["charliep@alineagroup.co"]
+
+        approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
+        approval_url += "?pass={0}&status=approved&id={1}".format(self.create_approval_pass(), 
+                                                                  self.id)
+        body = render_to_string('purchase_order_approval.html', {'po': self,
+                                                                       'items': self.items.all(), 
+                                                                       'approval_url': approval_url})
+        logger.debug(body)
+        #Send email
+        
+        conn.send_email('no-reply@dellarobbiathailand.com',
+                        u'Purchase Order {0}: ({1}) Approval Request'.format(self.id,
+                                                                             self.supplier.name),
+                        body,
+                        recipients,
+                        format='html')
+        
+
+    def approve(self, approval_pass):
+        logger.debug(approval_pass)
+        logger.debug(self.create_approval_pass())
+        if approval_pass == self.create_approval_pass():
+            self.approval_pass = approval_pass
+            self.status = "APPROVED"
+            self.save()
+
+            return True
+        else:
+            return False
         
         
 class Item(models.Model):

@@ -10,6 +10,8 @@ import math
 import subprocess
 import pprint
 import logging
+from datetime import datetime, timedelta
+
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
 
@@ -25,10 +27,15 @@ from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 from estimates.models import Estimate as E
+from po.models import PurchaseOrder as PO
 
-e = E.objects.get(pk=12959)
+d = datetime.now() - timedelta(days=34)
+pos = PO.objects.filter(order_date__gte=d).order_by('-id')
+for p in pos:
+    if p.status.lower() == "processed":
+        p.status = "AWAITING APPROVAL"
+        p.save()
 
-e.create_and_upload_pdf()
 """
 
 a = A.objects.all().order_by('-id')[0]

@@ -6,6 +6,7 @@ from datetime import datetime
 from pytz import timezone
 import httplib2
 
+from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from rest_framework import serializers
 import boto.ses
@@ -275,6 +276,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.debug(e)
 
+
+        if instance.approval_pass:
+            if instance.approval_pass == instance.create_approval_pass():
+                ret['approval_pass'] = instance.approval_pass
+
         return ret
 
     def create(self, validated_data):
@@ -282,6 +288,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'create' method to customize how items are created and pass the supplier instance
         to the item serializer via context
         """
+
+        employee = User.objects.get(pk=1)#self.context['request'].user
+
         items_data = validated_data.pop('items')
         for item_data in items_data:
             try:
@@ -294,9 +303,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         terms = validated_data.pop('terms', validated_data['supplier'].terms)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
 
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
+        instance = self.Meta.model.objects.create(employee=employee, 
                                                   discount=discount,
                                                   receive_date=receive_date,
+                                                  status="AWAITING APPROVAL",
                                                   **validated_data)
         instance.currency = currency
         instance.terms = terms
@@ -310,17 +320,35 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.create_and_upload_pdf()
 
+        # Create approval key and salt
+        instance.approval_key = instance.create_approval_key()
+        instance.approval_salt = instance.create_approval_key()
+
         instance.save()
+
+        
 
         # Create a calendar event
         try:
             instance.create_calendar_event(employee)
         except Exception as e:
-            logger.warn(e)
+            message = "Unable to create calendar event because: {0]"
+            message = message.format(e)
+            POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         # Log Opening of an order
-        message = "Order #{0} was processed.".format(instance.id)
-        log = POLog.objects.create(message=message, purchase_order=instance, user=self.context['request'].user)
+        message = "Purchase Order #{0} was created.".format(instance.id)
+        log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
+
+        try:
+            instance.email_approver()
+            # Log Opening of an order
+            message = "Purchase Order #{0} sent for approval.".format(instance.id)
+            log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
+        except Exception as e:
+            message = "Unable to email approver because: {0]"
+            message = message.format(e)
+            POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         return instance
 
@@ -349,28 +377,22 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             POLog.create(message=message, purchase_order=instance, user=employee)
 
         # Process if status has changed
-        if status.lower() != instance.status.lower() and status.lower():
+        if status.lower() != instance.status.lower():
 
-            if status.lower() == "received" and instance.status.lower() != "received":
+            old_status = instance.status
+            instance.status = status
+
+            if old_status.lower() == "received" and instance.status.lower() != "received":
                 self.receive_order(instance, validated_data)
 
-            if instance.status.lower() == 'paid':
-                instance.paid_date = datetime.now()
+            instance.save()
 
-            if status.lower() == 'cancelled':
-                instance.status = status
 
-            message = "Purchase Order #{0} has been {1}.".format(instance.id, status.lower())
+            message = "The status of purchase order #{0} has been changed from {1} to {2}.".format(instance.id, 
+                                                                                                   old_status.lower(),
+                                                                                                   instance.status.lower())
             log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
-            # Check if a high level event has ocurrred. If yes, then the status will not change
-            statuses = ['processed', 'deposited', 'received', 'invoiced', 'paid', 'cancelled']
-            for status in statuses:
-                if instance.logs.filter(message__icontains=status).exists():
-                    pass #instance.status = status
-
-
-            instance.save()
 
 
         items_data = validated_data.pop('items', self.context['request'].data['items'])
@@ -583,3 +605,5 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                             body,
                             recipients,
                             format='html')
+
+   

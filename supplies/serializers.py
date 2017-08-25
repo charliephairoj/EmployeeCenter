@@ -224,12 +224,12 @@ class SupplySerializer(serializers.ModelSerializer):
 
             suppliers_data = [data]
 
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
+        #iam_credentials = self.context['request'].user.aws_credentials
+        #key = iam_credentials.access_key_id
+        #secret = iam_credentials.secret_access_key
 
         instance = self.Meta.model.objects.create(**validated_data)
-        instance.create_stickers(key, secret)
+        #instance.create_stickers(key, secret)
 
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):

@@ -14,7 +14,7 @@ class LogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Log
-        fields = ('message', 'timestamp', 'user', 'type')
+        fields = ('id', 'message', 'timestamp', 'user', 'type')
         
     def to_representation(self, instance):
         

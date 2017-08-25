@@ -2,12 +2,14 @@
 
 import json
 import logging
+from datetime import datetime, timedelta
 
 from django.http import HttpResponse
 from django.db import connection
 from django.db.models import Q
 from django.conf import settings
 from rest_framework import generics
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_protect
 
 from po.serializers import PurchaseOrderSerializer
 from po.models import PurchaseOrder
@@ -16,6 +18,33 @@ from projects.models import Project
 
 logger = logging.getLogger(__name__)
 
+
+@csrf_exempt
+def purchase_order_approval(request):
+
+    if request.method.lower() == 'get':
+        query_params = request.GET
+
+        po_id = query_params.get('id')
+        approval_pass = query_params.get('pass')
+        
+        po = PurchaseOrder.objects.get(pk=po_id)
+        
+        if po.approve(approval_pass):
+            message = "PO # {0} approved.".format(po.id)
+            response = HttpResponse(json.dumps({'message': message}),
+                            content_type="application/json")
+            response.status_code = 201
+        else:
+            response = HttpResponse(json.dumps({'message':'unauthorized'}),
+                            content_type="application/json")
+            response.status_code = 404
+    else: 
+        response = HttpResponse(json.dumps({'message':'unauthorized'}),
+                            content_type="application/json")
+        response.status_code = 404
+    
+    return response
 
 def purchase_order_stats(request):
     cursor = connection.cursor()
@@ -133,6 +162,10 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset.exclude(status='cancelled')
+        od = datetime.now() - timedelta(30)
+        queryset = queryset.exclude(status="Processed", order_date__lte=od)
+        rd = datetime.now() - timedelta(30)
+        queryset = queryset.exclude(status="CLOSED", order_date__lte=rd)
         
         # Filter based on query
         query = self.request.query_params.get('q', None)

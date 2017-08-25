@@ -167,6 +167,8 @@ urlpatterns += patterns('equipment.views',
 )
 
 urlpatterns += patterns('po.views',
+    url(r'api/v1/purchase-order/approval$', 'purchase_order_approval'),
+    url(r'api/v1/purchase-order/approval/$', 'purchase_order_approval'),
     url(r'api/v1/purchase-order/stats$', 'purchase_order_stats'),
     url(r'api/v1/purchase-order/stats/$', 'purchase_order_stats')
 )
