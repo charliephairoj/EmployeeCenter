@@ -72,12 +72,6 @@ class ShippingSerializer(serializers.ModelSerializer):
         except AttributeError:
             instance = self.Meta.model.objects.create(employee=self.context['request'].user, **validated_data)
         
-        try:        
-            if instance.project and instance.phase:
-                for item in items_data:
-                    del item['item']
-        except AttributeError:
-            pass
             
         item_serializer = ItemSerializer(data=items_data, context={'shipping': instance}, many=True)
                 
