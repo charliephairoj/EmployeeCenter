@@ -236,6 +236,7 @@ class ItemSerializer(serializers.ModelSerializer):
             logger.debug(ret['image'])
         except AttributeError as e:
             logger.debug(e)
+            
         return ret
 
 class FileSerializer(serializers.ModelSerializer):

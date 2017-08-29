@@ -59,7 +59,7 @@ def upload_attendance(request):
         
         lines = open('attendance.txt').readlines()
         data = [l.replace('\r\n', '').split('\t') for l in lines]
-
+        logger.debug(data)
         timestamps = []
         error_times = []
         employees = {}
@@ -101,6 +101,7 @@ def upload_attendance(request):
                         Timestamp.objects.filter(employee=employee, datetime=timestamp).delete()
                         timestamps.append(Timestamp.objects.create(employee=employee,
                                                                      datetime=timestamp))
+
                                                                  
             
         def create_attendances(timestamps):
@@ -353,13 +354,17 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
             query += " ORDER BY a_date DESC"
             logger.debug(query)
             queryset = Attendance.objects.raw(query)
+
+            logger.debug(len(queryset[0:]))
     
-       
-        if offset:
-            queryset = queryset[offset - 1:]
+        if offset != None and limit == 0:
+            queryset = queryset[offset:]
+        elif offset == 0 and limit != 0:
+            queryset = queryset[offset:offset + limit]
         else:
-            queryset = queryset[0:]
-                        
+            queryset = queryset[offset: offset + settings.REST_FRAMEWORK['PAGINATE_BY']]
+
+        logger.debug(len(queryset[0:]))
         return queryset
     
     

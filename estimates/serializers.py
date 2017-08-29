@@ -39,6 +39,13 @@ class PillowSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ItemListSerializer(serializers.ListSerializer):
+
+    def to_representation(self, data):
+        data = data.exclude(deleted=True)
+        return super(ItemListSerializer, self).to_representation(data)
+
+
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
@@ -64,6 +71,7 @@ class ItemSerializer(serializers.ModelSerializer):
         field = ('description', 'id', 'width', 'depth', 'height', 'comments', 'unit_price')
         read_only_fields = ('total', 'type')
         exclude = ('estimate', )
+        list_serializer_class = ItemListSerializer
 
     def create(self, validated_data):
         """
@@ -139,7 +147,7 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         read_only_fields = ('acknowledgement', 'file')
-"""
+""" 
 
 class EstimateSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -294,19 +302,17 @@ class EstimateSerializer(serializers.ModelSerializer):
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
 
-        logger.debug(pp.pformat(id_list))
-
         #Delete Items
         for item in instance.items.all():
             if item.id not in id_list:
-                pass#item.delete()
+                item.deleted = True
+                item.save()
 
         #Update or Create Item
         for item_data in items_data:
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
             except (KeyError, Item.DoesNotExist) as e:
-                logger.debug(e)
                 try:
                     item = Item(product=Product.objects.get(pk=item_data['product']))
                 except TypeError as e:

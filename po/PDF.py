@@ -453,6 +453,9 @@ class PurchaseOrderPDF():
         style = ParagraphStyle(name='Normal',
                                fontName='Garuda',
                                fontSize=10,
+                               wordWrap='CJK',
+                               allowWidows=1,
+                               allowOrphans=1,
                                textColor=colors.CMYKColor(black=60))
                                
         if supply.discount > 0:

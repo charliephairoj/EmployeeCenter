@@ -163,7 +163,7 @@ class Estimate(models.Model):
         create the pdfs from the object itself. It requires
         no arguments
         """
-        products = self.items.all().order_by('description')
+        products = self.items.exclude(deleted=True).order_by('description')
         estimate_pdf = EstimatePDF(customer=self.customer, estimate=self, products=products)
         estimate_filename = estimate_pdf.create()
         
@@ -184,7 +184,7 @@ class Estimate(models.Model):
 
         #Define items if not already defined
         if not items:
-            items = self.items.all()
+            items = self.items.exclude(deleted=True)
         for product in items:
             logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(product.unit_price, product.quantity, product.total))
             running_total += product.total
@@ -353,6 +353,11 @@ class Item(models.Model):
             item.save()
 
         return item
+
+    def delete(self, *args, **kwargs):
+
+        self.deleted = True
+        self.save()
 
     def _apply_product_data(self):
         """Applies data from the set product

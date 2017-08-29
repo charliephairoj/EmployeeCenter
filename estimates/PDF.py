@@ -62,7 +62,7 @@ class AckDocTemplate(BaseDocTemplate):
         if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
     
         #Read image from link
         img = utils.ImageReader(path)
@@ -326,7 +326,7 @@ class EstimatePDF(object):
                                    textColor=colors.CMYKColor(black=60))
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
                                   style)
-            comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
+            comments = Table([['  Comments:', paragraph]], colWidths=(60, 225))
             comments.setStyle(TableStyle([('FONT', (0, 0), (-1, -1), 'Garuda'),
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),

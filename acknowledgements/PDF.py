@@ -489,7 +489,7 @@ class AcknowledgementPDF(object):
                                    textColor=colors.black)
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'),
                                   style)
-            comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
+            comments = Table([['  Comments:', paragraph]], colWidths=(60, 235))
             comments.setStyle(TableStyle([('FONT', (0, 0), (-1, -1), 'Garuda'),
                                           ('FONTSIZE', (0, 0), (-1, -1), 10),
                                           ('VALIGN', (0, 0), (-1, -1), 'TOP'),
