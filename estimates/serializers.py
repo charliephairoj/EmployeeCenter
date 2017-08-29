@@ -303,8 +303,6 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         #Update or Create Item
         for item_data in items_data:
-            logger.debug(pp.pformat(item_data))
-            logger.debug(pp.pformat(item_data['id']))
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
             except (KeyError, Item.DoesNotExist) as e:
