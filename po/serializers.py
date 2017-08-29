@@ -346,7 +346,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             message = "Purchase Order #{0} sent for approval.".format(instance.id)
             log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
         except Exception as e:
-            message = "Unable to email approver because: {0]"
+            message = "Unable to email approver because: {0}"
             message = message.format(e)
             POLog.objects.create(message=message, purchase_order=instance, user=employee)
 

@@ -299,7 +299,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         #Delete Items
         for item in instance.items.all():
             if item.id not in id_list:
-                item.delete()
+                pass#item.delete()
 
         #Update or Create Item
         for item_data in items_data:
