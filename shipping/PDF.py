@@ -256,8 +256,9 @@ class ShippingPDF(object):
         except AttributeError as e:
             logger.warn(e)
 
-        if self.shipping.comments is not None and self.shipping.comments != '':
+        if self.shipping.comments:
             data.append(['Comments', self.shipping.comments])
+            
         #Create table
         table = Table(data, colWidths=(110, 200))
         #Create and set table style

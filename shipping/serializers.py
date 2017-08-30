@@ -72,6 +72,8 @@ class ShippingSerializer(serializers.ModelSerializer):
         except AttributeError:
             instance = self.Meta.model.objects.create(employee=self.context['request'].user, **validated_data)
         
+        instance.comments = validated_data.pop('comments', instance.comments)
+        instance.save()
             
         item_serializer = ItemSerializer(data=items_data, context={'shipping': instance}, many=True)
                 
