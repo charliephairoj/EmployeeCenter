@@ -16,6 +16,7 @@ from django.conf import settings
 from shipping.models import Shipping
 from shipping.serializers import ShippingSerializer
 from acknowledgements.models import Acknowledgement
+from projects.models import Project, Room, Phase
 
 
 logger = logging.getLogger(__name__)
@@ -30,10 +31,35 @@ class ShippingMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['acknowledgement', 'project', 'phase', 'customer']
+        project = None
+        room = None
+        fields = ['acknowledgement', 'project', 'room', 'customer']
         
         for field in fields:
             if field in request.data:
+                logger.debug(field)
+                logger.debug(request.data[field])
+                
+                # Create a project if it does not exist
+                if field == 'project':
+                    try:
+                        project = Project.objects.get(pk=request.data[field]['id'])
+                    except KeyError as e:
+                        project = Project(codename=request.data[field]['codename'])
+                        project.save()
+                        request.data[field]['id'] = project.id
+                    
+                # Create a room if it does not exist
+                elif field == 'room':
+                    try: 
+                        room = Room.objects.get(pk=request.data[field]['id'])
+                    except (KeyError, AttributeError) as e:
+                        room = Room(description=request.data[field]['description'],
+                                    project=project)
+                        room.save()
+                        request.data[field]['id'] = room.id
+
+
                 if 'id' in request.data[field]:
                     request.data[field] = request.data[field]['id']
                     
@@ -52,6 +78,60 @@ class ShippingMixin(object):
         except Exception:
             pass
         logger.debug(request.data)
+        return request
+
+    def _format_primary_key_data_for_put(self, request):
+        """
+        Format fields that are primary key related so that they may 
+        work with DRF
+        """
+        project = None
+        room = None
+        fields = ['acknowledgement', 'project', 'phase', 'customer', 'items']
+        
+        for field in fields:
+            if field in request.data:
+                try:
+                    if 'id' in request.data[field]:
+                        request.data[field] = request.data[field]['id']
+                except TypeError:
+                    pass
+                    
+                if field == 'items':
+                    for index, item in enumerate(request.data['items']):
+                        try:
+                            request.data['items'][index]['fabric'] = item['fabric']['id']
+                        except (KeyError, TypeError):
+                            pass
+                            
+                        try:
+                            request.data['items'][index]['image'] = item['image']['id']
+                        except (KeyError, TypeError) as e:
+                            request.data['items'][index]['image'] = None
+                            
+                # Create a project if it does not exist
+                elif field == 'project':
+                    try:
+                        project = Project.objects.get(pk=request.data[field]['id'])
+                    except KeyError as e:
+                        project = Project(codename=request.data[field]['codename'])
+                        project.save()
+                        request.data[field]['id'] = project.id
+                    except TypeError as e:
+                        pass
+                    
+                # Create a room if it does not exist
+                elif field == 'room':
+                    try: 
+                        room = Room.objects.get(pk=request.data[field]['id'])
+                    except (KeyError, AttributeError) as e:
+                        room = Room(description=request.data[field]['description'],
+                                    project=project)
+                        room.save()
+                        request.data[field]['id'] = room.id
+                    except TypeError as e:
+                        pass
+
         return request
     
     
@@ -97,8 +177,8 @@ class ShippingDetail(ShippingMixin, generics.RetrieveUpdateDestroyAPIView):
     
     def put(self, request, *args, **kwargs):
         
-        request.data['acknowledgement'] = request.data['acknowledgement']['id']
-        
+        request = self._format_primary_key_data_for_put(request)
+
         return super(ShippingDetail, self).put(request, *args, **kwargs)
     
     

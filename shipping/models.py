@@ -16,7 +16,7 @@ from contacts.models import Customer
 from shipping.PDF import ShippingPDF
 import acknowledgements
 from media.models import S3Object
-from projects.models import Project, Phase
+from projects.models import Project, Phase, Room
 
 
 class Shipping(models.Model):
@@ -29,7 +29,8 @@ class Shipping(models.Model):
     pdf = models.ForeignKey(S3Object, related_name='+', null=True)
     comments = models.TextField(null=True, blank=True)
     last_modified = models.DateTimeField(auto_now=True)
-    #project = models.ForeignKey(Project, null=True)
+    project = models.ForeignKey(Project, null=True)
+    room = models.ForeignKey(Room, null=True)
     #phase = models.ForeignKey(Phase, null=True)
 
     def get_data(self):

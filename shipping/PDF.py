@@ -201,7 +201,7 @@ class ShippingPDF(object):
             data.append(['', u'{0}, {1}'.format(city, territory)])
             data.append(['', u"{0} {1}".format(country, zipcode)]) 
         #Create Table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(110, 200))
         #Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
                             ('TOPPADDING', (0,0), (-1,-1), 1),
@@ -247,12 +247,12 @@ class ShippingPDF(object):
             logger.info(e)
 
         try:
-            data.append(['Project:', self.shipping.acknowledgement.project.codename])
+            data.append(['Project:', self.shipping.project.codename])
         except AttributeError as e:
             logger.warn(e)
 
         try:
-            data.append(['Room:', self.shipping.acknowledgement.room.description])
+            data.append(['Room:', self.shipping.room.description])
         except AttributeError as e:
             logger.warn(e)
 

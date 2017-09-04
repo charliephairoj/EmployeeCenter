@@ -1,12 +1,13 @@
 import logging
 
 from rest_framework import serializers
+from django.contrib.auth.models import User
 
 from shipping.models import Shipping, Item
 from acknowledgements.models import Acknowledgement, Item as AckItem
 from contacts.models import Customer
 from contacts.serializers import CustomerSerializer
-from projects.models import Project, Phase
+from projects.models import Project, Phase, Room
 
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,8 @@ class ShippingSerializer(serializers.ModelSerializer):
     #customer = CustomerSerializer(read_only=True)
     acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    #project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), allow_null=True, required=False)
-    #phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=False, allow_null=True)
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), allow_null=True, required=False)
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), required=False, allow_null=True)
     
     class Meta:
         model = Shipping
@@ -57,6 +58,8 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create items from nested data
         """ 
+        employee = User.objects.get(pk=1)#self.context['request'].user
+
         items_data = validated_data.pop('items')
         for item_data in items_data:
             # add try and except that so new items no longer require a preapprove
@@ -67,10 +70,10 @@ class ShippingSerializer(serializers.ModelSerializer):
                 item_data['item'] = None
         logger.debug(validated_data)
         try:
-            instance = self.Meta.model.objects.create(employee=self.context['request'].user,
+            instance = self.Meta.model.objects.create(employee=employee,
                                                       **validated_data)
         except AttributeError:
-            instance = self.Meta.model.objects.create(employee=self.context['request'].user, **validated_data)
+            instance = self.Meta.model.objects.create(employee=employee, **validated_data)
         
         instance.comments = validated_data.pop('comments', instance.comments)
         instance.save()
@@ -114,8 +117,10 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method
         """
+        logger.debug(validated_data)
         delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
-        
+        instance.comments = validated_data.pop('comments', instance.comments)
+
         items_data = validated_data.pop('items', [])
         
         for item_data in items_data:
@@ -133,9 +138,6 @@ class ShippingSerializer(serializers.ModelSerializer):
                 
         if instance.delivery_date != delivery_date:
             instance.delivery_date = delivery_date
-            instance.acknowledgement.delivery_date = delivery_date
-            instance.create_and_upload_pdf()
-            instance.save()
             
             # Update the delivery date for the acknowledgement
             instance.acknowledgement.delivery_date = instance.delivery_date
@@ -146,8 +148,12 @@ class ShippingSerializer(serializers.ModelSerializer):
                 instance.acknowledgement.update_calendar_event()
             except Exception as e:
                 logger.warn(e)
-            
-        
+
+
+        instance.create_and_upload_pdf()
+        instance.save()
+
+
         return instance
         
     def to_representation(self, instance):
@@ -172,18 +178,22 @@ class ShippingSerializer(serializers.ModelSerializer):
             pass
             
         try:
-            ret['acknowledgement']['project'] = {'id': instance.acknowledgement.project.id,
-                                                 'codename': instance.acknowledgement.project.codename}
+            ret['project'] = {'id': instance.project.id,
+                              'codename': instance.project.codename}
+        except AttributeError:
+            pass
+
+        try:
+            ret['room'] = {'id': instance.room.id,
+                            'description': instance.room.description}
         except AttributeError:
             pass
         
         
-        
         try:
-            iam_credentials = self.context['request'].user.aws_credentials
-            key = iam_credentials.access_key_id
-            secret = iam_credentials.secret_access_key
-            ret['pdf'] = {'url': instance.pdf.generate_url(key, secret)}
+            ret['pdf'] = {'id': instance.pdf.id,
+                          'filename': instance.pdf.key.split('/')[-1],
+                          'url': instance.pdf.generate_url()}
         except AttributeError as e:
             logger.warn(e)
        

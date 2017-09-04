@@ -368,13 +368,17 @@ class Acknowledgement(models.Model):
         tr_so.customer['telephone'] = self.customer.telephone
 
         #Set Address
-        address = self.customer.addresses.all()[0]
-        tr_address = u"{0}, {1}, {2}, {3} {4}".format(address.address1,
-                                                      address.city or "",
-                                                      address.territory or "",
-                                                      address.country or "",
-                                                      address.zipcode or "")
-        tr_so.customer['address'] = tr_address
+        try:
+            address = self.customer.addresses.all()[0]
+            tr_address = u"{0}, {1}, {2}, {3} {4}".format(address.address1,
+                                                        address.city or "",
+                                                        address.territory or "",
+                                                        address.country or "",
+                                                        address.zipcode or "")
+            tr_so.customer['address'] = tr_address
+        except IndexError as e:
+            tr_so.customer['address'] = ''
+            
         tr_so.customer['tax_id'] = self.customer.tax_id or ""
 
         tr_so.document_number = ""
