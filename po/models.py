@@ -381,16 +381,54 @@ class PurchaseOrder(models.Model):
         return hashlib.sha512(self.approval_key + self.approval_salt).hexdigest()
 
     def email_approver(self):
+        # Styles
+        main_container_style = """
+        width:50em;
+        height:100%;
+        font-family: Tahoma;
+        display: block;
+        float:none;
+        text-align:center;
+        padding:5em 1em;"""
+        button_container_style = """
+        padding:1em 0;
+        display:block;
+        float:left;
+        """
+        button_style = """
+        float:left;
+        appearance: button;
+        background:green;
+        width:5em;
+        padding:1em 0;
+        display:block;
+        text-align:center;
+        border-radius:4px;
+        color:rgba(255, 255, 255, 1);
+        text-decoration: none;
+        outline: none;
+        overflow: hidden;
+        cursor: pointer;
+        border:5px solid rgba(199, 199, 199, 1);
+        """
+
         
         conn = boto.ses.connect_to_region('us-east-1')
         recipients = ["charliep@alineagroup.co"]
 
+        #approval_url = "https://employee.alineagroup.co/api/v1/purchase-order/approval/"
         approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
+        
         approval_url += "?pass={0}&status=approved&id={1}".format(self.create_approval_pass(), 
                                                                   self.id)
         body = render_to_string('purchase_order_approval.html', {'po': self,
-                                                                       'items': self.items.all(), 
-                                                                       'approval_url': approval_url})
+                                                                 'items': self.items.all(), 
+                                                                 'approval_url': approval_url,
+                                                                 'pdf_url':self.pdf.generate_url(),
+                                                                 'main_container_style': main_container_style,
+                                                                 'button_container_style': button_container_style,
+                                                                 'button_style': button_style
+                                                                 })
         logger.debug(body)
         #Send email
         

@@ -152,7 +152,16 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         #Filter based on supplier
         s_id = self.request.query_params.get('supplier_id', None)
         if s_id:
-            queryset = queryset.filter(products__supplier_id=s_id)
+            #queryset = queryset.order_by(products__supplier_id=s_id)
+
+            queryset.extra(select={'is_supplier': "pub_date > '2006-01-01'"})
+            sql = """SELECT count(*) = 0 FROM supplies_product where supplies_product.supply_id = supplies_supply.id
+                     and supplies_product.supplier_id = {0}"""
+            sql = sql.format(s_id)
+            logger.debug(sql)
+                     
+            queryset = queryset.extra(select={'product_count': sql})
+            queryset = queryset.extra(order_by = ['-product_count'])
 
         #Filter based on product upc code
         upc = self.request.query_params.get('upc', None)

@@ -128,11 +128,18 @@ class ItemSerializer(serializers.ModelSerializer):
         except Product.DoesNotExist as e:
             logger.warn(e)
             logger.debug(u"{0} : {1}".format(instance.supply.id, instance.description))
-
+            product = None
         except Product.MultipleObjectsReturned:
             product = Product.objects.filter(supply=instance.supply,
                                           supplier=instance.purchase_order.supplier).order_by('id')[0]
             ret['units'] = product.purchasing_units
+
+        if product:
+            try:
+                ret['image'] = {'url': product.supply.image.generate_url(),
+                                'id': product.supply.image.id}
+            except AttributeError as e:
+                logger.debug(e)
 
         return ret
 

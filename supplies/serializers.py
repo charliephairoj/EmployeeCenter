@@ -184,7 +184,7 @@ class SupplySerializer(serializers.ModelSerializer):
                     ret['cost'] = instance.cost
                     ret['reference'] = instance.reference
 
-            except KeyError:
+            except (KeyError, ValueError) as e:
                 pass
 
         ret['quantity'] = instance.quantity

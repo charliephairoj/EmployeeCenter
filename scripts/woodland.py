@@ -30,11 +30,8 @@ from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
 
 d = datetime.now() - timedelta(days=34)
-pos = PO.objects.filter(order_date__gte=d).order_by('-id')
-for p in pos:
-    if p.status.lower() == "processed":
-        p.status = "AWAITING APPROVAL"
-        p.save()
+po = PO.objects.filter(order_date__gte=d).order_by('-id')[1]
+po.email_approver()
 
 """
 
