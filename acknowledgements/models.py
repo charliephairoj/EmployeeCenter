@@ -214,8 +214,8 @@ class Acknowledgement(models.Model):
         try:
             tr_so.create()
         except Exception as e:
-            message = "Unable to create Sales Order in TRCloud because: {0}"
-            message = message.format(e)
+            message = "Unable to create Sales Order for acknowledgement {0} in TRCloud because: {1}"
+            message = message.format(self.id, e)
             Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
@@ -243,8 +243,8 @@ class Acknowledgement(models.Model):
         try:
             tr_so.update()
         except Exception as e:
-            message = "Unable to update Sales Order in TRCloud because: {0}"
-            message = message.format(e)
+            message = "Unable to update Sales Order for acknowledgement {0} in TRCloud because: {1}"
+            message = message.format(self.id, e)
             Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
@@ -381,7 +381,6 @@ class Acknowledgement(models.Model):
             
         tr_so.customer['tax_id'] = self.customer.tax_id or ""
 
-        tr_so.document_number = ""
         # Set Date
         d = datetime.now()
         tr_so.document_number = self.trcloud_document_number

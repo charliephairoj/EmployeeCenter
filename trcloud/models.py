@@ -360,7 +360,7 @@ class TRSalesOrder(BaseTRModelMixin):
 
         server_data = self.retrieve(self.id)
 
-        data = {document_number}
+        data = {'document_number': self.document_number}
 
         
         # Populate data for submission from Attributes

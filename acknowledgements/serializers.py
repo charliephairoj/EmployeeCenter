@@ -364,7 +364,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         try:
             instance.create_calendar_event(employee)
         except Exception as e:
-            logger.warn(e)
+            message = "Unable to create calendar event for acknowledgement {0} because:\n{1}"
+            message = message.format(instance.id, e)
+            log = AckLog.create(message=message, 
+                                acknowledgement=instance, 
+                                user=employee,
+                                type="GOOGLE CALENDAR")
 
         # Log Opening of an order
         message = "Created Acknowledgement #{0}.".format(instance.id)
@@ -376,7 +381,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except Exception as e:
                 message = "Unable to create acknowledgement because:\n{0}"
                 message = message.format(e)
-                log = AckLog.create(message=message, acknowledgement=instance, user=employee)
+                log = AckLog.create(message=message, 
+                                    acknowledgement=instance, 
+                                    user=employee,
+                                    type="TRCLOUD")
                 
         return instance
 
@@ -513,12 +521,25 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         try:
             instance.update_calendar_event()
         except Exception as e:
-            logger.warn(e)
+            message = "Unable to update calendar event for acknowledgement {0} because:\n{1}"
+            message = message.format(instance.id, e)
+            log = AckLog.create(message=message, 
+                                acknowledgement=instance, 
+                                user=employee,
+                                type="GOOGLE CALENDAR")
 
         instance.save()
 
         if instance.vat > 0 and instance.trcloud_id:
-            instance.update_in_trcloud()
+            try:
+                instance.update_in_trcloud()
+            except Exception as e:
+                message = "Unable to update acknowledgement {0} because:\n{1}"
+                message = message.format(instance.id, e)
+                log = AckLog.create(message=message, 
+                                    acknowledgement=instance, 
+                                    user=employee,
+                                    type="TRCLOUD")
            
         return instance
 
