@@ -232,6 +232,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         ret['supplier'] = {'id': instance.supplier.id,
                            'name': instance.supplier.name,
+                           'email': instance.supplier.email,
+                           'telephone': instance.supplier.telephone,
+                           'fax': instance.supplier.fax,
                            'addresses': AddressSerializer(instance.supplier.addresses.all(), many=True).data}
 
         try:
@@ -260,7 +263,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 
         try:
-            ret['pdf'] = {'url': instance.pdf.generate_url()}
+            ret['pdf'] = {'url': instance.pdf.generate_url(),
+                          'filename': instance.pdf.key.split('/')[-1],
+                          'id': instance.pdf.id}
         except AttributeError:
             pass
 

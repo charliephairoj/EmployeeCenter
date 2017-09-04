@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
+logo_height = 70
+
 
 class PODocTemplate(BaseDocTemplate):
     id = 0
@@ -67,15 +69,15 @@ class PODocTemplate(BaseDocTemplate):
         if self.company.lower() == 'dellarobbia thailand':
             path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
         else:
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         
         # Read image from link
         img = utils.ImageReader(path)
         
         # Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
-        canvas.drawImage(path, 42, 780, height=30, width=new_width)
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
 
         canvas.setFont('Helvetica', 8)
         canvas.setFillColorCMYK(0, 0, 0, 60)
@@ -208,10 +210,12 @@ class PurchaseOrderPDF():
             logger.warn(e)
             
         # Create Table
-        table = Table(data, colWidths=(60, 200))
+        table = Table(data, colWidths=(80, 200))
         # Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
+                            ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                            ('ALIGNMENT', (0, 0), (0, -1), 'RIGHT'),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
                              colors.CMYKColor(black=60)),
                             ('FONT', (0, 0), (-1, -1), 'Garuda')])
@@ -248,6 +252,8 @@ class PurchaseOrderPDF():
         table = Table(data, colWidths=(50, 150))
         # Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                            ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                            ('ALIGNMENT', (0, 0), (0, -1), 'RIGHT'),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
                              colors.CMYKColor(black=60)),
@@ -261,7 +267,7 @@ class PurchaseOrderPDF():
         t1 = self.__create_supplier_section()
         t2 = self.__create_recipient_section()
         # create table for supplier and recipient data
-        contact = Table([[t1, t2]], colWidths=(280, 200))
+        contact = Table([[t1, t2]], colWidths=(300, 200))
         # Create Style and apply
         style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
@@ -300,10 +306,12 @@ class PurchaseOrderPDF():
             data.append(['Comments:', self._format_string_to_paragraph(self.po.comments)])
 
         # Create table
-        table = Table(data, colWidths=(60, 200))
+        table = Table(data, colWidths=(80, 200))
         # Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
+                            ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                            ('ALIGNMENT', (0, 0), (0, -1), 'RIGHT'),
                             ('TEXTCOLOR', (0, 0), (-1, -1),
                              colors.CMYKColor(black=60)),
                             ('FONT', (0, 0), (-1, -1), 'Helvetica'),
