@@ -371,7 +371,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         log = AckLog.create(message=message, acknowledgement=instance, user=employee)
 
         if instance.vat > 0:
-            instance.create_in_trcloud() 
+            try:
+                instance.create_in_trcloud() 
+            except Exception as e:
+                message = "Unable to create acknowledgement because:\n{0}"
+                message = message.format(e)
+                log = AckLog.create(message=message, acknowledgement=instance, user=employee)
                 
         return instance
 

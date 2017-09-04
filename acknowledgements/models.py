@@ -339,7 +339,7 @@ class Acknowledgement(models.Model):
         logger.debug("subtotal: = {0:.2f}".format(running_total))
         self.subtotal = running_total
         
-        #Calculate and apply discount
+        #Calculate and apply discount 
         discount = (Decimal(self.discount) / 100) * running_total
         running_total -= discount
         logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount))
