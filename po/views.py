@@ -28,7 +28,13 @@ def purchase_order_approval(request):
         po_id = query_params.get('id')
         approval_pass = query_params.get('pass')
         
-        po = PurchaseOrder.objects.get(pk=po_id)
+        try:
+            po = PurchaseOrder.objects.get(pk=po_id)
+        except PurchaseOrder.DoesNotExist as e:
+            response = HttpResponse(json.dumps({'message':'unauthorized'}),
+                            content_type="application/json")
+            response.status_code = 404
+            return response
         
         if po.approve(approval_pass):
             message = "PO # {0} approved.".format(po.id)
@@ -131,6 +137,52 @@ class PurchaseOrderMixin(object):
         # Loop through data in order to prepare for deserialization
         for index, item in enumerate(request.data['items']):
             # Only reassign the 'id' if it is post
+            try:
+                if not isinstance(request.data['items'][index]['supply'], (int, long)):
+                    request.data['items'][index]['supply'] = item['supply']['id']
+            except (TypeError, KeyError):
+                try:
+                    request.data['items'][index]['supply'] = item['id']
+                except (TypeError, KeyError):
+                    logger.error(item)
+
+            try:
+                request.data['items'][index]['unit_cost'] = item['cost']
+            except KeyError:
+                pass
+            
+        
+        return request
+
+    def _format_primary_key_data_for_put(self, request):
+        """
+        Format fields that are primary key related so that they may
+        work with DRF
+        """
+        fields = ['supplier', 'project', 'room', 'phase']
+
+        for field in fields:
+            if field in request.data:
+                try:
+                    request.data[field] = request.data[field]['id']
+                except (TypeError, KeyError) as e:
+                    logger.warn(e)
+                    
+            if field == 'project':
+                try:
+                    if "id" not in request.data['project']:
+                        codename = request.data['project']['codename']
+                        project = Project(codename=codename)
+                        project.save()
+                        request.data['project'] = project.id
+                except (KeyError, TypeError) as e:
+                    logger.warn(e)
+
+        # Loop through data in order to prepare for deserialization
+        for index, item in enumerate(request.data['items']):
+            # Only reassign the 'id' if it is post
+
+            
             try:
                 if not isinstance(request.data['items'][index]['supply'], (int, long)):
                     request.data['items'][index]['supply'] = item['supply']['id']

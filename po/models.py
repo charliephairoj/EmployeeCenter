@@ -416,8 +416,8 @@ class PurchaseOrder(models.Model):
         conn = boto.ses.connect_to_region('us-east-1')
         recipients = ["charliep@alineagroup.co"]
 
-        #approval_url = "https://employee.alineagroup.co/api/v1/purchase-order/approval/"
-        approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
+        approval_url = "https://employee.alineagroup.co/api/v1/purchase-order/approval/"
+        #approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
         
         approval_url += "?pass={0}&status=approved&id={1}".format(self.create_approval_pass(), 
                                                                   self.id)

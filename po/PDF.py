@@ -210,7 +210,7 @@ class PurchaseOrderPDF():
             logger.warn(e)
             
         # Create Table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(60, 200))
         # Create and apply Table Style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -267,7 +267,7 @@ class PurchaseOrderPDF():
         t1 = self.__create_supplier_section()
         t2 = self.__create_recipient_section()
         # create table for supplier and recipient data
-        contact = Table([[t1, t2]], colWidths=(300, 200))
+        contact = Table([[t1, t2]], colWidths=(320, 200))
         # Create Style and apply
         style = TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
@@ -306,7 +306,7 @@ class PurchaseOrderPDF():
             data.append(['Comments:', self._format_string_to_paragraph(self.po.comments)])
 
         # Create table
-        table = Table(data, colWidths=(80, 200))
+        table = Table(data, colWidths=(60, 200))
         # Create and set table style
         style = TableStyle([('BOTTOMPADDING', (0, 0), (-1, -1), 1),
                             ('TOPPADDING', (0, 0), (-1, -1), 1),
@@ -338,7 +338,7 @@ class PurchaseOrderPDF():
                          self._get_description(supply),
                          self._format_string_to_paragraph(supply.supply.purchasing_units),
                          u"{0:,.2f}".format(supply.quantity),
-                         u"{0:,.4f}".format(calculated_unit_cost),
+                         u"{0:,.2f}".format(calculated_unit_cost),
                          u"{0:,.2f}".format(supply.total)])
                          
             # increase the item number

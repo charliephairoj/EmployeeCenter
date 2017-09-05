@@ -31,7 +31,8 @@ from po.models import PurchaseOrder as PO
 
 d = datetime.now() - timedelta(days=34)
 po = PO.objects.filter(order_date__gte=d).order_by('-id')[1]
-po.email_approver()
+po.create_and_upload_pdf()
+print po.pdf.generate_url()
 
 """
 
