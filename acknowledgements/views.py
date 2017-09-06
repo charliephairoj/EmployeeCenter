@@ -228,7 +228,7 @@ class AcknowledgementMixin(object):
                     try:
                         request.data['room'] = request.data[field]['room']['id']
                         logger.debug(request.data)
-                    except KeyError as e:
+                    except (KeyError, TypeError) as e:
                         logger.debug(e)
 
                     try: 
@@ -236,7 +236,7 @@ class AcknowledgementMixin(object):
                                     project_id=request.data["project"]["id"])
                         room.save()
                         request.data["room"] = room.id
-                    except (KeyError, AttributeError) as e:
+                    except (KeyError, AttributeError, TypeError) as e:
                         logger.debug(e)
 
                         
