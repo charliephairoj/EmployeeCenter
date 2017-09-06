@@ -6,6 +6,7 @@ from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework import authentication, permissions
 
 from contacts.models import Customer, Supplier
 from contacts.serializers import CustomerSerializer, SupplierSerializer
@@ -28,13 +29,14 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """
     queryset = Customer.objects.all().order_by('name')
     serializer_class = CustomerSerializer
-        
+    authentication_classes = (authentication.SessionAuthentication,)
+
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset
-        
+        logger.debug(self.request.user)
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
@@ -47,6 +49,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        elif not offset and limit:
+            queryset = queryset[:limit]
             
         return queryset
         
