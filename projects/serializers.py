@@ -169,15 +169,20 @@ class RoomSerializer(serializers.ModelSerializer):
         
         ret['items'] = [ItemSerializer(item).data for item in instance.items.all()]
         
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
-        
+        try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
+        except KeyError as e:
+            pass
+        except AttributeError as e:
+            logger.warn(e)
+                    
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
+                             'url': file.generate_url()} for file in instance.files.all()]
         except AttributeError:
             pass
 
@@ -275,22 +280,27 @@ class ItemSerializer(serializers.ModelSerializer):
         
         ret = super(ItemSerializer, self).to_representation(instance)
         
-        iam_credentials = self.context['request'].user.aws_credentials
-        key = iam_credentials.access_key_id
-        secret = iam_credentials.secret_access_key
+        try:
+            iam_credentials = self.context['request'].user.aws_credentials
+            key = iam_credentials.access_key_id
+            secret = iam_credentials.secret_access_key
+        except KeyError as e:
+            pass
         
+        """
         ret['supplies'] = [{'id': supply.id,
                             'description': supply.description,
                             'quantity': ItemSupply.objects.get(item=instance, supply=supply).quantity,
                             'url': self._get_image_from_supply(supply),
                             'units': supply.units}
-                           for supply in instance.supplies.all(key, secret)]
+                           for supply in instance.supplies.all()]
+        """
                            
         try:
             ret['files'] = [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url(key, secret)} for file in instance.files.all()]
+                             'url': file.generate_url()} for file in instance.files.all()]
         except AttributeError:
             pass
             

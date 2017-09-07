@@ -78,8 +78,12 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        elif not offset and limit:
+            queryset = queryset[:limit]
         else:
             queryset = queryset
 
@@ -127,6 +131,31 @@ class RoomList(RoomMixin, generics.ListCreateAPIView):
         request = self._format_primary_key_data(request)
         
         return super(RoomList, self).post(request, *args, **kwargs)
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = Room.objects.all()
+        
+        #Filter based on query
+        query = self.request.query_params.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(description__icontains=query) | 
+                                       Q(pk__icontains=query))
+                                      
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+        elif not offset and limit:
+            queryset = queryset[:limit]
+        else:
+            queryset = queryset
+
+        return queryset
     
 
 class RoomDetail(RoomMixin, generics.RetrieveUpdateDestroyAPIView):

@@ -61,7 +61,7 @@ def check_google_authenticated(request):
 
 
     else:
-        return HttpResponseRedirect('/main')
+        return HttpResponseRedirect(_get_url(request))
 
 
 @csrf_exempt
@@ -84,14 +84,27 @@ def app_login(request):
 
                 return check_google_authenticated(request)
 
-            return HttpResponseRedirect('/main')
+            return HttpResponseRedirect(_get_url(request))
 
         else:
+            original_url = request.GET.get('next', None)
+            if original_url:
+                request.session['original_url'] = original_url
+
             #logout the request
             logout(request)
             #create a new login form
             form = LoginForm()
-            return render(request, 'login.html', {'form':form})
+
+            action_url = "/login"
+
+            original_url = request.GET.get('next', None)
+            if original_url:
+                logger.debug(original_url)
+                action_url += "?next="
+                action_url += original_url
+
+            return render(request, 'login.html', {'form':form, 'action_url':action_url})
 
     #what to do with a post request
     elif request.method == "POST":
@@ -99,6 +112,10 @@ def app_login(request):
         form = LoginForm(request.POST)
         #check if form is valid
         if form.is_valid():
+
+            original_url = request.GET.get('next', None)
+            if original_url:
+                request.session['original_url'] = original_url
 
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
@@ -120,14 +137,18 @@ def app_login(request):
                         return check_google_authenticated(request)
 
                     #Gets user profile to do checks
-                    return HttpResponseRedirect('/main')
+                    return HttpResponseRedirect(_get_url(request))
+
+            original_url = request.POST.get('next', None)
+            if original_url:
+                request.session['original_url'] = original_url
 
             return HttpResponseRedirect('/')
 
     else:
         #create a new login form
         form = LoginForm()
-        return render(request, 'login.html', {'form':form})
+        return render(request, 'login.html', {'form':form, 'action_url':"/login"})
 
 
 @login_required
@@ -141,7 +162,7 @@ def auth_return(request):
     credential = FLOW.step2_exchange(request.GET)
     storage = Storage(CredentialsModel, 'id', request.user, 'credential')
     storage.put(credential)
-    return HttpResponseRedirect("/main")
+    return HttpResponseRedirect(_get_url(request))
 
 
 #Logs user out
@@ -149,3 +170,17 @@ def logout(request):
     from django.contrib.auth import logout
     logout(request)
     return HttpResponseRedirect('/')
+
+
+def _get_url(request):
+
+    url = "/main"
+
+    original_url = request.session.get('original_url')
+    logger.debug(original_url)
+    logger.debug(request.session.__dict__)
+    if original_url:
+        url += '#'
+        url += original_url
+    logger.debug(url)
+    return url

@@ -12,6 +12,7 @@ from contacts.serializers import SupplierSerializer
 
 logger = logging.getLogger(__name__)
 
+
 class ProductListSerializer(serializers.ListSerializer):
 
     def create(self, validated_data):
@@ -309,6 +310,7 @@ class FabricSerializer(SupplySerializer):
 
     class Meta:
         model = Fabric
+        fields = '__all__'
         write_only_fields = ('suppliers', )
 
     def create(self, validated_data):
@@ -368,6 +370,7 @@ class LogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Log
+        fields = '__all__'
 
     def update(self, instance, validated_data):
 
