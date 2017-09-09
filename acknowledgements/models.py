@@ -899,7 +899,13 @@ class Log(BaseLog):
 
     @classmethod
     def create(cls, **kwargs):
-        log = cls(type="ACKNOWLEDGEMENT", **kwargs)
+
+        try:
+            type = kwargs['type']
+        except KeyError as e:
+            type = 'ACKNOWLEDGEMENT'
+
+        log = cls(type=type, **kwargs)
         log.save()
 
         return log
