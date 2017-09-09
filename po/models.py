@@ -557,7 +557,13 @@ class Log(BaseLog):
 
     @classmethod
     def create(cls, **kwargs):
-        log = cls(type="PURCHASE ORDER", **kwargs)
+
+        try:
+            type = kwargs['type']
+        except KeyError as e:
+            type = "PURCHASE ORDER"
+
+        log = cls(type=type, **kwargs)
         log.save()
 
         return log
