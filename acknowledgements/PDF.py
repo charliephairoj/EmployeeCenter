@@ -64,7 +64,7 @@ class AckDocTemplate(BaseDocTemplate):
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
         if self.company.lower() == 'dellarobbia thailand':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
     
@@ -133,7 +133,7 @@ class ConfirmationDocTemplate(BaseDocTemplate):
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
         if self.company.lower() == 'dellarobbia thailand':
-            path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+            path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         

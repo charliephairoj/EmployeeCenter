@@ -423,6 +423,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         #Update items individually
         for item_data in items_data:
+            logger.debug(item_data)
+
+            try:
+                item_data['image'] = item_data['image'].id
+            except (AttributeError, TypeError) as e:
+                pass
 
             try:
                 item_data['product'] = item_data['product'].id
