@@ -4,7 +4,7 @@ from django.conf.urls import *
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
-from contacts.views import CustomerViewSet, SupplierViewSet, SupplierList, SupplierDetail
+from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import LogList, LogDetail
@@ -42,7 +42,7 @@ resources with the api
 
 router = DefaultRouter()
 
-router.register(r'api/v1/customer', CustomerViewSet)
+#router.register(r'api/v1/customer', CustomerViewSet)
 #router.register(r'api/v1/model', ModelViewSet)
 router.register(r'api/v1/configuration', ConfigurationViewSet)
 router.register(r'api/v1/phase', PhaseViewSet)
@@ -68,6 +68,8 @@ urlpatterns = patterns('',
 
     url(r'^api/v1/supplier/$', SupplierList.as_view()),
     url(r'^api/v1/supplier/(?P<pk>[0-9]+)/$', SupplierDetail.as_view()),
+    url(r'^api/v1/customer/$', CustomerList.as_view()),
+    url(r'^api/v1/customer/(?P<pk>[0-9]+)/$', CustomerDetail.as_view()),
     url(r'^api/v1/supply/$', SupplyList.as_view()),
     url(r'^api/v1/supply/(?P<pk>[0-9]+)/$', SupplyDetail.as_view()),
     url(r'^api/v1/supply/type/$', supply_type_list),

@@ -64,6 +64,63 @@ class CustomerViewSet(viewsets.ModelViewSet):
         else:
             return limit    
 
+
+class CustomerMixin(object):
+    queryset = Customer.objects.all().order_by('name')
+    serializer_class = CustomerSerializer
+    
+    def handle_exception(self, exc):
+        """
+        Custom Exception Handler
+        
+        Exceptions are logged as error via logging, 
+        which will send an email to the system administrator
+        """
+        logger.error(exc)        
+        
+        return super(CustomerMixin, self).handle_exception(exc)
+    
+    
+class CustomerList(CustomerMixin, generics.ListCreateAPIView):
+        
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset.all()
+        
+        #Filter based on query
+        query = self.request.query_params.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(name__icontains=query) |
+                                       Q(email__icontains=query) |
+                                       Q(telephone__icontains=query) |
+                                       Q(notes__icontains=query))
+
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
+            
+        return queryset
+        
+    def get_paginate_by(self):
+        """
+        
+        """
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        if limit == 0:
+            return self.queryset.count()
+        else:
+            return limit
+            
+
+class CustomerDetail(CustomerMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+
+
 class SupplierMixin(object):
     queryset = Supplier.objects.all().order_by('name')
     serializer_class = SupplierSerializer
