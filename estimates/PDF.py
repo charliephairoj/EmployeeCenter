@@ -273,7 +273,7 @@ class EstimatePDF(object):
 
     def _create_products_title_section(self):
         titles = ['Product ID', 'Description', 'Unit Price', 'Qty', 'Total']
-        table = Table([titles], colWidths=(70, 280, 70, 40, 85))
+        table = Table([titles], colWidths=(70, 285, 70, 40, 85))
         style_data = [('TEXTCOLOR', (0, 0), (-1, -1),
                        colors.CMYKColor(black=60)),
                       ('GRID', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)),
@@ -473,7 +473,7 @@ class EstimatePDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
-        table = Table(data, colWidths=(150, 140, 80, 70, 105))
+        table = Table(data, colWidths=(150, 140, 85, 70, 120))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1,
