@@ -310,6 +310,7 @@ class FabricSerializer(SupplySerializer):
     class Meta:
         model = Fabric
         write_only_fields = ('suppliers', )
+        fields = '__all__'
 
     def create(self, validated_data):
         """
