@@ -473,7 +473,7 @@ class EstimatePDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
-        table = Table(data, colWidths=(150, 140, 85, 70, 120))
+        table = Table(data, colWidths=(130, 140, 85, 70, 125))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                             #Lines around content
                             ('LINEBELOW', (0, -1), (-1, -1), 1,
