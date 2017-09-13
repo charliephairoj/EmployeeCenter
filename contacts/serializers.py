@@ -37,6 +37,7 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierContact
         read_only_fields = ('supplier',)
+        fields = '__all__'
         
     def create(self, validated_data):
         """

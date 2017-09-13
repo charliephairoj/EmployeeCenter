@@ -35,6 +35,8 @@ class ProductListSerializer(serializers.ListSerializer):
         #Create new products for data without ids
         return super(ProductListSerializer, self).create(validated_data)
         """
+        logger.debug(validated_data)
+
         return self.update(Product.objects.filter(supply=self.context['supply']), validated_data)
 
     def update(self, instance, validated_data):
@@ -52,19 +54,23 @@ class ProductListSerializer(serializers.ListSerializer):
             data_mapping = {int(item.get('id', 0)): item for item in validated_data}
         except SyntaxError as e:
             """
+        logger.debug(validated_data)
+        logger.debug(instance)
         product_mapping = {}
         for product in instance:
-            product_mapping[product.id] = product
+            product_mapping[product.supplier.id] = product
 
         data_mapping = {}
         for item in validated_data:
-            data_mapping[int(item.get('id', 0))] = item
+            logger.debug(item)
+            data_mapping[int(item['supplier'].id)] = item
 
         # Perform creations and updates.
+        logger.debug(data_mapping)
         ret = []
         for product_id, data in data_mapping.items():
             product = product_mapping.get(product_id, None)
-
+            logger.debug(product)
             if product is None:
                 ret.append(self.child.create(data))
             else:
@@ -91,11 +97,13 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         read_only_fields = ['supply']
         list_serializer_class = ProductListSerializer
+        fields = '__all__'
 
     def create(self, validated_data):
         """
         Override the 'create' method in order to assign the supply passed via context
         """
+        logger.debug(validated_data)
         supply = self.context['supply']
 
         instance = self.Meta.model.objects.create(supply=supply, **validated_data)
@@ -175,17 +183,17 @@ class SupplySerializer(serializers.ModelSerializer):
                                   'url': instance.sticker.generate_url(key, secret)}
             """
 
-        else:
-            try:
-                if 'supplier_id' in self.context['request'].query_params:
-                    instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+        # Apply data attributes from the product associate between the supply and supplier if it exists
+        try:
+            if 'supplier_id' in self.context['request'].query_params:
+                instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
 
-                    ret['unit_cost'] = instance.cost
-                    ret['cost'] = instance.cost
-                    ret['reference'] = instance.reference
+                ret['unit_cost'] = instance.cost
+                ret['cost'] = instance.cost
+                ret['reference'] = instance.reference
 
-            except (KeyError, ValueError) as e:
-                pass
+        except (KeyError, ValueError) as e:
+            logger.debug(e)
 
         ret['quantity'] = instance.quantity
 
