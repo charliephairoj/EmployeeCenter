@@ -45,6 +45,7 @@ class BaseTRModelMixin(object):
             "timestamp": timestamp,
         }
         
+        logger.debug(predata)
 
 
 

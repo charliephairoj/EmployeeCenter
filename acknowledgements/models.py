@@ -226,8 +226,13 @@ class Acknowledgement(models.Model):
 
         # Set the trcloud_id for items
         for product in tr_so.products:
-            item = self.items.get(description=product['product'],
-                                  quantity=product['quantity'])
+            try:
+                item = self.items.get(description=product['product'],
+                                      quantity=product['quantity'])
+            except Item.DoesNotExist as e:
+                logger.debug(product['product'])
+                logger.debug(product['quantity'])
+
             logger.debug(product)
             logger.debug(item.__dict__)
             item.trcloud_id = product['id']
@@ -387,7 +392,7 @@ class Acknowledgement(models.Model):
         tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
         tr_so.delivery_due = self.delivery_date.strftime("%Y-%m-%d")
         tr_so.company_format = "SO"
-        tr_so.tax = "{0}".format(self.vat)
+        tr_so.tax = "{0:.2f}".format((Decimal(str(self.vat))/Decimal('100')) * self.subtotal)
         tr_so.total = float(self.subtotal)
         tr_so.grand_total = float(self.total)
         tr_so.customer_id = self.customer.trcloud_id
@@ -396,10 +401,11 @@ class Acknowledgement(models.Model):
         for item in self.items.all():
             tr_so.products.append({'id': item.id,
                                    'product': item.description or '',
-                                   'price': float(item.unit_price or 0),
-                                   'quantity': float(item.quantity or 0),
-                                   'before': float(item.total or 0),
-                                   'amount': float(item.total or 0)})
+                                   'price': "{0:.2f}".format(item.unit_price or 0),
+                                   'quantity': "{0:.2f}".format(item.quantity or 0),
+                                   'before': "{0:.2f}".format(item.total or 0),
+                                   'amount': "{0:.2f}".format((item.total * Decimal('1.07')) or 0),
+                                   'vat':'7%'})
         
         return tr_so
 
