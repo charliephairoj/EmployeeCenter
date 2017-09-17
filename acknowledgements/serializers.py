@@ -377,7 +377,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         if instance.vat > 0:
             try:
-                instance.create_in_trcloud() 
+                pass #instance.create_in_trcloud() 
             except Exception as e:
                 message = "Unable to create acknowledgement because:\n{0}"
                 message = message.format(e)
@@ -538,7 +538,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         if instance.vat > 0 and instance.trcloud_id:
             try:
-                instance.update_in_trcloud()
+                pass #instance.update_in_trcloud()
             except Exception as e:
                 message = "Unable to update acknowledgement {0} because:\n{1}"
                 message = message.format(instance.id, e)

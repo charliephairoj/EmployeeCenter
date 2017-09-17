@@ -28,21 +28,12 @@ from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
+from django.contrib.auth.models import User as U
 
-d = datetime.now() - timedelta(days=34)
-po = PO.objects.filter(order_date__gte=d).order_by('-id')[1]
-po.create_and_upload_pdf()
-print po.pdf.generate_url()
+u = U.objects.get(pk=1)
+a = A.objects.filter(calendar_event_id=None).exclude(status__icontains='cancelled').order_by('-id')[0]
+logger.debug(a.id)
+logger.debug(a.calendar_event_id)
+a.create_calendar_event(u)
+logger.debug(a.calendar_event_id)
 
-"""
-
-a = A.objects.all().order_by('-id')[0]
-
-logger.debug(pp.pformat(a.__dict__))
-a.trcloud_id = None
-
-a.create_in_trcloud()
-
-
-a.update_in_trcloud()
-"""

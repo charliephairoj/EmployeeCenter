@@ -424,12 +424,11 @@ class PurchaseOrder(models.Model):
         body = render_to_string('purchase_order_approval.html', {'po': self,
                                                                  'items': self.items.all(), 
                                                                  'approval_url': approval_url,
-                                                                 'pdf_url':self.pdf.generate_url(),
+                                                                 'pdf_url':self.pdf.generate_url(time=172800),
                                                                  'main_container_style': main_container_style,
                                                                  'button_container_style': button_container_style,
                                                                  'button_style': button_style
                                                                  })
-        logger.debug(body)
         #Send email
         
         conn.send_email('no-reply@dellarobbiathailand.com',
@@ -441,8 +440,6 @@ class PurchaseOrder(models.Model):
         
 
     def approve(self, approval_pass):
-        logger.debug(approval_pass)
-        logger.debug(self.create_approval_pass())
         if approval_pass == self.create_approval_pass():
             self.approval_pass = approval_pass
             self.status = "APPROVED"

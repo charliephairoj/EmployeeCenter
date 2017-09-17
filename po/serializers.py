@@ -450,7 +450,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             instance.update_calendar_event()
         except Exception as e:
-            logger.warn(e)
+            message = "Unable to create calendar event because: {0}"
+            message = message.format(e)
+            POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         return instance
 

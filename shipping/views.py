@@ -16,6 +16,8 @@ from django.conf import settings
 from shipping.models import Shipping
 from shipping.serializers import ShippingSerializer
 from acknowledgements.models import Acknowledgement
+from contacts.models import Customer
+from contacts.serializers import CustomerSerializer
 from projects.models import Project, Room, Phase
 
 
@@ -58,6 +60,17 @@ class ShippingMixin(object):
                                     project=project)
                         room.save()
                         request.data[field]['id'] = room.id
+
+                elif field == 'customer':
+                    try:
+                        customer = Customer.objects.get(pk=request.data[field]['id'])
+                    except (KeyError, AttributeError) as e:
+                        customer_serializer = CustomerSerializer(data=request.data[field])
+                        
+                        if customer_serializer.is_valid(raise_exception=True):
+                            customer_serializer.save()
+
+                            request.data[field]['id'] = customer_serializer.data['id']
 
 
                 if 'id' in request.data[field]:
