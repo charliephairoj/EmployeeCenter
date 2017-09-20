@@ -120,7 +120,7 @@ class SupplyMixin(object):
                                 data[field][index]['supplier'] = supplier['id']
                             except KeyError:
                                 pass
-
+        logger.debug(data)
         return data
 
 

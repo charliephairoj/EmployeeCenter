@@ -92,6 +92,7 @@ class ProductSerializer(serializers.ModelSerializer):
     reference = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     purchasing_units = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    cost = serializers.DecimalField(decimal_places=4, max_digits=16, required=False)
 
     class Meta:
         model = Product
@@ -231,7 +232,7 @@ class SupplySerializer(serializers.ModelSerializer):
                 data['supplier'] = self.context['request'].data['suppliers'][0]
 
             suppliers_data = [data]
-
+        logger.debug(suppliers_data)
         #iam_credentials = self.context['request'].user.aws_credentials
         #key = iam_credentials.access_key_id
         #secret = iam_credentials.secret_access_key
