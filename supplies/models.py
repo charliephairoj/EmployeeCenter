@@ -238,7 +238,7 @@ class Supply(models.Model):
                     logger.debug(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
                 logger.debug("Too many products returned")
                 
-                self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('-id')[0]
+                self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
                 #raise ValueError("Too many products return for this supply and supplier combo")
 
         return self.product
@@ -308,6 +308,16 @@ class Product(models.Model):
     purchasing_units = models.TextField(default='pc')
     quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12, default=1)
     lead_time = models.IntegerField(default=1)
+
+    def save(self, *args, **kwargs):
+        logger.debug(self.cost)
+        logger.debug(args)
+        logger.debug(kwargs)
+        
+        super(Product, self).save(*args, **kwargs)
+
+        logger.debug(self.cost)
+
 
 class Location(models.Model):
     """This Location class is used to track and location and in the future

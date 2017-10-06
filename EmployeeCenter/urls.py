@@ -4,6 +4,12 @@ from django.conf.urls import *
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
+import login.views
+import administrator.views
+import auth.views
+import products.views
+import acknowledgements.views
+import ivr.views
 from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
@@ -51,17 +57,17 @@ router.register(r'api/v1/shift', ShiftViewSet)
 
 
 #primary login and url routing
-urlpatterns = patterns('',
-    url(r'^$', 'login.views.app_login'),
-    url(r'^main$', 'login.views.main'),
-    url(r'^login$', 'login.views.app_login'),
-    url(r'^oauth2callback$', 'login.views.auth_return'),
-    url(r'^logout$', 'login.views.logout'),
-    url(r'^api/v1/current_user$', 'administrator.views.current_user'),
-    url(r'^api/v1/current_user$', 'administrator.views.current_user'),
-    url(r'^api/v1/change_password', 'auth.views.change_password'),
-    url(r'^api/v1/change_password/', 'auth.views.change_password'),
-    url(r'^api/v1/client/log/$', 'administrator.views.log'),
+urlpatterns = [
+    url(r'^$', login.views.app_login),
+    url(r'^main$', login.views.main),
+    url(r'^login$', login.views.app_login),
+    url(r'^oauth2callback$', login.views.auth_return),
+    url(r'^logout$', login.views.logout),
+    url(r'^api/v1/current_user$', administrator.views.current_user),
+    url(r'^api/v1/current_user$', administrator.views.current_user),
+    url(r'^api/v1/change_password', auth.views.change_password),
+    url(r'^api/v1/change_password/', auth.views.change_password),
+    url(r'^api/v1/client/log/$', administrator.views.log),
 
 
     url(r'^', include(router.urls)),
@@ -117,27 +123,27 @@ urlpatterns = patterns('',
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
 
     url(r'^api/v1/administrator/log/$', ALogList.as_view()),
-)
+]
 
 
 
-urlpatterns += patterns('acknowledgements.views',
+urlpatterns += [
     #url(r'^acknowledgement$', 'acknowledgement'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
     #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
-    url(r'api/v1/acknowledgement/stats/$', 'acknowledgement_stats'),
-    url(r'api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
-    url(r'^api/v1/acknowledgement/item/image$', 'acknowledgement_item_image'),
-    url(r'api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
-    url(r'^api/v1/acknowledgement/item/image/$', 'acknowledgement_item_image'),
-    url(r'^api/v1/acknowledgement/file/$', 'acknowledgement_file'),
-    url(r'^api/v1/acknowledgement/download', 'acknowledgement_download')
+    url(r'api/v1/acknowledgement/stats/$', acknowledgements.views.acknowledgement_stats),
+    url(r'api/v1/acknowledgement/item/image$', acknowledgements.views.acknowledgement_item_image),
+    url(r'^api/v1/acknowledgement/item/image$', acknowledgements.views.acknowledgement_item_image),
+    url(r'api/v1/acknowledgement/item/image/$', acknowledgements.views.acknowledgement_item_image),
+    url(r'^api/v1/acknowledgement/item/image/$', acknowledgements.views.acknowledgement_item_image),
+    url(r'^api/v1/acknowledgement/file/$', acknowledgements.views.acknowledgement_file),
+    url(r'^api/v1/acknowledgement/download', acknowledgements.views.acknowledgement_download)
 
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
-)
+]
 
 urlpatterns += patterns('products.views',
     url(r'api/v1/upholstery/image$', 'product_image'),

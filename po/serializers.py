@@ -46,6 +46,10 @@ class ItemSerializer(serializers.ModelSerializer):
         supply = validated_data['supply']
         supply.supplier = self.context['supplier']
         purchase_order = self.context['po']
+        logger.debug(validated_data)
+        logger.debug("{0}: {1}:{2}".format(supply.description, 
+                                           validated_data.get('unit_cost'),
+                                           supply.cost))
 
         # Confirm that the supply has a product
         if Product.objects.filter(supplier=purchase_order.supplier, supply=supply).count() == 0:
@@ -65,8 +69,11 @@ class ItemSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        logger.debug("{0}:{1}".format(unit_cost, supply.cost))
         if unit_cost != supply.cost:
             self._change_supply_cost(supply, unit_cost)
+
+        logger.debug(supply.cost)
 
         return instance
 
@@ -110,6 +117,8 @@ class ItemSerializer(serializers.ModelSerializer):
             instance.supply.save()
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
 
+        logger.debug(instance.unit_cost)
+        logger.debug(instance.supply.cost)
         if instance.unit_cost != instance.supply.cost:
             self._change_supply_cost(instance.supply, instance.unit_cost, units)
 
@@ -150,6 +159,7 @@ class ItemSerializer(serializers.ModelSerializer):
         This will change the supply's product cost, respective of supplier, in the database
         and will log the event as 'PRICE CHANGE'
         """
+        logger.debug(cost)
         try:
             product = Product.objects.get(supply=supply, supplier=supply.supplier)
         except Product.MultipleObjectsReturned:
@@ -300,7 +310,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'create' method to customize how items are created and pass the supplier instance
         to the item serializer via context
         """
-
+        logger.debug(validated_data)
         employee = User.objects.get(pk=1)#self.context['request'].user
 
         items_data = validated_data.pop('items')
@@ -330,7 +340,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.calculate_total()
 
-        instance.create_and_upload_pdf()
+        #instance.create_and_upload_pdf()
 
         # Create approval key and salt
         instance.approval_key = instance.create_approval_key()
@@ -342,7 +352,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         # Create a calendar event
         try:
-            instance.create_calendar_event(employee)
+            pass #instance.create_calendar_event(employee)
         except Exception as e:
             message = "Unable to create calendar event because: {0}"
             message = message.format(e)
@@ -353,7 +363,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         try:
-            instance.email_approver()
+            pass #instance.email_approver()
             # Log Opening of an order
             message = "Purchase Order #{0} sent for approval.".format(instance.id)
             log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
@@ -361,6 +371,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             message = "Unable to email approver because: {0}"
             message = message.format(e)
             POLog.objects.create(message=message, purchase_order=instance, user=employee)
+
+        p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
+        logger.debug(p.cost)
+        raise Exception()
 
         return instance
 
@@ -448,7 +462,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.save()
 
         try:
-            instance.update_calendar_event()
+            pass #instance.update_calendar_event()
         except Exception as e:
             message = "Unable to create calendar event because: {0}"
             message = message.format(e)
