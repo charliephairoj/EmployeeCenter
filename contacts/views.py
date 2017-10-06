@@ -47,6 +47,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        logger.debug(limit)
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
         elif not offset and limit:
@@ -66,7 +67,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 
 class CustomerMixin(object):
-    queryset = Customer.objects.all().order_by('name')
+    queryset = Customer.objects.all().order_by('-last_modified')
     serializer_class = CustomerSerializer
     
     def handle_exception(self, exc):
@@ -101,6 +102,8 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
+        elif not offset and limit:
+            queryset = queryset[:limit]
         else:
             queryset = queryset[0:50]
             
@@ -122,7 +125,7 @@ class CustomerDetail(CustomerMixin, generics.RetrieveUpdateDestroyAPIView):
 
 
 class SupplierMixin(object):
-    queryset = Supplier.objects.all().order_by('name')
+    queryset = Supplier.objects.all().order_by('-last_modified')
     serializer_class = SupplierSerializer
     
     def handle_exception(self, exc):

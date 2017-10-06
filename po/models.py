@@ -432,8 +432,61 @@ class PurchaseOrder(models.Model):
         #Send email
         
         conn.send_email('no-reply@dellarobbiathailand.com',
-                        u'Purchase Order {0}: ({1}) Approval Request'.format(self.id,
-                                                                             self.supplier.name),
+                        u'Approval Request: Purchase Order {0}: ({1})'.format(self.id,
+                                                                              self.supplier.name),
+                        body,
+                        recipients,
+                        format='html')
+
+
+    def email_requester(self):
+        # Styles
+        main_container_style = """
+        width:50em;
+        height:100%;
+        font-family: Tahoma;
+        display: block;
+        float:none;
+        text-align:center;
+        padding:5em 1em;"""
+        button_container_style = """
+        padding:1em 0;
+        display:block;
+        float:left;
+        """
+        button_style = """
+        float:left;
+        appearance: button;
+        background:green;
+        width:5em;
+        padding:1em 0;
+        display:block;
+        text-align:center;
+        border-radius:4px;
+        color:rgba(255, 255, 255, 1);
+        text-decoration: none;
+        outline: none;
+        overflow: hidden;
+        cursor: pointer;
+        border:5px solid rgba(199, 199, 199, 1);
+        """
+
+        
+        conn = boto.ses.connect_to_region('us-east-1')
+        recipients = [po.employee.email]
+      
+        body = render_to_string('purchase_order_approved.html', {'po': self,
+                                                                 'items': self.items.all(), 
+                                                                 'pdf_url':self.pdf.generate_url(time=172800),
+                                                                 'main_container_style': main_container_style,
+                                                                 'button_container_style': button_container_style,
+                                                                 'button_style': button_style
+                                                                 })
+        #Send email
+        
+        conn.send_email('no-reply@dellarobbiathailand.com',
+                        u'Approved: Purchase Order {0}: ({1})'.format(self.id,
+                                                                      self.supplier.name),
                         body,
                         recipients,
                         format='html')
