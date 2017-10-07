@@ -473,7 +473,7 @@ class PurchaseOrder(models.Model):
 
         
         conn = boto.ses.connect_to_region('us-east-1')
-        recipients = [po.employee.email]
+        recipients = [self.employee.email]
       
         body = render_to_string('purchase_order_approved.html', {'po': self,
                                                                  'items': self.items.all(), 

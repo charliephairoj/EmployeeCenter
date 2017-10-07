@@ -425,6 +425,8 @@ class EstimatePDF(object):
         #calculate the totals
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0:
+            quotation_details = ''
+            """
             # Provide account details for 'Dellarobbia Thailand'
             if self.ack.company.lower() == 'dellarobbia thailand':
                 quotation_details = "Prices are valid for 30 Days\n"
@@ -441,7 +443,7 @@ class EstimatePDF(object):
                 quotation_details += "Alinea Group Co., Ltd.\n"
                 quotation_details += "023-1-67736-4\n"
                 quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
-
+            """
             #get subtotal and add to pdf
             data.append([quotation_details, '', '', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
             total = self.ack.subtotal
