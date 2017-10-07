@@ -47,7 +47,7 @@ class ItemSerializer(serializers.ModelSerializer):
         supply.supplier = self.context['supplier']
         purchase_order = self.context['po']
         logger.debug(validated_data)
-        logger.debug("{0}: {1}:{2}".format(supply.description, 
+        logger.debug(u"{0}: {1}:{2}".format(supply.description, 
                                            validated_data.get('unit_cost'),
                                            supply.cost))
 
