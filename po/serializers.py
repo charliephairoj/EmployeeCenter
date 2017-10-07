@@ -310,8 +310,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'create' method to customize how items are created and pass the supplier instance
         to the item serializer via context
         """
-        logger.debug(validated_data)
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
         for item_data in items_data:
@@ -340,7 +339,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.calculate_total()
 
-        #instance.create_and_upload_pdf()
+        instance.create_and_upload_pdf()
 
         # Create approval key and salt
         instance.approval_key = instance.create_approval_key()
@@ -352,7 +351,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         # Create a calendar event
         try:
-            pass #instance.create_calendar_event(employee)
+            instance.create_calendar_event(employee)
         except Exception as e:
             message = "Unable to create calendar event because: {0}"
             message = message.format(e)
@@ -363,7 +362,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         try:
-            pass #instance.email_approver()
+            instance.email_approver()
             # Log Opening of an order
             message = "Purchase Order #{0} sent for approval.".format(instance.id)
             log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
@@ -373,8 +372,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
-        logger.debug(p.cost)
-        raise Exception()
 
         return instance
 
@@ -383,7 +380,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
 
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
         
         instance.current_user = employee
 
@@ -462,7 +459,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.save()
 
         try:
-            pass #instance.update_calendar_event()
+            instance.update_calendar_event()
         except Exception as e:
             message = "Unable to create calendar event because: {0}"
             message = message.format(e)

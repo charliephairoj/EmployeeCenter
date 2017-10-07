@@ -37,6 +37,7 @@ def purchase_order_approval(request):
             return response
         
         if po.approve(approval_pass):
+            po.email_requester()
             message = "PO # {0} approved.".format(po.id)
             response = HttpResponse(json.dumps({'message': message}),
                             content_type="application/json")
