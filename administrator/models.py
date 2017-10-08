@@ -20,6 +20,13 @@ class AWSUser(models.Model):
     iam_id = models.TextField(default="")
     
 
+class Label(models.Model):
+    type = models.TextField()
+    category = models.TextField(default="")
+
+    en = models.TextField(default="")
+    th = models.TextField(default="")
+
 
 class Log(models.Model):
     type = models.TextField()

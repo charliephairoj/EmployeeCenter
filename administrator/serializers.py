@@ -4,10 +4,18 @@ from rest_framework import serializers
 from django.contrib.auth.models import Permission, Group
 import boto
 
-from administrator.models import User, AWSUser, Log
+from administrator.models import User, AWSUser, Log, Label
 
 
 logger = logging.getLogger(__name__)
+
+
+class LabelSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    class Meta:
+        model = Label
+        fields = '__all__'
 
 
 class LogSerializer(serializers.ModelSerializer):
