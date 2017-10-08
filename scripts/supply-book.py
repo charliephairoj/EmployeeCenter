@@ -1,9 +1,16 @@
+
+
 import sys, os, django
+
+
 sys.path.append('/Users/Charlie/Sites/employee/backend')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+sys.path.append('/home/django_worker/backend')
+
+
 import logging
 from decimal import *
 
+from django.core.wsgi import get_wsgi_application
 from django.conf import settings
 from django.core.exceptions import *
 from django.db.models import Q
@@ -16,6 +23,11 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
 from reportlab.lib.enums import TA_LEFT
+
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+application = get_wsgi_application()
+
 
 from contacts.models import Supplier
 from supplies.models import Supply
@@ -38,24 +50,34 @@ class SupplyPDF(object):
                    ('FONT', (0,0), (-1,-1), 'Garuda'),
                    ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
                    ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'),
-                   ('ALIGNMENT', (2,0), (2,-1), 'CENTER'),
+                   ('ALIGNMENT', (1,0), (2,-1), 'CENTER'),
                    ('PADDING', (0,0), (-1,-1), 0),
+                   ('TOPPADDING', (2,1), (2,-1), 20),
+                   ('BOTTOMPADDING', (2,1), (2,-1), 20),
                    ('FONTSIZE', (0,0),(-1,-1), 10)]
         
     def __init__(self, *args, **kwargs):
         
         self.queryset = Supply.objects.raw(
             """
-            SELECT DISTINCT id, description, type, image_id
+            SELECT DISTINCT id, description, type, image_id, last_modified
             FROM supplies_supply AS s
-            WHERE (s.id IN (SELECT supply_id from po_item)
+            WHERE ((s.id IN (SELECT supply_id from po_item)
                    OR s.id IN (SELECT supply_id FROM supplies_log where action != 'PRICE CHANGE'))
             AND s.type != 'Wool'
             AND s.type != 'Acrylic'
             AND s.type != 'fabric'
             AND s.type != 'prop'
-            AND s.type != 'foam'
             AND s.description not ilike '%%test%%'
+            AND s.last_modified > date '2017-6-1')
+            OR s.type = 'screw'
+            OR s.type = 'glue'
+            OR s.type = 'nail'
+            OR s.type = 'staple'
+            OR s.type = 'abrasive'
+            OR s.type = 'adhesive'
+            OR s.type = 'polishing'
+            OR s.type = 'paint'
             ORDER BY s.type, s.description
             """
         )

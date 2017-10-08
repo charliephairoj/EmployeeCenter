@@ -1,8 +1,11 @@
 #!/usr/bin/python
 
 import sys, os, django
-sys.path.append('/home/django_worker/backend')
+
+
 sys.path.append('/Users/Charlie/Sites/employee/backend')
+sys.path.append('/home/django_worker/backend')
+
 
 from django.conf import settings
 from django.core.wsgi import get_wsgi_application
@@ -28,6 +31,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from django.core.wsgi import get_wsgi_application
+
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 application = get_wsgi_application()
