@@ -54,8 +54,6 @@ class ProductListSerializer(serializers.ListSerializer):
             data_mapping = {int(item.get('id', 0)): item for item in validated_data}
         except SyntaxError as e:
             """
-        logger.debug(validated_data)
-        logger.debug(instance)
         product_mapping = {}
         for product in instance:
             product_mapping[product.supplier.id] = product
@@ -66,11 +64,9 @@ class ProductListSerializer(serializers.ListSerializer):
             data_mapping[int(item['supplier'].id)] = item
 
         # Perform creations and updates.
-        logger.debug(data_mapping)
         ret = []
         for product_id, data in data_mapping.items():
             product = product_mapping.get(product_id, None)
-            logger.debug(product)
             if product is None:
                 ret.append(self.child.create(data))
             else:
@@ -250,6 +246,7 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to customize create, update and delete of products
         """
+        logger.debug(validated_data)
         try:
             products_data = validated_data.pop('suppliers')
         except KeyError:
@@ -269,7 +266,9 @@ class SupplySerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        assert instance.quantity == new_quantity
         self._log_quantity(instance, old_quantity, new_quantity, employee)
+        assert instance.quantity == new_quantity
 
         return instance
 
