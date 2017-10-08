@@ -160,7 +160,9 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     contacts = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
-    
+    bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Customer
         exclude = ('contact', 'google_contact_id', 'type', 'job_title')
@@ -216,7 +218,9 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     contacts = ContactSerializer(required=False, many=True, write_only=True, allow_null=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
+    bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Supplier
         exclude = ('contact', 'google_contact_id')

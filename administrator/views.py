@@ -13,8 +13,8 @@ from boto.s3.key import Key
 import boto.ses
 
 #from administrator.models import User
-from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer, LogSerializer
-from administrator.models import Log
+from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer, LogSerializer, LabelSerializer
+from administrator.models import Log, Label
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,41 @@ def log(request):
         response.status_code = 200 
         return response
         
+
+class LabelMixin(object):
+    queryset = Label.objects.all()
+    serializer_class = LabelSerializer
+    
+    
+class LabelList(LabelMixin, generics.ListCreateAPIView):
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        label_type = self.request.query_params.get('type', None)
+
+        if label_type:
+            queryset = queryset.filter(type=label_type)
+        
+        offset = self.request.query_params.get('offset', None)
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        if offset != None and limit:
+            queryset = queryset[int(offset):limit + int(offset)]
+        elif offset == None and limit:
+            queryset = queryset[:limit]
+        else:
+            queryset = queryset[0:50]
+        
+        return queryset
+    
+
+class LabelDetail(LabelMixin, generics.RetrieveUpdateDestroyAPIView):
+    pass
+
     
 class UserMixin(object):
     queryset = User.objects.all()

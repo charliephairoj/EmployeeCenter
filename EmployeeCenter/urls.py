@@ -32,6 +32,7 @@ from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from hr.views import ShiftViewSet
 from administrator.views import UserList, UserDetail
+from administrator.views import LabelList, LabelDetail
 from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail, LogList as ALogList
 from equipment.views import EquipmentList, EquipmentDetail
@@ -108,6 +109,8 @@ urlpatterns = [
     url(r'^api/v1/room/(?P<pk>[0-9]+)/$', RoomDetail.as_view()),
     url(r'^api/v1/room-item/$', RoomItemList.as_view()),
     url(r'^api/v1/room-item/(?P<pk>[0-9]+)/$', RoomItemDetail.as_view()),
+    url(r'^api/v1/label/$', LabelList.as_view()),
+    url(r'^api/v1/label/(?P<pk>[0-9]+)/$', LabelDetail.as_view()),
     url(r'^api/v1/user/$', UserList.as_view()),
     url(r'^api/v1/user/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
     url(r'^api/v1/group/$', GroupList.as_view()),

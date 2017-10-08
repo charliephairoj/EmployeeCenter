@@ -38,7 +38,9 @@ class Contact(models.Model):
     website = models.TextField(null=True, blank=True)
     google_contact_id = models.TextField(null=True, blank=True)
     tax_id = models.TextField(null=True, blank=True)
-    
+    bank = models.TextField(null=True, default="")
+    bank_account_number = models.TextField(null=True, default="")
+
     #class Meta:
         #ordering = ['name']
 
