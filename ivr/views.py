@@ -3,7 +3,9 @@
 import logging
 
 from django.conf import settings
+from django.template.loader import render_to_string
 from django.shortcuts import render
+from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from twilio.twiml.voice_response import Gather, VoiceResponse, Say, Dial
@@ -58,7 +60,6 @@ def get_token(request):
 
 @csrf_exempt
 def test(request):
-    logger.debug(request.GET)
     resp = VoiceResponse()
 
     gather = Gather(action="/api/v1/ivr/test/route_call/", method="POST", num_digits=1, timeout=10)
@@ -72,8 +73,6 @@ def test(request):
 
 def route_call(request):
 
-    logger.debug(request.POST)
-    logger.debug(request.POST.get('Digits', ''))
 
     digits = int(request.POST.get('Digits', '0'))
     call_origin = request.POST.get('From', None)
@@ -81,13 +80,10 @@ def route_call(request):
     call_log = Call.objects.create(twilio_id=request.POST.get('CallSid', None), 
                                    type="incoming", 
                                    incoming_number=call_origin)
-
-    logger.debug(call_log.__dict__)
-
     if digits == 1:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-sales.mp3"
-        numbers = ['+66819189145']
-        clients = ["sidarat"]
+        numbers = [(73, '+66819189145')]
+        clients = [(73, "sidarat")]
         caller_id = call_origin or '+6625088681'
 
         call_log.forwarding_number = '+66819189145'
@@ -95,48 +91,50 @@ def route_call(request):
 
     elif digits == 2:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
-        numbers = ['+66914928558', '+66952471426']
-        clients = ["chup", 'apaporn']
+        numbers = [(16, '+66914928558'), (42, '+66952471426'), (42, '+66634646465')]
+        clients = [(16, "chup"), (42, 'apaporn')]
         caller_id = '+6625088681'
 
     elif digits == 3:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
-        numbers = ['+66988325610']
-        clients = ["mays"]
+        numbers = [(63, '+66988325610')]
+        clients = [(63, "mays")]
         caller_id = '+6625088681'
 
     elif digits == 8:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-accounting.mp3"
-        numbers = ['+66990041468']
-        clients = ["charliephairoj"]
-        caller_id = call_origin or ""
+        numbers = [(1, '+66990041468')]
+        clients = [(1, "charliephairoj")]
+        caller_id = "+6625088681"
 
         call_log.forwarding_number = '+66990041468'
         call_log.save()
 
     else:
         message = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/ivr/audio-transferring-customer-service.mp3"
-        numbers = ['+66914928558', '+66952471426']
-        clients = ["chup", 'apaporn']
+        numbers = [(16, '+66914928558'), (42, '+66952471426')]
+        clients = [(16, "chup"), (42, 'apaporn')]
         caller_id = '+6625088681' or '+6625088681'
 
     resp = VoiceResponse()
     resp.play(message)
 
     dial = Dial(caller_id=caller_id, 
-                action='/api/v1/ivr/status/',
+                #action='/api/v1/ivr/status/',
                 record='record-from-ringing', 
                 recording_status_callback="/api/v1/ivr/recording/")
 
     for number in numbers:
-        dial.number(number,
-                    status_callback_event=['answered', 'completed'],
-                    status_callback='/api/v1/ivr/status/',)
+        dial.number(number[1],
+                    status_callback_event='answered',
+                    status_callback=_get_status_callback_url(number[0]),
+                    status_callback_method="GET")
     
     for client in clients:
-        dial.client(client,
-                    status_callback_event=['answered', 'completed'],
-                    status_callback='/api/v1/ivr/status/',)
+        dial.client(client[1],
+                    status_callback_event='answered',
+                    status_callback=_get_status_callback_url(client[0]),
+                    status_callback_method="GET")
 
     resp.append(dial)
 
@@ -144,17 +142,25 @@ def route_call(request):
 
 
 def call_status_update_callback(request):
-    call_data = request.POST
-    logger.debug(call_data)
+    call_data = request.GET
 
     try:
-        call_log = Call.objects.get(twilio_id=call_data.get('CallSid', 0))
+        user = User.objects.get(pk=call_data['employee_id'])
     except Exception as e:
+        logger.debug(e)
+        user = User.objects.get(pk=1)
+
+    try:
+        call_log = Call.objects.get(twilio_id=call_data.get('ParentCallSid', 0))
+    except Exception as e:
+        logger.debug(e)
+        logger.debug("New Call Created")
         call_log = Call()
 
-    call_log.twilio_id = request.POST.get('CallSid', call_log.twilio_id)
-    call_log.type = call_data.get('Direction', call_log.type) 
-    call_log.incoming_number = call_data.get('From', call_log.incoming_number)
+    call_log.twilio_id = request.POST.get(u'ParentCallSid', call_log.twilio_id)
+    call_log.type = call_log.type or call_data.get('Direction', call_log.type) 
+    call_log.incoming_number = call_log.incoming_number or call_data.get('From', call_log.incoming_number)
+    call_log.employee = user
     call_log.save()
 
     resp = VoiceResponse()
@@ -164,7 +170,6 @@ def call_status_update_callback(request):
 
 def recording_callback(request):
     call_data = request.POST
-    logger.debug(call_data)
     call_log = Call.objects.get(twilio_id=call_data.get('CallSid', 0))
 
     call_log.duration = call_data.get('RecordingDuration', call_log.duration)
@@ -175,13 +180,30 @@ def recording_callback(request):
     resp = VoiceResponse()
     resp.hangup()
 
+    try:
+        email_call_summary(call_log.employee.email, call_log)
+    except Exception as e:
+        logger.debug(e)
+        email_call_summary('charliep@alineagroup.co', call_log)
+
+
     return HttpResponse(resp)
 
-def email_call_summary(recipient, body):
+def email_call_summary(recipient, call):
 
+    body = render_to_string('call_summary.html', {'call': call})
     conn = boto.ses.connect_to_region('us-east-1')
     conn.send_email('no-replay@dellarobbiathailand.com',
-                    'Acknowledgement of Order Placed',
+                    'Call Summary',
                     body,
-                    recipients,
+                    recipient,
                     format='html')
+
+def _get_status_callback_url(employee_id=None):
+    status_callback_url = 'https://employee.alineagroup.co/api/v1/ivr/status/'
+
+    if employee_id:
+        status_callback_url += "?employee={0}".format(employee_id)
+    
+    
+    return status_callback_url

@@ -204,6 +204,7 @@ urlpatterns += patterns('ivr.views',
     url(r'^api/v1/ivr/test/$', 'test'),
     url(r'^api/v1/ivr/test/route_call/$', 'route_call'),
     url(r'^api/v1/ivr/status/$', 'call_status_update_callback'),
+#    url(r'^api/v1/ivr/status/(?P<pk>[0-9]+)/$', 'call_status_update_callback'),
     url(r'^api/v1/ivr/recording/$', 'recording_callback'),
 )
 
