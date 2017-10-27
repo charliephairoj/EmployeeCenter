@@ -12,7 +12,7 @@ from twilio.twiml.voice_response import Gather, VoiceResponse, Say, Dial
 from twilio.jwt.client import ClientCapabilityToken
 import boto.ses
 
-
+from administrator.models import Log
 from ivr.models import Call
 
 
@@ -183,18 +183,24 @@ def recording_callback(request):
     try:
         email_call_summary(call_log.employee.email, call_log)
     except Exception as e:
-        logger.debug(e)
-        email_call_summary('charliep@alineagroup.co', call_log)
+        try: 
+            employee = call_log.employee or User.objects.get(pk=1)
+        except AttributeError:
+            employee = User.objects.get(pk=1)
+        Log.objects.create(type="Call Summary Error", 
+                           message=e,
+                           user=employee)
+        email_call_summary('charliep@alineagroup.co', call_log, 'error call summary')
 
 
     return HttpResponse(resp)
 
-def email_call_summary(recipient, call):
+def email_call_summary(recipient, call, subject='Call Summary'):
 
     body = render_to_string('call_summary.html', {'call': call})
     conn = boto.ses.connect_to_region('us-east-1')
     conn.send_email('no-replay@dellarobbiathailand.com',
-                    'Call Summary',
+                    subject,
                     body,
                     recipient,
                     format='html')
