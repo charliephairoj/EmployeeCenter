@@ -14,20 +14,24 @@ from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierD
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import LogList, LogDetail
+from supplies.views import supply_image, sticker, fabric_sticker
 from products.views import ConfigurationViewSet
 from products.views import ModelList, ModelDetail
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
 from products.views import ProductSupplyList, ProductSupplyDetail
+from products.views import product_image, model_public
 from estimates.views import EstimateList, EstimateDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
 from po.views import PurchaseOrderList, PurchaseOrderDetail
+from po.views import purchase_order_approval, purchase_order_stats
 from projects.views import ProjectList, ProjectDetail
 from projects.views import PhaseViewSet
 from projects.views import RoomList, RoomDetail
 from projects.views import RoomItemList, RoomItemDetail
 from projects.views import PartViewSet
+from projects.views import report, phase_report
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from hr.views import ShiftViewSet
@@ -35,10 +39,11 @@ from administrator.views import UserList, UserDetail
 from administrator.views import LabelList, LabelDetail
 from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail, LogList as ALogList
-from equipment.views import EquipmentList, EquipmentDetail
+from equipment.views import EquipmentList, EquipmentDetail, sticker
 from hr.views import PayrollList
+from hr.views import employee_stats, employee_image, upload_attendance
 from deals.views import DealList, DealDetail
-from ivr.views import test
+from ivr.views import voice, get_token, test, route_call, recording_callback, call_status_update_callback
 """
 API Section
 
@@ -148,65 +153,64 @@ urlpatterns += [
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 ]
 
-urlpatterns += patterns('products.views',
-    url(r'api/v1/upholstery/image$', 'product_image'),
-    url(r'^api/v1/upholstery/image$', 'product_image'),
-    url(r'^api/v1/upholstery/image/$', 'product_image'),
-    url(r'^api/v1/upholstery/image/$', 'product_image'),
-    url(r'api/v1/model/image$', 'product_image'),
-    url(r'^api/v1/model/image$', 'product_image'),
-    url(r'^api/v1/model/image/$', 'product_image'),
-    url(r'^api/v1/model/image/$', 'product_image'),
-    url(r'^api/v1/model/public/$', 'model_public')
+urlpatterns += [
+    url(r'api/v1/upholstery/image$', product_image),
+    url(r'^api/v1/upholstery/image$', product_image),
+    url(r'^api/v1/upholstery/image/$', product_image),
+    url(r'^api/v1/upholstery/image/$', product_image),
+    url(r'api/v1/model/image$', product_image),
+    url(r'^api/v1/model/image$', product_image),
+    url(r'^api/v1/model/image/$', product_image),
+    url(r'^api/v1/model/image/$', product_image),
+    url(r'^api/v1/model/public/$', model_public)
 
-)
+]
 
-urlpatterns += patterns('supplies.views',
-    url(r'^api/v1/supply/image/$', 'supply_image'),
-    url(r'^api/v1/supply/image/$', 'supply_image'),
-    url(r'api/v1/supply/(?P<pk>\d+)/sticker$', 'sticker'),
-    url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', 'sticker'),
-    url(r'api/v1/fabric/(?P<pk>\d+)/sticker$', 'fabric_sticker'),
-    url(r'api/v1/fabric/(?P<pk>\d+)/sticker/$', 'fabric_sticker'),
+urlpatterns += [
+    url(r'^api/v1/supply/image/$', supply_image),
+    url(r'^api/v1/supply/image/$', supply_image),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker$', sticker),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', sticker),
+    url(r'api/v1/fabric/(?P<pk>\d+)/sticker$', fabric_sticker),
+    url(r'api/v1/fabric/(?P<pk>\d+)/sticker/$', fabric_sticker),
 
-)
+]
 
-urlpatterns += patterns('equipment.views',
-    url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', 'sticker'),
-    url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', 'sticker'),
+urlpatterns += [
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', sticker),
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', sticker),
+]
 
-)
+urlpatterns += [
+    url(r'api/v1/purchase-order/approval$', purchase_order_approval),
+    url(r'api/v1/purchase-order/approval/$', purchase_order_approval),
+    url(r'api/v1/purchase-order/stats$', purchase_order_stats),
+    url(r'api/v1/purchase-order/stats/$', purchase_order_stats)
+]
 
-urlpatterns += patterns('po.views',
-    url(r'api/v1/purchase-order/approval$', 'purchase_order_approval'),
-    url(r'api/v1/purchase-order/approval/$', 'purchase_order_approval'),
-    url(r'api/v1/purchase-order/stats$', 'purchase_order_stats'),
-    url(r'api/v1/purchase-order/stats/$', 'purchase_order_stats')
-)
+urlpatterns += [
+    url(r'api/v1/project/(?P<pk>\d+)/report$', report),
+    url(r'api/v1/project/(?P<pk>\d+)/report/$', report),
+    url(r'api/v1/phase/(?P<pk>\d+)/report$', phase_report),
+    url(r'api/v1/phase/(?P<pk>\d+)/report/$', phase_report)
+]
 
-urlpatterns += patterns('projects.views',
-    url(r'api/v1/project/(?P<pk>\d+)/report$', 'report'),
-    url(r'api/v1/project/(?P<pk>\d+)/report/$', 'report'),
-    url(r'api/v1/phase/(?P<pk>\d+)/report$', 'phase_report'),
-    url(r'api/v1/phase/(?P<pk>\d+)/report/$', 'phase_report')
-)
-
-urlpatterns += patterns('hr.views',
-    url(r'^api/v1/employee/stats/$', 'employee_stats'),
-    url(r'^api/v1/employee/image/$', 'employee_image'),
-    url(r'^api/v1/employee/attendance/$', 'upload_attendance')
-)
+urlpatterns += [
+    url(r'^api/v1/employee/stats/$', employee_stats),
+    url(r'^api/v1/employee/image/$', employee_image),
+    url(r'^api/v1/employee/attendance/$', upload_attendance)
+]
 
 
-urlpatterns += patterns('ivr.views',
-    url(r'^api/v1/ivr/voice/$', 'voice'),
-    url(r'^api/v1/ivr/token/$', 'get_token'),
-    url(r'^api/v1/ivr/test/$', 'test'),
-    url(r'^api/v1/ivr/test/route_call/$', 'route_call'),
-    url(r'^api/v1/ivr/status/$', 'call_status_update_callback'),
+urlpatterns += [
+    url(r'^api/v1/ivr/voice/$', voice),
+    url(r'^api/v1/ivr/token/$', get_token),
+    url(r'^api/v1/ivr/test/$', test),
+    url(r'^api/v1/ivr/test/route_call/$', route_call),
+    url(r'^api/v1/ivr/status/$', call_status_update_callback),
 #    url(r'^api/v1/ivr/status/(?P<pk>[0-9]+)/$', 'call_status_update_callback'),
-    url(r'^api/v1/ivr/recording/$', 'recording_callback'),
-)
+    url(r'^api/v1/ivr/recording/$', recording_callback),
+]
 
 
 urlpatterns += patterns('',
