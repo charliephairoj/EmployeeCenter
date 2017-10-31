@@ -36,7 +36,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset
-        logger.debug(self.request.user)
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
@@ -47,7 +47,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
-        logger.debug(limit)
+
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
         elif not offset and limit:
@@ -89,7 +89,6 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset.all()
-        
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:

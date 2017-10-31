@@ -497,7 +497,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                           supplier=po.supplier)
         except Product.MultipleObjectsReturned as e:
             logger.warn(e)
-            product = Product.objects.filter(supply=item.supply, supplier=po.supplier)[0]
+            products = Product.objects.filter(supply=item.supply, supplier=po.supplier)
+            product = products.order_by('id')[0]
+        except Product.DoesNotExist as e:
+            msg = "There is no product for supply {0}: {1} and supplier {2}: {3}\n\n{4}"
+            msg = msg.format(supply.item.id,
+                             supply.item.description,
+                             po.supplier.id,
+                             po.supplier.name,
+                             e)
 
 
         #Calculate the quantity to add to current supply qty

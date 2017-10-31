@@ -13,6 +13,7 @@ from django.http import HttpResponse
 from django.db import transaction, connection
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from acknowledgements.models import Acknowledgement, Item, Pillow
 from acknowledgements.serializers import AcknowledgementSerializer, ItemSerializer
@@ -80,11 +81,17 @@ def acknowledgement_stats(request):
     response.status_code = 200
     return response
     
-    
+
+@login_required
 def acknowledgement_item_image(request):
+
     if request.method == "POST":
-        
-        credentials = request.user.aws_credentials
+        try:
+            credentials = request.user.aws_credentials
+        except AttributeError as e:
+            logger.error(e)
+
+
         key = credentials.access_key_id
         secret = credentials.secret_access_key
         
