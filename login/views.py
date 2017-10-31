@@ -107,10 +107,12 @@ def app_login(request):
 
             #checks whether user authennticated
             if user is not None:
-
+                logger.debug(user)
+                logger.debug(user.is_active)
+                logger.debug(user.first_name.lower())
                 #checks if user is still active
                 if user.is_active:
-
+                    
                     #login the user
                     login(request, user)
 
