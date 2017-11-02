@@ -240,7 +240,7 @@ class AcknowledgementPDF(object):
 
     #create method
     def create(self):
-        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
         doc = AckDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,

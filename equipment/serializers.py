@@ -40,6 +40,7 @@ class EquipmentSerializer(serializers.ModelSerializer):
     image = S3ObjectSerializer(allow_null=True, required=False)
     
     class Meta:
+        fields = '__all__'
         model = Equipment
         list_serializer_class = EquipmentListSerializer
     

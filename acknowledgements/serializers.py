@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+import traceback
 
 import boto
 from rest_framework import serializers
@@ -521,18 +522,32 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         old_total = instance.total
         instance.calculate_totals()
 
-        instance.create_and_upload_pdfs()
+        try:
+            instance.create_and_upload_pdfs()
+        except IOError as e:
+
+        
+            tb = traceback.format_exc()
+            logger.error(tb)
+            
+            message = "Unable to update PDF for acknowledgement {0} because:\n{1}"
+            message = message.format(instance.id, e)
+            log = AckLog.create(message=message, 
+                                acknowledgement=instance, 
+                                user=employee,
+                                type="PDF CREATION ERROR")
 
 
         try:
             instance.update_calendar_event()
         except Exception as e:
+            logger.debug(e)
             message = "Unable to update calendar event for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
             log = AckLog.create(message=message, 
                                 acknowledgement=instance, 
                                 user=employee,
-                                type="GOOGLE CALENDAR")
+                                type="GOOGLE CALENDAR ERROR")
 
         instance.save()
 
@@ -545,7 +560,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 log = AckLog.create(message=message, 
                                     acknowledgement=instance, 
                                     user=employee,
-                                    type="TRCLOUD")
+                                    type="TRCLOUD ERROR")
            
         return instance
 

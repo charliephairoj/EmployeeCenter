@@ -19,15 +19,16 @@ from administrator.models import Log, Label
 
 logger = logging.getLogger(__name__)
 
-
+@login_required
 def log(request):
     if request.method.lower() == 'post':
         data = request.POST
     
         try:
-            Log.objects.create(user=request.user, type=data['type'].upper(), message=data['message'])
+            err_type = "Web Error: {0}".format(data['type'].upper())
+            Log.objects.create(user=request.user, type=err_type, message=data['message'])
         except Exception:
-            pass
+            Log.objects.create(user=request.user, type="Web Error", message=data['message'])
             
         #Send an email if log is an error
         if data['type'].lower() == 'xerror': 
