@@ -371,7 +371,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             message = message.format(e)
             POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
-        p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
+        # What is this line for? Unsure.
+        #p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
 
         return instance
 
@@ -501,8 +502,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             product = products.order_by('id')[0]
         except Product.DoesNotExist as e:
             msg = "There is no product for supply {0}: {1} and supplier {2}: {3}\n\n{4}"
-            msg = msg.format(supply.item.id,
-                             supply.item.description,
+            msg = msg.format(item.supply.id,
+                             item.supply.description,
                              po.supplier.id,
                              po.supplier.name,
                              e)
