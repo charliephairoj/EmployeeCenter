@@ -507,7 +507,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                              po.supplier.id,
                              po.supplier.name,
                              e)
-
+            product = Product.objects.create(supply=item.supply, 
+                                             supplier=po.supplier,
+                                             unit_cost=item.unit_cost)
 
         #Calculate the quantity to add to current supply qty
         try:
