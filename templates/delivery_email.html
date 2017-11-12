@@ -212,19 +212,7 @@
 					</table>
 				</td>
 			</tr>
-			<tr>
-				<td colspan="9">
-					<table style="width:100%; height:12px">
-						<tr>
-							<td style="{{status_cell}} {% if ack.opened %} background-color:rgb(54, 66, 140); color:#FFF;{% endif %}">Acknowledged</td>
-							<td style="{{status_cell}} {% if ack.deposit_received %} background-color:rgb(50, 130, 120); color:#FFF;{% endif %}">Deposit Received</td>
-							<td style="{{status_cell}} {% if ack.in_production %} background-color:rgb(198, 148, 77); color:#FFF;{% endif %}">In Production</td>
-							<td style="{{status_cell}} {% if ack.ready_to_ship %} background-color:rgb(87,117,83); color:#FFF;{% endif %}">Ready to Ship</td>
-							<td style="{{status_cell}} {% if ack.shipped %} background-color:rgb(97,92,130); color:#FFF;{% endif %}">Shipped</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
+			
 			{% endfor %}
 		</tbody>
     </table>

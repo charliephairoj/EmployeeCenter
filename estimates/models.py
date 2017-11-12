@@ -43,7 +43,7 @@ class Estimate(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object, null=True, related_name='+')
-    
+    deposit = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimate")
               
     """

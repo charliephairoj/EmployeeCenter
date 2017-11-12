@@ -8,15 +8,20 @@ the email address
 """
 
 import sys, os, django
-sys.path.append('/Users/Charlie/Sites/employee/backend')
-sys.path.append('/home/django_worker/backend')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-
 from decimal import Decimal
 from datetime import timedelta, datetime
 import logging
+import pprint
+
+sys.path.append('/Users/Charlie/Sites/employee/backend')
+sys.path.append('/home/django_worker/backend')
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+application = get_wsgi_application()
+pp = pprint.PrettyPrinter(width=1, indent=1)
+logger = logging.getLogger(__name__)
 
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -74,21 +79,24 @@ class AcknowledgementEmail(object):
         #super(self, AcknowledgementEmail).__init__(*args, **kwargs)
         
         date = datetime.today()
-        self.start_date = date - timedelta(days=31)
+        self.start_date = date - timedelta(days=4)
         self.end_date = self.start_date + timedelta(days=31)
-        self.queryset = self.queryset.filter(delivery_date__range=[self.start_date,
-                                                                   self.end_date])
-        self.queryset = self.queryset.order_by('delivery_date')
+        logger.debug(self.start_date)
+        logger.debug(self.end_date)
+        self.queryset = self.queryset.filter(_delivery_date__range=[self.start_date,
+                                                                    self.end_date])
+        self.queryset = self.queryset.order_by('_delivery_date')
         
-        self.queryset = Acknowledgement.objects.raw("""
-        SELECT id, delivery_date, status from acknowledgements_acknowledgement
-        where (delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
-        OR (delivery_date > now() - interval '14 days' AND 
-        (lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship'))
-        ORDER BY delivery_date""")
+        #self.queryset = Acknowledgement.objects.raw("""
+        #SELECT id, delivery_date, status from acknowledgements_acknowledgement
+        #where (delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
+        #OR (delivery_date > now() - interval '14 days' AND 
+        #(lower(status) = 'acknowledged' OR lower(status) = 'deposit received' OR lower(status) = 'in production' OR lower(status) = 'ready to ship'))
+        #ORDER BY delivery_date""")
         
         self.acks = []
         
+
         for ack in self.queryset:
             for status in ['opened', 'deposit received', 'in production', 'ready to ship', 'shipped', 'invoiced', 'paid']:
                 if ack.logs.filter(message__icontains=status).exists(): 
@@ -117,7 +125,7 @@ if __name__ == "__main__":
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["deliveries@dellarobbiathailand.com"],
+                      ["charliep@dellarobbiathailand.com"],
                       format='html')
    
 

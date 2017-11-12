@@ -30,10 +30,9 @@ from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
 from django.contrib.auth.models import User as U
 
-u = U.objects.get(pk=1)
-a = A.objects.filter(calendar_event_id=None).exclude(status__icontains='cancelled').order_by('-id')[0]
-logger.debug(a.id)
-logger.debug(a.calendar_event_id)
-a.create_calendar_event(u)
-logger.debug(a.calendar_event_id)
-
+e = E.objects.get(pk=12984)
+e.vat = 0
+e.deposit = 50
+e.save()
+e.create_and_upload_pdf()
+print e.pdf.generate_url()

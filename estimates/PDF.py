@@ -7,7 +7,7 @@ for customers. The production pdf is created to be
 use by the production team and the office overseeing
 production
 """
-
+ 
 from decimal import Decimal
 from pytz import timezone
 
@@ -424,7 +424,7 @@ class EstimatePDF(object):
         data = []
         #calculate the totals
         #what to do if there is vat or discount
-        if self.ack.vat > 0 or self.ack.discount > 0:
+        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
             # Provide account details for 'Dellarobbia Thailand'
             if self.ack.company.lower() == 'dellarobbia thailand':
                 quotation_details = "Prices are valid for 30 Days\n"
@@ -473,22 +473,37 @@ class EstimatePDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
+
+        if 1 == 1: #self.ack.deposit > 0:
+            deposit_amount = self.ack.total * (self.ack.deposit/Decimal('100'))
+            data.append(['', '', '', 'Deposit {0}%'.format(self.ack.deposit), "{0:,.2f}".format(deposit_amount)])
+
+            balance_amount = self.ack.total - deposit_amount
+            data.append(['', '', '', 'Balance {0}%'.format(Decimal('100') - self.ack.deposit), "{0:,.2f}".format(balance_amount)])
+
+
         table = Table(data, colWidths=(130, 140, 85, 70, 125))
-        style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
-                            #Lines around content
-                            ('LINEBELOW', (0, -1), (-1, -1), 1,
-                             colors.CMYKColor(black=80)),
-                            ('LINEBEFORE', (0, 0), (0, -1), 1,
-                             colors.CMYKColor(black=60)),
-                            ('LINEAFTER', (-1, 0), (-1, -1), 1,
-                             colors.CMYKColor(black=60)),
-                            ('LINEBEFORE', (-2, 0), (-2, -1), 1,
-                             colors.CMYKColor(black=60)),
-                            #General alignment
-                            ('ALIGNMENT', (0, 0), (-2, -1), 'LEFT'),
-                            #Align description
-                            ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT'),
-                            ('SPAN', (0, 0), (2, -1))])
+        style_list = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+                        #Lines around content
+                        ('LINEBELOW', (0, -1), (-1, -1), 1,
+                            colors.CMYKColor(black=80)),
+                        ('LINEBEFORE', (0, 0), (0, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        ('LINEAFTER', (-1, 0), (-1, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        ('LINEBEFORE', (-2, 0), (-2, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        #General alignment
+                        ('ALIGNMENT', (0, 0), (-2, -1), 'LEFT'),
+                        #Align description
+                        ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT'),
+                        ('SPAN', (0, 0), (2, -1))]
+
+    
+        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
+            style_list.append(('VALIGN', (0,0), (0,0), 'TOP'))
+
+        style = TableStyle(style_list)
         table.setStyle(style)
         style = TableStyle()
 
