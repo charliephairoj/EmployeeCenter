@@ -422,6 +422,25 @@ class EstimatePDF(object):
     def _create_totals_section(self):
         #Create data and style array
         data = []
+
+        # Craete the default style list
+        table = Table(data, colWidths=(130, 140, 85, 70, 125))
+        style_list = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
+                        #Lines around content
+                        ('LINEBELOW', (0, -1), (-1, -1), 1,
+                            colors.CMYKColor(black=80)),
+                        ('LINEBEFORE', (0, 0), (0, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        ('LINEAFTER', (-1, 0), (-1, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        ('LINEBEFORE', (-2, 0), (-2, -1), 1,
+                            colors.CMYKColor(black=60)),
+                        #General alignment
+                        ('ALIGNMENT', (0, 0), (-2, -1), 'LEFT'),
+                        #Align description
+                        ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT'),
+                        ('SPAN', (0, 0), (2, -1))]
+        
         #calculate the totals
         #what to do if there is vat or discount
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
@@ -474,32 +493,15 @@ class EstimatePDF(object):
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
 
-        if 1 == 1: #self.ack.deposit > 0:
+        if self.ack.deposit > 0:
             deposit_amount = self.ack.total * (self.ack.deposit/Decimal('100'))
             data.append(['', '', '', 'Deposit {0}%'.format(self.ack.deposit), "{0:,.2f}".format(deposit_amount)])
 
             balance_amount = self.ack.total - deposit_amount
             data.append(['', '', '', 'Balance {0}%'.format(Decimal('100') - self.ack.deposit), "{0:,.2f}".format(balance_amount)])
 
+            style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80))
 
-        table = Table(data, colWidths=(130, 140, 85, 70, 125))
-        style_list = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
-                        #Lines around content
-                        ('LINEBELOW', (0, -1), (-1, -1), 1,
-                            colors.CMYKColor(black=80)),
-                        ('LINEBEFORE', (0, 0), (0, -1), 1,
-                            colors.CMYKColor(black=60)),
-                        ('LINEAFTER', (-1, 0), (-1, -1), 1,
-                            colors.CMYKColor(black=60)),
-                        ('LINEBEFORE', (-2, 0), (-2, -1), 1,
-                            colors.CMYKColor(black=60)),
-                        #General alignment
-                        ('ALIGNMENT', (0, 0), (-2, -1), 'LEFT'),
-                        #Align description
-                        ('ALIGNMENT', (-1, 0), (-1, -1), 'RIGHT'),
-                        ('SPAN', (0, 0), (2, -1))]
-
-    
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
             style_list.append(('VALIGN', (0,0), (0,0), 'TOP'))
 
