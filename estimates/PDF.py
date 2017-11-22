@@ -502,7 +502,7 @@ class EstimatePDF(object):
 
             style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80))
 
-        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
+        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit > 0:
             style_list.append(('VALIGN', (0,0), (0,0), 'TOP'))
 
         style = TableStyle(style_list)
