@@ -500,7 +500,7 @@ class EstimatePDF(object):
             balance_amount = self.ack.total - deposit_amount
             data.append(['', '', '', 'Balance {0}%'.format(Decimal('100') - self.ack.deposit), "{0:,.2f}".format(balance_amount)])
 
-            style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80))
+            style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80)))
 
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit > 0:
             style_list.append(('VALIGN', (0,0), (0,0), 'TOP'))
