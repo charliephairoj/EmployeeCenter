@@ -424,7 +424,6 @@ class EstimatePDF(object):
         data = []
 
         # Craete the default style list
-        table = Table(data, colWidths=(130, 140, 85, 70, 125))
         style_list = [('TEXTCOLOR', (0, 0), (-1, -1), colors.CMYKColor(black=60)),
                         #Lines around content
                         ('LINEBELOW', (0, -1), (-1, -1), 1,
@@ -502,9 +501,11 @@ class EstimatePDF(object):
 
             style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80)))
 
-        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit > 0:
+        if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
             style_list.append(('VALIGN', (0,0), (0,0), 'TOP'))
 
+
+        table = Table(data, colWidths=(130, 140, 85, 70, 125))
         style = TableStyle(style_list)
         table.setStyle(style)
         style = TableStyle()
