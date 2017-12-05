@@ -5,6 +5,8 @@ from django.contrib.auth.hashers import check_password
 import json
 import logging
 
+from django.contrib.auth.models import User
+
 
 logger = logging.getLogger('EmployeeCenter')
 
@@ -56,24 +58,37 @@ def change_password(request):
     data = json.loads(request.body)
 
     #Check if correct old password supplied
-    if check_password(data['old'], user.password):
-        if data['newPass'] == data['repeatPass']:
-            user.set_password(data['newPass'])
+    if user.is_superuser:
+        if data["new_password"] == data["repeat_new_password"]:
+            user = User.objects.get(id=data["user_id"])
+            user.set_password(data["new_password"])
             user.save()
-            response = HttpResponse(json.dumps({"status": "Password Changed"}),
+            response = HttpResponse(json.dumps({'status': 'success'}),
                                     content_type="application/json")
             response.status_code = 200
+            #return data via http
             return response
         else:
-            response = HttpResponse(json.dumps({"status": "New Passwords do not match"}),
+            return HttpResponseBadRequest("New passwords do not match")
+    else:
+        if check_password(data['old'], user.password):
+            if data['newPass'] == data['repeatPass']:
+                user.set_password(data['newPass'])
+                user.save()
+                response = HttpResponse(json.dumps({"status": "Password Changed"}),
+                                        content_type="application/json")
+                response.status_code = 200
+                return response
+            else:
+                response = HttpResponse(json.dumps({"status": "New Passwords do not match"}),
+                                        content_type="application/json")
+                response.status_code = 400
+                return response
+        else:
+            response = HttpResponse(json.dumps({"status": "Incorrect Password"}),
                                     content_type="application/json")
             response.status_code = 400
             return response
-    else:
-        response = HttpResponse(json.dumps({"status": "Incorrect Password"}),
-                                content_type="application/json")
-        response.status_code = 400
-        return response
 
 
 @login_required

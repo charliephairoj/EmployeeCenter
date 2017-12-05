@@ -440,7 +440,7 @@ def user(request, user_id=0):
         return response
 
 
-def password(request, user_id):
+def password(request, user_id=0):
     """
     Changes the password of the specified user
     """
@@ -450,6 +450,7 @@ def password(request, user_id):
         print request.user.is_superuser
         if request.user.is_superuser:
             if data["new_password"] == data["repeat_new_password"]:
+                user = User.objects.get(id=data["user_id"])
                 user.set_password(data["new_password"])
                 user.save()
                 response = HttpResponse(json.dumps({'status': 'success'}),
