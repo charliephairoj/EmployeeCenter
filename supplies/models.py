@@ -236,6 +236,7 @@ class Supply(models.Model):
                 
                 for p in Product.objects.filter(supply=self, supplier=supplier):
                     logger.debug(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
+                    logger.debug(p.__dict__)
                 logger.debug("Too many products returned")
                 
                 self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
@@ -313,9 +314,9 @@ class Product(models.Model):
         logger.debug(self.cost)
         logger.debug(args)
         logger.debug(kwargs)
-        
+        logger.debug(self.__dict__)
         super(Product, self).save(*args, **kwargs)
-
+        logger.debug(self.__dict__)
         logger.debug(self.cost)
 
 

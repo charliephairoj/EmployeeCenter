@@ -104,7 +104,9 @@ class ProductSerializer(serializers.ModelSerializer):
         supply = self.context['supply']
 
         instance = self.Meta.model.objects.create(supply=supply, **validated_data)
-
+        instance.supplier = validated_data['supplier']
+        instance.save()
+        
         return instance
 
 

@@ -33,6 +33,7 @@ class ItemSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     units = serializers.CharField(required=False, allow_null=True, allow_blank=True, write_only=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = Item
@@ -162,9 +163,13 @@ class ItemSerializer(serializers.ModelSerializer):
         logger.debug(cost)
         try:
             product = Product.objects.get(supply=supply, supplier=supply.supplier)
-        except Product.MultipleObjectsReturned:
+        except Product.MultipleObjectsReturned as e:
+            logger.debug(e)
             product = Product.objects.filter(supply=supply, supplier=supply.supplier).order_by('id')[0]
-        except Product.DoesNotExist:
+        except Product.DoesNotExist as e:
+            logger.debug(e)
+            logger.debug(supply.supplier.__dict__)
+            logger.debug(supply.__dict__)
             product = Product.objects.create(supplier=supply.supplier, supply=supply,
                                              purchasing_units=units, cost=cost)
 
@@ -531,7 +536,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
-
+        logger.debug(items_data)
         #Update or Create Item
         for item_data in items_data:
             try:
@@ -555,7 +560,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item.calculate_total()
                 item.save()
                 """
-            except KeyError:
+            except KeyError as e:
+
+                logger.debug(e)
+                raise Exception(e)
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
                 if serializer.is_valid(raise_exception=True):
                     item = serializer.save()
