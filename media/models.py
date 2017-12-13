@@ -5,7 +5,7 @@ import logging
 
 from django.db import models
 from django.contrib import admin
-from django.contrib.auth.models import User
+from administrator.models import User
 from django.conf import settings
 from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import os
 import time
 from datetime import datetime
@@ -5,7 +7,7 @@ from decimal import Decimal
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import User
+from administrator.models import User
 from django.db import models
 from django.core.exceptions import MultipleObjectsReturned
 from django.shortcuts import get_object_or_404

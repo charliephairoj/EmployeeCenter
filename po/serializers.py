@@ -7,7 +7,7 @@ from pytz import timezone
 import httplib2
 
 from django.template.loader import render_to_string
-from django.contrib.auth.models import User
+from administrator.models import User
 from rest_framework import serializers
 import boto.ses
 from pytz import timezone

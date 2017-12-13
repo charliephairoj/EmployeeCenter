@@ -9,7 +9,7 @@ from dateutil import parser
 import boto
 from rest_framework import serializers
 from rest_framework.fields import DictField
-from django.contrib.auth.models import User
+from administrator.models import User
 
 from deals.models import Deal, Event as DealEvent
 from contacts.models import Contact, Customer

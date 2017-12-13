@@ -7,7 +7,7 @@ import dateutil
 from tastypie import fields
 from tastypie.resources import ModelResource
 from tastypie.authorization import Authorization, DjangoAuthorization
-from django.contrib.auth.models import User
+from administrator.models import User
 from django.db.models import Q
 import pytz
 

@@ -2,7 +2,7 @@ from decimal import Decimal
 import dateutil.parser
 
 from django.db import models
-from django.contrib.auth.models import User
+from administrator.models import User
 from contacts.models import Contact
 
 

@@ -1,15 +1,20 @@
 import httplib2
 
 from django.db import models
-from django.contrib.auth.models import User as AuthUser, UserManager
+from django.contrib.auth.models import User as AuthUser, UserManager, AbstractUser
 from django.contrib import admin
 from oauth2client.contrib.django_orm import FlowField
 from oauth2client.contrib.django_orm import CredentialsField
 from gdata.gauth import OAuth2Token
 
 
-User = AuthUser
+class Company(models.Model):
+    name = models.TextField()
 
+
+class User(AbstractUser):
+    pass
+    #company = model.ForeignKey(Company)
 
 class AWSUser(models.Model):
     user = models.OneToOneField(User, 

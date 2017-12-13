@@ -11,7 +11,7 @@ from pytz import timezone
 from datetime import datetime
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
+from administrator.models import User
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses

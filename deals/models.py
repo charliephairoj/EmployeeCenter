@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, date
 
 from django.db import models
-from django.contrib.auth.models import User
+from administrator.models import User
 
 from contacts.models import Contact, Customer
 from acknowledgements.models import Acknowledgement

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import logging
 from decimal import Decimal
 import traceback
@@ -7,7 +9,7 @@ from rest_framework import serializers
 from rest_framework.fields import DictField
 from pytz import timezone
 
-from django.contrib.auth.models import User
+from administrator.models import User
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer

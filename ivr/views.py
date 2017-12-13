@@ -5,7 +5,7 @@ import logging
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.shortcuts import render
-from django.contrib.auth.models import User
+from administrator.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from twilio.twiml.voice_response import Gather, VoiceResponse, Say, Dial

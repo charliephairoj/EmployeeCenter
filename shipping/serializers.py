@@ -1,7 +1,7 @@
 import logging
 
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from administrator.models import User
 
 from shipping.models import Shipping, Item
 from acknowledgements.models import Acknowledgement, Item as AckItem

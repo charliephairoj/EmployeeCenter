@@ -18,7 +18,7 @@ from boto.s3.key import Key
 
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
+from administrator.models import User
 from reportlab.lib import colors, utils
 from reportlab.lib.units import mm
 from reportlab.platypus import *

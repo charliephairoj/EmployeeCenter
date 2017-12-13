@@ -5,7 +5,7 @@ from django.contrib.auth.hashers import check_password
 import json
 import logging
 
-from django.contrib.auth.models import User
+from administrator.models import User
 
 
 logger = logging.getLogger('EmployeeCenter')

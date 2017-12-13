@@ -16,9 +16,10 @@ import copy
 import subprocess
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User, Permission, Group, ContentType
+from django.contrib.auth.models import Permission, Group, ContentType
 from rest_framework.test import APIRequestFactory, APITestCase, APIClient
 
+from administrator.models import User
 from acknowledgements.models import Acknowledgement, Item, Pillow, Log as AckLog
 from supplies.models import Fabric, Reservation, Log
 from contacts.models import Customer, Address, Supplier

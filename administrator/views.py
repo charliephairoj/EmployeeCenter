@@ -2,7 +2,7 @@ import json
 import logging
 
 import boto
-from django.contrib.auth.models import Permission, Group, User
+from django.contrib.auth.models import Permission, Group
 from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
@@ -12,7 +12,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
 
-#from administrator.models import User
+from administrator.models import User
 from administrator.serializers import UserSerializer, GroupSerializer, PermissionSerializer, LogSerializer, LabelSerializer
 from administrator.models import Log, Label
 
