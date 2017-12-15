@@ -393,7 +393,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
 
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
         
         instance.current_user = employee
         dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
