@@ -285,7 +285,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
         
         for item_data in items_data:
             for field in ['product', 'fabric', 'image']:
