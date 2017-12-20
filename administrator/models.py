@@ -13,7 +13,7 @@ class Company(models.Model):
 
 
 class User(AbstractUser):
-    pass
+    reset_password = models.BooleanField(default=False)
     #company = model.ForeignKey(Company)
 
 class AWSUser(models.Model):

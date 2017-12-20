@@ -19,7 +19,7 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.contrib.django_orm import Storage
 
 from auth.views import current_user
-from login.models import LoginForm
+from login.models import LoginForm, PasswordResetForm
 from administrator.models import CredentialsModel
 
 
@@ -45,6 +45,57 @@ FLOW = flow_from_clientsecrets(
 @ensure_csrf_cookie
 def main(request):
     return render(request, 'index.html')
+
+@login_required
+def password_reset(request):
+    
+    #determines if this is get request
+    if request.method == "GET":
+        """Determines if the user is authenticated.
+        Authenticated users are served the index page
+        while anonymous users are served the login page"""
+        if request.user.is_authenticated():
+            
+            form = PasswordResetForm()
+            return render(request, 'password_reset.html', {'form':form})
+
+        else:
+            return HttpResponseRedirect('/login')
+
+
+    #what to do with a post request
+    elif request.method == "POST":
+        logger.debug(request.POST)
+        #initialize form with post data
+        form = PasswordResetForm(request.POST)
+        #check if form is valid
+        logger.debug(form.is_valid())
+        logger.debug(form.errors)
+        if form.is_valid():
+            clean_password = form.cleaned_data['password']
+            clean_repeat_password = form.cleaned_data['repeat_password']
+
+            if clean_password == clean_repeat_password:
+                user = request.user
+
+                user.set_password(clean_password)
+
+                
+                logger.debug(clean_password)
+                logger.debug(clean_repeat_password)
+
+                return HttpResponseRedirect('/')
+        
+            else:
+                form = PasswordResetForm()
+
+                return render(request, 'password_reset.html', {'form':form})
+            
+        else:
+
+            form = PasswordResetForm()
+
+            return render(request, 'password_reset.html', {'form':form})
 
 
 @login_required

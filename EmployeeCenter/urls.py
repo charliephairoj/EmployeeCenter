@@ -66,6 +66,7 @@ router.register(r'api/v1/shift', ShiftViewSet)
 urlpatterns = [
     url(r'^$', login.views.app_login),
     url(r'^main$', login.views.main),
+    url(r'^password-reset$', login.views.password_reset),
     url(r'^login$', login.views.app_login),
     url(r'^oauth2callback$', login.views.auth_return),
     url(r'^logout$', login.views.logout),
