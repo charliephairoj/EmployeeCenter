@@ -440,21 +440,30 @@ def user(request, user_id=0):
         return response
 
 
-def password(request, user_id=0):
+def change_password(request, user_id=0):
     """
     Changes the password of the specified user
     """
     if request.method == "POST":
         data = json.loads(request.body)
-        user = User.objects.get(id=user_id)
         print request.user.is_superuser
         if request.user.is_superuser:
             if data["new_password"] == data["repeat_new_password"]:
                 user = User.objects.get(id=data["user_id"])
                 user.set_password(data["new_password"])
                 user.save()
+
+                reset_password = data['reset_password']
+
+                logger.debug(reset_password)
+                # If this box was ticked, the next time the user logs in, 
+                # they will be asked to reset their password
+                if reset_password:
+                    user.reset_password = True
+                    user.save()
+
                 response = HttpResponse(json.dumps({'status': 'success'}),
-                                        mimetype="application/json")
+                                        content_type="application/json")
                 response.status_code = 200
                 #return data via http
                 return response
@@ -466,7 +475,7 @@ def password(request, user_id=0):
                     user.set_password(data["new_password"])
                     user.save()
                     response = HttpResponse(json.dumps({'status': 'success'}),
-                                    mimetype="application/json")
+                                    content_type="application/json")
                     response.status_code = 200
                     #return data via http
                     return response

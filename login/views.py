@@ -79,7 +79,8 @@ def password_reset(request):
                 user = request.user
 
                 user.set_password(clean_password)
-
+                user.reset_password = False
+                user.save()
                 
                 logger.debug(clean_password)
                 logger.debug(clean_repeat_password)
@@ -167,6 +168,9 @@ def app_login(request):
                     #login the user
                     login(request, user)
 
+                    #Check if the password needs to be reset
+                    if user.reset_password:
+                        return HttpResponseRedirect('/password-reset')
 
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':

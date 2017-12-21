@@ -67,13 +67,14 @@ urlpatterns = [
     url(r'^$', login.views.app_login),
     url(r'^main$', login.views.main),
     url(r'^password-reset$', login.views.password_reset),
+    url(r'^password-reset/$', login.views.password_reset),
     url(r'^login$', login.views.app_login),
     url(r'^oauth2callback$', login.views.auth_return),
     url(r'^logout$', login.views.logout),
     url(r'^api/v1/current_user$', administrator.views.current_user),
     url(r'^api/v1/current_user$', administrator.views.current_user),
-    url(r'^api/v1/change_password', auth.views.change_password),
-    url(r'^api/v1/change_password/', auth.views.change_password),
+    url(r'^api/v1/change_password', administrator.views.change_password),
+    url(r'^api/v1/change_password/', administrator.views.change_password),
     url(r'^api/v1/client/log/$', administrator.views.log),
 
 
