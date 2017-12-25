@@ -28,11 +28,9 @@ from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
-from administrator.models import User as U
 
+from django.contrib.auth.models import User as U
 
+a = A.objects.all().order_by('-id')[0]
+a.create_and_upload_checklist()
 
-pos = PO.objects.all().order_by('-id')[0:50]
-
-for po in pos:
-    po.email_approver()

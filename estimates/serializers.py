@@ -66,11 +66,12 @@ class ItemSerializer(serializers.ModelSerializer):
                                                write_only=True, required=False,
                                                allow_null=True)
     id = serializers.IntegerField(required=False, allow_null=True)
+    type = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = Item
         field = ('description', 'id', 'width', 'depth', 'height', 'comments', 'unit_price')
-        read_only_fields = ('total', 'type')
+        read_only_fields = ('total',)
         exclude = ('estimate', )
         list_serializer_class = ItemListSerializer
 

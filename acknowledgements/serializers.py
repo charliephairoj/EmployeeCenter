@@ -93,6 +93,7 @@ class ItemSerializer(serializers.ModelSerializer):
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False,
                                                allow_null=True)
     id = serializers.IntegerField(required=False, allow_null=True)
+    type = serializers.CharField(required=False, allow_null=True)
 
     grades = {'A1': 15,
               'A2': 20,
@@ -104,8 +105,8 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product',
-                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components')
-        read_only_fields = ('total', 'type')
+                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components', 'type')
+        read_only_fields = ('total',)
 
     def create(self, validated_data):
         """

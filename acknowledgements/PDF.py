@@ -219,6 +219,40 @@ class ShippingLabelDocTemplate(BaseDocTemplate):
         template = PageTemplate(id=template_id, frames=[frame])
         
         return template
+
+
+class ChecklistDocTemplate(AckDocTemplate):
+    id = 0
+    top_padding = 120
+
+    def _create_header(self, canvas, doc):
+        #Draw the logo in the upper left
+        #if self.company.lower() == 'dellarobbia thailand':
+        #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/form_logo.jpg"""
+        #else:
+        #    path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/alinea-logo.png"""
+
+        path = """https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"""
+        
+        #Read image from link
+        img = utils.ImageReader(path)
+        #Get Size
+        img_width, img_height = img.getSize()
+        new_width = (img_width * logo_height) / img_height
+        canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColorCMYK(0, 0, 0, 60)
+        canvas.setFont("Helvetica", 16)
+        canvas.drawRightString(550, 800, 'Quality Control')
+        canvas.setFont("Helvetica", 12)
+        canvas.drawRightString(550, 780, 'Order#: {0}'.format(self.id))
+        #Create a barcode from the id
+        canvas.setFillColorCMYK(0, 0, 0, 1)
+        code = "QC-{0}".format(self.id)
+        barcode = code128.Code128(code, barHeight=20, barWidth=0.5 * mm)
+        x_position = 570 - barcode.width
+        # drawOn puts the barcode on the canvas at the specified coordinates
+        barcode.drawOn(canvas, x_position, 750)
         
 
 class AcknowledgementPDF(object):
@@ -1345,6 +1379,7 @@ class SingleStickerDocTemplate(BaseDocTemplate):
         template = PageTemplate('Normal', [frame])
         return template
     
+
 class ShippingLabelPDF(object):
     """Class to create PO PDF"""
     
@@ -1509,7 +1544,6 @@ class ShippingLabelPDF(object):
                   ["Customer:", customer_paragraph],
                   ["Project:", project],
                   ["Room:", room]]
-
         
         
         details_table = Table(data, colWidths=(self.width * .3, self.width * .7))
@@ -1604,3 +1638,258 @@ class ShippingLabelPDF(object):
            
         return Image(path, width=newWidth, height=newHeight)
     
+
+class QualityControlPDF(AcknowledgementPDF):
+    """Class to create PO PDF"""
+    #attributes
+    document_type = "Quality_Control"
+
+    def __init__(self, customer=None, products=None,
+                 ack=None, connection=None):
+       
+        self.width, self.height = A4
+        stylesheet = getSampleStyleSheet()
+        normalStyle = stylesheet['Normal']
+        #Set Var
+        self.customer = customer
+        self.products = products
+        self.ack = ack
+        self.employee = self.ack.employee
+
+    #create method
+    def create(self):
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.id)
+        self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
+        #create the doc template
+        doc = ChecklistDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+                                    leftMargin=36, rightMargin=36, topMargin=36)
+        #Build the document with stories
+        stories = self._get_stories()
+        doc.build(stories)
+
+        #return the filename
+        return self.location
+    
+    def _get_stories(self):
+        #initialize story array
+        stories = []
+        #add heading and spacing
+        logger.debug(self.products)
+        # Run through arrays of products
+        for product in self.products:
+
+            # Add product checklist
+            stories.append(self._create_product_qc_page(product))
+
+            # Add a page break
+            stories.append(PageBreak())
+        logger.debug(stories)
+        # Return the story
+        return stories
+
+    def _create_product_qc_page(self, product):
+
+        # Dictionaries that match product type with the 
+        # function that will create the correct qc page
+        qc_page_fns = {'upholstery': UpholsteryQCPage}
+                       #'bed': self._create_bed_qc_page,
+                       #'table': self._create_table_qc_page}
+
+        try:
+            Page = qc_page_fns[product.type]
+        except KeyError as e:
+            Page = qc_page_fns['upholstery']
+
+        # Return page
+        return Page.create(self.ack, product)
+
+
+class UpholsteryQCPage(object):
+    frame_list = [{"en": "Check that arms are strong", "th": ""}],
+    fabric_cutting_list = [{"en": "Fabric is stain and blemish free", "th": "ฟหกดฟหกเฟกดฟหกด"},
+                           {"en": "All work marks are removed", "th": ""},
+                           {"en": "All fabric is running in the same direction", "th": ""}]
+    sewing_and_upholstery_list = [{"en": "Sewing is straight", "th": ""},
+                                  {"en": "Seams are not stretched", "th": ""},
+                                  {"en": "Frame is not exposed", "th": ""},
+                                  {"en": "Seams are in the line with the edges of the frame", "th": ""},
+                                  {"en": "Fabric is stain and blemish free", "th": ""},
+                                  {"en": "Legs are straight", "th": ""},
+                                  {'en': "Legs are the same size", "th": ""}]
+
+    @classmethod
+    def create(cls, ack, product):
+        
+        page = cls()
+
+        page.ack = ack
+        page.product = product
+
+        data = []
+
+        # Create title
+        # Create style for paragraph
+        title_style = ParagraphStyle(name='Normal',
+                                     fontName='Garuda',
+                                     leading=20,
+                                     wordWrap='CJK',
+                                     allowWidows=1,
+                                     allowOrphans=1,
+                                     alignment=TA_CENTER,
+                                     fontSize=20,
+                                     textColor=colors.black)
+        title = Paragraph('Quality Control Checklist', title_style)
+        data.append([title])
+
+        # Create production information
+        data.append([page._create_product_detail_section(product)])
+
+        # Create heading
+        table = Table([["Section", "Description", "Initials"]], 
+                      colWidths=(120, 350, 80),
+                      rowHeights=30)
+        table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                                   ('TOPPADDING', (0, 0), (-1, -1), 0),
+                                   ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                   ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                                   ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                                   ('FONTSIZE', (0, 0), (-1, -1), 14)]))
+        data.append([table])
+        
+        data.append([page._create_fabric_cutting_section()])
+        data.append([page._create_sewing_section()])
+
+        table = Table(data)
+        style_data = [('TOPPADDING', (0, 0), (-1, -1), 0),
+                      ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                      ('BOTTOMPADDING', (0, 0), (-1, 1), 20), # padding for title
+                      ('ALIGNMENT', (0, 0), (-1, 0), 'CENTER'),
+                      ('ALIGNMENT', (0, 1), (-1, 1), 'LEFT'),
+                      ]
+        table.setStyle(TableStyle(style_data))
+
+        return table
+
+    def _create_product_detail_section(self, product):
+
+        # Create data array
+        data = []
+        data.append(["Order #:" , self.ack.id])
+        data.append(['Product Description:', product.description])
+
+        table = Table(data)
+        style = TableStyle([('FONTSIZE', (0, 0), (-1, -1), 12),
+                            ('FONTSIZE', (0, 0), (-1, -1), 12)])
+        table.setStyle(style)
+        
+        return table
+
+    def _create_frame_section(self):
+        
+        # Create data array
+        data = []
+
+        # Add details to check
+        data.append(["", "", ""])
+
+
+
+    def _create_foam_section(self):
+        pass
+
+    def _create_fabric_cutting_section(self):
+
+        # Create data
+        data = []
+
+        # Add details to check
+        for qc_item in self.fabric_cutting_list:
+            # Create style for paragraph
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   leading=12,
+                                   wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
+                                   fontSize=12,
+                                   textColor=colors.black)
+            
+            # Create the description
+            desc_str = "{0}<br/>{1}".format(qc_item['th'], qc_item['en'])
+            description = Paragraph(desc_str, style)
+
+            data.append(["Fabric Cutting", description, ""])
+
+        # Create table style
+        style_data = [('FONTSIZE', (0, 0), (-1, 0), 12),
+                      ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                      ('LINEAFTER', (0, 0) ,(-2, -1), 1, colors.black), 
+                      ('TOPPADDING', (0, 0), (-1, -1), 5),
+                      ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                      ('ALIGNMENT', (0, 0), (0, -1), 'CENTER'),
+                      ('LINEBELOW', (-1, 0), (-1, -1), 1, colors.black),
+                      ('BOX', (0, 0), (-1, -1), 1, colors.black),
+                      ('SPAN', (0, 0), (0, -1))]
+        style = TableStyle(style_data)
+
+        # Create and style table
+        table = Table(data, colWidths=(120, 350, 80))
+        table.setStyle(style)
+
+        return table
+
+    def _create_sewing_section(self):
+
+        # Create data arraw
+        data = []
+
+
+        # Add details to check
+        for qc_item in self.sewing_and_upholstery_list:
+            # Create style for paragraph
+            style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   leading=12,
+                                   wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
+                                   fontSize=12,
+                                   textColor=colors.black)
+            
+            # Create the description
+            desc_str = "{0}<br/>{1}".format(qc_item['th'], qc_item['en'])
+            description = Paragraph(desc_str, style)
+
+            data.append(["Sewing / Upholstery", description, ""])
+
+        # Create table style
+        style_data = [('FONTSIZE', (0, 0), (-1, 0), 12), 
+                      ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                      ('LINEAFTER', (0, 0) ,(-2, -1), 1, colors.black), 
+                      ('TOPPADDING', (0, 0), (-1, -1), 5),
+                      ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                      ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                      ('ALIGNMENT', (0, 0), (0, -1), 'CENTER'),
+                      ('BOX', (0, 0), (-1, -1), 1, colors.black),
+                      ('LINEBELOW', (-1, 0), (-1, -1), 1, colors.black),
+                      ('SPAN', (0, 0), (0, -1))]
+        style = TableStyle(style_data)
+
+        # Create and style table
+        table = Table(data, colWidths=(120, 350, 80))
+        table.setStyle(style)
+
+        return table
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -23,7 +23,7 @@ from contacts.models import Customer
 from products.models import Product, Upholstery
 from projects.models import Project, Room, Phase
 from supplies.models import Fabric
-from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF
+from acknowledgements.PDF import AcknowledgementPDF, ConfirmationPDF, ProductionPDF, ShippingLabelPDF, QualityControlPDF
 from media.models import Log, S3Object
 from administrator.models import CredentialsModel, Log as BaseLog
 from trcloud.models import TRSalesOrder, TRContact
@@ -269,22 +269,28 @@ class Acknowledgement(models.Model):
             raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdfs(self, delete_original=True):
-        ack_filename, production_filename, label_filename = self.create_pdfs()
+        ack_filename, production_filename, label_filename, qc_filename = self.create_pdfs()
         ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
         #confirmation_key = "acknowledgement/Confirmation-{0}.pdf".format(self.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
         label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
+        qc_key = "acknowledgment/Quality_Control-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
         #confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
         prod_pdf = S3Object.create(production_filename, production_key, bucket, delete_original=delete_original)
         label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
+        qc_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
 
+        # Save references for files
         self.label_pdf = label_pdf
         self.acknowledgement_pdf = ack_pdf
         #self.confirmation_pdf = confirmation_pdf
         self.production_pdf = prod_pdf
 
+        # Add qc file to the
+        File.objects.create(file=qc_pdf, acknowledgement=self)
+        
         self.save()
         
     def create_pdfs(self):
@@ -295,19 +301,39 @@ class Acknowledgement(models.Model):
         no arguments
         """
         products = self.items.all().order_by('id')
+
+        # Initialize pdfs
         ack_pdf = AcknowledgementPDF(customer=self.customer, ack=self, products=products)
         confirmation_pdf = ConfirmationPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
         label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
+        qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
+
+        # Create pdfs
         ack_filename = ack_pdf.create()
         #confirmation_filename = confirmation_pdf.create()
         production_filename = production_pdf.create()
         
         label_filename = label_pdf.create()
+        qc_filename = qc_pdf.create()
         
-            
-        return ack_filename, production_filename, label_filename
-    
+        return ack_filename, production_filename, label_filename, qc_filename
+
+    def create_and_upload_checklist(self):
+        """
+        Creates a shipping Label pdf and uploads to S3 service
+        """
+        products = self.items.all().order_by('id')
+        qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
+        qc_filename = qc_pdf.create()
+        label_key = "acknowledgement/Quality_Control-{0}.pdf".format(self.id)
+        bucket = "document.dellarobbiathailand.com"
+        #qc_pdf = S3Object.create(qc_filename, label_key, bucket, delete_original=False)
+
+        #logger.debug(qc_pdf.generate_url())
+
+        self.save()
+
     def create_and_upload_shipping_label(self):
         """
         Creates a shipping Label pdf and uploads to S3 service
@@ -610,7 +636,7 @@ class Item(models.Model):
     trcloud_id = models.IntegerField(null=True, blank=True)
     acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
     product = models.ForeignKey(Product)
-    type = models.CharField(max_length=20, null=True)
+    type = models.TextField(null=True, blank=True)
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)

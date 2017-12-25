@@ -299,7 +299,7 @@ class File(models.Model):
 class Item(models.Model):
     estimate = models.ForeignKey(Estimate, related_name="items")
     product = models.ForeignKey(Product, related_name="estimate_item_product")
-    type = models.CharField(max_length=20, null=True)
+    type = models.TextField(null=True, blank=True)
     quantity = models.IntegerField(null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
