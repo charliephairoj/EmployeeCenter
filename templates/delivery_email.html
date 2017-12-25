@@ -151,10 +151,11 @@
 	
 </head>
 <body>
+	
     <table class="content" width="100%" bgcolor="#f6f8f1" border="1" cellpadding="0" cellspacing="0">
 		<thead>
 			<tr>
-				<td colspan="9" style="text-align:center; font-size:1.5em; padding:1em 0;">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
+				<td colspan="10" style="text-align:center; font-size:1.5em; padding:1em 0;">Schedule for {{start_date|date:"N j, Y"}} - {{end_date|date:"N j, Y"}}</td>
 			</tr>
 			<tr>
 				<th style="{{header_style}}">#</th>
@@ -162,6 +163,7 @@
 				<th style="{{header_style}}">PO</th>
 				<th style="{{header_style}}">Comments</th>
 				<th style="{{header_style}}">Status</th>
+				<th style="{{header_style}}">Inspection Date</th>
 				<th style="{{header_style}}">Delivery Date</th>
 				<th style="{{header_style}} width:10em">Description</th>
 				<th style="{{header_style}} width:2em;">Qty</th>
@@ -169,6 +171,7 @@
 			</tr>
 		</thead>
 		<tbody>
+				
 			{% for ack in acknowledgements %}
 			<tr>
 				<td style="{{cell_style}} min-width:5em;">{{ack.id}}</td>
@@ -176,6 +179,7 @@
 				<td style="{{cell_style}}">{{ack.po_id}}</td>
 				<td style="{{cell_style}} max-width:20%;">{{ack.remarks}}</td>
 				<td style="{{cell_style}}">{{ack.status}}</td>
+				<td style="{{cell_style}} white-space:nowrap;"><b>{{ack.inspection_date|date:"d-m-Y"}}</b></td>
 				<td style="{{cell_style}} white-space:nowrap;">{{ack.delivery_date|date:"d-m-Y"}}</td>
 				<td colspan="3">
 					<table width="100%" border="0" cellpadding="0" cellspacing="0">

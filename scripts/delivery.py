@@ -46,9 +46,9 @@ from acknowledgements.models import Acknowledgement
 
 django.setup()
         
-        
+
 class AcknowledgementEmail(object):
-    queryset = Acknowledgement.objects.all()
+    queryset = Acknowledgement.objects.exclude(status="cancelled")
     message = "<div style='font-family:Tahoma;font-size:3mm;color:#595959;width:190mm'>"
     status_width = "18mm"
     customer_width = "auto"
@@ -85,8 +85,9 @@ class AcknowledgementEmail(object):
         logger.debug(self.end_date)
         self.queryset = self.queryset.filter(_delivery_date__range=[self.start_date,
                                                                     self.end_date])
+
         self.queryset = self.queryset.order_by('_delivery_date')
-        
+
         #self.queryset = Acknowledgement.objects.raw("""
         #SELECT id, delivery_date, status from acknowledgements_acknowledgement
         #where (delivery_date <= now() + interval '31 days' AND delivery_date >= now() - interval '31 days')
@@ -104,6 +105,8 @@ class AcknowledgementEmail(object):
                 else:
                     setattr(ack, '_'.join(status.split(' ')), False)
                   
+            ack.inspection_date = ack.delivery_date - timedelta(days=3)
+
             self.acks.append(ack)
             
     def get_message(self):
