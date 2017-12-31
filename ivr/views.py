@@ -120,7 +120,6 @@ def route_call(request):
     resp.play(message)
 
     dial = Dial(caller_id=caller_id, 
-                #action='/api/v1/ivr/status/',
                 record='record-from-ringing', 
                 recording_status_callback="/api/v1/ivr/recording/")
 
@@ -143,12 +142,15 @@ def route_call(request):
 
 def call_status_update_callback(request):
     call_data = request.GET
-
+    logger.debug(call_data['employee'])
     try:
-        user = User.objects.get(pk=call_data['employee_id'])
+        user = User.objects.get(pk=call_data['employee'])
     except Exception as e:
-        logger.debug(e)
         user = User.objects.get(pk=1)
+        logger.debug(e)
+        Log.objects.create(type="Call Summary Error (Getting User)", 
+                           message=e,
+                           user=user)
 
     try:
         call_log = Call.objects.get(twilio_id=call_data.get('ParentCallSid', 0))
@@ -157,7 +159,7 @@ def call_status_update_callback(request):
         logger.debug("New Call Created")
         call_log = Call()
 
-    call_log.twilio_id = request.POST.get(u'ParentCallSid', call_log.twilio_id)
+    call_log.twilio_id = request.GET.get(u'ParentCallSid', call_log.twilio_id)
     call_log.type = call_log.type or call_data.get('Direction', call_log.type) 
     call_log.incoming_number = call_log.incoming_number or call_data.get('From', call_log.incoming_number)
     call_log.employee = user
@@ -183,10 +185,18 @@ def recording_callback(request):
     try:
         email_call_summary(call_log.employee.email, call_log)
     except Exception as e:
+        logger.debug(e)
+
         try: 
-            employee = call_log.employee or User.objects.get(pk=1)
-        except AttributeError:
+            employee = call_log.employee
+        except AttributeError as f:
+            logger.debug(f)
             employee = User.objects.get(pk=1)
+            #Error for getting user
+            Log.objects.create(type="Call Summary Error (Getting user for sending email)", 
+                           message=f,
+                           user=employee)
+
         Log.objects.create(type="Call Summary Error", 
                            message=e,
                            user=employee)
