@@ -28,11 +28,13 @@ from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
 from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
-from django.contrib.auth.models import User as U
+from administrator.models import User as U
 
-e = E.objects.get(pk=12984)
-e.vat = 0
-e.deposit = 50
-e.save()
-e.create_and_upload_pdf()
-print e.pdf.generate_url()
+acks = A.objects.all().order_by('-_delivery_date')[0:100]
+
+for a in acks:
+    try:
+        a.update_calendar_event(user=U.objects.get(pk=1))
+        a.save()
+    except Exception as e:
+        logger.debug(e)
