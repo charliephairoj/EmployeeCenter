@@ -25,6 +25,7 @@ from media.models import S3Object
 from po.PDF import PurchaseOrderPDF, InventoryPurchaseOrderPDF
 from projects.models import Project, Room, Phase
 from administrator.models import CredentialsModel
+from acknowledgements.models import Acknowledgement
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,8 @@ class PurchaseOrder(models.Model):
     
     current_user = None 
     calendar_service = None
+
+    acknowledgement = models.ForeignKey(Acknowledgement, null=True)
 
     @classmethod
     def create(cls, user=None, **kwargs):

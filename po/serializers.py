@@ -20,6 +20,8 @@ from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSeriali
 from contacts.serializers import AddressSerializer
 from oauth2client.contrib.django_orm import Storage
 from apiclient import discovery
+from acknowledgements.models import Acknowledgement
+from acknowledgements.serializers import AcknowledgementSerializer
 
 from administrator.models import CredentialsModel
 
@@ -235,6 +237,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
                                                allow_null=True,
                                                required=False)
+
+    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(),
+                                                         required=False,
+                                                         allow_null=True)
     items = ItemSerializer(many=True)
     order_date = serializers.DateTimeField(read_only=True)
 
@@ -242,7 +248,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date', 'deposit',
-                  'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments')
+                  'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments', 
+                  'acknowledgement')
 
         read_only_fields = ('pdf', 'revision')
 
@@ -261,6 +268,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         try:
             ret['project'] = ProjectSerializer(instance.project).data
+        except AttributeError:
+            pass
+
+        try:
+            ret['acknowledgement'] = ProjectSerializer(instance.acknowledgement).data
         except AttributeError:
             pass
 
@@ -315,7 +327,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'create' method to customize how items are created and pass the supplier instance
         to the item serializer via context
         """
-        employee = self.context['request'].user
+        employee = User.objects.get(pk=1)#self.context['request'].user
 
         items_data = validated_data.pop('items')
         for item_data in items_data:
