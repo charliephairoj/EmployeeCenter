@@ -303,6 +303,12 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
             o_time = tz.localize(o_time)
             o_time = datetime.combine(a_date, o_time.timetz())
             request.data['overtime_request'] = o_time
+        except ValueError as e:
+            logger.debug(e)
+            o_time = parser.parse(request.data['overtime_request'])
+            o_time = datetime.combine(a_date, o_time.timetz())
+            logger.debug(o_time)
+            request.data['overtime_request'] = o_time
         except KeyError as e:
             logger.warn(e)
         

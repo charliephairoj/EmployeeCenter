@@ -36,7 +36,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         """
         start_time = validated_data.pop('start_time', None)
         end_time = validated_data.pop('end_time', None)
-        
+        logger.debug(validated_data)
         instance = self.Meta.model.objects.create(**validated_data)
 
         instance.start_time = start_time
