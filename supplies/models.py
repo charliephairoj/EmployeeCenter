@@ -232,7 +232,9 @@ class Supply(models.Model):
             try:
                 self.product = Product.objects.get(supply=self, supplier=supplier)
             except Product.DoesNotExist:
-                raise ValueError("Product does not exist.")
+                self.product = Product(supply=self, supplier=supplier)
+                self.product.save()
+                #raise ValueError("Product does not exist.")
                 
             except Product.MultipleObjectsReturned:
                 
