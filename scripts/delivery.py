@@ -55,19 +55,19 @@ class AcknowledgementEmail(object):
     cell_style = """
                  border-bottom:1px solid #595959;
                  border-right:1px solid #595959;
-                 padding:1em 0.5em;
+                 padding:1em 0em;
                  text-align:center;
-                 font-size:0.8;
                  font-family:Tahoma;
                  """
     header_cell_style = """
                         border-right:1px solid #595959;
                         border-bottom:1px solid #595959;
                         border-top:1px solid #595959;
-                        padding:1em;
+                        padding:1em 0;
                         """
     item_cell_style = """
-                      padding:0.75em 0.25em;
+                      padding:0.75em 0em;
+                      border-bottom: 1px solid rgba(0,0,0,0.3);
                       """
                       
     status_cell = """
