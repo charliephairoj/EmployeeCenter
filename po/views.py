@@ -13,6 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_p
 
 from po.serializers import PurchaseOrderSerializer
 from po.models import PurchaseOrder
+from supplies.models import Supply, Product
 from projects.models import Project
 
 
@@ -191,7 +192,12 @@ class PurchaseOrderMixin(object):
                 try:
                     request.data['items'][index]['supply'] = item['id']
                 except (TypeError, KeyError):
-                    logger.error(item)
+                    supply = Supply(description=request.data['items'][index]['description'])
+                    supply.save()
+                    product = Product(supply=supply, supplier_id=request.data['supplier']['id'],
+                                      cost=request.data['items'][index]['cost'])
+                    product.save()
+                    request.data['items'][index]['supply'] = supply.id
 
             try:
                 request.data['items'][index]['unit_cost'] = item['cost']
@@ -268,6 +274,6 @@ class PurchaseOrderDetail(PurchaseOrderMixin,
         """
         Override the 'put' method
         """
-        request = self._format_primary_key_data(request)
+        request = self._format_primary_key_data_for_put(request)
         return super(PurchaseOrderDetail, self).put(request, *args, **kwargs)
         

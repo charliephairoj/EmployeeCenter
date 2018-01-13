@@ -327,7 +327,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'create' method to customize how items are created and pass the supplier instance
         to the item serializer via context
         """
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
         for item_data in items_data:
