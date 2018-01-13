@@ -575,7 +575,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             except KeyError as e:
 
                 logger.debug(e)
-                raise Exception(e)
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
                 if serializer.is_valid(raise_exception=True):
                     item = serializer.save()
