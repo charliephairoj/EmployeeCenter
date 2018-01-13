@@ -194,7 +194,7 @@ class PurchaseOrderMixin(object):
                 except (TypeError, KeyError):
                     supply = Supply(description=request.data['items'][index]['description'])
                     supply.save()
-                    product = Product(supply=supply, supplier_id=request.data['supplier']['id'],
+                    product = Product(supply=supply, supplier_id=request.data['supplier'],
                                       cost=request.data['items'][index]['cost'])
                     product.save()
                     request.data['items'][index]['supply'] = supply.id
