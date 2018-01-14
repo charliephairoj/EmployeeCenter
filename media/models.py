@@ -71,7 +71,7 @@ class S3Object(models.Model):
        
         return filename
 
-    def generate_url(self, key=None, secret=None, time=1800, force_http=False):
+    def generate_url(self, key=None, secret=None, time=86400, force_http=False):
         """
         Generates a url for the object
         """
