@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys, os, django
-sys.path.append('/Users/Charlie/Sites/employee/backend')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 import logging
 from decimal import *
+
+
+sys.path.append('/Users/Charlie/Sites/employee/backend')
+sys.path.append('/home/django_worker/backend')
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
+application = get_wsgi_application()
 
 from django.conf import settings
 from django.core.exceptions import *
@@ -22,7 +29,6 @@ from reportlab.lib.enums import TA_LEFT
 from hr.models import Employee
 
 
-django.setup()
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +37,7 @@ pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
 
 
 class SupplyPDF(object):
-    queryset = Employee.objects.all().order_by('image')
+    queryset = Employee.objects.filter(status='active').order_by('image')
     
     table_style = [('GRID', (0, 0), (-1,-1), 1, colors.CMYKColor(black=60)),
                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
