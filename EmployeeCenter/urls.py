@@ -14,7 +14,7 @@ from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierD
 from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
 from supplies.views import FabricList, FabricDetail
 from supplies.views import LogList, LogDetail
-from supplies.views import supply_image, sticker, fabric_sticker
+from supplies.views import supply_image, sticker as SupplySticker, fabric_sticker
 from products.views import ConfigurationViewSet
 from products.views import ModelList, ModelDetail
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
@@ -39,7 +39,7 @@ from administrator.views import UserList, UserDetail
 from administrator.views import LabelList, LabelDetail
 from administrator.views import GroupList, GroupDetail
 from administrator.views import PermissionList, PermissionDetail, LogList as ALogList
-from equipment.views import EquipmentList, EquipmentDetail, sticker
+from equipment.views import EquipmentList, EquipmentDetail, sticker as EquipmentSticker
 from hr.views import PayrollList
 from hr.views import employee_stats, employee_image, upload_attendance
 from deals.views import DealList, DealDetail
@@ -171,16 +171,16 @@ urlpatterns += [
 urlpatterns += [
     url(r'^api/v1/supply/image/$', supply_image),
     url(r'^api/v1/supply/image/$', supply_image),
-    url(r'api/v1/supply/(?P<pk>\d+)/sticker$', sticker),
-    url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', sticker),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker$', SupplySticker),
+    url(r'api/v1/supply/(?P<pk>\d+)/sticker/$', SupplySticker),
     url(r'api/v1/fabric/(?P<pk>\d+)/sticker$', fabric_sticker),
     url(r'api/v1/fabric/(?P<pk>\d+)/sticker/$', fabric_sticker),
 
 ]
 
 urlpatterns += [
-    url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', sticker),
-    url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', sticker),
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker$', EquipmentSticker),
+    url(r'api/v1/equipment/(?P<pk>\d+)/sticker/$', EquipmentSticker),
 ]
 
 urlpatterns += [
