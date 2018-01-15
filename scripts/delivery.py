@@ -128,7 +128,7 @@ if __name__ == "__main__":
     e_conn.send_email('noreply@dellarobbiathailand.com',
                       'Delivery Schedule',
                       message,
-                      ["deliveries@dellarobbiathailand.com"],
+                      ["charliep@dellarobbiathailand.com"],
                       format='html')
    
 

@@ -14,6 +14,7 @@ from products.models import Product
 from supplies.models import Fabric, Log
 from projects.models import Project
 from media.models import S3Object
+from acknowledgements.models import Acknowledgement
 
 
 logger = logging.getLogger(__name__)
@@ -164,6 +165,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     discount = serializers.IntegerField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
     #                              allow_null=True)
+    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), allow_null=True)
 
     class Meta:
         model = Estimate
@@ -290,6 +292,12 @@ class EstimateSerializer(serializers.ModelSerializer):
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
                              'url': file.generate_url()} for file in instance.files.all()]
+        except AttributeError as e:
+            logger.warn(e)
+
+
+        try:
+            ret['acknowledgement'] +=  {'id': instance.acknowledgement.id}
         except AttributeError as e:
             logger.warn(e)
 

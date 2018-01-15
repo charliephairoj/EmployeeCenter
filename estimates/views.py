@@ -147,7 +147,7 @@ class EstimateMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['project', 'customer', 'fabric', 'items']
+        fields = ['project', 'customer', 'fabric', 'items', 'acknowledgement']
         
         for field in fields:
             if field in request.data:
@@ -155,7 +155,8 @@ class EstimateMixin(object):
                     if 'id' in request.data[field]:
                         request.data[field] = request.data[field]['id']
                 except TypeError:
-                    pass
+                    if field == 'acknowledgement':
+                        request.data[field] = None
                     
                 if field == 'items':
                     for index, item in enumerate(request.data['items']):

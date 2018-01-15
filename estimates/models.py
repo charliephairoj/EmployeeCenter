@@ -18,7 +18,7 @@ from projects.models import Project
 from supplies.models import Fabric
 from estimates.PDF import EstimatePDF
 from media.models import Log, S3Object
-
+from acknowledgements.models import Acknowledgement
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,8 @@ class Estimate(models.Model):
     pdf = models.ForeignKey(S3Object, null=True, related_name='+')
     deposit = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimate")
-              
+    acknowledgement = models.ForeignKey(Acknowledgement, null=True, related_name="quotations")
+
     """
     @property
     def delivery_date(self):
