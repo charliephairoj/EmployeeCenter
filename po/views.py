@@ -124,6 +124,9 @@ class PurchaseOrderMixin(object):
                 try:
                     request.data[field] = request.data[field]['id']
                 except (TypeError, KeyError) as e:
+                    if field == "acknowledgement":
+                        request.data[field] = None
+                        
                     logger.warn(e)
                     
             if field == 'project':
@@ -168,6 +171,9 @@ class PurchaseOrderMixin(object):
                 try:
                     request.data[field] = request.data[field]['id']
                 except (TypeError, KeyError) as e:
+                    if field == "acknowledgement":
+                        request.data[field] = None
+
                     logger.warn(e)
                     
             if field == 'project':
