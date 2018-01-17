@@ -13,7 +13,8 @@ import unittest
 from pytz import timezone
 
 from django.test import TestCase
-from django.contrib.auth.models import User, Permission, ContentType
+from administrator.models import User
+from django.contrib.auth.models import Permission, ContentType
 from rest_framework.test import APITestCase
 
 from contacts.models import Supplier, Address, SupplierContact
@@ -55,7 +56,8 @@ base_purchase_order = {'supplier': {'id':1},
                        'deposit': '50',
                        'items': [{'supply':{'id': 1}, 'quantity':10},
                                  {'supply':{'id': 2}, 'quantity': 3}],
-                       'vat': '7'}
+                       'vat': '7',
+                       'receive_date': datetime.datetime.now()}
 
 date = datetime.datetime.now()
 
@@ -73,6 +75,7 @@ def create_user(block_permissions=[]):
     user.save()
 
     #Add permissions
+    
     for p in Permission.objects.all():
         if p.codename not in block_permissions:
             user.user_permissions.add(p)
@@ -87,8 +90,8 @@ class PurchaseOrderTest(APITestCase):
         """
         Set up dependent objects
         """
-        super(PurchaseOrderTest, self).setUp()
-        
+        #super(PurchaseOrderTest, self).setUp()
+       
         self.ct = ContentType(app_label="po")
         self.ct.save()
         self.p = Permission(codename="add_purchaseorder", content_type=self.ct)
@@ -140,7 +143,9 @@ class PurchaseOrderTest(APITestCase):
         self.po.supplier = self.supplier
         self.po.terms = self.supplier.terms
         self.po.vat = 7
-        self.po.order_date = datetime.datetime(2014, 3, 2)
+        self.order_date = datetime.datetime(2017, 1, 15, 15, 30, 0, 0, tzinfo=timezone('Asia/Bangkok'))
+        self.po.order_date = self.order_date
+        self.po.receive_date = datetime.datetime.now()
         self.po.save()
         #self.po.create_and_upload_pdf()
         
@@ -150,7 +155,7 @@ class PurchaseOrderTest(APITestCase):
         
         self.po.calculate_total()
         self.po.save()
-    
+        
     def test_get_list(self):
         """
         Tests getting a list of po's via GET
@@ -161,9 +166,8 @@ class PurchaseOrderTest(APITestCase):
         
         #Validate the returned data
         resp = resp.data
-        self.assertIsInstance(resp, dict)
-        self.assertIsInstance(resp['results'], list)
-        self.assertEqual(len(resp['results']), 1)
+        self.assertIsInstance(resp, list)
+        self.assertEqual(len(resp), 1)
     
     def test_get(self):
         """
@@ -389,7 +393,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(self.po.id, 1)
         self.assertEqual(self.po.items.count(), 1)
         self.assertEqual(self.po.grand_total, Decimal('129.58'))
-        self.assertEqual(self.po.order_date.date(), datetime.now().date())
+        self.assertEqual(timezone('Asia/Bangkok').normalize(self.po.order_date).date(), datetime.datetime.now().date())
         item = self.po.items.all()[0]
         self.assertEqual(item.id, 1)
         self.assertEqual(item.quantity, 10)
@@ -401,7 +405,6 @@ class PurchaseOrderTest(APITestCase):
         modified_po_data['items'][0]['comments'] = 'test change'
         modified_po_data['items'][0]['description'] = "test description change"
         modified_po_data['status'] = 'PROCESSED'
-        
         resp = self.client.put('/api/v1/purchase-order/1/',
                                    format='json',
                                    data=modified_po_data)
@@ -434,7 +437,7 @@ class PurchaseOrderTest(APITestCase):
         
         self.assertEqual(po.supplier.id, 1)
         self.assertEqual(po.status, 'PROCESSED')
-        self.assertEqual(po.order_date.date(), datetime.datetime.now(timezone('Asia/Bangkok')).date())
+        #self.assertEqual(timezone('Asia/Bangkok').normalize(po.order_date), datetime.datetime.now().date())
         self.assertEqual(po.vat, 7)
         self.assertEqual(po.grand_total, Decimal('38.88'))
         self.assertEqual(po.items.count(), 1)
@@ -575,8 +578,9 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(resp_obj['discount'], 0)
         self.assertEqual(resp_obj['revision'], 1)
         self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('107.54'))
+        self.assertEqual(len(resp_obj['items']), 1)
         item1 = resp_obj['items'][0]
-        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['id'], 1)
         self.assertEqual(item1['quantity'], '10.0000000000')
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
@@ -598,6 +602,11 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(log.supply, supply)
         self.assertEqual(log.supplier, po.supplier)
         self.assertEqual(log.message, "Price change from 12.11USD to 10.05USD for Pattern: Maxx, Col: Blue [Supplier: Zipper World]")
+
+        # Confirm that there is still only one product for this supply and supplier
+        # in the database
+        products = Product.objects.filter(supply=supply, supplier=po.supplier)
+        self.assertEqual(len(products), 1)
        
     def test_updating_item_status(self):
         """

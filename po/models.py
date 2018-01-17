@@ -172,6 +172,10 @@ class PurchaseOrder(models.Model):
         """
         Creates a pdf and uploads it to the S3 service
         """
+
+        pass
+
+        """
         filename, filename2 = self.create_pdf()
         key = "purchase_order/PO-{0}.pdf".format(self.id)
         self.pdf = S3Object.create(filename,
@@ -184,7 +188,8 @@ class PurchaseOrder(models.Model):
                                               'document.dellarobbiathailand.com')
         
         self.save()
-
+        """
+        
     def email_approver(self):
         
         conn = boto.ses.connect_to_region('us-east-1')
@@ -433,14 +438,14 @@ class PurchaseOrder(models.Model):
                                                                  'button_style': button_style
                                                                  })
         #Send email
-        
+        """
         conn.send_email('no-reply@dellarobbiathailand.com',
                         u'Approval Request: Purchase Order {0}: ({1})'.format(self.id,
                                                                               self.supplier.name),
                         body,
                         recipients,
                         format='html')
-
+        """
 
     def email_requester(self):
         # Styles

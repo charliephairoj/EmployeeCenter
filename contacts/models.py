@@ -33,7 +33,7 @@ class Contact(models.Model):
     notes = models.TextField(null=True, default="", blank=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
-    contact = models.ForeignKey('self', related_name="contacts")
+    contact = models.ForeignKey('self', related_name="contacts", null=True)
     contact_service = None
     website = models.TextField(null=True, blank=True)
     google_contact_id = models.TextField(null=True, blank=True)

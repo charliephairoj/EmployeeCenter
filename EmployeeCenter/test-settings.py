@@ -1,15 +1,51 @@
 
+import os
 from EmployeeCenter.settings import *
 
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
+        'TEST_NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
+
     }
 }
 
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
+)
+
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'administrator',
+    #'auth',
+    'products',
+    'contacts',
+    'supplies',
+    'po',
+    'library',
+    'acknowledgements',
+    'shipping',
+    'deliveries',
+    'accounting',
+    'projects',
+    'media',
+    'hr',
+    'equipment',
+    'estimates',
+    'deals',
+    #'trcloud',
+    'rest_framework',
+    'ivr',
+    #'twilio',
+    #'social.apps.django_app.default',
+    'corsheaders',
+    #'oauth2client',
 )
 
 LOGGING = {

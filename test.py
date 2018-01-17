@@ -4,8 +4,12 @@ Tests the specified module
 import os
 import sys
 import subprocess
+import logging
 
 import django
+
+
+logger = logging.getLogger(__name__)
 
 
 def test_module(module):
@@ -13,7 +17,7 @@ def test_module(module):
     subprocess.call(cmd, shell=True)
     
 if __name__ == '__main__':
-    
+    logger.debug(__name__)
     try:
         module_to_test = sys.argv[1]
         if module_to_test == 'all':
