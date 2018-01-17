@@ -165,7 +165,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     discount = serializers.IntegerField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
     #                              allow_null=True)
-    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), allow_null=True)
+    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), allow_null=True, allow_blank=True)
 
     class Meta:
         model = Estimate
