@@ -173,9 +173,6 @@ class PurchaseOrder(models.Model):
         Creates a pdf and uploads it to the S3 service
         """
 
-        pass
-
-        """
         filename, filename2 = self.create_pdf()
         key = "purchase_order/PO-{0}.pdf".format(self.id)
         self.pdf = S3Object.create(filename,
@@ -188,7 +185,7 @@ class PurchaseOrder(models.Model):
                                               'document.dellarobbiathailand.com')
         
         self.save()
-        """
+        
         
     def email_approver(self):
         
