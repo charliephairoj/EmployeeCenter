@@ -48,7 +48,7 @@ django.setup()
         
 
 class AcknowledgementEmail(object):
-    queryset = Acknowledgement.objects.exclude(status="cancelled")
+    queryset = Acknowledgement.objects.exclude(status="cancelled").exclude(status="shipped").exclude(status="paid")
     message = "<div style='font-family:Tahoma;font-size:3mm;color:#595959;width:190mm'>"
     status_width = "18mm"
     customer_width = "auto"
@@ -80,7 +80,7 @@ class AcknowledgementEmail(object):
         
         date = datetime.today()
         self.start_date = date - timedelta(days=4)
-        self.end_date = self.start_date + timedelta(days=31)
+        self.end_date = self.start_date + timedelta(days=45)
         logger.debug(self.start_date)
         logger.debug(self.end_date)
         self.queryset = self.queryset.filter(_delivery_date__range=[self.start_date,
