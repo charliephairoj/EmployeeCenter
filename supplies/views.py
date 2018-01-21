@@ -172,10 +172,6 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
 
             logger.debug(queryset.count())
 
-            for s in queryset[0:10]:
-                logger.debug(s.order_count)
-                for p in s.products.all():
-                    print s.id, p.id, p.supplier.name
         #Filter based on product upc code
         upc = self.request.query_params.get('upc', None)
         if upc:
