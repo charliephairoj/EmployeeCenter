@@ -14,6 +14,8 @@ import multiprocessing
 from threading import Thread
 from time import sleep
 
+from svglib.svglib import svg2rlg
+#if you want to see the box around the image
 from django.conf import settings
 from django.core.exceptions import *
 from django.db.models import Q, Sum
@@ -25,11 +27,14 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
+from reportlab.graphics import renderPDF, renderPM
+
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 from products.models import Model, Upholstery, Supply as ProductSupply
 from supplies.models import Fabric
 from contacts.models import Supplier
+from media.models import S3Object
 
 
 django.setup()
@@ -40,7 +45,7 @@ logger.setLevel(logging.DEBUG)
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
-
+pdfmetrics.registerFont(TTFont('Raleway', settings.FONT_ROOT + 'raleway_thin-webfont.ttf'))
 
 class PricelistDocTemplate(BaseDocTemplate):
     id = 0
@@ -112,6 +117,7 @@ class PricelistPDF(object):
         'PS-1031'
     ]
 
+
     queryset = Model.objects.filter(Q(model__istartswith='dw-') | Q(model__in=models))
     #queryset = Model.objects.filter(Q(model__istartswith='ac-'))
     #queryset = queryset.filter(upholstery__id__gt=0).distinct('model').order_by('model')
@@ -119,6 +125,10 @@ class PricelistPDF(object):
     queryset = queryset.exclude(model='DW-1217').exclude(model='DW-1212')
     data = [m for m in queryset.filter(model__istartswith='dw-')]
     data += [m for m in queryset.exclude(model__istartswith='dw-').order_by('model')]
+
+    # Testing
+    data = data[0:15]
+
     _display_retail_price = False
     _overhead_percent = 30
     _profit_percent = 35
@@ -131,7 +141,7 @@ class PricelistPDF(object):
                  'Warranty': {'Warranty': 'warranty.txt',
                               'Fabrics': 'fabrics.txt'},
                  'Product Information': {'Custom Sizes': 'custom_sizes.txt'}}
-
+    max_row_height = 20
     table_style = [('GRID', (0, 0), (-1,-1), 1, colors.CMYKColor(black=60)),
                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                    ('FONT', (0,0), (-1,-1), 'Garuda'),
@@ -140,6 +150,7 @@ class PricelistPDF(object):
                    ('ALIGNMENT', (2,0), (2,-1), 'CENTER'),
                    ('PADDING', (0,0), (-1,-1), 0),
                    ('FONTSIZE', (0,0),(-1,-1), 10)]
+    _files_to_delete = []
 
     def __init__(self, export=False, *args, **kwargs):
 
@@ -219,7 +230,7 @@ class PricelistPDF(object):
             return data
 
     def _add_upholstery_data(self, model, data):
-        for upholstery in Upholstery.objects.filter(model=model).exclude(description__icontains="pillow").distinct('description').order_by('description'):
+        for upholstery in Upholstery.objects.filter(model=model).exclude(description__icontains="pillow").distinct('width').order_by('-width'):
 
             uphol_data = {'id': upholstery.id,
                           'configuration': upholstery.configuration.configuration,
@@ -229,6 +240,15 @@ class PricelistPDF(object):
                           'height': upholstery.height,
                           'price': upholstery.price,
                           'export_price': upholstery.export_price}
+
+            try:
+                filename = "{0}.svg".format(upholstery.description)
+                upholstery.schematic.download(filename)
+                uphol_data['schematic'] = filename
+                self._files_to_delete.append(filename)
+
+            except AttributeError as e:
+                logger.debug(e)
 
             """
             if upholstery.supplies.count() > 0:
@@ -271,8 +291,10 @@ class PricelistPDF(object):
         images = model.images.all().order_by('-primary')
 
         try:
-            data = [[self._prepare_text(model.model,
-                                        fontname='Helvetica',
+            product_description = u"{0} {1}"
+            product_description = product_description.format(model.name, model.model)
+            data = [[self._prepare_text(product_description,
+                                        fontname='Raleway',
                                         alignment=TA_LEFT,
                                         font_size=24,
                                         left_indent=12)],[self._get_image(images[0].generate_url(), height=150)]]
@@ -283,7 +305,87 @@ class PricelistPDF(object):
 
         # Var to keep track of number of products priced
         count = 0
+        priced_count = 0
 
+        # Get Max row height
+        try:
+            self.max_row_height = max([self._get_drawing(p['schematic'])[2] for p in products])
+            logger.debug("max row height for {0}: {1}".format(model.model, self.max_row_height))
+        except (KeyError, ValueError) as e:
+            self.max_row_height = 20 
+            logger.debug("No schematics:")
+            logger.debug(model.model)
+            logger.debug(model.name)
+            print "\n\n"
+        # Denotes number of products per line by 
+        product_tables = []
+        for p in products:
+            p1, w = self._create_product_price_table(p)
+            product_tables.append((p1, p, w))
+
+        col_widths = 0
+        page_width = 600
+        section_products = []
+        for index, x in enumerate(product_tables):
+            # If the width and is less than preset width limit
+            # and it is not the last product
+            if col_widths + x[2] <= page_width and (index + 1) != len(products):
+                section_products.append(x)
+                col_widths += x[2]
+                priced_count += 1
+                count += 1
+            # If the width and is greater than preset width limit
+            # and it is not the last product
+            elif col_widths + x[2] >= page_width and (index + 1) != len(products): 
+                # Create full section first 
+                section = self._create_section(section_products)
+                data.append([section])
+
+                # Then start next row
+                col_widths = x[2]
+                section_products = [x]
+                priced_count += 1
+                count = 1
+
+            # If the width and is greater than preset width limit
+            # and it is the last product
+            elif col_widths + x[2] >= page_width and (index + 1) == len(products): 
+                # Create full section first 
+                section = self._create_section(section_products)
+                data.append([section])
+                
+
+                # Then start next row
+                col_widths = x[2]
+                section_products = [x]
+                priced_count += 1
+                count = 1
+
+                # Create final row
+                section = self._create_section(section_products)
+                data.append([section])
+
+            elif col_widths + x[2] <= page_width and (index + 1) == len(products):
+                section_products.append(x)
+                col_widths += x[2]
+                priced_count += 1
+                count += 1
+
+                # Create final row
+                section = self._create_section(section_products)
+                data.append([section])
+
+            else:
+                logger.debug("price count: {0}".format(priced_count))
+                logger.debug("col widths: {0}".format(col_widths))
+                logger.debug("product width: {0}".format(x[2]))
+                logger.debug(x)
+                raise ValueError("Missing a test here")
+                        
+
+        # Denotes number of products per line
+        # by pre set number
+        """
         for index in xrange(0, int(math.ceil(len(products) / float(4)))):
 
             # Create indexes used to pull products set from array
@@ -295,9 +397,11 @@ class PricelistPDF(object):
 
             section = self._create_section(section_products, index)
             data.append([section])
-
+        """
         # Check that all products for this model have been priced
-        assert count == len(products), "Only {0} of {1} price".format(count, len(products))
+        assert priced_count == len(products), "Only {0} of {1} price".format(priced_count, len(products))
+
+        assert len(data) != 0 
 
         table_style = [('ALIGNMENT', (0,0), (0, 0), 'CENTER'),
                        ('ALIGNMENT', (0, 1), (0, -1), 'LEFT'),
@@ -305,13 +409,18 @@ class PricelistPDF(object):
                        ('BOTTOMPADDING', (0, 0), (-1, -1), 30),
                        ('LEFTPADDING', (0, 1), (0, -1), 15)]
 
-        table = Table(data, colWidths=(550))
+        table = Table(data, colWidths=(550), repeatRows=2)
         table.setStyle(TableStyle(table_style))
+
+        # Reset max row height
+        self.max_row_height = 20
+
         return table
 
-    def _create_section(self, products, index):
+    def _create_section(self, products, row_height=20):
 
         header = []#[self._prepare_text('Grade', font_size=12)]
+        col_widths = []
         titles = Table([[i] for i in ['', 'A1']], colWidths=50) #, 'A2', 'A3', 'A4', 'A5', 'A6']], colWidths=50)
         titles.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
                                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
@@ -320,15 +429,19 @@ class PricelistPDF(object):
         else:
             data = []#Table([[], ["Price"]])]#[titles]
 
-        assert len(products) <= 4, "There are {0} in this set.".format(len(products))
-
-        for product in products:
+        for product_table, product, widths in products:
 
             header.append(self._prepare_text(product['configuration'], font_size=12))
 
-            data.append(self._create_product_price_table(product))
+            #t, w = self._create_product_price_table(product)
+            data.append(product_table)
+            col_widths.append(widths)
 
-        table = Table([header, data], colWidths=[120 for i in xrange(0, len(header))])
+        row_heights = [40, (20 * 4)]
+        if self.max_row_height > 20:
+            row_heights[1] = row_heights[1] + self.max_row_height
+        
+        table = Table([header, data], colWidths=col_widths, rowHeights=row_heights)
         table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
                                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
@@ -339,13 +452,30 @@ class PricelistPDF(object):
         """
         Calculate price list for each product
         """
-        data  = [["W:{0} x D:{1} x H:{2}".format(product['width'], product['depth'], product['height'])]]
+        col_width = 150
+        row_height = 20 
+        data = []
+
+        try:
+            drawing, drawing_width, drawing_height = self._get_drawing(product['schematic'],
+                                                       filename="{0}.png".format(product['description']))
+            data.append([drawing])
+            col_width = drawing_width if drawing_width >= 120 else 120
+            row_height = drawing_height
+        except KeyError as e:
+            logger.debug(e)
+            
+        data.append(["Width:  {0}".format(product['width'])])
+        data.append(["Depth:  {0}".format(product['depth'])])
+        data.append(["Height: {0}".format(product['height'])])
+
+
         #data  = []
         #prices = product['prices']
 
         if "dw-" in product['configuration'].lower():
             price = product['price']
-            data.append(["{0:,.2f}".format(price)])
+            data.append(["Price: {0:,.2f}".format(price)])
             """
 
             for grade in sorted(prices.keys()):
@@ -354,7 +484,7 @@ class PricelistPDF(object):
             """
         else:
 
-            price = "{0:,.2f}".format(product['price'])
+            price = "Price: {0:,.2f}".format(product['price'])
             #price = math.ceil(price / Decimal('35'))
             data.append([price])
             #new_price = "{0:,.2f}".format(Decimal(str(price)) * Decimal('0.6'))
@@ -375,12 +505,21 @@ class PricelistPDF(object):
                 data.append([new_price])
              """
 
-        table = Table(data, colWidths=(120,))
-        table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
-                                   ('INNERGRID', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60)),
-                                   #('TEXTCOLOR', (0, -1), (-1, -1), 'red')
-                                   ]))
-        return table
+        row_heights = (20, 20, 20, 20)
+        table_style = [('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                ]
+
+
+        if len(data) > 4:
+            row_heights = (self.max_row_height, 20, 20, 20, 20)
+            table_style.append(('ALIGNMENT', (0, 0), (-1, 0), 'CENTER'))
+            table_style.append(('VALIGN', (0, 1), (-1, 1), 'TOP'))
+            table_style.append(('LINEBELOW', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)))
+
+        table = Table(data, colWidths=col_width, rowHeights=row_heights)
+        table.setStyle(TableStyle(table_style))
+
+        return table, col_width
 
     def _prepare_text(self, description, font_size=12, alignment=TA_CENTER, left_indent=0, fontname='Garuda', leading=12):
 
@@ -431,6 +570,21 @@ class PricelistPDF(object):
                 new_height = (float(imgHeight) / float(imgWidth)) * max_width
 
         return Image(path, width=new_width, height=new_height)
+
+    def _get_drawing(self, path, filename=None, width=None, height=None):
+        try:
+            drawing = svg2rlg(path)
+            sx=sy=1
+            drawing.width,drawing.height = drawing.minWidth()*sx, drawing.height*sy
+            drawing.scale(sx,sy)
+        except (AttributeError) as e:
+            logger.debug(e)
+            logger.debug(path)
+            logger.debug(svg2rlg(path))
+    
+        return drawing, drawing.width, drawing.height
+        #renderPM.drawToFile(drawing, filename)
+        #return self._get_image(filename, width=width)
 
 
 class FabricPDF(object):
@@ -628,7 +782,10 @@ class FabricPDF(object):
 
 if __name__ == "__main__":
 
-    directory = sys.argv[1]
+    try:
+        directory = sys.argv[1]
+    except IndexError:
+        directory = ''
 
     try:
         export = sys.argv[2].replace('--', "")
@@ -648,6 +805,16 @@ if __name__ == "__main__":
     def create_pricelist(filename):
         pdf = PricelistPDF()
         pdf.create(filename)
+        regexp = re.compile('(.+)?\.svg$')
+
+        # Delete svg files saved from S3
+        for f in pdf._files_to_delete:
+            if regexp.search(f):
+                os.remove(f)
+            else: 
+                logger.debug("Did not remove {0}".format(f))
+                logger.debug("Result of regexp: {0}".format(regexp.search(f)))
+                logger.debug(regexp.pattern)
 
     def create_fabriclist(filename, fabrics):
         f_pdf = FabricPDF(fabrics=None)
