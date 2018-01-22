@@ -127,7 +127,7 @@ class PricelistPDF(object):
     data += [m for m in queryset.exclude(model__istartswith='dw-').order_by('model')]
 
     # Testing
-    data = data[0:15]
+    #data = data[0:15]
 
     _display_retail_price = False
     _overhead_percent = 30
@@ -170,7 +170,7 @@ class PricelistPDF(object):
 
 
         stories.append(Spacer(0, 200))
-        link = "form_logo.jpg"
+        link = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         stories.append(self._get_image(link, width=200))
         stories.append(PageBreak())
 
@@ -248,7 +248,7 @@ class PricelistPDF(object):
                 self._files_to_delete.append(filename)
 
             except AttributeError as e:
-                logger.debug(e)
+                pass
 
             """
             if upholstery.supplies.count() > 0:
@@ -298,7 +298,8 @@ class PricelistPDF(object):
                                         alignment=TA_LEFT,
                                         font_size=24,
                                         left_indent=12)],[self._get_image(images[0].generate_url(), height=150)]]
-        except IndexError:
+        except (IndexError, AttributeError) as e:
+            logger.debug(e)
             data = []
 
         #data = [[self._prepare_text(model.model, font_size=24, alignment=TA_LEFT)]]
@@ -310,12 +311,12 @@ class PricelistPDF(object):
         # Get Max row height
         try:
             self.max_row_height = max([self._get_drawing(p['schematic'])[2] for p in products])
-            logger.debug("max row height for {0}: {1}".format(model.model, self.max_row_height))
         except (KeyError, ValueError) as e:
             self.max_row_height = 20 
             logger.debug("No schematics:")
             logger.debug(model.model)
             logger.debug(model.name)
+            logger.debug(e)
             print "\n\n"
         # Denotes number of products per line by 
         product_tables = []
@@ -324,7 +325,7 @@ class PricelistPDF(object):
             product_tables.append((p1, p, w))
 
         col_widths = 0
-        page_width = 600
+        page_width = 550
         section_products = []
         for index, x in enumerate(product_tables):
             # If the width and is less than preset width limit
