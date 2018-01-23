@@ -208,6 +208,8 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
                     serializer.save()
                     d['id'] = serializer.data['id']
 
+            assert 'id' in d, "This item has no ID"
+
         # restrict the update to the filtered queryset
         serializer = SupplySerializer(Supply.objects.filter(id__in=[d['id'] for d in request.data]),
                                       data=request.data,
