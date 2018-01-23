@@ -60,8 +60,11 @@ class ProductListSerializer(serializers.ListSerializer):
 
         data_mapping = {}
         for item in validated_data:
-            logger.debug(item)
-            data_mapping[int(item['supplier'].id)] = item
+            try:
+                logger.debug(item)
+                data_mapping[int(item['supplier'].id)] = item
+            except KeyError as e:
+                pass
 
         # Perform creations and updates.
         ret = []
@@ -89,7 +92,7 @@ class ProductSerializer(serializers.ModelSerializer):
     purchasing_units = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cost = serializers.DecimalField(decimal_places=4, max_digits=16, required=False)
-
+    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all(), required=False)
     class Meta:
         model = Product
         read_only_fields = ['supply']
@@ -139,7 +142,7 @@ class SupplySerializer(serializers.ModelSerializer):
     employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False)
     id = serializers.IntegerField(required=False)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-
+    
     class Meta:
         model = Supply
         list_serializer_class = SupplyListSerializer
@@ -220,14 +223,29 @@ class SupplySerializer(serializers.ModelSerializer):
             data = {}
             for field in ['cost', 'reference', 'purchasing_units', 'quantity_per_purchasing_units', 'upc']:
                 try:
+                    logger.debug(field)
+                    logger.debug(self.context['request'])
                     data[field] = self.context['request'].data[field]
                 except KeyError:
                     pass
+                except TypeError:
+                    try:
+                        data[field] = self.context['request'].data[self.context['index']][field]
+                    except KeyError:
+                        pass
 
             try:
                 data['supplier'] = self.context['request'].data['supplier']
             except KeyError:
                 data['supplier'] = self.context['request'].data['suppliers'][0]
+            except TypeError:
+                try:
+                    data['supplier'] = self.context['request'].data[self.context['index']]['supplier']
+                except KeyError:
+                    try:
+                        data['supplier'] = self.context['request'].data[self.context['index']]['suppliers'][0]
+                    except KeyError:
+                        pass
 
             suppliers_data = [data]
         logger.debug(suppliers_data)

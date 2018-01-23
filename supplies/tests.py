@@ -573,8 +573,11 @@ class SupplyAPITest(APITestCase):
         self.assertEqual(supply2_obj.quantity, 12.3)
 
         supply3 = supplies[2]
+        logger.debug(supply3)
+        self.assertEqual(supply3['description'], 'slat wood')
         self.assertEqual(supply3['quantity'], Decimal('10'))
-        supply3_obj = Supply.objects.get(pk=3)
+        supply3_obj = Supply.objects.get(pk=supply3['id'])
+        self.assertEqual(supply3_obj.description, 'slat wood')
         self.assertEqual(supply3_obj.quantity, 10)
                 
         log1 = Log.objects.all()[0]
