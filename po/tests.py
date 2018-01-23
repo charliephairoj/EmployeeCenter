@@ -564,11 +564,9 @@ class PurchaseOrderTest(APITestCase):
             self.assertEqual(item.total, Decimal('121.1'))
             
             modified_po_data = copy.deepcopy(base_purchase_order)
-            modified_po_data['items'][1]['id'] = 203
             modified_po_data['items'][1]['unit_cost'] = Decimal('11.99')
             modified_po_data['items'][1]['comments'] = 'test change'
             modified_po_data['items'][1]['description'] = "test description change"
-            del modified_po_data['items'][1]['supply']
             modified_po_data['status'] = 'PROCESSED'
             resp = self.client.put('/api/v1/purchase-order/1/',
                                     format='json',
@@ -631,7 +629,7 @@ class PurchaseOrderTest(APITestCase):
             self.assertEqual(product.supply.id, item2_d.supply.id)
             self.assertEqual(product.supplier.id, self.po.supplier.id)
             self.assertEqual(product.cost, Decimal('11.99'))
-            
+
     def test_updating_po_items(self):
         """
         Test updating properties of items in the purchase order
