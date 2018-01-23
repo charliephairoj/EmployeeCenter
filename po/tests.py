@@ -19,7 +19,7 @@ from rest_framework.test import APITestCase
 
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
-from supplies.models import Supply, Fabric, Product, Log
+from supplies.models import Supply, Fabric, Product, Log, Product as SupplyProduct
 from projects.models import Project
 from po.serializers import ItemSerializer
 
@@ -116,6 +116,8 @@ class PurchaseOrderTest(APITestCase):
         self.contact = SupplierContact(name='test', email='test@yahoo.com', telephone=1234, primary=True)
         self.contact.supplier = self.supplier
         self.contact.save()
+
+        # Create Fabric
         self.supply = Fabric.create(**base_fabric)
        
         #self.supply.units = "m^2"
@@ -130,9 +132,15 @@ class PurchaseOrderTest(APITestCase):
         self.supply2.save()
         self.product2 = Product(supply=self.supply2, supplier=self.supplier, cost=base_fabric['unit_cost'])
         self.product2.save()
-        self.supply.supplier = self.supplier
+        self.supply1.supplier = self.supplier
         self.supply2.supplier = self.supplier
         
+
+        #Create supply with no target item
+        self.supply3 = Supply.objects.create(description='test supply')
+        self.supply3.id = 203
+        self.supply3.save()
+
         #Create a project
         self.project = Project()
         self.project.codename = 'MC House'
@@ -450,6 +458,180 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(item2.unit_cost, Decimal('12.11'))
         self.assertEqual(item2.total, Decimal('36.33'))
     
+    def test_adding_a_new_item_with_no_supply(self):
+        """
+        Test adding a new item to the purchase order with no previous supply or product"
+        """ 
+        print '\n'
+        logger.debug('Add a new item to a current PO via PUT')
+        print '\n'
+        
+        #Verifying po in database
+        self.assertEqual(self.po.id, 1)
+        self.assertEqual(self.po.items.count(), 1)
+        self.assertEqual(self.po.grand_total, Decimal('129.58'))
+        self.assertEqual(timezone('Asia/Bangkok').normalize(self.po.order_date).date(), datetime.datetime.now().date())
+        item = self.po.items.all()[0]
+        self.assertEqual(item.id, 1)
+        self.assertEqual(item.quantity, 10)
+        self.assertEqual(item.total, Decimal('121.1'))
+        
+        modified_po_data = copy.deepcopy(base_purchase_order)
+        modified_po_data['items'][1]['id'] = 203
+        modified_po_data['items'][1]['unit_cost'] = Decimal('11.99')
+        modified_po_data['items'][1]['comments'] = 'test change'
+        modified_po_data['items'][1]['description'] = "test description change"
+        del modified_po_data['items'][1]['supply']
+        modified_po_data['status'] = 'PROCESSED'
+        resp = self.client.put('/api/v1/purchase-order/1/',
+                                   format='json',
+                                   data=modified_po_data)
+        
+        #Verify the response
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        po = resp.data
+        self.assertEqual(po['id'], 1)
+        self.assertEqual(po['supplier']['id'], 1)
+        self.assertEqual(po['vat'], 7)
+        #self.assertEqual(Decimal(po['grand_total']), Decimal('74.85'))
+        self.assertEqual(po['discount'], 0)
+        self.assertEqual(po['revision'], 1)
+        self.assertEqual(len(po['items']), 2)
+        #self.assertEqual(po['status'], 'PAID')
+        #Check the new pdf
+        #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
+        
+        item1 = po['items'][0]
+        logger.debug(item1)
+        self.assertEqual(item1['id'], 2)
+        self.assertEqual(item1['quantity'], '10.0000000000')
+        self.assertEqual(item1['description'], u'Pattern: Maxx, Col: Blue')
+        self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.1100'))
+        self.assertEqual(Decimal(item1['total']), Decimal('121.10'))
+
+        item2 = po['items'][1]
+        logger.debug(item2)
+        self.assertEqual(item2['id'], 203)
+        self.assertEqual(item2['quantity'], '3.0000000000')
+        self.assertEqual(item2['comments'], 'test change')
+        self.assertEqual(item2['description'], 'test description change')
+        self.assertEqual(Decimal(item2['unit_cost']), Decimal('11.99'))
+        self.assertEqual(Decimal(item2['total']), Decimal('35.97'))
+        
+        #Verify database record
+        po = PurchaseOrder.objects.get(pk=1)
+        
+        self.assertEqual(po.supplier.id, 1)
+        self.assertEqual(po.status, 'PROCESSED')
+        #self.assertEqual(timezone('Asia/Bangkok').normalize(po.order_date), datetime.datetime.now().date())
+        self.assertEqual(po.vat, 7)
+        self.assertEqual(po.grand_total, Decimal('168.07'))
+        self.assertEqual(po.items.count(), 2)
+        
+        # Check new item in the database
+        item2_d = po.items.all().order_by('id')[1]
+        self.assertEqual(item2_d.id, 203)
+        self.assertEqual(item2_d.description, 'test description change')
+        self.assertEqual(item2_d.comments, 'test change')
+        self.assertEqual(item2_d.quantity, 3)
+        self.assertEqual(item2_d.unit_cost, Decimal('11.99'))
+        self.assertEqual(item2_d.total, Decimal('35.97'))
+
+        # Check new supply product in the database
+        products = SupplyProduct.objects.filter(supply=item2_d.supply, supplier=self.po.supplier)
+        self.assertEqual(products.count(), 1)
+        product = products.all()[0]
+        self.assertEqual(product.supply.id, item2_d.supply.id)
+        self.assertEqual(product.supplier.id, self.po.supplier.id)
+        self.assertEqual(product.cost, Decimal('11.99'))
+
+    def test_adding_a_new_item_with_no_supply(self):
+            """
+            Test adding a new item to the purchase order with no previous supply or product"
+            """ 
+            print '\n'
+            logger.debug('Add a new item to a current PO via PUT')
+            print '\n'
+            
+            #Verifying po in database
+            self.assertEqual(self.po.id, 1)
+            self.assertEqual(self.po.items.count(), 1)
+            self.assertEqual(self.po.grand_total, Decimal('129.58'))
+            self.assertEqual(timezone('Asia/Bangkok').normalize(self.po.order_date).date(), datetime.datetime.now().date())
+            item = self.po.items.all()[0]
+            self.assertEqual(item.id, 1)
+            self.assertEqual(item.quantity, 10)
+            self.assertEqual(item.total, Decimal('121.1'))
+            
+            modified_po_data = copy.deepcopy(base_purchase_order)
+            modified_po_data['items'][1]['id'] = 203
+            modified_po_data['items'][1]['unit_cost'] = Decimal('11.99')
+            modified_po_data['items'][1]['comments'] = 'test change'
+            modified_po_data['items'][1]['description'] = "test description change"
+            del modified_po_data['items'][1]['supply']
+            modified_po_data['status'] = 'PROCESSED'
+            resp = self.client.put('/api/v1/purchase-order/1/',
+                                    format='json',
+                                    data=modified_po_data)
+            
+            #Verify the response
+            self.assertEqual(resp.status_code, 200, msg=resp)
+            po = resp.data
+            self.assertEqual(po['id'], 1)
+            self.assertEqual(po['supplier']['id'], 1)
+            self.assertEqual(po['vat'], 7)
+            #self.assertEqual(Decimal(po['grand_total']), Decimal('74.85'))
+            self.assertEqual(po['discount'], 0)
+            self.assertEqual(po['revision'], 1)
+            self.assertEqual(len(po['items']), 2)
+            #self.assertEqual(po['status'], 'PAID')
+            #Check the new pdf
+            #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(po['pdf']['url'])
+            
+            item1 = po['items'][0]
+            logger.debug(item1)
+            self.assertEqual(item1['id'], 2)
+            self.assertEqual(item1['quantity'], '10.0000000000')
+            self.assertEqual(item1['description'], u'Pattern: Maxx, Col: Blue')
+            self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.1100'))
+            self.assertEqual(Decimal(item1['total']), Decimal('121.10'))
+
+            item2 = po['items'][1]
+            logger.debug(item2)
+            self.assertEqual(item2['id'], 203)
+            self.assertEqual(item2['quantity'], '3.0000000000')
+            self.assertEqual(item2['comments'], 'test change')
+            self.assertEqual(item2['description'], 'test description change')
+            self.assertEqual(Decimal(item2['unit_cost']), Decimal('11.99'))
+            self.assertEqual(Decimal(item2['total']), Decimal('35.97'))
+            
+            #Verify database record
+            po = PurchaseOrder.objects.get(pk=1)
+            
+            self.assertEqual(po.supplier.id, 1)
+            self.assertEqual(po.status, 'PROCESSED')
+            #self.assertEqual(timezone('Asia/Bangkok').normalize(po.order_date), datetime.datetime.now().date())
+            self.assertEqual(po.vat, 7)
+            self.assertEqual(po.grand_total, Decimal('168.07'))
+            self.assertEqual(po.items.count(), 2)
+            
+            # Check new item in the database
+            item2_d = po.items.all().order_by('id')[1]
+            self.assertEqual(item2_d.id, 203)
+            self.assertEqual(item2_d.description, 'test description change')
+            self.assertEqual(item2_d.comments, 'test change')
+            self.assertEqual(item2_d.quantity, 3)
+            self.assertEqual(item2_d.unit_cost, Decimal('11.99'))
+            self.assertEqual(item2_d.total, Decimal('35.97'))
+
+            # Check new supply product in the database
+            products = SupplyProduct.objects.filter(supply=item2_d.supply, supplier=self.po.supplier)
+            self.assertEqual(products.count(), 1)
+            product = products.all()[0]
+            self.assertEqual(product.supply.id, item2_d.supply.id)
+            self.assertEqual(product.supplier.id, self.po.supplier.id)
+            self.assertEqual(product.cost, Decimal('11.99'))
+            
     def test_updating_po_items(self):
         """
         Test updating properties of items in the purchase order

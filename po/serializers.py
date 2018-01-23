@@ -572,7 +572,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item.calculate_total()
                 item.save()
                 """
-            except KeyError as e:
+            except(KeyError, Item.DoesNotExist) as e:
 
                 logger.debug(e)
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
