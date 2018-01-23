@@ -10,7 +10,8 @@ import logging
 import random
 import unittest
 
-from django.contrib.auth.models import User, Permission, ContentType
+from administrator.models import User
+from django.contrib.auth.models import Permission, ContentType
 from rest_framework.test import APITestCase
 
 from contacts.models import Supplier
@@ -70,14 +71,14 @@ def create_user(block_permissions=[]):
             user.user_permissions.add(p)
     return user
                 
-class SupplyAPITestCase(APITestCase):
+class SupplyAPITest(APITestCase):
     def setUp(self):
         """
         Set up the view 
         
         -login the user
         """
-        super(SupplyAPITestCase, self).setUp()
+        super(SupplyAPITest, self).setUp()
         
         self.create_user()
         self.client.login(username='test', password='test')
@@ -530,6 +531,51 @@ class SupplyAPITestCase(APITestCase):
         self.assertEqual(supply2['quantity'], Decimal('12.3'))
         supply2_obj = Supply.objects.get(pk=2)
         self.assertEqual(supply2_obj.quantity, 12.3)
+                
+        log1 = Log.objects.all()[0]
+        self.assertEqual(log1.action, "SUBTRACT")
+        self.assertEqual(log1.quantity, Decimal('1.8'))
+        self.assertIsNotNone(log1.employee)
+        self.assertEqual(log1.employee.id, 1)
+        self.assertEqual(log1.employee.first_name, "John")
+        self.assertEqual(log1.employee.last_name, "Smith")
+        
+        log2 = Log.objects.all()[1]
+        self.assertEqual(log2.action, "ADD")
+        self.assertEqual(log2.quantity, Decimal('1.5'))
+        self.assertIsNotNone(log2.employee)
+        self.assertEqual(log2.employee.id, 1)
+        self.assertEqual(log2.employee.first_name, "John")
+        self.assertEqual(log2.employee.last_name, "Smith")
+
+    def test_bulk_update_with_new_supply(self):
+        """
+        Test that we can update the quantities of multiple supplies
+        """
+        data = [{'id': 1, 'description': 'poooo', 'quantity': 9, 'employee': {'id': 1}}, 
+                {'id':2, 'quantity': 12.3, 'employee': {'id': 1}},
+                {'description': 'slat wood',
+                 'quantity': 10}]
+        
+        resp = self.client.put('/api/v1/supply/', format='json', data=data)
+        self.assertEqual(resp.status_code, 200, msg=resp)
+        supplies = resp.data
+
+        supply1 = supplies[0]
+        self.assertEqual(supply1['quantity'], 9)
+        self.assertEqual(supply1['description'], u'poooo')
+        supply1_obj = Supply.objects.get(pk=1)
+        self.assertEqual(supply1_obj.quantity, 9)
+        
+        supply2 = supplies[1]
+        self.assertEqual(supply2['quantity'], Decimal('12.3'))
+        supply2_obj = Supply.objects.get(pk=2)
+        self.assertEqual(supply2_obj.quantity, 12.3)
+
+        supply3 = supplies[2]
+        self.assertEqual(supply3['quantity'], Decimal('10'))
+        supply3_obj = Supply.objects.get(pk=3)
+        self.assertEqual(supply3_obj.quantity, 10)
                 
         log1 = Log.objects.all()[0]
         self.assertEqual(log1.action, "SUBTRACT")

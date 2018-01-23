@@ -30,7 +30,7 @@ class Shift(models.Model):
     
     
 class Employee(models.Model):
-    user = models.OneToOneField(User, related_name='profile')
+    user = models.OneToOneField(User, related_name='profile', null=True)
     title = models.TextField(null=True)
     name = models.TextField(db_column="name", null=True)
     first_name = models.TextField(null=True, blank=True)
