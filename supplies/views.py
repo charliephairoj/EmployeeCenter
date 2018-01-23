@@ -203,7 +203,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
             try:
                 print d['id']
             except KeyError as e:
-                SupplySerializer(data=d, context={'request': request, 'view', self})
+                SupplySerializer(data=d, context={'request': request, 'view': self})
                 if serizlier.is_valid(raise_exception=True):
                     serializer.save()
                     d['id'] = serializer.data['id']
