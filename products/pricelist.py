@@ -49,7 +49,7 @@ pdfmetrics.registerFont(TTFont('Raleway', settings.FONT_ROOT + 'raleway_thin-web
 
 class PricelistDocTemplate(BaseDocTemplate):
     id = 0
-    top_padding = 36 #150
+    top_padding = 12 #150
 
 
     def __init__(self, filename, **kwargs):
@@ -59,7 +59,7 @@ class PricelistDocTemplate(BaseDocTemplate):
 
     def _create_page_template(self):
         frame = Frame(0, 0, 210 * mm, 297 * mm, leftPadding=36,
-                      bottomPadding=30, rightPadding=36,
+                      bottomPadding=12, rightPadding=36,
                       topPadding=self.top_padding)
         template = PageTemplate('Normal', [frame])
         template.beforeDrawPage = self._create_header
@@ -72,7 +72,7 @@ class PricelistDocTemplate(BaseDocTemplate):
         img = utils.ImageReader(path)
         #Get Size
         img_width, img_height = img.getSize()
-        new_width = (img_width * 30) / img_height
+        new_width = (img_width * 50) / img_height
         #canvas.drawImage(path, 42, 780, height=30, width=new_width)
 
         canvas.setFont('Times-Roman', 5)
@@ -195,11 +195,14 @@ class PricelistPDF(object):
 
         models = self._prepare_data(self.queryset)
 
-        models_name = [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" in model.model]
-        models_name += [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" not in model.model]
+        #models_name = [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" in model.model]
+        #models_name += [model for model in sorted(models.keys(), key=lambda model: model.model) if "DW-" not in model.model]
 
-        for model in models_name:
+        for model in models.keys():
 
+            assert len(models[model]) == model.upholsteries.all().count(), "Only {0} of {1} return from prepare data for model {2}".format(len(models[model]),
+                                                                                                                                       model.upholsteries.all().count(),
+                                                                                                                                       model.model)
             stories.append(self._create_model_section(model, models[model]))
             stories.append(PageBreak())
 
@@ -227,10 +230,15 @@ class PricelistPDF(object):
             sleep(1)
 
         else:
+            for model in data.keys():
+                msg = "Prepared {0} of {1} for model {2}"
+                assert len(data[model]) == model.upholsteries.all().count(), msg.format(len(data[model]), 
+                                                                                        model.upholsteries.all().count(),
+                                                                                        model.model)
             return data
 
     def _add_upholstery_data(self, model, data):
-        for upholstery in Upholstery.objects.filter(model=model).exclude(description__icontains="pillow").distinct('width').order_by('-width'):
+        for upholstery in model.upholsteries.all().order_by('-width'):
 
             uphol_data = {'id': upholstery.id,
                           'configuration': upholstery.configuration.configuration,
@@ -241,14 +249,23 @@ class PricelistPDF(object):
                           'price': upholstery.price,
                           'export_price': upholstery.export_price}
 
-            try:
-                filename = "{0}.svg".format(upholstery.description)
-                upholstery.schematic.download(filename)
-                uphol_data['schematic'] = filename
-                self._files_to_delete.append(filename)
+            download_switch = True
+            filename = "{0}.svg".format(upholstery.description)
 
-            except AttributeError as e:
-                pass
+            while download_switch:
+                try:
+                    upholstery.schematic.download(filename)
+                    uphol_data['schematic'] = filename
+                    self._files_to_delete.append(filename)
+                    download_switch = False
+                except AttributeError as e:
+                    download_switch = False
+                except Exception as e:
+                    logger.warn(e)
+                    msg = "Will try to download schemetic for {0} again in 15 seconds"
+                    logger.info(msg.format(upholstery.description))
+                    sleep(5)
+
 
             """
             if upholstery.supplies.count() > 0:
@@ -279,6 +296,11 @@ class PricelistPDF(object):
             """
 
             data[model].append(uphol_data)
+        
+        uphol_count = model.upholsteries.all().count()
+        logger.debug("Model {0} has {1} upholsteries.".format(model.model, uphol_count ))
+        assert len(data[model]) == model.upholsteries.all().count()
+
 
     def _create_model_section(self, model, products):
         """
@@ -300,29 +322,58 @@ class PricelistPDF(object):
                                         left_indent=12)],[self._get_image(images[0].generate_url(), height=150)]]
         except (IndexError, AttributeError) as e:
             logger.debug(e)
-            data = []
+            product_description = u"{0} {1}"
+            product_description = product_description.format(model.name, model.model)
+            data = [[self._prepare_text(product_description,
+                                        fontname='Raleway',
+                                        alignment=TA_LEFT,
+                                        font_size=24,
+                                        left_indent=12)],[]]
 
         #data = [[self._prepare_text(model.model, font_size=24, alignment=TA_LEFT)]]
 
+        assert len(products) == model.upholsteries.all().count(), "Only {0} of {1} products in create model section for model {2}".format(len(products),
+                                                                                                                                          model.upholsteries.all().count(),
+                                                                                                                                          model.model)
         # Var to keep track of number of products priced
         count = 0
         priced_count = 0
 
         # Get Max row height
+        logger.info(u"{0}".format(model.model))
+        if "PS-905" in model.model:
+            self.max_row_height = 110
+            logger.info("\n\n905\n")
         try:
-            self.max_row_height = max([self._get_drawing(p['schematic'])[2] for p in products])
+            self.max_row_height = max([self._get_drawing(p['schematic'])[2] for p in products])     
+
+            logger.info([self._get_drawing(p['schematic'])[2] for p in products])
+
+            if len([p for p in products if 'schematic' in p]) > 0:
+
+                assert self.max_row_height > 40, products
+
+            logger.info("\n\nMax row height for {0} is {1}\n".format(model.model, self.max_row_height))
+
+
         except (KeyError, ValueError) as e:
-            self.max_row_height = 20 
             logger.debug("No schematics:")
             logger.debug(model.model)
             logger.debug(model.name)
             logger.debug(e)
             print "\n\n"
+
         # Denotes number of products per line by 
         product_tables = []
         for p in products:
             p1, w = self._create_product_price_table(p)
             product_tables.append((p1, p, w))
+
+
+        assert len(product_tables) == model.upholsteries.all().count(), "Only {0} for {1} product tables for model {2}".format(len(product_tables),
+                                                                                                                             model.upholsteries.all().count(),
+                                                                                                                             model.model)
+
 
         col_widths = 0
         page_width = 550
@@ -402,12 +453,15 @@ class PricelistPDF(object):
         # Check that all products for this model have been priced
         assert priced_count == len(products), "Only {0} of {1} price".format(priced_count, len(products))
 
+        assert priced_count == model.upholsteries.all().count(), "Only added {0} of {1} for model {2}".format(priced_count, 
+                                                                                                              model.upholsteries.all().count(),
+                                                                                                              model.model)
         assert len(data) != 0 
 
         table_style = [('ALIGNMENT', (0,0), (0, 0), 'CENTER'),
                        ('ALIGNMENT', (0, 1), (0, -1), 'LEFT'),
                        ('PADDING', (0, 1), (-1, -1), 0),
-                       ('BOTTOMPADDING', (0, 0), (-1, -1), 30),
+                       ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
                        ('LEFTPADDING', (0, 1), (0, -1), 15)]
 
         table = Table(data, colWidths=(550), repeatRows=2)
@@ -439,6 +493,7 @@ class PricelistPDF(object):
             col_widths.append(widths)
 
         row_heights = [40, (20 * 4)]
+        self.max_row_height
         if self.max_row_height > 20:
             row_heights[1] = row_heights[1] + self.max_row_height
         
@@ -459,9 +514,11 @@ class PricelistPDF(object):
 
         try:
             drawing, drawing_width, drawing_height = self._get_drawing(product['schematic'],
-                                                       filename="{0}.png".format(product['description']))
+                                                       filename="{0}.png".format(product['description']),
+                                                       max_height=150)
             data.append([drawing])
             col_width = drawing_width if drawing_width >= 120 else 120
+            assert drawing_height > row_height, "Height of {0} shoul be greather a {1}".format(drawing_height, row_height)
             row_height = drawing_height
         except KeyError as e:
             logger.debug(e)
@@ -510,12 +567,26 @@ class PricelistPDF(object):
         table_style = [('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
                 ]
 
+        
 
-        if len(data) > 4:
+        if len(data) > 4 :
             row_heights = (self.max_row_height, 20, 20, 20, 20)
+
+        
             table_style.append(('ALIGNMENT', (0, 0), (-1, 0), 'CENTER'))
             table_style.append(('VALIGN', (0, 1), (-1, 1), 'TOP'))
             table_style.append(('LINEBELOW', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)))
+        elif re.compile('(.+)?905(.+)?').search(product['description']):
+            row_heights = (self.max_row_height, 20, 20, 20, 20)
+
+        
+            table_style.append(('ALIGNMENT', (0, 0), (-1, 0), 'CENTER'))
+            table_style.append(('VALIGN', (0, 1), (-1, 1), 'TOP'))
+            table_style.append(('LINEBELOW', (0, 0), (-1, 0), 1, colors.CMYKColor(black=60)))
+            if len(data) == 4:
+                data = [[]] + data
+
+        logger.info("{1} {0}".format(row_heights, product['description']))
 
         table = Table(data, colWidths=col_width, rowHeights=row_heights)
         table.setStyle(TableStyle(table_style))
@@ -572,16 +643,25 @@ class PricelistPDF(object):
 
         return Image(path, width=new_width, height=new_height)
 
-    def _get_drawing(self, path, filename=None, width=None, height=None):
+    def _get_drawing(self, path, filename=None, width=None, height=None, max_width=None, max_height=None):
         try:
             drawing = svg2rlg(path)
             sx=sy=1
             drawing.width,drawing.height = drawing.minWidth()*sx, drawing.height*sy
-            drawing.scale(sx,sy)
+
+            if max_height: 
+                sy= max_height/drawing.height if  drawing.height > max_height else 1
+                sx = sy
+            elif max_width:
+                sx= max_width/drawing.width if  drawing.width > max_width else 1
+                sy = sx
         except (AttributeError) as e:
             logger.debug(e)
             logger.debug(path)
             logger.debug(svg2rlg(path))
+        
+        drawing.scale(sx,sy)
+        
     
         return drawing, drawing.width, drawing.height
         #renderPM.drawToFile(drawing, filename)

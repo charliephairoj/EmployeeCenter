@@ -201,13 +201,13 @@ class PurchaseOrder(models.Model):
 
         logger.debug(html_string)
         #Send email
-        """
+        
         conn.send_email('no-reply@dellarobbiathailand.com',
                         u'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
                         body,
                         recipients,
                         format='html')
-        """
+        
     
     def _calculate_subtotal(self):
         """
