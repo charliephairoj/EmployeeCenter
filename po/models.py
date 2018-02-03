@@ -185,29 +185,6 @@ class PurchaseOrder(models.Model):
                                               'document.dellarobbiathailand.com')
         
         self.save()
-        
-        
-    def email_approver(self):
-        
-        conn = boto.ses.connect_to_region('us-east-1')
-        recipients = ["charliep@alineagroup.co"]
-
-        approval_url = "http://localhost:8000/api/v1/purchase-order/approval/"
-        approval_url += "?pass={0}".format(self.create_approval_pass())
-        html_string = render_to_string('purchase_order_approval.html', {'po': self,
-                                                                       'items': self.items.all()})
-
-        
-
-        logger.debug(html_string)
-        #Send email
-        
-        conn.send_email('no-reply@dellarobbiathailand.com',
-                        u'Purchase Order from {0} Received'.format(purchase_order.supplier.name),
-                        body,
-                        recipients,
-                        format='html')
-        
     
     def _calculate_subtotal(self):
         """
@@ -435,14 +412,15 @@ class PurchaseOrder(models.Model):
                                                                  'button_style': button_style
                                                                  })
         #Send email
-        """
-        conn.send_email('no-reply@dellarobbiathailand.com',
-                        u'Approval Request: Purchase Order {0}: ({1})'.format(self.id,
+        
+        resp = conn.send_email('no-reply@dellarobbiathailand.com',
+                               u'Approval Request: Purchase Order {0}: ({1})'.format(self.id,
                                                                               self.supplier.name),
-                        body,
-                        recipients,
-                        format='html')
-        """
+                               body,
+                               recipients,
+                               format='html')
+        
+        return resp
 
     def email_requester(self):
         # Styles

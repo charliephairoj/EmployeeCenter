@@ -30,11 +30,9 @@ from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
 from administrator.models import User as U
 
-acks = A.objects.all().order_by('-_delivery_date')[0:100]
 
-for a in acks:
-    try:
-        a.update_calendar_event(user=U.objects.get(pk=1))
-        a.save()
-    except Exception as e:
-        logger.debug(e)
+
+pos = PO.objects.all().order_by('-id')[0:50]
+
+for po in pos:
+    po.email_approver()
