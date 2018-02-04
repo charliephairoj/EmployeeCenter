@@ -631,7 +631,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         logger.debug(purchase_order.employee)
         if purchase_order.employee.email:
             conn = boto.ses.connect_to_region('us-east-1')
-            recipients = [purchase_order.employee.email]
+            recipients = [purchase_order.employee.email, 'charliep@alineagroup.co']
 
             #Build the email body
             body = u"""<table><tr><td><h1>Purchase Order Received</h1></td><td></td><td></td></tr>
