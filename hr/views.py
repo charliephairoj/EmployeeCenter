@@ -321,6 +321,9 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset.order_by()
+
+        # Eager loading
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
@@ -370,7 +373,6 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[offset: offset + settings.REST_FRAMEWORK['PAGINATE_BY']]
 
-        logger.debug(len(queryset[0:]))
         return queryset
     
     

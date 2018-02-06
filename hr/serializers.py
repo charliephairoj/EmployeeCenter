@@ -3,6 +3,7 @@ from dateutil import parser
 from decimal import Decimal
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from pytz import timezone
 
 from hr.models import Employee, Attendance, Shift, PayRecord, Payroll
@@ -30,6 +31,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
         model = Attendance
         read_only_fields = ('gross_wage', 'net_wage', 'lunch_pay', 'remarks')
         exclude = ('_start_time', '_end_time', '_enable_overtime')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Attendance.objects.all(),
+                fields=('date', 'employee')
+            )
+        ]
         
     def create(self, validated_data):
         """Create a new instance of Attendance
@@ -41,6 +48,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
         instance.start_time = start_time
         instance.end_time = end_time
+        instance.calculate_times()
         instance.save()
         
         return instance
@@ -103,6 +111,25 @@ class EmployeeSerializer(serializers.ModelSerializer):
                   'bank', 'account_number', 'company', 'incentive_pay', 'status', 'payment_option', 'manager_stipend', 'title',
                   'location', 'employment_date')
     
+    @staticmethod
+    def setup_eager_loading(cls, queryset):
+        """ Perform necessary eager loading of data. """
+        # select_related for "to-one" relationships
+        queryset = queryset.select_related('image', 'shift')
+
+        # prefetch_related for "to-many" relationships
+        queryset = queryset.prefetch_related(
+            'image',
+            'shift',
+            'equipments')
+
+        # Prefetch for subsets of relationships
+        queryset = queryset.prefetch_related(
+            Prefetch('unaffiliated_attendees', 
+                queryset=Attendee.objects.filter(organization__isnull=True))
+            )
+        return queryset
+
     def create(self, validated_data):
         """Create a new instance of Employee
         """
