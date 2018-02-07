@@ -274,13 +274,21 @@ class Acknowledgement(models.Model):
         #confirmation_key = "acknowledgement/Confirmation-{0}.pdf".format(self.id)
         production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
         label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
-        qc_key = "acknowledgment/Quality_Control-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
         #confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
         prod_pdf = S3Object.create(production_filename, production_key, bucket, delete_original=delete_original)
         label_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
-        qc_pdf = S3Object.create(label_filename, label_key, bucket, delete_original=delete_original)
+
+        # Create QC key and upload and add to files
+        try:
+            qc_key = "acknowledgment/Quality_Control-{0}.pdf".format(self.id)
+            qc_pdf = S3Object.create(qc_filename, qc_key, bucket, delete_original=delete_original)
+
+            # Add qc file to the
+            File.objects.create(file=qc_pdf, acknowledgement=self)
+        except Exception as e:
+            logger.warn(e)
 
         # Save references for files
         self.label_pdf = label_pdf
@@ -288,8 +296,7 @@ class Acknowledgement(models.Model):
         #self.confirmation_pdf = confirmation_pdf
         self.production_pdf = prod_pdf
 
-        # Add qc file to the
-        File.objects.create(file=qc_pdf, acknowledgement=self)
+        
         
         self.save()
         
@@ -307,7 +314,6 @@ class Acknowledgement(models.Model):
         confirmation_pdf = ConfirmationPDF(customer=self.customer, ack=self, products=products)
         production_pdf = ProductionPDF(customer=self.customer, ack=self, products=products)
         label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
-        qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
 
         # Create pdfs
         ack_filename = ack_pdf.create()
@@ -315,8 +321,15 @@ class Acknowledgement(models.Model):
         production_filename = production_pdf.create()
         
         label_filename = label_pdf.create()
-        qc_filename = qc_pdf.create()
-        
+
+        # Initialize and create PDF section
+        try:
+            qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
+            qc_filename = qc_pdf.create()
+        except Exception as e:
+            logger.warn(e)
+            qc_filename = ""
+
         return ack_filename, production_filename, label_filename, qc_filename
 
     def create_and_upload_checklist(self):

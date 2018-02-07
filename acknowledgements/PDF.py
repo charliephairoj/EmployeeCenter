@@ -1705,7 +1705,8 @@ class QualityControlPDF(AcknowledgementPDF):
 
 
 class UpholsteryQCPage(object):
-    frame_list = [{"en": "Check that arms are strong", "th": ""}],
+    frame_list = [{"en": "Check that arms are strong", "th": ""},
+                  {"en": "Check that the piece is level" , "th": ""}],
     fabric_cutting_list = [{"en": "Fabric is stain and blemish free", "th": "ฟหกดฟหกเฟกดฟหกด"},
                            {"en": "All work marks are removed", "th": ""},
                            {"en": "All fabric is running in the same direction", "th": ""}]
