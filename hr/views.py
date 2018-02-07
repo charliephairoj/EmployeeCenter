@@ -323,7 +323,7 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         queryset = self.queryset.order_by()
 
         # Eager loading
-        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        #queryset = self.get_serializer_class().setup_eager_loading(queryset)
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
