@@ -139,7 +139,7 @@ class SupplySerializer(serializers.ModelSerializer):
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     suppliers = ProductSerializer(source="products", required=False, many=True, write_only=True)
-    employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False)
+    employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False, allow_null=True)
     id = serializers.IntegerField(required=False)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
@@ -237,8 +237,11 @@ class SupplySerializer(serializers.ModelSerializer):
             try:
                 data['supplier'] = self.context['request'].data['supplier']
             except KeyError:
-                data['supplier'] = self.context['request'].data['suppliers'][0]
-            except TypeError:
+                try:
+                    data['supplier'] = self.context['request'].data['suppliers'][0]
+                except KeyError as e:
+                    logger.warn(e)
+            except TypeError as e:
                 try:
                     data['supplier'] = self.context['request'].data[self.context['index']]['supplier']
                 except KeyError:
@@ -252,10 +255,10 @@ class SupplySerializer(serializers.ModelSerializer):
         #iam_credentials = self.context['request'].user.aws_credentials
         #key = iam_credentials.access_key_id
         #secret = iam_credentials.secret_access_key
-
+        logger.debug(validated_data)
         instance = self.Meta.model.objects.create(**validated_data)
         #instance.create_stickers(key, secret)
-
+        logger.debug(instance.__dict__)
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
             product_serializer.save()

@@ -230,31 +230,31 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
-        status = self.request.query_params.get('employee_status', None)
+        status = self.request.query_params.get('status', None)
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
 
-        if not query and not status:
-            q = "SELECT * FROM hr_employee ORDER BY status ASC, government_id, card_id, name"
-            queryset = Employee.objects.raw(q)
-
-        else:
-
-            if query:
-                queryset = queryset.filter(Q(id__icontains=query) |
-                                        Q(first_name__icontains=query) |
-                                        Q(last_name__icontains=query) |
-                                        Q(card_id__icontains=query) |
-                                        Q(name__icontains=query) |
-                                        Q(nickname__icontains=query) |
-                                        Q(department__icontains=query) |
-                                        Q(telephone__icontains=query))
-                                        
+       
+        if query:
+            queryset = queryset.filter(Q(id__icontains=query) |
+                                    Q(first_name__icontains=query) |
+                                    Q(last_name__icontains=query) |
+                                    Q(card_id__icontains=query) |
+                                    Q(name__icontains=query) |
+                                    Q(nickname__icontains=query) |
+                                    Q(department__icontains=query) |
+                                    Q(telephone__icontains=query))
+                                    
+        
+        
+        logger.debug(queryset.count())
+        if status:
+            queryset = queryset.filter(status__icontains=status)
             
-                    
-            if status:
-                queryset = queryset.filter(status=status)
-            
+        logger.debug(status)
+        logger.debug(query)
+        logger.debug(queryset.count())
+
         if offset != None and limit == 0:
             queryset = queryset[offset:]
         elif offset == 0 and limit != 0:
