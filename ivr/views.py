@@ -125,13 +125,13 @@ def route_call(request):
 
     for number in numbers:
         dial.number(number[1],
-                    status_callback_event='answered',
+                    status_callback_event='answered completed',
                     status_callback=_get_status_callback_url(number[0]),
                     status_callback_method="GET")
     
     for client in clients:
         dial.client(client[1],
-                    status_callback_event='answered',
+                    status_callback_event='answered completed',
                     status_callback=_get_status_callback_url(client[0]),
                     status_callback_method="GET")
 
@@ -147,7 +147,7 @@ def call_status_update_callback(request):
         user = User.objects.get(pk=call_data['employee'])
     except Exception as e:
         user = User.objects.get(pk=1)
-        logger.debug(e)
+        logger.warn(e)
         Log.objects.create(type="Call Summary Error (Getting User)", 
                            message=e,
                            user=user)
@@ -185,21 +185,27 @@ def recording_callback(request):
     try:
         email_call_summary(call_log.employee.email, call_log)
     except Exception as e:
-        logger.debug(e)
+        logger.warn(e)
 
         try: 
             employee = call_log.employee
         except AttributeError as f:
-            logger.debug(f)
+            logger.warn(f)
             employee = User.objects.get(pk=1)
             #Error for getting user
             Log.objects.create(type="Call Summary Error (Getting user for sending email)", 
                            message=f,
                            user=employee)
 
-        Log.objects.create(type="Call Summary Error", 
-                           message=e,
-                           user=employee)
+        try:
+            Log.objects.create(type="Call Summary Error", 
+                            message=e,
+                            user=employee)
+        except ValueError as e:
+            logger.warn(e)
+            Log.objects.create(type="Call Summary Error", 
+                            message=e,
+                            user=User.objects.get(pk=1))
         email_call_summary('charliep@alineagroup.co', call_log, 'error call summary')
 
 
