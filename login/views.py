@@ -181,6 +181,14 @@ def app_login(request):
 
             return HttpResponseRedirect('/')
 
+        else:
+
+            logger.warn(form.__dict__)
+            
+            #create a new login form
+            form = LoginForm()
+            return render(request, 'login.html', {'form':form})
+
     else:
         #create a new login form
         form = LoginForm()
