@@ -372,21 +372,23 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         except Exception as e:
             message = "Unable to create calendar event because: {0}"
             message = message.format(e)
-            POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            type_label = "PURCHASE ORDER EMAIL ERROR"
+            POLog.create(message=message, purchase_order=instance, user=employee, type=type_label)
 
         # Log Opening of an order
         message = "Purchase Order #{0} was created.".format(instance.id)
-        log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
+        log = POLog.create(message=message, purchase_order=instance, user=employee)
 
         try:
             instance.email_approver()
             # Log Opening of an order
             message = "Purchase Order #{0} sent for approval.".format(instance.id)
-            log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            log = POLog.create(message=message, purchase_order=instance, user=employee)
         except Exception as e:
             message = "Unable to email approver because: {0}"
             message = message.format(e)
-            POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            type_label = "PURCHASE ORDER EMAIL ERROR"
+            POLog.create(message=message, purchase_order=instance, user=employee, type=type_label)
 
         # What is this line for? Unsure.
         #p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
