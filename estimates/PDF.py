@@ -442,23 +442,25 @@ class EstimatePDF(object):
         
         #calculate the totals
         #what to do if there is vat or discount
+        # Provide account details for 'Dellarobbia Thailand'
+        if self.ack.company.lower() == 'dellarobbia thailand':
+            quotation_details = "Prices are valid for 30 Days\n"
+            quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
+            quotation_details += "Transfer deposit to:\n"
+            quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
+            quotation_details += "294-3-006361\n"
+            quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
+        # Provide account details for 'Alinea Group'
+        else: 
+            quotation_details = "Prices are valid for 30 Days\n"
+            quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
+            quotation_details += "Transfer deposit to:\n"
+            quotation_details += "Alinea Group Co., Ltd.\n"
+            quotation_details += "023-1-67736-4\n"
+            quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
+
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
-            # Provide account details for 'Dellarobbia Thailand'
-            if self.ack.company.lower() == 'dellarobbia thailand':
-                quotation_details = "Prices are valid for 30 Days\n"
-                quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
-                quotation_details += "Transfer deposit to:\n"
-                quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
-                quotation_details += "294-3-006361\n"
-                quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
-            # Provide account details for 'Alinea Group'
-            else: 
-                quotation_details = "Prices are valid for 30 Days\n"
-                quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
-                quotation_details += "Transfer deposit to:\n"
-                quotation_details += "Alinea Group Co., Ltd.\n"
-                quotation_details += "023-1-67736-4\n"
-                quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
+            
 
             #get subtotal and add to pdf
             data.append([quotation_details, '', '', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
@@ -490,7 +492,7 @@ class EstimatePDF(object):
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
-        data.append(['', '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
+        data.append([quotation_details, '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
 
         if self.ack.deposit > 0:
             deposit_amount = self.ack.total * (self.ack.deposit/Decimal('100'))
