@@ -493,6 +493,7 @@ class EstimatePDF(object):
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
         data.append([quotation_details, '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
+        style_list.append(('VALIGN', (0,-1), (-1,-1), 'TOP'))
 
         if self.ack.deposit > 0:
             deposit_amount = self.ack.total * (self.ack.deposit/Decimal('100'))
