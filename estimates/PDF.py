@@ -455,9 +455,14 @@ class EstimatePDF(object):
             quotation_details = "Prices are valid for 30 Days\n"
             quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
             quotation_details += "Transfer deposit to:\n"
-            quotation_details += "Alinea Group Co., Ltd.\n"
-            quotation_details += "023-1-67736-4\n"
-            quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
+            if self.ack.vat > 0:
+                quotation_details += "Alinea Group Co., Ltd.\n"
+                quotation_details += "023-1-67736-4\n"
+                quotation_details += "Bank: Kasikorn, Branch: Fashion Island"
+            else:
+                quotation_details += "Charlie Phairojmahakij\n"
+                quotation_details += "404-414-523-0\n"
+                quotation_details += "Bank: Siam Commercial Bank, Branch: Lam Lukka Khlong 4"
 
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
             

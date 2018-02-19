@@ -5,6 +5,7 @@ Project views
 """
 import json
 import time
+from datetime import datetime, timedelta
 import logging
 
 from django.http import HttpResponse
@@ -71,7 +72,8 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
             queryset = queryset.exclude(status__icontains=status_exclusions)
             
         # Exclude projects that are completed and order than 30 days
-        queryset = queryset.exclude(status__icontains="completed")
+        d = datetime.now() - timedelta(days=30)
+        queryset = queryset.exclude(status__icontains="completed", last_modified__lte=d)
         
         # Enfore ordering by codename    
         queryset = queryset.order_by('-codename')
@@ -81,7 +83,7 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         if offset and limit:
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
-            queryset = queryset
+            queryset = queryset[0:50]
 
         return queryset
     
