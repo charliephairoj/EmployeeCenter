@@ -2,14 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-import requests
-import json
-import hashlib
-import time
-import math
-import subprocess
-import pprint
 import logging
+import pprint
 from datetime import datetime, timedelta, date
 
 sys.path.append('/Users/Charlie/Sites/employee/backend')
@@ -27,26 +21,19 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
 import boto
-from contacts.models import Customer
-from acknowledgements.models import Acknowledgement as A
-from trcloud.models import TRSalesOrder as SO
-from estimates.models import Estimate as E
-from po.models import PurchaseOrder as PO
+
 from hr.models import Attendance, Employee
 from hr.PDF import AttendancePDF
-
-from django.contrib.auth.models import User as U
 
 
 if __name__ == '__main__':
     ed = date.today()
-    m = abs(ed.month - 1) or 12 if ed.day <= 25 else ed.month
-    y = ed.year
-    sd = date(y, m, 26)
-    logger.debug(sd.strftime('%B %d, %Y'))
-    logger.debug(ed.strftime('%B %d, %Y'))
 
-    employees = Employee.objects.filter(status='active').order_by('-nationality', 'name')
+    m = abs(ed.month - 1) or 12 if ed.day <= 25 else ed.month
+    y = ed.year if ed > date(ed.year, 1, 25) else ed.year - 1
+    sd = date(y, m, 26)
+
+    employees = Employee.objects.filter(status='active').order_by('-nationality')
 
     pdf = AttendancePDF(start_date=sd, end_date=ed, employees=employees)
     filename = pdf.create()
@@ -79,3 +66,5 @@ if __name__ == '__main__':
         , source=msg['From']
         , destinations=[msg['To']])
     logger.debug(result)
+
+    os.remove(filename)

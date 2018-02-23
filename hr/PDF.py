@@ -3,6 +3,7 @@
 import logging
 from decimal import *
 import math
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.exceptions import *
@@ -11,7 +12,7 @@ from reportlab.lib import colors, utils
 from reportlab.lib.units import mm
 from reportlab.platypus import *
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A3, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code128
@@ -565,6 +566,238 @@ class PayrollPDF(object):
         return Paragraph(description, style)
         
         
-if __name__ == "__main__":
-    pdf = ProjectPDF()
-    pdf.create()
+class AttendancePDF(object):
+    table_style = [('GRID', (0, 0), (-1,-1), 1, colors.CMYKColor(black=60)),
+                   ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                   ('FONT', (0,0), (-1,-1), 'Garuda'),
+                   ('TEXTCOLOR', (0,0), (-1,-1), colors.CMYKColor(black=60)),
+                   ('ALIGNMENT', (0,0), (-1,-1), 'LEFT'),
+                   ('ALIGNMENT', (2,0), (2,-1), 'CENTER'),
+                   ('PADDING', (0,0), (-1,-1), 0),
+                   ('FONTSIZE', (0,0),(-1,-1), 10)]
+    cell_width = 35
+    cell_height = 25
+
+    def __init__(self, start_date=None, end_date=None, employees=[], *args, **kwargs):
+            
+        self.start_date = start_date
+        self.end_date = end_date
+        self.employees = employees
+          
+        super(AttendancePDF, self).__init__(*args, **kwargs)
+        
+    def create(self, response=None):
+        
+        if response is None:
+            response = 'Payroll_{0}-{1}.pdf'.format(self.start_date, self.end_date)
+            self.filename = response
+        
+        doc = SimpleDocTemplate(response, 
+                                pagesize=landscape(A3), 
+                                leftMargin=12, 
+                                rightMargin=12, 
+                                topMargin=12, 
+                                bottomMargin=12)
+        stories = []
+        
+        
+        
+        stories.append(self._format_text("Attendance Summary",
+                                         font_size=30))
+        stories.append(Spacer(0, 50))
+        stories.append(self._create_employee_attendance())
+        doc.build(stories)
+
+        return self.filename 
+
+    def _create_employee_attendance(self):
+        """Create and overall detailed summary of all attendances
+        """
+
+
+        dates = [self.start_date + timedelta(days=i) for i in xrange((self.end_date - self.start_date).days + 1)]
+        dates_table = Table([[d.strftime("%b") for d in dates],
+                             [d.strftime("%d") for d in dates]], colWidths=self.cell_width, rowHeights=20)
+        dates_table.setStyle(TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                                         ('FONTSIZE', (0, 0), (-1, -1), 14),
+                                         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                         ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
+                                         ('TOPPADDING', (0, 0), (-1, -1), 0),
+                                         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                                         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                                         ('LEFTPADDING', (0, 0), (-1, -1), 0),]))
+        data = [['Employee', dates_table]]
+
+        for employee in self.employees:
+
+            try:
+                id_data = [[self._format_text(employee.name)], [self.get_image(employee.image.generate_url(), width=90)]]
+            except AttributeError as e:
+                id_data = [[self._format_text(employee.name)], ['']]
+
+            id_table = Table(id_data, rowHeights=(25,125))
+        
+            data.append([id_table, self._create_attendance_details(employee, dates)])
+                         
+        table = Table(data, colWidths=(100, self.cell_width * len(dates)), repeatRows=1)
+        style = TableStyle([('ALIGNMENT', (0, 0), (-1, -1), 'LEFT'),
+                            ('FONT', (0, 0), (-1, -1), 'Tahoma'),
+                            ('TOPPADDING', (0, 0), (-1, -1), 0),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                            ('GRID', (0, 0), (-1, -1),  1, colors.CMYKColor(black=60))
+                            ])
+        table.setStyle(style)
+        
+        return table
+    
+    def _create_attendance_details(self, employee, dates):
+        
+        predata = {}
+        data = []
+        r_days = 0
+        r_ot = 0
+        sundays = 0
+        sunday_ot = 0
+        
+        attendances = employee.attendances.filter(date__gte=self.start_date, 
+                                                  date__lte=self.end_date)
+
+        logger.debug(employee.name)
+        logger.debug(attendances.count())
+        print '\n'
+
+        for dd in dates:
+            predata[dd] = None
+
+        for a in attendances.order_by('date'):
+            predata[a.date] = a
+
+        for key in predata:
+            a = predata[key]
+            mdata = []
+            a_styles = [('TOPPADDING', (0, 0), (-1, -1), 0),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                        ('FONTSIZE', (0, 0), (-1, -1), 12),
+                        ('ALIGNMENT', (0, 0), (-1, -1), 'CENTER'),
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        #('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(yellow=50, cyan=50))
+                        ('LINEAFTER', (0, 0), (-1, -1), 1, colors.CMYKColor(black=60))
+
+                        ]
+
+            try:
+                if a.vacation or a.sick_leave:
+                    
+                    if a.vacation:
+                        mdata.append(['V'])
+                        a_styles.append(('TEXTCOLOR', (0, 0), (-1, -1), colors.yellow))
+                    elif a.sick_leave:
+                        mdata.append(['S'])
+                        a_styles.append(('TEXTCOLOR', (0, 0), (-1, -1), colors.orange))
+
+                    a_styles.append(('SPAN', (0, 0), (-1, -1)))
+                    for i in xrange(6 - len(mdata)):
+                        mdata.append([''])
+
+                else:
+                    mdata.append([a.start_time.strftime('%H:%M')])
+                    mdata.append([a.end_time.strftime('%H:%M')])
+                    mdata.append([a.regular_time])
+                    mdata.append([a.overtime])
+                    mdata.append([a.doubletime])
+                    mdata.append([a.sunday_overtime])
+                    
+            except AttributeError as e:
+                logger.debug(e)
+                a_styles.append(('TEXTCOLOR', (0, len(mdata)), (-1, -1), colors.red))
+                a_styles.append(('SPAN', (0, len(mdata)), (-1, -1)))
+                for i in xrange(6 - len(mdata)):
+                    mdata.append(['N'])
+                
+
+
+            a_table = Table(mdata, rowHeights=self.cell_height, colWidths=self.cell_width)
+            a_table.setStyle(TableStyle(a_styles))
+            data.append(a_table)
+            """
+                         a.start_time.time() if a.start_time else '',
+                         a.end_time.time() if a.end_time else '',
+                         "{0:.2f}".format(Decimal(a.regular_time or 0)),
+                         "{0:.2f}".format(Decimal(a.overtime or 0))])
+                         #"{0:.2f}".format(a.gross_wage),
+                         #"{0:.2f}".format(a.net_wage)])
+                         
+                         
+            if a.is_sunday:
+                sundays += 1
+                sunday_ot += a.overtime
+            else:
+                r_days += (a.regular_time or Decimal('0')) / Decimal('8')
+                r_ot += a.overtime
+            
+        
+        data.append(['', '', '', 'Regular', '{0:.2f}'.format(r_days)])
+        data.append(['', '', '', 'Overtime', '{0:.2f}'.format(r_ot)])
+        data.append(['', '', '', 'Sundays', '{0:.2f}'.format(sundays)])
+        data.append(['', '', '', 'Sunday Overtime', '{0:.2f}'.format(sunday_ot)])
+        """
+                    
+        table = Table([data], colWidths=self.cell_width, rowHeights=self.cell_height*6)
+        style = TableStyle([#('GRID', (0, 0), (-1, -1), 1, colors.CMYKColor(cyan=60)),
+                            ('TOPPADDING', (0, 0), (-1, -1), 0),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 0),])
+        table.setStyle(style)
+        
+        return table
+        
+        
+    def _format_text(self, description, font_size=12):
+        """
+        Formats the description into a paragraph
+        with the paragraph style
+        """
+        style = ParagraphStyle(name='Normal',
+                               fontName='Garuda',
+                               leading=12,
+                               wordWrap=None,
+                               allowWidows=0,
+                               alignment=1,
+                               allowOrphans=0,
+                               fontSize=font_size,
+                               textColor=colors.CMYKColor(black=60))
+        
+        return Paragraph(description, style)
+
+    #helps change the size and maintain ratio
+    def get_image(self, path, width=None, height=None, max_width=0, max_height=0):
+        """Retrieves the image via the link and gets the
+        size from the image. The correct dimensions for
+        image are calculated based on the desired with or
+        height"""
+        try:
+            #Read image from link
+            img = utils.ImageReader(path)
+        except:
+            return None
+        #Get Size
+        imgWidth, imgHeight = img.getSize()
+        #Detect if there height or width provided
+        if width and height == None:
+            ratio = float(imgHeight) / float(imgWidth)
+            new_height = ratio * width
+            new_width = width
+        elif height and width == None:
+            ratio = float(imgWidth) / float(imgHeight)
+            new_height = height
+            new_width = ratio * height
+            if max_width != 0 and new_width > max_width:
+                new_width = max_width
+                new_height = (float(imgHeight) / float(imgWidth)) * max_width
+
+        return Image(path, width=new_width, height=new_height)
