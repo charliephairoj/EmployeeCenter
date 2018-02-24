@@ -299,6 +299,7 @@ class Product(models.Model):
 
 
 class Model(models.Model):
+    type = models.TextField(default="upholstery")
     model = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=100, null=True)
     collection = models.CharField(max_length=100, null=True)

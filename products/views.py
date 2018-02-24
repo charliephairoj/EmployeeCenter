@@ -19,7 +19,20 @@ logger = logging.getLogger(__name__)
 
 def model_public(request):
     if request.method.lower() == "get":
-        models = Model.objects.filter(web_active=True)
+        models = Model.objects.filter(web_active=True, type='upholstery').order_by('name')
+        models_data = [{'name': model.name,
+                        'model': model.model,
+                        'images': [img.generate_url(time=31560000) for img in model.images.filter(web_active=True).order_by('-primary')]}
+                        for model in models]
+        response = HttpResponse(json.dumps(models_data), 
+                                content_type="application/json")
+        response.status_code = 200
+        return response
+
+
+def bed_public(request):
+    if request.method.lower() == "get":
+        models = Model.objects.filter(web_active=True, type='bed').order_by('name')
         models_data = [{'name': model.name,
                         'model': model.model,
                         'images': [img.generate_url(time=31560000) for img in model.images.filter(web_active=True).order_by('-primary')]}
@@ -32,27 +45,20 @@ def model_public(request):
         
 def product_image(request):
     if request.method == "POST":
-        credentials = request.user.aws_credentials
-        key = credentials.access_key_id
-        secret = credentials.secret_access_key
-        
         try:
             filename = request.FILES['file'].name
         except MultiValueDictKeyError:
             filename = request.FILES['image'].name
 
         filename = save_upload(request, filename=filename)
-        logger.debug(filename)
+
         obj = S3Object.create(filename,
                         "acknowledgement/item/image/{0}_{1}".format(time.time(), filename.split('/')[-1]),
-                        'media.dellarobbiathailand.com',
-                        key,
-                        secret)
+                        'media.dellarobbiathailand.com')
                         
-        logger.debug(obj.__dict__)
         
         response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url(key, secret)}),
+                                            'url': obj.generate_url()}),
                                 content_type="application/json")
         response.status_code = 201
         return response

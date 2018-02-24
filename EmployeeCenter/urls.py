@@ -20,7 +20,7 @@ from products.views import ModelList, ModelDetail
 from products.views import UpholsteryList, UpholsteryDetail, UpholsteryViewSet
 from products.views import TableList, TableDetail
 from products.views import ProductSupplyList, ProductSupplyDetail
-from products.views import product_image, model_public
+from products.views import product_image, model_public, bed_public
 from estimates.views import EstimateList, EstimateDetail
 from acknowledgements.views import AcknowledgementList, AcknowledgementDetail
 from shipping.views import ShippingList, ShippingDetail
@@ -164,7 +164,8 @@ urlpatterns += [
     url(r'^api/v1/model/image$', product_image),
     url(r'^api/v1/model/image/$', product_image),
     url(r'^api/v1/model/image/$', product_image),
-    url(r'^api/v1/model/public/$', model_public)
+    url(r'^api/v1/model/public/$', model_public),
+    url(r'^api/v1/bed/public/$', bed_public)
 
 ]
 

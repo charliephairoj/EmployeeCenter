@@ -20,10 +20,16 @@ class ConfigurationSerializer(serializers.ModelSerializer):
 class ModelSerializer(serializers.ModelSerializer):
     images = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-
+    type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    frame = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    upholstery = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    suspension = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    cushions = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    legs = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+     
     class Meta:
         model = Model
-        field = ('id', 'model', 'images', 'has_back_pillows', 'frame', 'upholstery', 'suspension', 'cushion', 'legs')
+        field = ('id', 'model', 'images', 'has_back_pillows',)
         exclude = ('image_url', 'bucket', 'image_key')
 
     def create(self, validated_data):
@@ -95,7 +101,7 @@ class ModelSerializer(serializers.ModelSerializer):
 
         ret = super(ModelSerializer, self).to_representation(instance)
 
-        iam_credentials = self.context['request'].user.aws_credentials
+        #iam_credentials = self.context['request'].user.aws_credentials
         key = None #iam_credentials.access_key_id
         secret = None #iam_credentials.secret_access_key
 
