@@ -57,9 +57,13 @@ def upload_attendance(request):
             for chunk in file.chunks():
                 destination.write(chunk)
         
+        # Save and format the data into a list
         lines = open('attendance.txt').readlines()
         data = [l.replace('\r\n', '').split('\t') for l in lines]
-        logger.debug(data)
+        
+        assert len(lines) == len(data), "Error reformatting data from attendance.txt"
+
+        # Create master holders
         timestamps = []
         error_times = []
         employees = {}
@@ -67,37 +71,54 @@ def upload_attendance(request):
         duplicate_employees = []
         timezone = pytz.timezone('Asia/Bangkok')
 
-        def create_timestamps(data):
 
+        def create_timestamps(data):
+            """
+            Create Timestamps
+
+            This function will loop through the list of data, and 
+            find a timestamp if it exists. If not it will create a new 
+            timestamp
+            """
             for index, d in enumerate(data):
                 employee = None
                 timestamp = timezone.localize(parser.parse(d[-1]))
                 card_id = d[2]
                 
-                # Find the employee with the corresponding card
+                # Find the employee with the corresponding card id
                 try:
+                    # Check if employee is already found and in the dict
                     if card_id in employees:
                         employee = employees[card_id]
+                    # Retrieves employee by card id and active status
                     else:
                         employee = Employee.objects.get(card_id=card_id)
                         employee.shift = Shift.objects.all()[0]
                         employee.save()
                         employees[employee.card_id] = employee
 
+                except IndexError as e:
+                    print '\n\n'
+                    missing_employees[card_id] = {'id': d[2], 'timestamp': timestamp, 'card_id': card_id}
+                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
+                    print '\n\n'
                 except Employee.DoesNotExist:
                     missing_employees[card_id] = {'id': d[2], 'timestamp': timestamp, 'card_id': card_id}
-                    #logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
+                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
                 except Employee.MultipleObjectsReturned as e:
                     duplicate_employees.append({'id': d[2], 'timestamp': timestamp})
-                    #logger.warn(e)
+                    logger.warn(e)
                 
                 if employee:
+                    # Try to find an existing time stamp first
                     try:
                         timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
-                    except Timestamp.DoesNotExist:
+                    # Creates a timestamp if one is not found
+                    except Timestamp.DoesNotExist as e:
                         timestamps.append(Timestamp.objects.create(employee=employee,
                                                                      datetime=timestamp))
-                    except Timestamp.MultipleObjectsReturned:
+                    # If multiple copies are found, all are deleted and new one is made
+                    except Timestamp.MultipleObjectsReturned as e:
                         Timestamp.objects.filter(employee=employee, datetime=timestamp).delete()
                         timestamps.append(Timestamp.objects.create(employee=employee,
                                                                      datetime=timestamp))
@@ -126,12 +147,21 @@ def upload_attendance(request):
                 
                 assert attendance.id is not None
                 assert attendance.date is not None
+                assert attendance.employee is not None
+                assert attendance.date.year == 2018
                 #logger.debug("{0}: {1} | {2}".format(attendance.date, attendance.employee.id, attendance.id))
         
             
         def create_timestamps_and_attendances(data):
-            thread1 = Thread(target=create_timestamps, args=(data[1:len(data)/2], ))
-            thread2 = Thread(target=create_timestamps, args=(data[len(data)/2:], ))
+            logger.debug("Total timestamps {0}".format(len(data)))
+            data1 = data[1:len(data)/2]
+            data2 = data[len(data)/2:]
+
+            # Check that the timestamps have been divided correctly
+            assert len(data1) + len(data2) == len(data) - 1, "Data quantities do not match"
+
+            thread1 = Thread(target=create_timestamps, args=(data1, ))
+            thread2 = Thread(target=create_timestamps, args=(data2, ))
         
             threads = [thread1, thread2]
         
@@ -144,7 +174,7 @@ def upload_attendance(request):
             create_attendances(timestamps)
             
             logger.debug("Emailing Attenance Upload Report")
-            
+
             heading = """Attendance Upload Report"""
             header_cell_style = """
                                 border-right:1px solid #595959;
@@ -169,7 +199,7 @@ def upload_attendance(request):
             
             
         # Primary parallel thread
-        primary_thread = Thread(target=create_timestamps_and_attendances, args=(data[0:50], ))
+        primary_thread = Thread(target=create_timestamps_and_attendances, args=(data, ))
         primary_thread.start()
         
                 
