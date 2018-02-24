@@ -44,7 +44,7 @@ if __name__ == '__main__':
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = 'noreply@alineagroup.co'
-    msg['To'] = 'charliep@alineagroup.co'
+    msg['To'] = 'hr@alineagroup.co'
 
     # what a recipient sees if they don't use an email reader
     msg.preamble = 'Multipart message.\n'
