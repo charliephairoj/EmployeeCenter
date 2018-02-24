@@ -100,14 +100,14 @@ def upload_attendance(request):
                 except IndexError as e:
                     print '\n\n'
                     missing_employees[card_id] = {'id': d[2], 'timestamp': timestamp, 'card_id': card_id}
-                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
+                    logger.debug('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
                     print '\n\n'
                 except Employee.DoesNotExist:
                     missing_employees[card_id] = {'id': d[2], 'timestamp': timestamp, 'card_id': card_id}
-                    logger.warn('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
+                    logger.debug('No employee for card ID {0} on date: {1}'.format(card_id, timestamp))
                 except Employee.MultipleObjectsReturned as e:
                     duplicate_employees.append({'id': d[2], 'timestamp': timestamp})
-                    logger.warn(e)
+                    logger.debug("Card ID {0} return model than 1 employee".format(card_id))
                 
                 if employee:
                     # Try to find an existing time stamp first
@@ -193,7 +193,7 @@ def upload_attendance(request):
             e_conn.send_email('noreply@dellarobbiathailand.com',
                               'Attendance Upload Report',
                               message,
-                              ["charliep@dellarobbiathailand.com"],
+                              ["hr@alineagroup.co"],
                               format='html')
             
             
