@@ -24,7 +24,7 @@ class LogSerializer(serializers.ModelSerializer):
         model = Log
         fields = ('id', 'message', 'timestamp', 'user', 'type')
         
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         
         ret = super(LogSerializer, self).to_representation(instance)
         
@@ -86,12 +86,13 @@ class GroupSerializer(serializers.ModelSerializer):
         
              
 class UserSerializer(serializers.ModelSerializer):
-    groups = GroupSerializer(many=True, required=False)
-    password = serializers.CharField(write_only=True, required=False)
+    #groups = GroupSerializer(many=True, required=False)
+    #password = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = User
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'groups', 'id', 'last_login', 'is_active']
+        write_only_fields = ['password',]
+        fields = ['password', 'email', 'username', 'first_name', 'last_name', 'groups', 'id', 'last_login', 'is_active'],
         depth = 1
     
     def create(self, validated_data):

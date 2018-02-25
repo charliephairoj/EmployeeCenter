@@ -142,9 +142,6 @@ class LogList(LogMixin, generics.ListAPIView):
 
         if user_id:
             queryset = queryset.filter(user_id=user_id)
-            
-        logger.debug(queryset)
-        logger.debug(queryset.count())
         
         offset = self.request.query_params.get('offset', None)
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
@@ -153,6 +150,8 @@ class LogList(LogMixin, generics.ListAPIView):
             queryset = queryset[int(offset):limit + int(offset)]
         else:
             queryset = queryset[0:50]
+
+        queryset = queryset.select_related('user')
         
         return queryset
     

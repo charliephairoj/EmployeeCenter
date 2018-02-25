@@ -15,6 +15,9 @@ class Company(models.Model):
 class User(AbstractUser):
     reset_password = models.BooleanField(default=False)
     #company = model.ForeignKey(Company)
+ 
+    def password(self):
+        return ''
 
 class AWSUser(models.Model):
     user = models.OneToOneField(User, 

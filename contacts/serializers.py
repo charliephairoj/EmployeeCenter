@@ -200,12 +200,13 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     def to_representation(self, instance):
         
         ret = super(CustomerSerializer, self).to_representation(instance)
-        
+        """
         ret['contacts'] = [{'id': c.id,
                             'name': c.name,
                             'telephone': c.telephone,
                             'email': c.email,
                             'job_title': c.job_title} for c in instance.contacts.all()]
+        """
                             
         return ret
     

@@ -3,6 +3,7 @@
 from django.conf.urls import *
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
+import debug_toolbar
 
 import login.views
 import administrator.views
@@ -64,6 +65,7 @@ router.register(r'api/v1/shift', ShiftViewSet)
 
 #primary login and url routing
 urlpatterns = [
+    url(r'^__debug__/', include(debug_toolbar.urls)),
     url(r'^$', login.views.app_login),
     url(r'^main$', login.views.main),
     url(r'^password-reset$', login.views.password_reset),
@@ -134,7 +136,6 @@ urlpatterns = [
 
     url(r'^api/v1/administrator/log/$', ALogList.as_view()),
 ]
-
 
 
 urlpatterns += [

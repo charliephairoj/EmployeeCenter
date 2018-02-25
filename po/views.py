@@ -260,6 +260,19 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
             
+
+        queryset = queryset.select_related('supplier',
+                                           'project',
+                                           'room',
+                                           'phase', 
+                                           'pdf', 
+                                           'acknowledgement')
+        queryset = queryset.prefetch_related('items',
+                                             'items__supply',
+                                             #'items__supply__product',
+                                             'project__rooms',
+                                             'project__phases',
+                                             'project__rooms__files')
         return queryset
         
     def get_paginate_by(self):

@@ -196,11 +196,12 @@ class Attendance(models.Model):
             self.pay_rate = self.employee.wage
         
         # Set the shift if not set and not specified
-        if 'shift' not in kwargs and self.shift == None:
-            self.shift = self.employee.shift
+        #if 'shift' not in kwargs and self.shift == None:
+        #    self.shift = self.employee.shift
             
-        if self._start_time and self._end_time:
-            self.calculate_times()
+        #if self._start_time and self._end_time:
+        #    self.calculate_times()
+
                             
     def calculate_times(self):
         """Calculate the different times based on the assigned shift

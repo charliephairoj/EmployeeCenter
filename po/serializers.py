@@ -127,7 +127,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
 
         ret = super(ItemSerializer, self).to_representation(instance)
 
@@ -253,7 +253,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         read_only_fields = ('pdf', 'revision')
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the 'to_representation' in order to customize output for supplier
         """

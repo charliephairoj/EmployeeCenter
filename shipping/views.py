@@ -145,6 +145,9 @@ class ShippingMixin(object):
                     except TypeError as e:
                         pass
 
+
+        
+
         return request
     
     
@@ -173,6 +176,13 @@ class ShippingList(ShippingMixin, generics.ListCreateAPIView):
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
+
+        queryset = queryset.select_related('acknowledgement',
+                                           'pdf',
+                                           'customer',
+                                           'employee',
+                                           'project')
+        queryset = queryset.prefetch_related('items',)
             
         return queryset
         

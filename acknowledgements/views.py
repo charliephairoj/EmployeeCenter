@@ -393,7 +393,18 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
             queryset = queryset[0:50]
         
         
-            
+        queryset = queryset.select_related('customer', 
+                                            'project', 
+                                            'room',
+                                            'phase',
+                                            'employee',
+                                            'acknowledgement_pdf',
+                                            'production_pdf',
+                                            'confirmation_pdf',
+                                            'label_pdf',
+                                            'original_acknowledgement_pdf')
+        queryset = queryset.prefetch_related('logs')
+        
         return queryset
         
     def get_paginate_by(self):

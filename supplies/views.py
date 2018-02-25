@@ -184,6 +184,11 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
 
+        queryset = queryset.select_related('image',
+                                           'sticker',
+                                           'image')
+        queryset = queryset.prefetch_related()
+
         return queryset
 
     def get_paginate_by(self):
@@ -341,7 +346,7 @@ class LogList(generics.ListAPIView):
 
     def get_queryset(self):
 
-        queryset = self.queryset.all()
+        queryset = self.queryset.all()[0:50]
 
         supply_id = self.request.query_params.get('supply', None)
         supply_id = self.request.query_params.get('supply_id', None) or supply_id
@@ -353,6 +358,8 @@ class LogList(generics.ListAPIView):
 
         if action:
             queryset = queryset.filter(action=action)
+
+        queryset = queryset.select_related('supply', 'employee', 'supplier', 'supply__image')
 
         return queryset
 

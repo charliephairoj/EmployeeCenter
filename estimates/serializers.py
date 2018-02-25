@@ -9,6 +9,9 @@ from estimates.models import Estimate, Item, Pillow
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
+from administrator.serializers import UserSerializer as EmployeeSerializer
+from projects.serializers import ProjectSerializer
+from acknowledgements.serializers import AcknowledgementSerializer
 from contacts.models import Customer
 from products.models import Product
 from supplies.models import Fabric, Log
@@ -42,7 +45,7 @@ class PillowSerializer(serializers.ModelSerializer):
 
 class ItemListSerializer(serializers.ListSerializer):
 
-    def to_representation(self, data):
+    def xto_representation(self, data):
         data = data.exclude(deleted=True)
         return super(ItemListSerializer, self).to_representation(data)
 
@@ -123,7 +126,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the 'to_representation' method to transform the output for related and nested items
         """
@@ -153,9 +156,9 @@ class FileSerializer(serializers.ModelSerializer):
 
 class EstimateSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
+    customer = CustomerSerializer()#serializers.PrimaryKeyRelatedField()
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
+    project = ProjectSerializer()#serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
     items = ItemSerializer(many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -166,12 +169,13 @@ class EstimateSerializer(serializers.ModelSerializer):
     discount = serializers.IntegerField(required=False, allow_null=True)
     #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
     #                              allow_null=True)
-    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), allow_null=True, required=False)
+    acknowledgement = AcknowledgementSerializer() #serializers.PrimaryKeyRelatedField(allow_null=True, required=False)
 
     class Meta:
         model = Estimate
         read_only_fields = ('total', 'subtotal', 'time_created')
         exclude = ('pdf',)
+        depth = 1
 
 
     def create(self, validated_data):
@@ -261,7 +265,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """

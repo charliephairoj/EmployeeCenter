@@ -277,14 +277,9 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
                                     
         
         
-        logger.debug(queryset.count())
         if status:
             queryset = queryset.filter(status__icontains=status)
             
-        logger.debug(status)
-        logger.debug(query)
-        logger.debug(queryset.count())
-
         if offset != None and limit == 0:
             queryset = queryset[offset:]
         elif offset == 0 and limit != 0:
@@ -292,6 +287,9 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[offset: offset + settings.REST_FRAMEWORK['PAGINATE_BY']]
         
+        queryset = queryset.select_related('shift',
+                                           'image')
+        queryset = queryset.prefetch_related('equipments')
         return queryset
     
     
@@ -350,7 +348,7 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.order_by()
+        queryset = self.queryset.order_by('date')
 
         # Eager loading
         #queryset = self.get_serializer_class().setup_eager_loading(queryset)
@@ -361,40 +359,23 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
         end_date = self.request.query_params.get('end_date', None)
         employee_id = self.request.query_params.get('employee_id', None)
         
-        if employee_id or start_date or end_date:
+        if employee_id or (start_date and end_date):
             query = "SELECT * FROM hr_attendance WHERE"
 
             # Search only attendances for selected employee
             if employee_id:
+                queryset = queryset.filter(employee_id=employee_id)
                 query += " employee_id = {0}".format(employee_id)
             
             # Filter all records after the start_date
-            if start_date:
+            if start_date and end_date:
                 start_date = parser.parse(start_date)
                 start_date_str = start_date.strftime("%Y-%m-%d")
-
-                # Add a connector if employee id is present
-                if employee_id:
-                    query += " AND"
-                
-                query += " a_date >= '{0}'::date".format(start_date_str)
-                
-            # Filter all records before end_date
-            if end_date:
                 end_date = parser.parse(end_date)
                 end_date_str = end_date.strftime("%Y-%m-%d")
-
-                # Add a connector if employee id is present
-                if employee_id or start_date:
-                    query += " AND"
                 
-                query += " a_date <= '{0}'::date".format(end_date_str)
-                
-            query += " ORDER BY a_date DESC"
-            logger.debug(query)
-            queryset = Attendance.objects.raw(query)
-
-            logger.debug(len(queryset[0:]))
+                queryset = queryset.filter(date__range=[start_date_str, end_date_str])
+            #queryset = Attendance.objects.raw(query)
     
         if offset != None and limit == 0:
             queryset = queryset[offset:]
@@ -402,6 +383,9 @@ class AttendanceList(AttendanceMixin, generics.ListCreateAPIView):
             queryset = queryset[offset:offset + limit]
         else:
             queryset = queryset[offset: offset + settings.REST_FRAMEWORK['PAGINATE_BY']]
+
+        queryset = queryset.select_related('shift', 'employee__shift')
+        #queryset = queryset.prefetch_related('employee__shift')
 
         return queryset
     

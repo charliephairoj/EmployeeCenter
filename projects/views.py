@@ -88,6 +88,8 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
 
+        queryset = queryset.select_related('customer')
+        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files')
         return queryset
     
     

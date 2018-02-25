@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def model_public(request):
     if request.method.lower() == "get":
-        models = Model.objects.filter(web_active=True, type='upholstery').order_by('name')
+        models = Model.objects.select_related('images').filter(web_active=True, type='upholstery').order_by('name')
         models_data = [{'name': model.name,
                         'model': model.model,
                         'images': [img.generate_url(time=31560000) for img in model.images.filter(web_active=True).order_by('-primary')]}
@@ -32,7 +32,7 @@ def model_public(request):
 
 def bed_public(request):
     if request.method.lower() == "get":
-        models = Model.objects.filter(web_active=True, type='bed').order_by('name')
+        models = Model.objects.select_related('images').filter(web_active=True, type='bed').order_by('name')
         models_data = [{'name': model.name,
                         'model': model.model,
                         'images': [img.generate_url(time=31560000) for img in model.images.filter(web_active=True).order_by('-primary')]}
