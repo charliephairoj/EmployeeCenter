@@ -126,7 +126,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def xto_representation(self, instance):
+    def to_representation(self, instance):
         """
         Override the 'to_representation' method to transform the output for related and nested items
         """
@@ -293,7 +293,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         except AttributeError as e:
             logger.warn(e)
         """
-        
+
         return ret
 
     def _update_items(self, instance, items_data):
