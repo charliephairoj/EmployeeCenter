@@ -193,11 +193,14 @@ class EstimateSerializer(serializers.ModelSerializer):
                     pass
                 except AttributeError:
                     pass
-                        
-        discount = validated_data.pop('discount', validated_data['customer'].discount)
-       
+
+        try:
+            discount = validated_data.pop('discount', validated_data['customer'].discount)
+        except AttributeError as e:
+            discount = validated_data['customer'].discount
 
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
+                                            
                                                   discount=discount,
                                                   status="open",
                                                   **validated_data)
