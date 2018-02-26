@@ -101,7 +101,8 @@ class DealList(DealMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
         
-        
+        queryset = queryset.select_related('customer', 'contact', 'quotation', 'employee')
+        queryset = queryset.prefetch_related('customer__contacts', 'customer__addresses')
             
         return queryset
         
