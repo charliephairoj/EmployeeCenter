@@ -189,12 +189,12 @@ class UpholsterySerializer(serializers.ModelSerializer):
                                 'url': instance.schematic.generate_url()}
         except AttributeError:
             pass
-
+        """
         try:
             ret['prices'] = [{'grade': price.grade, 'price':price.price} for price in instance.prices.all()]
         except AttributeError:
             pass
-
+        """
         return ret
 
     def create(self, validated_data):

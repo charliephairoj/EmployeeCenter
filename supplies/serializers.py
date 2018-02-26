@@ -390,7 +390,7 @@ class FabricSerializer(SupplySerializer):
     def to_representation(self, instance):
         ret = super(FabricSerializer, self).to_representation(instance)
 
-        ret['reserved'] = sum([log.quantity or 0 for log in instance.logs.filter(action__icontains='reserve')])
+        ret['reserved'] = sum([log.quantity or 0 for log in instance.reserved_fabric_logs])
 
         return ret
 

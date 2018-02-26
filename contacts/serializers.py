@@ -212,7 +212,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
                 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
-    addresses = AddressSerializer(required=False, many=True, write_only=True, allow_null=True)
+    addresses = AddressSerializer(required=False, many=True, allow_null=True)
     address = AddressSerializer(required=False, write_only=True, allow_null=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #name_th = serializers.CharField(required=False)
@@ -234,7 +234,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
             
             ret['contacts'] = ContactSerializer(SupplierContact.objects.filter(supplier=instance.id), many=True).data
             
-        ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
+        #ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
             
         return ret
         

@@ -213,6 +213,8 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
             
+        queryset = queryset.select_related('model', 'configuration', 'image', 'schematic')
+        queryset = queryset.prefetch_related('model__images', 'pillows', 'supplies')
         return queryset
         
     def get_paginate_by(self):

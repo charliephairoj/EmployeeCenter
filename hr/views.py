@@ -70,7 +70,8 @@ def upload_attendance(request):
         missing_employees = {}
         duplicate_employees = []
         timezone = pytz.timezone('Asia/Bangkok')
-
+        employee_queryset = Employee.objects.filter(status='active').select_related('shift')
+        timestamp_queryset = Timestamp.objects.all().select_related('employee', 'employee__shift')
 
         def create_timestamps(data):
             """
@@ -92,9 +93,7 @@ def upload_attendance(request):
                         employee = employees[card_id]
                     # Retrieves employee by card id and active status
                     else:
-                        employee = Employee.objects.get(card_id=card_id)
-                        employee.shift = Shift.objects.all()[0]
-                        employee.save()
+                        employee = employee_queryset.get(card_id=card_id)
                         employees[employee.card_id] = employee
 
                 except IndexError as e:
@@ -112,7 +111,7 @@ def upload_attendance(request):
                 if employee:
                     # Try to find an existing time stamp first
                     try:
-                        timestamps.append(Timestamp.objects.get(employee=employee, datetime=timestamp))
+                        timestamps.append(timestamp_queryset.objects.get(employee=employee, datetime=timestamp))
                     # Creates a timestamp if one is not found
                     except Timestamp.DoesNotExist as e:
                         timestamps.append(Timestamp.objects.create(employee=employee,

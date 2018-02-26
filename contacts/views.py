@@ -53,6 +53,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         elif not offset and limit:
             queryset = queryset[:limit]
             
+        queryset = queryset.prefetch_related('addresses', 'contacts')
+
         return queryset
         
     def get_paginate_by(self):
@@ -106,6 +108,8 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
             
+        queryset = queryset.prefetch_related('addresses', 'contacts')
+
         return queryset
         
     def get_paginate_by(self):
@@ -161,6 +165,9 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
+
+        queryset = queryset.prefetch_related('addresses', 'contacts')
+
             
         return queryset
         
@@ -206,6 +213,8 @@ class SupplierViewSet(viewsets.ModelViewSet):
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
+                                      
+        queryset = queryset.prefetch_related('addresses', 'contacts')
                                       
         return queryset
         

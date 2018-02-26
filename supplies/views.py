@@ -6,7 +6,7 @@ import time
 
 from rest_framework import viewsets
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -294,6 +294,12 @@ class FabricList(FabricMixin, SupplyList):
             queryset = queryset[offset:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
+
+        queryset = queryset.select_related('image')
+        queryset = queryset.prefetch_related('logs', 'logs__employee')
+        queryset = queryset.prefetch_related(Prefetch('logs', 
+                                                      Log.objects.filter(action__icontains='reserved'),
+                                                      to_attr='reserved_fabric_logs'))
 
         return queryset
 
