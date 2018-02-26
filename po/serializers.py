@@ -17,7 +17,7 @@ from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item, Log as POLog
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
-from contacts.serializers import AddressSerializer
+from contacts.serializers import AddressSerializer, SupplierSerializer
 from oauth2client.contrib.django_orm import Storage
 from apiclient import discovery
 from acknowledgements.models import Acknowledgement
@@ -41,6 +41,7 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         read_only_fields = ('total', 'sticker')
         exclude = ('purchase_order', )
+        depth = 1
 
     def create(self, validated_data):
         """
@@ -127,10 +128,11 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def xto_representation(self, instance):
+    def to_representation(self, instance):
 
         ret = super(ItemSerializer, self).to_representation(instance)
 
+        """
         try:
             product = Product.objects.get(supply=instance.supply,
                                           supplier=instance.purchase_order.supplier)
@@ -145,13 +147,13 @@ class ItemSerializer(serializers.ModelSerializer):
             product = Product.objects.filter(supply=instance.supply,
                                           supplier=instance.purchase_order.supplier).order_by('id')[0]
             ret['units'] = product.purchasing_units
-
-        if product:
-            try:
-                ret['image'] = {'url': product.supply.image.generate_url(),
-                                'id': product.supply.image.id}
-            except AttributeError as e:
-                logger.debug(e)
+        """
+        try:
+            ret['image'] = {'url': instance.supply.image.generate_url(),
+                            'id': instance.supply.image.id}
+        except AttributeError as e:
+            pass
+           
 
         return ret
 
@@ -229,7 +231,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    supplier = SupplierSerializer() #serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
     project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
                                               allow_null=True,
@@ -253,19 +255,21 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         read_only_fields = ('pdf', 'revision')
 
-    def xto_representation(self, instance):
+    def to_representation(self, instance):
         """
         Override the 'to_representation' in order to customize output for supplier
         """
         ret = super(PurchaseOrderSerializer, self).to_representation(instance)
 
+        """
         ret['supplier'] = {'id': instance.supplier.id,
                            'name': instance.supplier.name,
                            'email': instance.supplier.email,
                            'telephone': instance.supplier.telephone,
                            'fax': instance.supplier.fax,
-                           'addresses': AddressSerializer(instance.supplier.addresses.all(), many=True).data}
-
+                           'addresses': AddressSerializer(instance.supplier.addresses, many=True).data}
+        """
+        
         try:
             ret['project'] = ProjectSerializer(instance.project).data
         except AttributeError:
@@ -311,7 +315,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             ret['logs'] = [{'message': log.message,
                             #'employee': get_employee(log),
-                            'timestamp': log.timestamp} for log in instance.logs.all()]
+                            'timestamp': log.timestamp} for log in instance.logs]
         except Exception as e:
             logger.debug(e)
 

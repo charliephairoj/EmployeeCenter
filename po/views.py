@@ -117,7 +117,7 @@ class PurchaseOrderMixin(object):
         Format fields that are primary key related so that they may
         work with DRF
         """
-        fields = ['supplier', 'project', 'room', 'phase', 'acknowledgement']
+        fields = ['project', 'room', 'phase', 'acknowledgement']
 
         for field in fields:
             if field in request.data:
@@ -164,7 +164,7 @@ class PurchaseOrderMixin(object):
         Format fields that are primary key related so that they may
         work with DRF
         """
-        fields = ['supplier', 'project', 'room', 'phase', 'acknowledgement']
+        fields = ['project', 'room', 'phase', 'acknowledgement']
 
         for field in fields:
             if field in request.data:
@@ -266,13 +266,18 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
                                            'room',
                                            'phase', 
                                            'pdf', 
+                                           'auto_print_pdf',
                                            'acknowledgement')
         queryset = queryset.prefetch_related('items',
+                                             'items__purchase_order',
+                                             'logs',
                                              'items__supply',
+                                             'items__supply__image',
                                              #'items__supply__product',
                                              'project__rooms',
                                              'project__phases',
-                                             'project__rooms__files')
+                                             'project__rooms__files',
+                                             'supplier__addresses')
         return queryset
         
     def get_paginate_by(self):
