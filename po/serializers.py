@@ -340,18 +340,25 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             except AttributeError:
                 item_data['supply'] = item_data['supply']['id']
 
-        currency = validated_data.pop('currency', validated_data['supplier'].currency)
-        discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
-        terms = validated_data.pop('terms', validated_data['supplier'].terms)
+        data = {}
+        for key in ['currency', 'discount', 'terms']:
+            try:
+                data[key] = validated_data.pop(key, getattr(validated_data['supplier'], key))
+            except AttributeError as e:
+                data[key] = getattr(validated_data['supplier'], key)
+                
+        #currency = validated_data.pop('currency', validated_data['supplier'].currency)
+        #discount = validated_data.pop('discount', None) or validated_data['supplier'].discount
+        #terms = validated_data.pop('terms', validated_data['supplier'].terms)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
 
         instance = self.Meta.model.objects.create(employee=employee, 
-                                                  discount=discount,
+                                                  currency=data['currency'],
+                                                  terms=data['terms'],
+                                                  discount=data['discount'],
                                                   receive_date=receive_date,
                                                   status="AWAITING APPROVAL",
                                                   **validated_data)
-        instance.currency = currency
-        instance.terms = terms
 
         item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance},
                                          many=True)
