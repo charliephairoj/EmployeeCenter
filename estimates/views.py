@@ -19,6 +19,7 @@ from contacts.models import Customer
 from projects.models import Project
 from utilities.http import save_upload
 from media.models import S3Object
+from administrator.models import User
 
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,12 @@ class EstimateMixin(object):
         """
         fields = ['employee', 'fabric', 'items']
         
+        for f in [('customer', Customer), ('project', Project), ('employee', User)]:
+            try:
+                request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
+            except (AttributeError, KeyError, IndexError) as e:
+                pass
+
         for field in fields:
             if field in request.data:
                 if 'id' in request.data[field]:
@@ -148,7 +155,12 @@ class EstimateMixin(object):
         work with DRF
         """
         fields = ['employee', 'fabric', 'items']
-        
+        for f in [('customer', Customer), ('project', Project), ('employee', User)]:
+            try:
+                request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
+            except (AttributeError, KeyError, IndexError) as e:
+                pass
+                
         for field in fields:
             if field in request.data:
                 try:
