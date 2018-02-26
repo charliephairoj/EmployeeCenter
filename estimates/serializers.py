@@ -158,7 +158,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = CustomerSerializer()#serializers.PrimaryKeyRelatedField()
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = ProjectSerializer()#serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
+    project = ProjectSerializer(allow_null=True, required=False)#serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
     items = ItemSerializer(many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -169,7 +169,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     discount = serializers.IntegerField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), required=False,
                                   allow_null=True)
-    acknowledgement = AcknowledgementSerializer() #serializers.PrimaryKeyRelatedField(allow_null=True, required=False)
+    acknowledgement = AcknowledgementSerializer(required=False, allow_null=True) #serializers.PrimaryKeyRelatedField(allow_null=True, required=False)
 
     class Meta:
         model = Estimate
@@ -239,7 +239,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.discount = validated_data.pop('discount', instance.discount)
         instance.remarks = validated_data.pop('remarks', instance.remarks)
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
-        instance.project = validated_data.pop('project', instance.project)
+        #instance.project = validated_data.pop('project', instance.project)
         #Update attached files
         #files = validated_data.pop('files', [])
         #for file in files:
