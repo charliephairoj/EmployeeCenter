@@ -110,7 +110,7 @@ class EstimateMixin(object):
         
         for f in [('customer', Customer), ('project', Project), ('employee', User)]:
             try:
-                request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
+                pass#request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
             except (AttributeError, KeyError, IndexError) as e:
                 pass
 
@@ -157,10 +157,10 @@ class EstimateMixin(object):
         fields = ['employee', 'fabric', 'items']
         for f in [('customer', Customer), ('project', Project), ('employee', User)]:
             try:
-                request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
+                pass#request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
             except (AttributeError, KeyError, IndexError) as e:
                 pass
-                
+
         for field in fields:
             if field in request.data:
                 try:
