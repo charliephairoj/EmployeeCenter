@@ -167,8 +167,8 @@ class EstimateSerializer(serializers.ModelSerializer):
     delivery_date = serializers.DateTimeField(required=True)
     #vat = serializers.DecimalField(required=False, allow_null=True)
     discount = serializers.IntegerField(required=False, allow_null=True)
-    #files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
-    #                              allow_null=True)
+    files = serializers.ListField(child=serializers.DictField(), required=False,
+                                  allow_null=True)
     acknowledgement = AcknowledgementSerializer() #serializers.PrimaryKeyRelatedField(allow_null=True, required=False)
 
     class Meta:
@@ -265,47 +265,35 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def xto_representation(self, instance):
+    def to_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """
         ret = super(EstimateSerializer, self).to_representation(instance)
 
-        ret['customer'] = {'id': instance.customer.id,
-                           'name': instance.customer.name}
-
+        
         ret['employee'] = {'id': instance.employee.id,
                            'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
 
-        try:
-            ret['project'] = {'id': instance.project.id,
-                              'codename': instance.project.codename}
-        except AttributeError:
-            pass
 
-        ret['files'] = []
 
         try:
             ret['files'] = [{'id': instance.id,
                              'filename': instance.pdf.key.split('/')[-1],
                              'url': instance.pdf.generate_url()}]
         except AttributeError as e:
-            logger.warn(e)
+            ret['files'] = []
 
+        """
         try:
             ret['files'] += [{'id': file.id,
                              'filename': file.key.split('/')[-1],
                              'type': file.key.split('.')[-1],
-                             'url': file.generate_url()} for file in instance.files.all()]
+                             'url': file.generate_url()} for file in instance.files]
         except AttributeError as e:
             logger.warn(e)
-
-
-        try:
-            ret['acknowledgement'] +=  {'id': instance.acknowledgement.id}
-        except AttributeError as e:
-            logger.warn(e)
-
+        """
+        
         return ret
 
     def _update_items(self, instance, items_data):
