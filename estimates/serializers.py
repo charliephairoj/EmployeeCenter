@@ -197,7 +197,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         try:
             discount = validated_data.pop('discount', validated_data['customer'].discount)
         except AttributeError as e:
-            discount = validated_data['customer'].discount
+            discount = 0
 
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
                                             
