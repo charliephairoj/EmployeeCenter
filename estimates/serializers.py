@@ -188,7 +188,11 @@ class EstimateSerializer(serializers.ModelSerializer):
         try:
             ret['project'] = Project.objects.get(pk=data['project']['id'])
         except (Customer.DoesNotExist, KeyError) as e:
-            ret['project'] = Project.objects.create(**data['project'])
+
+            try:
+                ret['project'] = Project.objects.create(**data['project'])
+            except KeyError as e:
+                pass
 
         try:
             ret['acknowledgement'] = Project.objects.get(pk=data['acknowledgement']['id'])
