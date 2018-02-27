@@ -341,7 +341,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -356,7 +356,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         self.assertEqual(item3['fabric']['id'], 1)
         
@@ -474,7 +474,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -489,7 +489,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         self.assertIsNotNone(item3['image'])
         self.assertIn('url', item3['image'])
@@ -584,7 +584,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -599,7 +599,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
@@ -663,7 +663,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -678,7 +678,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
@@ -740,7 +740,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -755,7 +755,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         
         #Tests links to document
@@ -815,7 +815,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -830,7 +830,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), Decimal('300'))
         
         #Tests links to document
@@ -889,7 +889,7 @@ class EstimateResourceTest(APITestCase):
         item2 = ack['items'][1]
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
-        self.assertEqual(item2['quantity'], 1)
+        self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
         self.assertTrue(item2['is_custom_size'])
         self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
@@ -904,7 +904,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
         self.assertTrue(item3['is_custom_item'])
-        self.assertEqual(item3['quantity'], 1)
+        self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         
         #Tests links to document
         self.assertIsNotNone(ack['pdf'])
