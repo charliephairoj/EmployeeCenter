@@ -63,8 +63,8 @@ class ItemSerializer(serializers.ModelSerializer):
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, default=1)
-    custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
-                                            allow_null=True)
+    #custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
+    #                                        allow_null=True)
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12,
                                                write_only=True, required=False,
                                                allow_null=True)
@@ -177,6 +177,25 @@ class EstimateSerializer(serializers.ModelSerializer):
         exclude = ('pdf',)
         depth = 1
 
+    def to_internal_value(self, data):
+        ret = super(EstimateSerializer, self).to_internal_value(data)
+
+        try:
+            ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            ret['customer'] = Customer.objects.create(**data['customer'])
+
+        try:
+            ret['project'] = Project.objects.get(pk=data['project']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            ret['project'] = Project.objects.create(**data['project'])
+
+        try:
+            ret['acknowledgement'] = Project.objects.get(pk=data['acknowledgement']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            pass
+
+        return ret
 
     def create(self, validated_data):
         """
@@ -198,6 +217,11 @@ class EstimateSerializer(serializers.ModelSerializer):
             discount = validated_data.pop('discount', validated_data['customer'].discount)
         except AttributeError as e:
             discount = 0
+
+        try:
+            files = validated_data.pop('files', [])
+        except KeyError as e:
+            files = []
 
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
                                             

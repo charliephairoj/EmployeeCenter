@@ -151,6 +151,7 @@ class ContactMixin(object):
         
         
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True,)
     addresses = AddressSerializer(required=False,  many=True, allow_null=True)
     address = AddressSerializer(required=False, allow_null=True, write_only=True)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)

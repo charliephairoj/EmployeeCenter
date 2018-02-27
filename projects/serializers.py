@@ -27,6 +27,7 @@ class PhaseSerializer(serializers.ModelSerializer):
         
 
 class ProjectSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
     supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
                                      required=False)
     #phases = PhaseSerializer(many=True)

@@ -14,7 +14,7 @@ import copy
 import subprocess
 
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User, Permission, Group, ContentType
+from django.contrib.auth.models import Permission, Group, ContentType
 from rest_framework.test import APIRequestFactory, APITestCase, APIClient
 
 from estimates.models import Estimate, Item, Pillow
@@ -23,6 +23,7 @@ from contacts.models import Customer, Address, Supplier
 from products.models import Product
 from media.models import S3Object
 from projects.models import Project
+from administrator.models import User
 
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
@@ -325,7 +326,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), Decimal('2.00'))
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -458,7 +459,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), Decimal('2.00'))
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -568,7 +569,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), Decimal('2.00'))
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -647,7 +648,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), Decimal('2'))
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -724,7 +725,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -799,7 +800,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), 2)
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
@@ -873,7 +874,7 @@ class EstimateResourceTest(APITestCase):
         item1 = ack['items'][0]
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
-        self.assertEqual(item1['quantity'], 2)
+        self.assertEqual(Decimal(item1['quantity']), Decimal('2.00'))
         self.assertFalse(item1['is_custom_size'])
         self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
