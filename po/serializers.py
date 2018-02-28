@@ -256,7 +256,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ('pdf', 'revision')
 
     def to_internal_value(self, data):
-        ret = super(EstimateSerializer, self).to_internal_value(data)
+        ret = super(PurchaseOrderSerializer, self).to_internal_value(data)
 
         try:
             ret['supplier'] = Supplier.objects.get(pk=data['supplier']['id'])
