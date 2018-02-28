@@ -19,6 +19,50 @@ from administrator.models import Log, Label
 
 logger = logging.getLogger(__name__)
 
+
+def public_email(request):
+    if request.method.lower() == 'post':
+        data = request.POST
+        name = data['name']
+        email = data['email']
+        message = data['message']
+
+        logger.debug(name)
+        logger.debug(email)
+        logger.debug(message)
+        conn = boto.ses.connect_to_region('us-east-1')
+        body = """
+        <table border="0" cellpadding="1">
+            <tr>
+                <td>Name</td>
+                <td>{0}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{1}</td>
+            </tr>
+            <tr>
+                <td>Message</td>
+                <td>{2}</td>
+            </tr>
+        </table>
+        """
+        body = body.format(name, email, message)
+        conn.send_email('noreply@alineagroup.co',
+                         u'Web Inquiry',
+                         body,
+                         'inquiry@alineagroup.co',
+                         format='html')
+        
+        response = HttpResponse('{"message":"ok"}', content_type='application/json; charset=utf-8')
+        response.status_code = 201 
+        return response
+    else:
+        response = HttpResponse('nope', content_type='application/json')
+        response.status_code = 400 
+        return response
+
+
 @login_required
 def log(request):
     if request.method.lower() == 'post':

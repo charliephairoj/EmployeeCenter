@@ -39,7 +39,7 @@ from hr.views import ShiftViewSet
 from administrator.views import UserList, UserDetail
 from administrator.views import LabelList, LabelDetail
 from administrator.views import GroupList, GroupDetail
-from administrator.views import PermissionList, PermissionDetail, LogList as ALogList
+from administrator.views import PermissionList, PermissionDetail, LogList as ALogList, public_email
 from equipment.views import EquipmentList, EquipmentDetail, sticker as EquipmentSticker
 from hr.views import PayrollList
 from hr.views import employee_stats, employee_image, upload_attendance
@@ -78,6 +78,7 @@ urlpatterns = [
     url(r'^api/v1/change_password', administrator.views.change_password),
     url(r'^api/v1/change_password/', administrator.views.change_password),
     url(r'^api/v1/client/log/$', administrator.views.log),
+    url(r'^api/v1/email/public/$', administrator.views.public_email),
 
 
     url(r'^', include(router.urls)),
@@ -135,6 +136,7 @@ urlpatterns = [
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
 
     url(r'^api/v1/administrator/log/$', ALogList.as_view()),
+
 ]
 
 
