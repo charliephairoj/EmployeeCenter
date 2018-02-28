@@ -255,6 +255,30 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         read_only_fields = ('pdf', 'revision')
 
+    def to_internal_value(self, data):
+        ret = super(EstimateSerializer, self).to_internal_value(data)
+
+        try:
+            ret['supplier'] = Supplier.objects.get(pk=data['supplier']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            ret['supplier'] = Supplier.objects.create(**data['supplier'])
+
+        try:
+            ret['project'] = Project.objects.get(pk=data['project']['id'])
+        except (Project.DoesNotExist, KeyError) as e:
+
+            try:
+                ret['project'] = Project.objects.create(**data['project'])
+            except KeyError as e:
+                pass
+
+        try:
+            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
+        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
+            pass
+
+        return ret
+
     def to_representation(self, instance):
         """
         Override the 'to_representation' in order to customize output for supplier
