@@ -9,7 +9,7 @@ from administrator.models import User
 
 from contacts.models import Contact, Customer
 from acknowledgements.models import Acknowledgement
-from estimates.models import Estimate
+#from estimates.models import Estimate
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class Deal(models.Model):
     customer = models.ForeignKey(Customer, null=True)
     contact = models.ForeignKey(Contact, related_name="deals", null=True)
     acknowledgement = models.ForeignKey(Acknowledgement, null=True)
-    quotation = models.ForeignKey(Estimate, null=True)
+    #quotation = models.ForeignKey(Estimate, null=True)
     employee = models.ForeignKey(User)
     currency = models.TextField(default="THB")
     status = models.TextField(null=True)

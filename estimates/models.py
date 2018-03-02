@@ -19,6 +19,8 @@ from supplies.models import Fabric
 from estimates.PDF import EstimatePDF
 from media.models import Log, S3Object
 from acknowledgements.models import Acknowledgement
+from deals.models import Event, Deal
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ class Estimate(models.Model):
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
-    status = models.TextField(default='ACKNOWLEDGED')
+    _status = models.TextField(default='ACKNOWLEDGED', db_column='status')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)
@@ -46,6 +48,7 @@ class Estimate(models.Model):
     deposit = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimates")
     acknowledgement = models.ForeignKey(Acknowledgement, null=True, related_name="quotations")
+    deal = models.ForeignKey(Deal, null=True, related_name="quotations")
 
     """
     @property
@@ -57,6 +60,21 @@ class Estimate(models.Model):
         self._delivery_date = value
     """
         
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        if value.lower() == 'cancelled':
+            try:
+                self.deal.status="closed lost"
+                self.deal.save()
+            except AttributeError as e:
+                pass
+        
+        self._status = value
+
     @classmethod
     def xcreate(cls, user, **kwargs):
         """Creates the acknowledgement (DEPRECATED)
@@ -146,6 +164,37 @@ class Estimate(models.Model):
 
         self.save()
     
+    def create_and_update_deal(self):
+        """
+        Create a new deal based on the 
+        """
+        # Check that a deal for this estimate does not already exist
+        try:
+            deal = Deal.objects.get(quotation=self)
+        except Deal.DoesNotExist as e:
+            # Create description string
+            description = u"{0}".format(self.customer.name)
+            if self.project and self.project.codename:
+                description += u" - {0}".format(self.project.codename)
+
+            deal = Deal.objects.create(customer=self.customer,
+                                       currency=self.customer.currency,
+                                       status='proposal',
+                                       description=description)
+
+            event = Event.objects.create(deal=deal,
+                                         description="Quotation created")
+
+        data = {
+            'description': description,
+            'customer': self.customer,
+            'currency': self.customer.currency,
+            'total': self.total,
+            'status': 'proposal'
+        }
+
+        return deal
+
     def create_and_upload_pdf(self, delete_original=True):
         ack_filename = self.create_pdf()
         ack_key = "estimate/Quotation-{0}.pdf".format(self.id)

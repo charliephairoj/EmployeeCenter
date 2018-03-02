@@ -42,7 +42,10 @@ class ModelSerializer(serializers.ModelSerializer):
             try:
                 image = Image.objects.get(id=image_data['id'])
             except Image.DoesNotExist:
-                image = Image.objects.create(id=image_data['id'])
+                image = Image.objects.create(id=image_data['id'],
+                                             model=instance, 
+                                             bucket=image_data['bucket'],
+                                             key=image_data['key'])
             image.model = instance
             image.save()
 

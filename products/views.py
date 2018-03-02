@@ -60,7 +60,9 @@ def product_image(request):
                         
         
         response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url()}),
+                                            'url': obj.generate_url(),
+                                            'key': obj.key,
+                                            'bucket':obj.bucket}),
                                 content_type="application/json")
         response.status_code = 201
         return response
@@ -138,6 +140,9 @@ class ModelList(ModelMixin, generics.ListCreateAPIView):
             queryset = queryset[offset - 1:limit + (offset - 1)]
         else:
             queryset = queryset[0:50]
+
+        #queryset = queryset.select_related()
+        queryset = queryset.prefetch_related('images')
             
         return queryset
         
