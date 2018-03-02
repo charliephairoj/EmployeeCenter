@@ -217,7 +217,7 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         """
         
         max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=30)
-        queryset = self.queryset.exclude(status__icontains='cancelled', last_modified__lt=max_date)
+        queryset = self.queryset.exclude(_status__icontains='cancelled', last_modified__lt=max_date)
 
         #Filter based on query
         query = self.request.query_params.get('q', None)
