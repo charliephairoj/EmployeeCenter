@@ -187,11 +187,11 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         try:
             ret['project'] = Project.objects.get(pk=data['project']['id'])
-        except (Customer.DoesNotExist, KeyError) as e:
+        except (Customer.DoesNotExist, KeyError, TypeError) as e:
 
             try:
                 ret['project'] = Project.objects.create(**data['project'])
-            except KeyError as e:
+            except (KeyError, TypeError) as e:
                 pass
 
         try:
