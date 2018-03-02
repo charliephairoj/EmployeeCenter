@@ -32,7 +32,7 @@ class DealMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['project', 'customer', 'contact', 'acknowledgement', 'quotation']
+        fields = ['project', 'customer', 'contact', 'acknowledgement']
         
         for field in fields:
             if field in request.data:
@@ -69,7 +69,8 @@ class DealList(DealMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=30)
-        queryset = self.queryset.exclude(status__icontains='closed', last_modified__lt=max_date)
+        queryset = self.queryset.exclude(status__icontains='closed')
+        queryset = self.queryset.exclude(last_modified__lt=max_date)
         
         status = self.request.query_params.get('status', None)
         if status:
@@ -101,9 +102,9 @@ class DealList(DealMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
         
-        queryset = queryset.select_related('customer', 'contact', 'employee')
-        queryset = queryset.prefetch_related('customer__contacts', 'customer__addresses')
-            
+        queryset = queryset.select_related('customer')
+        #queryset = queryset.prefetch_related('customer__contacts', 'customer__addresses')
+        
         return queryset
         
 

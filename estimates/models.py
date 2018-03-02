@@ -180,7 +180,8 @@ class Estimate(models.Model):
             deal = Deal.objects.create(customer=self.customer,
                                         currency=self.customer.currency,
                                         status='proposal',
-                                        description=description)
+                                        description=description,
+                                        total=self.total)
 
             event = Event.objects.create(deal=deal,
                                         description="Quotation created")
