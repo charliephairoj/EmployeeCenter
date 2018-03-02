@@ -169,21 +169,21 @@ class Estimate(models.Model):
         Create a new deal based on the 
         """
         # Check that a deal for this estimate does not already exist
-        try:
-            deal = Deal.objects.get(quotation=self)
-        except Deal.DoesNotExist as e:
+        if self.deal:
+            deal = self.deal
+        else:
             # Create description string
             description = u"{0}".format(self.customer.name)
             if self.project and self.project.codename:
                 description += u" - {0}".format(self.project.codename)
 
             deal = Deal.objects.create(customer=self.customer,
-                                       currency=self.customer.currency,
-                                       status='proposal',
-                                       description=description)
+                                        currency=self.customer.currency,
+                                        status='proposal',
+                                        description=description)
 
             event = Event.objects.create(deal=deal,
-                                         description="Quotation created")
+                                        description="Quotation created")
 
         data = {
             'description': description,
