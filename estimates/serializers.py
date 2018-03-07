@@ -45,7 +45,7 @@ class PillowSerializer(serializers.ModelSerializer):
 
 class ItemListSerializer(serializers.ListSerializer):
 
-    def xto_representation(self, data):
+    def to_representation(self, data):
         data = data.exclude(deleted=True)
         return super(ItemListSerializer, self).to_representation(data)
 
@@ -412,4 +412,5 @@ class EstimateSerializer(serializers.ModelSerializer):
                     id_list.append(item.id)
             """
             
+        
         
