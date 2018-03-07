@@ -34,7 +34,7 @@ class Estimate(models.Model):
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
-    _status = models.TextField(default='ACKNOWLEDGED', db_column='status')
+    status = models.TextField(default='ACKNOWLEDGED', db_column='status')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)
@@ -60,20 +60,7 @@ class Estimate(models.Model):
         self._delivery_date = value
     """
         
-    @property
-    def status(self):
-        return self._status
-
-    @status.setter
-    def status(self, value):
-        if value.lower() == 'cancelled':
-            try:
-                self.deal.status="closed lost"
-                self.deal.save()
-            except AttributeError as e:
-                pass
-        
-        self._status = value
+    
 
     @classmethod
     def xcreate(cls, user, **kwargs):
@@ -183,13 +170,16 @@ class Estimate(models.Model):
                                         description=description,
                                         total=self.total)
 
+            self.deal = deal
+            self.save()
+
             event = Event.objects.create(deal=deal,
-                                        description="Quotation created")
+                                         description="Quotation created")
 
         data = {
             'description': description,
             'customer': self.customer,
-            'currency': self.customer.currency,
+            'currency': self.customer.currency or 'THB',
             'total': self.total,
             'status': 'proposal'
         }

@@ -280,7 +280,18 @@ class EstimateSerializer(serializers.ModelSerializer):
         #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
         #                            acknowledgement=instance)
 
-        instance.status = validated_data.pop('status', instance.status)
+        new_status = validated_data.pop('status', instance.status)
+        logger.debug(new_status)
+        logger.debug(instance.status)
+        # Set the corresponding deal as closed lost
+        if new_status.lower() != instance.status.lower() and new_status.lower() == 'cancelled':
+            try:
+                instance.deal.status = 'closed lost'
+                instance.deal.save()
+            except (AttributeError, TypeError) as e:
+                logger.debug(e)
+
+        instance.status = new_status
 
         items_data = validated_data.pop('items')
 
