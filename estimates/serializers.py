@@ -239,7 +239,11 @@ class EstimateSerializer(serializers.ModelSerializer):
             item_serializer.save()
         instance.calculate_totals()
 
-        instance.create_and_update_deal()
+        try:
+            instance.create_and_update_deal()
+        except Exception as e:
+            logger.warn(e)
+            
         instance.create_and_upload_pdf()
      
         #Assign files
