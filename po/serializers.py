@@ -265,11 +265,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         try:
             ret['project'] = Project.objects.get(pk=data['project']['id'])
-        except (Project.DoesNotExist, KeyError) as e:
+        except (Project.DoesNotExist, KeyError, TypeError) as e:
 
             try:
                 ret['project'] = Project.objects.create(**data['project'])
-            except KeyError as e:
+            except (KeyError, TypeError) as e:
                 pass
 
         try:
