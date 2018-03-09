@@ -280,6 +280,7 @@ class ShippingPDF(object):
         #iterate through the array
         for product in self.products:
             data.append([self._create_products_item_section(product)])
+
         #Create Table
         table = Table(data, colWidths=(520), repeatRows=1)
         #Create table style data and merge with totals style data
@@ -307,8 +308,19 @@ class ShippingPDF(object):
     def _create_products_item_section(self, product):
         data = []
         #add the data
+
+        style = ParagraphStyle(name='Normal',
+                                   fontName='Garuda',
+                                   leading=16,
+                                   fontSize=12,
+                                   wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
+                                   textColor='black')
+        description = Paragraph(product.description.replace('\n', '<br/>'),
+                                  style)
         data.append([code128.Code128("DRAI-{0}".format(product.id), barHeight=20), 
-                     product.description, 
+                     description, 
                      product.quantity,
                      u"{0} kg".format(product.net_weight),
                      u"{0} kg".format(product.gross_weight)])
@@ -344,10 +356,15 @@ class ShippingPDF(object):
 
         #Add comments if they exists
         if product.comments is not None and product.comments != '':
+            
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
-                                   fontSize=10,
-                                   textColor=colors.black)
+                                   leading=16,
+                                   fontSize=12,
+                                   wordWrap='CJK',
+                                   allowWidows=1,
+                                   allowOrphans=1,
+                                   textColor='black')
             paragraph = Paragraph(product.comments.replace('\n', '<br/>'), style)
             comments = Table([['  Comments:', paragraph]], colWidths=(60, 340))
             comments.setStyle(TableStyle([('FONT', (0,0), (-1,-1), 'Garuda'),

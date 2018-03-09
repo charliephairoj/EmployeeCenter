@@ -239,6 +239,7 @@ class EstimateSerializer(serializers.ModelSerializer):
             item_serializer.save()
         instance.calculate_totals()
 
+        instance.create_and_update_deal()
         instance.create_and_upload_pdf()
      
         #Assign files
