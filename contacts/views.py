@@ -93,7 +93,7 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         """
         
         try:
-            request.data['addresses'] = list(request.data['addresses'])
+            request.data['addresses'] = list(request.data['addresses'].values())
         except Exception as e:
             logger.warn(e)
 
