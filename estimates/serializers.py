@@ -213,9 +213,14 @@ class EstimateSerializer(serializers.ModelSerializer):
 
             try:
                 ret['project'] = Project.objects.create(**data['project'])
-            except (KeyError, TypeError) as e:
+            except (TypeError) as e:
                 logger.warn(e)
-                del ret['project']
+                try:
+                    del ret['project']
+                except Exception as e:
+                    logger.warn(e)
+            except KeyError as e:
+                pass
 
         try:
             ret['acknowledgement'] = Project.objects.get(pk=data['acknowledgement']['id'])
