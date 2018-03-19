@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal
 import pprint
 
+from django.db import models
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
@@ -45,9 +46,28 @@ class PillowSerializer(serializers.ModelSerializer):
 
 class ItemListSerializer(serializers.ListSerializer):
 
+    def to_internal_value(self, data):
+        print "\n\nItem List\n\n"
+        logger.debug(data)
+        return super(ItemListSerializer, self).to_internal_value(data)
+
     def to_representation(self, data):
+        print "\n\nItem List\n\n"
+        logger.debug(isinstance(data, models.Manager))
+        logger.debug(type(data))
+        logger.debug(data)
         data = data.exclude(deleted=True)
-        return super(ItemListSerializer, self).to_representation(data)
+        logger.debug(isinstance(data, models.Manager))
+        data = data.select_related('image')
+        data = data.prefetch_related('pillows')
+        logger.debug(isinstance(data, models.Manager))
+        data = super(ItemListSerializer, self).to_representation(data)
+
+        logger.debug(data)
+
+        
+
+        return data
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -155,11 +175,13 @@ class FileSerializer(serializers.ModelSerializer):
 """ 
 
 class EstimateSerializer(serializers.ModelSerializer):
+    item_queryset = Item.objects.exclude(deleted=True)
+
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = CustomerSerializer()#serializers.PrimaryKeyRelatedField()
     employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = ProjectSerializer(allow_null=True, required=False)#serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
-    items = ItemSerializer(many=True)
+    project = ProjectSerializer(allow_null=True, required=False) #serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
+    items = ItemSerializer(item_queryset, many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
@@ -192,12 +214,16 @@ class EstimateSerializer(serializers.ModelSerializer):
             try:
                 ret['project'] = Project.objects.create(**data['project'])
             except (KeyError, TypeError) as e:
-                pass
+                logger.warn(e)
+                del ret['project']
 
         try:
             ret['acknowledgement'] = Project.objects.get(pk=data['acknowledgement']['id'])
         except (Customer.DoesNotExist, KeyError, TypeError) as e:
             pass
+
+        print "\n\nEstimate to internal value\n\n"
+        logger.debug(ret['items'])
 
         return ret
 

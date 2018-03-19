@@ -237,18 +237,20 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
             queryset = queryset[int(offset):int(limit) + (int(offset))]
         elif offset is not None and limit == 0:
             queryset = queryset[int(offset):]
+
+        elif offset is None and limit:
+            queryset = queryset[0:limit]
         else:
             queryset = queryset[0:50]
 
-        queryset = queryset
-        queryset = queryset.select_related('customer', 'pdf', 'acknowledgement', 'employee', 'project',
+        queryset = queryset.select_related('customer', 'pdf', 'acknowledgement', 'employee', 'project', 'deal',
                                            )
         
-        queryset = queryset.prefetch_related('items', 'items__pillows', 'items__image', 'project__rooms', 'project__phases',
-                                             'project__rooms__files', 'customer__addresses') 
+        queryset = queryset.prefetch_related('items', 'items__pillows', 'items__image', 'customer__addresses', 
+                                             'project__rooms', 'project__phases') 
         #queryset = queryset.prefetch_related(Prefetch('items', queryset=Item.objects.select_related('image').prefetch_related('pillows')))
         queryset = queryset.defer('acknowledgement__items', 'acknowledgement__customer', 'acknowledgement__project',
-                                  'project__customer', 'items', 'customer__contact')
+                                  'project__customer', 'items', 'customer__contact', 'project__estimates')
                                   
         return queryset
         
