@@ -173,14 +173,14 @@ class ItemSerializer(serializers.ModelSerializer):
         
         if new_qty != instance.quantity:
             # Log Changing delivery date
-            message = "{0} quantity changed from {1} to {2}"
+            message = u"{0} quantity changed from {1} to {2}"
             message = message.format(instance.description, instance.quantity, new_qty)
             AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
             instance.quantity = new_qty
 
         if new_price != instance.unit_price:
             # Log Changing delivery date
-            message = "{0} unit price changed from {1} to {2}"
+            message = u"{0} unit price changed from {1} to {2}"
             message = message.format(instance.description, instance.unit_price, new_price)
             AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
             instance.unit_price = new_price
@@ -368,7 +368,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         try:
             instance.create_calendar_event(employee)
         except Exception as e:
-            message = "Unable to create calendar event for acknowledgement {0} because:\n{1}"
+            message = u"Unable to create calendar event for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
             log = AckLog.create(message=message, 
                                 acknowledgement=instance, 
@@ -376,14 +376,14 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                                 type="GOOGLE CALENDAR")
 
         # Log Opening of an order
-        message = "Created Acknowledgement #{0}.".format(instance.id)
+        message = u"Created Acknowledgement #{0}.".format(instance.id)
         log = AckLog.create(message=message, acknowledgement=instance, user=employee)
 
         if instance.vat > 0:
             try:
                 pass #instance.create_in_trcloud() 
             except Exception as e:
-                message = "Unable to create acknowledgement because:\n{0}"
+                message = u"Unable to create acknowledgement because:\n{0}"
                 message = message.format(e)
                 log = AckLog.create(message=message, 
                                     acknowledgement=instance, 
@@ -407,13 +407,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             instance.delivery_date = dd
            
             # Log Changing delivery date
-            message = "Acknowledgement #{0} delivery date changed from {1} to {2}."
+            message = u"Acknowledgement #{0} delivery date changed from {1} to {2}."
             message = message.format(instance.id, old_dd.strftime('%d/%m/%Y'), dd.strftime('%d/%m/%Y'))
             AckLog.create(message=message, acknowledgement=instance, user=employee)
 
         if status.lower() != instance.status.lower():
 
-            message = "Updated Acknowledgement #{0} from {1} to {2}."
+            message = u"Updated Acknowledgement #{0} from {1} to {2}."
             message = message.format(instance.id, instance.status.lower(), status.lower())
             AckLog.create(message=message, acknowledgement=instance, user=employee)
 
@@ -533,7 +533,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             tb = traceback.format_exc()
             logger.error(tb)
             
-            message = "Unable to update PDF for acknowledgement {0} because:\n{1}"
+            message = u"Unable to update PDF for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
             log = AckLog.create(message=message, 
                                 acknowledgement=instance, 
@@ -545,7 +545,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             instance.update_calendar_event()
         except Exception as e:
             logger.debug(e)
-            message = "Unable to update calendar event for acknowledgement {0} because:\n{1}"
+            message = u"Unable to update calendar event for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
             log = AckLog.create(message=message, 
                                 acknowledgement=instance, 
@@ -558,7 +558,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             try:
                 pass #instance.update_in_trcloud()
             except Exception as e:
-                message = "Unable to update acknowledgement {0} because:\n{1}"
+                message = u"Unable to update acknowledgement {0} because:\n{1}"
                 message = message.format(instance.id, e)
                 log = AckLog.create(message=message, 
                                     acknowledgement=instance, 
@@ -597,7 +597,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
             try:
-                return "{0} {1}".format(log.employee.first_name, log.employee.last_name)
+                return u"{0} {1}".format(log.employee.first_name, log.employee.last_name)
             except Exception as e:
                 return "NA"
 
@@ -622,7 +622,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 pass
 
             ret['employee'] = {'id': instance.employee.id,
-                               'name': "{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
+                               'name': u"{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
 
 
 
