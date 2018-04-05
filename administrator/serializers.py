@@ -2,6 +2,7 @@ import logging
 
 from rest_framework import serializers
 from django.contrib.auth.models import Permission, Group
+from django.db import models
 import boto
 
 from administrator.models import User, AWSUser, Log, Label
@@ -33,12 +34,43 @@ class LogSerializer(serializers.ModelSerializer):
         return ret
 
 
+class PermissionListSerializer(serializers.ListSerializer):
+
+    def to_internal_value(self, data):
+        print "\n\nPerm List\n\n"
+        logger.debug(data)
+        return super(PermissionListSerializer, self).to_internal_value(data)
+
+    def to_representation(self, data):
+        print "\n\nPerm List\n\n"
+        logger.debug(isinstance(data, models.Manager))
+        logger.debug(type(data))
+        logger.debug(data)
+        logger.debug(isinstance(data, models.Manager))
+        data = data.prefetch_related('content_type')
+        logger.debug(isinstance(data, models.Manager))
+        ret = super(PermissionListSerializer, self).to_representation(data)
+        #return data
+        logger.debug(data)
+        return ret
+
 class PermissionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     
     class Meta:
         model = Permission
         fields = ('id', 'codename', 'name')
+        list_serializer_class = PermissionListSerializer
+
+
+    def to_internal_value(self, data):
+        logger.debug(data)
+        ret = super(PermissionSerializer, self).to_internal_value(data)
+
+        logger.debug(ret)
+        
+
+        return ret
         
     def to_representation(self, instance):
         
@@ -50,7 +82,8 @@ class PermissionSerializer(serializers.ModelSerializer):
     
         
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionSerializer(many=True, required=False)
+    perm_queryset = Permission.objects.all().prefetch_related('content_type')
+    permissions = PermissionSerializer(data=perm_queryset, many=True, required=False)
     name = serializers.CharField(required=False)
     id = serializers.IntegerField(required=False)
     

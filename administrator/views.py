@@ -149,7 +149,18 @@ class GroupMixin(object):
     
     
 class GroupList(GroupMixin, generics.ListCreateAPIView):
-    pass
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+        
+        queryset = queryset.prefetch_related('permissions', 'permissions__content_type')
+
+
+        #queryset = queryset[0:10]
+        
+        return queryset
     
     
 class GroupDetail(GroupMixin, generics.RetrieveUpdateDestroyAPIView):

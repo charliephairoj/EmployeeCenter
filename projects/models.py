@@ -23,6 +23,7 @@ class Project(models.Model):
     supplies = models.ManyToManyField(Supply, through='ProjectSupply')
     files = models.ManyToManyField(S3Object, through='File', related_name='project')
     quantity = models.IntegerField(default=0)
+    website = models.BooleanField(default=False)
     
     class Meta:
         permissions = (
@@ -201,6 +202,8 @@ class File(models.Model):
     file = models.ForeignKey(S3Object, related_name="project_files")
     project = models.ForeignKey(Project, null=True)
     item = models.ForeignKey(Item, null=True)
+    web_active = models.BooleanField(default=False)
+    primary = models.BooleanField(default=False)
     
 
 class ProjectSupply(models.Model):

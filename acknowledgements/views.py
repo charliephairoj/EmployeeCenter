@@ -106,7 +106,9 @@ def acknowledgement_item_image(request):
                                 content_type="application/json")
         response.status_code = 201
         return response
-        
+
+
+@login_required
 def acknowledgement_file(request):
     try:
         file = request.FILES['image']

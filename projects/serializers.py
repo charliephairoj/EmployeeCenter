@@ -30,12 +30,14 @@ class ProjectSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
                                      required=False)
+    files = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
+                                     required=False)
     codename = serializers.CharField(allow_blank=True)
     #phases = PhaseSerializer(many=True)
     
     class Meta:
         model = Project
-        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies', 'status')
+        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies', 'status', 'website', 'files')
         depth = 1
         
     def to_representation(self, instance):
@@ -48,7 +50,11 @@ class ProjectSerializer(serializers.ModelSerializer):
             ret['items'] = []
             for acknowledgement in instance.acknowledgements.all():
                 ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
-                
+
+        ret['files'] = [{'id':f.file.id,
+                         'web_active': f.web_active,
+                         'primary': f.primary,
+                         'url':f.file.generate_url()} for f in File.objects.filter(project=instance)]     
         #ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
         
         return ret
@@ -58,10 +64,24 @@ class ProjectSerializer(serializers.ModelSerializer):
         Create
         """
         supplies = validated_data.pop('supplies', [])
+        files = validated_data.pop('files', [])
+        
         
         instance = self.Meta.model.objects.create(**validated_data)
         
         self._create_or_update_supplies(supplies, instance)
+
+        #Update attached files
+        for f_data in files:
+            try: 
+                file = File.objects.get(file_id=f_data['id'], project=instance)
+            except File.DoesNotExist:
+                file = File.objects.create(file=S3Object.objects.get(pk=f_data['id']),
+                                    project=instance)
+
+            file.web_active = f_data.get('web_active', file.web_active)
+            file.primary = f_data.get('primary', file.primary)
+            file.save()
         
         return instance
         
@@ -70,6 +90,27 @@ class ProjectSerializer(serializers.ModelSerializer):
         Update
         """
         supplies = validated_data.pop('supplies', [])
+        logger.debug(validated_data)
+        #Update attached files
+        files = validated_data.pop('files', [])
+
+        id_list = [f['id'] for f in files]
+
+        # Add of create new files
+        for f_data in files:
+            try: 
+                file = File.objects.get(file_id=f_data['id'], project=instance)
+            except File.DoesNotExist:
+                file = File.objects.create(file=S3Object.objects.get(pk=f_data['id']),
+                                           project=instance)
+
+            file.web_active = f_data.get('web_active', file.web_active)
+            file.primary = f_data.get('primary', file.primary)
+            file.save()
+
+        for f in instance.files.all():
+            if f.id not in id_list:
+                File.objects.get(file=f, project=instance).delete()
         
         self._create_or_update_supplies(supplies, instance)
         

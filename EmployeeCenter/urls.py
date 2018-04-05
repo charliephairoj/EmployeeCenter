@@ -33,6 +33,7 @@ from projects.views import RoomList, RoomDetail
 from projects.views import RoomItemList, RoomItemDetail
 from projects.views import PartViewSet
 from projects.views import report, phase_report
+from projects.views import project_public, project_image
 from hr.views import EmployeeList, EmployeeDetail
 from hr.views import AttendanceList, AttendanceDetail
 from hr.views import ShiftViewSet
@@ -198,7 +199,10 @@ urlpatterns += [
     url(r'api/v1/project/(?P<pk>\d+)/report$', report),
     url(r'api/v1/project/(?P<pk>\d+)/report/$', report),
     url(r'api/v1/phase/(?P<pk>\d+)/report$', phase_report),
-    url(r'api/v1/phase/(?P<pk>\d+)/report/$', phase_report)
+    url(r'api/v1/phase/(?P<pk>\d+)/report/$', phase_report),
+    url(r'^api/v1/project/image/$', project_image),
+    url(r'^api/v1/project/public/$', project_public),
+
 ]
 
 urlpatterns += [

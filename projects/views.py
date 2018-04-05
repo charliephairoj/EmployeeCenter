@@ -15,8 +15,10 @@ from django.contrib.auth.decorators import permission_required
 from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.response import Response
+from django.utils.datastructures import MultiValueDictKeyError
+from django.contrib.auth.decorators import login_required
 
-from projects.models import Project, Room, Item, Phase, Part
+from projects.models import Project, Room, Item, Phase, Part, File
 from projects.serializers import ProjectSerializer, PhaseSerializer, RoomSerializer, ItemSerializer, PartSerializer
 from utilities.http import process_api, save_upload
 from auth.models import S3Object
@@ -46,6 +48,44 @@ def phase_report(request, pk):
     pdf.create(response)
     
     return response
+
+
+def project_public(request):
+    if request.method.lower() == "get":
+        projects = Project.objects.filter(website=True).order_by('codename')
+        projects = projects.prefetch_related('files')
+        projects_data = [{'codename': project.codename,
+                          'images': [img.file.generate_url(time=31560000) for img in File.objects.filter(web_active=True, 
+                                                                                                    project=project).order_by('-primary')]}
+                        for project in projects]
+        response = HttpResponse(json.dumps(projects_data), 
+                                content_type="application/json")
+        response.status_code = 200
+        return response
+
+
+@login_required
+def project_image(request):
+    if request.method == "POST":
+        try:
+            filename = request.FILES['file'].name
+        except MultiValueDictKeyError:
+            filename = request.FILES['image'].name
+
+        filename = save_upload(request, filename=filename)
+
+        obj = S3Object.create(filename,
+                        "project/image/{0}_{1}".format(time.time(), filename.split('/')[-1]),
+                        'media.dellarobbiathailand.com')
+                        
+        
+        response = HttpResponse(json.dumps({'id': obj.id,
+                                            'url': obj.generate_url(),
+                                            'key': obj.key,
+                                            'bucket':obj.bucket}),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
     
     
 class ProjectMixin(object):
@@ -74,12 +114,12 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
         # Exclude projects that are completed and order than 30 days
         d = datetime.now() - timedelta(days=30)
         try:
-            queryset = queryset.exclude(status__icontains="completed", last_modified__lte=d)
+            queryset = queryset.exclude(status__icontains="completed", last_modified__lte=d, website=False)
         except Exception as e:
-            queryset = queryset.exclude(status__icontains="completed")
+            queryset = queryset.exclude(status__icontains="completed", website=False)
         
         # Enfore ordering by codename    
-        queryset = queryset.order_by('-codename')
+        queryset = queryset.order_by('-website', '-codename')
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
