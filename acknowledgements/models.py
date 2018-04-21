@@ -11,11 +11,11 @@ from pytz import timezone
 from datetime import datetime
 from django.conf import settings
 from django.db import models
-from administrator.models import User
+from administrator.models import User, Storage
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
-from oauth2client.contrib.django_orm import Storage
+#from oauth2client.contrib.django_orm import Storage
 from oauth2client.contrib import gce
 from apiclient import discovery
 

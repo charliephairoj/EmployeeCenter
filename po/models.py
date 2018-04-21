@@ -14,8 +14,8 @@ import string
 import boto.ses
 from django.template.loader import render_to_string
 from django.db import models
-from administrator.models import User
-from oauth2client.contrib.django_orm import Storage
+from administrator.models import User, Storage
+#from oauth2client.contrib.django_orm import Storage
 from apiclient import discovery
 
 from administrator.models import Log as BaseLog

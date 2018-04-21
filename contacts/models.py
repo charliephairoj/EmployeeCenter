@@ -5,12 +5,12 @@ import logging
 import pprint
 
 from django.db import models
-from oauth2client.contrib.django_orm import Storage
+#from oauth2client.contrib.django_orm import Storage
 from apiclient import discovery
 import gdata.contacts.client
 import gdata.contacts.data
 
-from administrator.models import CredentialsModel, OAuth2TokenFromCredentials
+from administrator.models import CredentialsModel, OAuth2TokenFromCredentials, Storage
 from trcloud.models import TRContact
 
 

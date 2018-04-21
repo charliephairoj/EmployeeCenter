@@ -6,24 +6,21 @@ from datetime import datetime
 from pytz import timezone
 import httplib2
 
+from apiclient import discovery
 from django.template.loader import render_to_string
-from administrator.models import User
 from rest_framework import serializers
 import boto.ses
 from pytz import timezone
 
+from administrator.models import User, Storage, CredentialsModel
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item, Log as POLog
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
 from contacts.serializers import AddressSerializer, SupplierSerializer
-from oauth2client.contrib.django_orm import Storage
-from apiclient import discovery
 from acknowledgements.models import Acknowledgement
 from acknowledgements.serializers import AcknowledgementSerializer
-
-from administrator.models import CredentialsModel
 
 
 logger = logging.getLogger(__name__)

@@ -4,6 +4,7 @@ from django.conf.urls import *
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 import debug_toolbar
+from django.contrib.staticfiles import views
 
 import login.views
 import administrator.views
@@ -223,10 +224,12 @@ urlpatterns += [
 ]
 
 
-urlpatterns += patterns('',
-    url(r'^(?P<path>.*)$', 'django.views.static.serve',
-        {'document_root': settings.STATIC_ROOT})
-)
+urlpatterns += [
+    url(r'^(?P<path>.*)$', views.serve)
+]
+   # url(r'^(?P<path>.*)$', 'django.views.static.serve',
+   #     {'document_root': settings.STATIC_ROOT})
+
 
 """
 #Public views

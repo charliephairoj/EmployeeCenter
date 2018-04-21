@@ -12,15 +12,16 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.contrib.auth.backends import ModelBackend
 from django.utils.safestring import mark_safe
 from django.shortcuts import render_to_response
 from oauth2client.contrib import xsrfutil
 from oauth2client.client import flow_from_clientsecrets
-from oauth2client.contrib.django_orm import Storage
+#from oauth2client.contrib.django_orm import Storage
 
 from auth.views import current_user
 from login.models import LoginForm, PasswordResetForm
-from administrator.models import CredentialsModel
+from administrator.models import CredentialsModel, Storage, User
 
 
 
@@ -154,8 +155,10 @@ def app_login(request):
 
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
-
-            user = authenticate(username=cleanUsername, password=cleanPassword)
+            
+            user = authenticate(request,
+                                username=cleanUsername,
+                                password=cleanPassword)
 
             #checks whether user authennticated
             if user is not None:
