@@ -807,7 +807,7 @@ class Item(models.Model):
                 logger.info(u"{0} fabric set to {1} \n".format(self.description,
                                                            self.fabric.description))
             except Fabric.DoesNotExist as e:
-                print u"Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"])
+                logger.debug(u"Error: {0} /Fabric: {1}".format(e, kwargs["fabric"]["id"]))
 
         #Sets all the pillows and the fabrics
         #for the item

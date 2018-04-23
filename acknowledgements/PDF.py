@@ -497,7 +497,7 @@ class AcknowledgementPDF(object):
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except Exception as e:
-            print e
+            logger.debug(e)
             
         if product.is_custom_size:
             dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
@@ -923,7 +923,7 @@ class ConfirmationPDF(object):
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), ''])
         except Exception as e:
-            print e
+            logger.debug(e)
             
         if product.is_custom_size:
             dimension_str = 'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)

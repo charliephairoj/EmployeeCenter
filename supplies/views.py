@@ -6,7 +6,7 @@ import time
 
 from rest_framework import viewsets
 from django.core.exceptions import ValidationError
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Count
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -82,6 +82,64 @@ def shopping_list(request):
 class SupplyMixin(object):
     queryset = Supply.objects.all().order_by('description')
     serializer_class = SupplySerializer
+    supplier = None
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset
+
+        #Filter based on query
+        query = self.request.query_params.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(products__supplier__name__icontains=query) |
+                                       Q(description__icontains=query) |
+                                       Q(products__reference__icontains=query))
+
+        #Filter based on supplier
+        s_id = self.request.query_params.get('supplier_id', None)
+        if s_id:
+            queryset = queryset.filter(products__supplier__id=s_id)
+            if self.supplier is None:
+                self.supplier = Supplier.objects.get(pk=s_id)
+            #queryset.extra(select={'is_supplier': "pub_date > '2006-01-01'"})
+            sql = """SELECT COUNT(po.id) 
+                     FROM supplies_product AS p 
+                         INNER JOIN supplies_supply AS s 
+                         ON p.supply_id = s.id
+                         INNER JOIN po_item AS pi
+                         ON pi.supply_id = s.id
+                         INNER JOIN po_purchaseorder AS po 
+                         ON pi.purchase_order_id = po.id 
+                         WHERE pi.supply_id = supplies_supply.id"""
+            sql = sql.format(s_id)
+            #logger.debug(sql)
+
+            queryset = queryset.annotate(supply_count=Count('po_items'))  
+            queryset = queryset.order_by('-supply_count')
+            #queryset = queryset.extra(select={'order_count': sql})
+            #queryset = queryset.extra(order_by = ['-order_count'])
+
+        #Filter based on product upc code
+        upc = self.request.query_params.get('upc', None)
+        if upc:
+            queryset = queryset.filter(products__upc=upc)
+
+        offset = int(self.request.query_params.get('offset', 0))
+        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
+        
+        if offset and limit:
+            queryset = queryset[offset - 1:limit + (offset - 1)]
+        else:
+            queryset = queryset[0:50]
+
+        queryset = queryset.select_related('image',
+                                           'sticker',
+                                           'image')
+        queryset = queryset.prefetch_related('products', 'products__supplier')
+
+        return queryset
 
     def _format_primary_key_data(self, request):
         """
@@ -135,61 +193,6 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
     def put(self, request, *args, **kwargs):
         request = self._format_primary_key_data(request)
         return self.bulk_update(request, *args, **kwargs)
-
-    def get_queryset(self):
-        """
-        Override 'get_queryset' method in order to customize filter
-        """
-        queryset = self.queryset
-
-        #Filter based on query
-        query = self.request.query_params.get('q', None)
-        if query:
-            queryset = queryset.filter(Q(products__supplier__name__icontains=query) |
-                                       Q(description__icontains=query) |
-                                       Q(products__reference__icontains=query))
-
-        #Filter based on supplier
-        s_id = self.request.query_params.get('supplier_id', None)
-        if s_id:
-            queryset = queryset.filter(products__supplier__id=s_id)
-
-            #queryset.extra(select={'is_supplier': "pub_date > '2006-01-01'"})
-            sql = """SELECT COUNT(po.id) 
-                     FROM supplies_product AS p 
-                         INNER JOIN supplies_supply AS s 
-                         ON p.supply_id = s.id
-                         INNER JOIN po_item AS pi
-                         ON pi.supply_id = s.id
-                         INNER JOIN po_purchaseorder AS po 
-                         ON pi.purchase_order_id = po.id 
-                         WHERE pi.supply_id = supplies_supply.id"""
-            sql = sql.format(s_id)
-            #logger.debug(sql)
-                     
-            queryset = queryset.extra(select={'order_count': sql})
-            queryset = queryset.extra(order_by = ['-order_count'])
-
-            logger.debug(queryset.count())
-
-        #Filter based on product upc code
-        upc = self.request.query_params.get('upc', None)
-        if upc:
-            queryset = queryset.filter(products__upc=upc)
-
-        offset = int(self.request.query_params.get('offset', 0))
-        limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
-        if offset and limit:
-            queryset = queryset[offset - 1:limit + (offset - 1)]
-        else:
-            queryset = queryset[0:50]
-
-        queryset = queryset.select_related('image',
-                                           'sticker',
-                                           'image')
-        queryset = queryset.prefetch_related()
-
-        return queryset
 
     def get_paginate_by(self):
         """

@@ -93,6 +93,8 @@ class ProductSerializer(serializers.ModelSerializer):
     quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cost = serializers.DecimalField(decimal_places=4, max_digits=16, required=False)
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all(), required=False)
+
+
     class Meta:
         model = Product
         read_only_fields = ['supply']
@@ -114,6 +116,20 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class SupplyListSerializer(serializers.ListSerializer):
+    def to_internal_value(self, data):
+        ret = super(SupplySerializer, self).to_internal_value(data)
+        
+
+
+        if not self.supplier:
+            if 'supplier_id' in self.context['request'].query_params:
+                self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+            
+            ret.supplier = self.supplier
+
+        logger.debug(ret)
+
+        return ret
 
     def update(self, instance, validated_data):
         """
@@ -143,11 +159,28 @@ class SupplySerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
+    #supplier = SupplierSerializer(required=False, allow_null=True)
+    supplier = None
     class Meta:
         model = Supply
         list_serializer_class = SupplyListSerializer
         #read_only_fields = ['suppliers']
         exclude = ['quantity_th', 'quantity_kh', 'shelf']
+
+    def to_internal_value(self, data):
+        ret = super(SupplySerializer, self).to_internal_value(data)
+
+
+
+        if not self.supplier:
+            if 'supplier_id' in self.context['request'].query_params:
+                self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+            
+            ret.supplier = self.supplier
+
+        logger.debug(ret)
+
+        return ret
 
     def to_representation(self, instance):
         """
@@ -188,7 +221,9 @@ class SupplySerializer(serializers.ModelSerializer):
         # Apply data attributes from the product associate between the supply and supplier if it exists
         try:
             if 'supplier_id' in self.context['request'].query_params:
-                instance.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+                if not self.supplier:
+                    self.supplier = view.supplier
+                    instance.supplier = self.supplier
 
                 ret['unit_cost'] = instance.cost
                 ret['cost'] = instance.cost

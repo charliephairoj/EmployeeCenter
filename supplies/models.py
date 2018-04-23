@@ -230,21 +230,25 @@ class Supply(models.Model):
         """
         if not hasattr(self, 'product'):
             try:
-                self.product = Product.objects.get(supply=self, supplier=supplier)
-            except Product.DoesNotExist:
-                self.product = Product(supply=self, supplier=supplier)
-                self.product.save()
-                #raise ValueError("Product does not exist.")
-                
-            except Product.MultipleObjectsReturned:
-                
-                for p in Product.objects.filter(supply=self, supplier=supplier):
-                    logger.debug(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
-                    logger.debug(p.__dict__)
-                logger.debug("Too many products returned")
-                
-                self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
-                #raise ValueError("Too many products return for this supply and supplier combo")
+                self.product = self.products.filter(supplier=supplier)[0]
+
+            except (IndexError, KeyError) as e:
+                try:
+                    self.product = Product.objects.get(supply=self, supplier=supplier)
+                except Product.DoesNotExist:
+                    self.product = Product(supply=self, supplier=supplier)
+                    self.product.save()
+                    #raise ValueError("Product does not exist.")
+                    
+                except Product.MultipleObjectsReturned:
+                    
+                    for p in Product.objects.filter(supply=self, supplier=supplier):
+                        logger.debug(u'{0} : {1} : {2}'.format(p.id, p.supply.description, p.supplier.id))
+                        logger.debug(p.__dict__)
+                    logger.debug("Too many products returned")
+                    
+                    self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
+                    #raise ValueError("Too many products return for this supply and supplier combo")
 
         return self.product
         
