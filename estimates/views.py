@@ -252,7 +252,7 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         queryset = queryset.defer('acknowledgement__items', 'acknowledgement__customer', 'acknowledgement__project',
                                   'project__customer', 'items', 'customer__contact', 'project__estimates')
                                   
-        return queryset[0:5]
+        return queryset
         
     def get_paginate_by(self):
         """
