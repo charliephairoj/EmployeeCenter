@@ -451,7 +451,7 @@ class AcknowledgementViewSet(viewsets.ModelViewSet):
            
             serializer.save()
         else:
-            print serializer.errors
+            logger.debug(serializer.errors)
         logger.debug(serializer.data)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

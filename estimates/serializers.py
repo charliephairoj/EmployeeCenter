@@ -47,12 +47,12 @@ class PillowSerializer(serializers.ModelSerializer):
 class ItemListSerializer(serializers.ListSerializer):
 
     def to_internal_value(self, data):
-        print "\n\nItem List\n\n"
+        logger.debug("\n\nItem List\n\n")
         logger.debug(data)
         return super(ItemListSerializer, self).to_internal_value(data)
 
     def to_representation(self, data):
-        print "\n\nItem List\n\n"
+        logger.debug("\n\nItem List\n\n")
         logger.debug(isinstance(data, models.Manager))
         logger.debug(type(data))
         logger.debug(data)
@@ -227,7 +227,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         except (Customer.DoesNotExist, KeyError, TypeError) as e:
             pass
 
-        print "\n\nEstimate to internal value\n\n"
+        logger.debug("\n\nEstimate to internal value\n\n")
         logger.debug(ret['items'])
 
         return ret
