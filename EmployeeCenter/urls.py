@@ -83,7 +83,7 @@ urlpatterns = [
     url(r'^api/v1/email/public/$', administrator.views.public_email),
 
 
-    #url(r'^', include(router.urls)),
+    url(r'^', include(router.urls)),
 
     url(r'^api/v1/supplier/$', SupplierList.as_view()),
     url(r'^api/v1/supplier/(?P<pk>[0-9]+)/$', SupplierDetail.as_view()),
