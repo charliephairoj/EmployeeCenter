@@ -117,10 +117,10 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class SupplyListSerializer(serializers.ListSerializer):
     def to_internal_value(self, data):
-        ret = super(SupplySerializer, self).to_internal_value(data)
+        ret = super(SupplyListSerializer, self).to_internal_value(data)
         
 
-
+        try:
         if not self.supplier:
             if 'supplier_id' in self.context['request'].query_params:
                 self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
@@ -128,6 +128,8 @@ class SupplyListSerializer(serializers.ListSerializer):
             ret.supplier = self.supplier
 
         logger.debug(ret)
+        except Exception as e:
+            logger.warn(e)
 
         return ret
 
