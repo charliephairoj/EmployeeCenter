@@ -84,6 +84,61 @@ class SupplyMixin(object):
     serializer_class = SupplySerializer
     supplier = None
     
+    
+
+    def _format_primary_key_data(self, request):
+        """
+        Format fields that are primary key related so that they may
+        work with DRF
+        """
+        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
+
+        if type(request.data) == list:
+            for index, data in enumerate(request.data):
+                request.data[index] = self._format_individual_data(request.data[index])
+        elif type(request.data) == dict:
+            self._format_individual_data(request.data)
+
+        return request
+
+    def _format_individual_data(self, data):
+
+        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
+
+        for field in fields:
+            if field in data:
+                try:
+                    if 'id' in data[field]:
+                        data[field] = data[field]['id']
+                except TypeError:
+                    pass
+
+                #format for supplier in suppliers list
+                if field == 'suppliers':
+                    for index, supplier in enumerate(data[field]):
+                        try:
+                            data[field][index]['supplier'] = supplier['supplier']['id']
+                        except (KeyError, TypeError):
+                            try:
+                                data[field][index]['supplier'] = supplier['id']
+                            except KeyError:
+                                pass
+        logger.debug(data)
+        return data
+
+
+class SupplyList(SupplyMixin, generics.ListCreateAPIView):
+
+    def post(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        response = super(SupplyList, self).post(request, *args, **kwargs)
+
+        return response
+
+    def put(self, request, *args, **kwargs):
+        request = self._format_primary_key_data(request)
+        return self.bulk_update(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
@@ -140,60 +195,7 @@ class SupplyMixin(object):
         queryset = queryset.prefetch_related('products', 'products__supplier')
 
         return queryset
-
-    def _format_primary_key_data(self, request):
-        """
-        Format fields that are primary key related so that they may
-        work with DRF
-        """
-        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
-
-        if type(request.data) == list:
-            for index, data in enumerate(request.data):
-                request.data[index] = self._format_individual_data(request.data[index])
-        elif type(request.data) == dict:
-            self._format_individual_data(request.data)
-
-        return request
-
-    def _format_individual_data(self, data):
-
-        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
-
-        for field in fields:
-            if field in data:
-                try:
-                    if 'id' in data[field]:
-                        data[field] = data[field]['id']
-                except TypeError:
-                    pass
-
-                #format for supplier in suppliers list
-                if field == 'suppliers':
-                    for index, supplier in enumerate(data[field]):
-                        try:
-                            data[field][index]['supplier'] = supplier['supplier']['id']
-                        except (KeyError, TypeError):
-                            try:
-                                data[field][index]['supplier'] = supplier['id']
-                            except KeyError:
-                                pass
-        logger.debug(data)
-        return data
-
-
-class SupplyList(SupplyMixin, generics.ListCreateAPIView):
-
-    def post(self, request, *args, **kwargs):
-        request = self._format_primary_key_data(request)
-        response = super(SupplyList, self).post(request, *args, **kwargs)
-
-        return response
-
-    def put(self, request, *args, **kwargs):
-        request = self._format_primary_key_data(request)
-        return self.bulk_update(request, *args, **kwargs)
-
+        
     def get_paginate_by(self):
         """
 

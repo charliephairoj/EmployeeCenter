@@ -171,7 +171,6 @@ urlpatterns += [
     url(r'^api/v1/model/image/$', product_image),
     url(r'^api/v1/model/public/$', model_public),
     url(r'^api/v1/bed/public/$', bed_public)
-
 ]
 
 urlpatterns += [
