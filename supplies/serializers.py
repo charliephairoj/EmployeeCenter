@@ -121,13 +121,13 @@ class SupplyListSerializer(serializers.ListSerializer):
         
 
         try:
-        if not self.supplier:
-            if 'supplier_id' in self.context['request'].query_params:
-                self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
-            
-            ret.supplier = self.supplier
+            if not self.supplier:
+                if 'supplier_id' in self.context['request'].query_params:
+                    self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
+                
+                ret.supplier = self.supplier
 
-        logger.debug(ret)
+            logger.debug(ret)
         except Exception as e:
             logger.warn(e)
 
