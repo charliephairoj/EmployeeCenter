@@ -34,7 +34,7 @@ def sticker(request, pk=None):
     pdf.create(response)
 
     return response
-
+   
 
 @login_required
 def fabric_sticker(request, pk=None):
@@ -195,7 +195,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         queryset = queryset.prefetch_related('products', 'products__supplier')
 
         return queryset
-        
+
     def get_paginate_by(self):
         """
 
