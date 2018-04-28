@@ -89,7 +89,7 @@ class GroupSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Group
-        fields = ['id', 'permissions', 'name']
+        fields = ('id', 'permissions', 'name')
         
     def create(self, validated_data):
         perms = validated_data.pop('permissions', [])
@@ -125,8 +125,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         write_only_fields = ['password',]
-        fields = ['password', 'email', 'username', 'first_name', 'last_name', 'groups', 'id', 'last_login', 'is_active'],
-        depth = 1
+        fields = ('email', 'username', 'first_name', 'last_name', 'groups', 'id', 'last_login', 'is_active')
+        depth = 0
     
     def create(self, validated_data):
         groups = validated_data.pop('groups', [])
@@ -177,13 +177,6 @@ class UserSerializer(serializers.ModelSerializer):
                 setattr(instance, field, data)
         
         return instance
-        
-    def to_representation(self, instance):
-
-        ret = super(UserSerializer, self).to_representation(instance)
-
-
-        return ret
 
     def _create_aws_credentials(self, user):
         aws_user = AWSUser(user=user).save()
@@ -202,6 +195,13 @@ class UserSerializer(serializers.ModelSerializer):
         user.aws_credentials.secret_access_key = response.secret_access_key
         
         user.aws_credentials.save()
+
+
+class UserFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active')
+        depth = 0
         
 
 

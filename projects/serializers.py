@@ -24,6 +24,14 @@ class PhaseSerializer(serializers.ModelSerializer):
         model = Phase
         fields = ('id', 'project', 'quantity', 'description', 'due_date')
         depth = 0
+
+
+class PhaseFieldSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Phase
+        fields = ('id', 'quantity', 'description', 'due_date')
+        depth = 0
         
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -54,7 +62,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         ret['files'] = [{'id':f.file.id,
                          'web_active': f.web_active,
                          'primary': f.primary,
-                         'url':f.file.generate_url()} for f in File.objects.filter(project=instance)]     
+                         'url':f.file.generate_url()} for f in instance.files.all()]     
         #ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
         
         return ret
@@ -155,7 +163,15 @@ class ProjectSerializer(serializers.ModelSerializer):
             pass
             
         return ret
-        
+
+
+class ProjectFieldSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Project
+        fields = ('id', 'codename', 'quantity', 'status')
+        depth = 0
+
                 
 class RoomSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
@@ -225,7 +241,14 @@ class RoomSerializer(serializers.ModelSerializer):
             pass
 
         return ret
-        
+
+
+class RoomFieldSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Room
+        fields = ('id', 'description', 'reference', 'floor')
+
         
 class ItemSerializer(serializers.ModelSerializer):
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())

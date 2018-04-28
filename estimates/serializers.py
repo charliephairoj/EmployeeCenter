@@ -10,8 +10,8 @@ from estimates.models import Estimate, Item, Pillow
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
-from administrator.serializers import UserSerializer as EmployeeSerializer
-from projects.serializers import ProjectSerializer
+from administrator.serializers import UserFieldSerializer as EmployeeSerializer
+from projects.serializers import ProjectFieldSerializer
 from acknowledgements.serializers import AcknowledgementSerializer
 from contacts.models import Customer
 from products.models import Product
@@ -51,7 +51,7 @@ class ItemListSerializer(serializers.ListSerializer):
         logger.debug(data)
         return super(ItemListSerializer, self).to_internal_value(data)
 
-    def to_representation(self, data):
+    def xto_representation(self, data):
         logger.debug("\n\nItem List\n\n")
         logger.debug(isinstance(data, models.Manager))
         logger.debug(type(data))
@@ -179,8 +179,8 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = CustomerSerializer()#serializers.PrimaryKeyRelatedField()
-    employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = ProjectSerializer(allow_null=True, required=False) #serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
+    employee = EmployeeSerializer(required=False, read_only=True)#serializers.PrimaryKeyRelatedField(required=False, read_only=True)
+    project = ProjectFieldSerializer(allow_null=True, required=False) #serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
     items = ItemSerializer(item_queryset, many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -195,8 +195,8 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estimate
-        read_only_fields = ('total', 'subtotal', 'time_created')
-        exclude = ('pdf',)
+        read_only_fields = ('total', 'subtotal', 'time_created', 'employee')
+        exclude = ('pdf', 'deal')
         depth = 1
 
     def to_internal_value(self, data):
@@ -343,7 +343,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """

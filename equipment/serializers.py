@@ -5,7 +5,7 @@ from rest_framework import serializers
 from equipment.models import Equipment
 from hr.models import Employee
 from media.models import S3Object
-from media.serializers import S3ObjectSerializer
+from media.serializers import S3ObjectFieldSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class EquipmentSerializer(serializers.ModelSerializer):
     brand = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
     status = serializers.CharField(required=False, allow_null=True)
-    image = S3ObjectSerializer(allow_null=True, required=False)
+    image = S3ObjectFieldSerializer(allow_null=True, required=False)
     
     class Meta:
         fields = '__all__'

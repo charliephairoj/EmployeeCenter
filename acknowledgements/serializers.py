@@ -673,3 +673,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         # Save log
         log.save()
+
+
+class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Acknowledgement
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created')

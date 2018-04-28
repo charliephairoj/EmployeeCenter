@@ -368,6 +368,13 @@ class SupplySerializer(serializers.ModelSerializer):
             log.save()
 
 
+class SupplyFieldSerializer(serializers.ModelSerializer):
+  
+    class Meta:
+        model = Supply
+        fields = ('description', 'quantity', 'id', 'type', 'status')
+
+
 class FabricSerializer(SupplySerializer):
     content = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     grade = serializers.CharField(required=False, allow_null=True, allow_blank=True)

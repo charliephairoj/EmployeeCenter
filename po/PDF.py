@@ -42,8 +42,7 @@ class PODocTemplate(BaseDocTemplate):
     top_padding = 150
 
     def __init__(self, filename, **kw):
-        logger.debug(kw["company"])
-        logger.debug("company" in kw)
+
         if "company" in kw:
             self.company = kw["company"]
         if "id" in kw:
@@ -52,7 +51,7 @@ class PODocTemplate(BaseDocTemplate):
             self.revision = kw['revision']
         if "revision_date" in kw:
             self.revision_date = kw['revision_date']
-        logger.debug(self.company)
+
         BaseDocTemplate.__init__(self, filename, **kw)
         self.addPageTemplates(self._create_page_template())
 
@@ -202,7 +201,7 @@ class PurchaseOrderPDF():
         if self.supplier.email:
             data.append(['', u"E: {0}".format(self.supplier.email)])
         try:
-            contact = self.supplier.contacts.get(primary=True)
+            contact = self.supplier.contacts.order_by('id')[0]
             data.append(['Contact:', u"{0}".format(contact.name)])
             data.append(['', u"{0}".format(contact.email)])
             data.append(['', u"{0}".format(contact.telephone)])
@@ -242,9 +241,9 @@ class PurchaseOrderPDF():
         data.append(['', u'E: {0}'.format(self.employee.email)])
         
         try:
-            if self.employee.employee.telephone:
-                if self.employee.employee.telephone != '':
-                    data.append(['', u'T: {0}'.format(self.employee.employee.telephone)])
+            if self.employee.telephone:
+                if self.employee.telephone != '':
+                    data.append(['', u'T: {0}'.format(self.employee.telephone)])
         except Exception as e:
             logger.warn(e)
             

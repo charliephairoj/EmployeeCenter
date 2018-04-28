@@ -216,6 +216,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, allow_null=True)
     address = AddressSerializer(required=False, write_only=True, allow_null=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #name_th = serializers.CharField(required=False)
     contacts = ContactSerializer(required=False, many=True, write_only=True, allow_null=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)

@@ -22,8 +22,8 @@ class Contact(models.Model):
     trcloud_id = models.IntegerField(null=True, default=0)
     name = models.TextField()
     name_th = models.TextField(null=True, blank=True)
-    telephone = models.TextField()
-    fax = models.TextField()
+    telephone = models.TextField(null=True, blank=True)
+    fax = models.TextField(null=True, blank=True)
     email = models.CharField(max_length=200, null=True, blank=True)
     job_title = models.TextField(null=True)
     is_supplier = models.BooleanField(default=False)
@@ -235,7 +235,7 @@ class Address(models.Model):
 
 
 class Customer(Contact):
-    first_name = models.TextField()
+    first_name = models.TextField(null=True)
     last_name = models.TextField(null=True)
     type = models.CharField(max_length=10, default="Retail")
 

@@ -551,7 +551,6 @@ class Item(models.Model):
         and the discount provied
         """
         # Calculate late the unit_cost based on discount if available
-        logger.debug(self.unit_cost)
         if not self.unit_cost:
             self.unit_cost = self.supply.cost
         if self.supply.discount == 0 and self.discount == 0:
@@ -587,6 +586,7 @@ class Item(models.Model):
 class Log(BaseLog):
     log_ptr = models.OneToOneField(BaseLog, related_name='+')
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='logs')
+    supplier = models.ForeignKey(Supplier, related_name='logs', null=True)
 
     @classmethod
     def create(cls, **kwargs):

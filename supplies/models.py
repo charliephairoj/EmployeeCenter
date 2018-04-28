@@ -318,11 +318,8 @@ class Product(models.Model):
     quantity_per_purchasing_unit = models.DecimalField(decimal_places=2, max_digits=12, default=1)
     lead_time = models.IntegerField(default=1)
 
-    def save(self, *args, **kwargs):
-        logger.debug(self.cost)
-        logger.debug(args)
-        logger.debug(kwargs)
-        logger.debug(self.__dict__)
+    def xsave(self, *args, **kwargs):
+        
         super(Product, self).save(*args, **kwargs)
         logger.debug(self.__dict__)
         logger.debug(self.cost)

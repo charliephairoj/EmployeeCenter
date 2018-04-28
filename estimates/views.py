@@ -106,7 +106,7 @@ class EstimateMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['employee', 'fabric', 'items']
+        fields = ['fabric', 'items']
         
         for f in [('customer', Customer), ('project', Project), ('employee', User)]:
             try:
@@ -154,7 +154,7 @@ class EstimateMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['employee', 'fabric', 'items']
+        fields = ['fabric', 'items']
         for f in [('customer', Customer), ('project', Project), ('employee', User)]:
             try:
                 pass#request.data[f[0]] = f[1].objects.get(pk=request.data[f[0]]['id'])
@@ -242,12 +242,12 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
             queryset = queryset[0:limit]
         else:
             queryset = queryset[0:50]
-
+        
         queryset = queryset.select_related('customer', 'pdf', 'acknowledgement', 'employee', 'project', 'deal',
                                            )
         
         queryset = queryset.prefetch_related('items', 'items__pillows', 'items__image', 'customer__addresses', 
-                                             'project__rooms', 'project__phases') 
+                                             'project') 
         #queryset = queryset.prefetch_related(Prefetch('items', queryset=Item.objects.select_related('image').prefetch_related('pillows')))
         queryset = queryset.defer('acknowledgement__items', 'acknowledgement__customer', 'acknowledgement__project',
                                   'project__customer', 'items', 'customer__contact', 'project__estimates')

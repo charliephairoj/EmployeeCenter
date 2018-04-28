@@ -14,7 +14,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_p
 from po.serializers import PurchaseOrderSerializer
 from po.models import PurchaseOrder
 from supplies.models import Supply, Product
-from projects.models import Project
+from projects.models import Project, Room, Phase
 
 
 logger = logging.getLogger(__name__)
@@ -103,125 +103,9 @@ class PurchaseOrderMixin(object):
         logger.error(exc)
         
         return super(PurchaseOrderMixin, self).handle_exception(exc)
-    
-    def post_save(self, obj, *args, **kwargs):
-        
-        obj.calculate_total()
-        obj.save()
-        # obj.create_and_upload_pdf()
-        
-        return obj
-        
-    def _format_primary_key_data(self, request):
-        """
-        Format fields that are primary key related so that they may
-        work with DRF
-        """
-        fields = ['project', 'room', 'phase', 'acknowledgement']
-
-        for field in fields:
-            if field in request.data:
-                try:
-                    request.data[field] = request.data[field]['id']
-                except (TypeError, KeyError) as e:
-                    if field == "acknowledgement":
-                        request.data[field] = None
-                        
-                    logger.warn(e)
-                    
-            if field == 'project':
-                try:
-                    if "id" not in request.data['project']:
-                        codename = request.data['project']['codename']
-                        project = Project(codename=codename)
-                        project.save()
-                        request.data['project'] = project.id
-                except (KeyError, TypeError) as e:
-                    logger.warn(e)
-
-        # Loop through data in order to prepare for deserialization
-        for index, item in enumerate(request.data['items']):
-            # Only reassign the 'id' if it is post
-            try:
-                if not isinstance(request.data['items'][index]['supply'], (int, long)):
-                    request.data['items'][index]['supply'] = item['supply']['id']
-            except (TypeError, KeyError):
-                try:
-                    request.data['items'][index]['supply'] = item['id']
-                except (TypeError, KeyError):
-                    logger.error(item)
-
-            try:
-                request.data['items'][index]['unit_cost'] = item['cost']
-            except KeyError:
-                pass
-            
-        
-        return request
-
-    def _format_primary_key_data_for_put(self, request):
-        """
-        Format fields that are primary key related so that they may
-        work with DRF
-        """
-        fields = ['project', 'room', 'phase', 'acknowledgement']
-
-        for field in fields:
-            if field in request.data:
-                try:
-                    request.data[field] = request.data[field]['id']
-                except (TypeError, KeyError) as e:
-                    if field == "acknowledgement":
-                        request.data[field] = None
-
-                    logger.warn(e)
-                    
-            if field == 'project':
-                try:
-                    if "id" not in request.data['project']:
-                        codename = request.data['project']['codename']
-                        project = Project(codename=codename)
-                        project.save()
-                        request.data['project'] = project.id
-                except (KeyError, TypeError) as e:
-                    logger.warn(e)
-
-        # Loop through data in order to prepare for deserialization
-        for index, item in enumerate(request.data['items']):
-            # Only reassign the 'id' if it is post
-
-            
-            try:
-                if not isinstance(request.data['items'][index]['supply'], (int, long)):
-                    request.data['items'][index]['supply'] = item['supply']['id']
-            except (TypeError, KeyError):
-                try:
-                    request.data['items'][index]['supply'] = item['id']
-                except (TypeError, KeyError):
-                    supply = Supply(description=request.data['items'][index]['description'])
-                    supply.save()
-                    product = Product(supply=supply, supplier_id=request.data['supplier'],
-                                      cost=request.data['items'][index]['cost'])
-                    product.save()
-                    request.data['items'][index]['supply'] = supply.id
-
-            try:
-                request.data['items'][index]['unit_cost'] = item['cost']
-            except KeyError:
-                pass
-            
-        
-        return request
         
         
 class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
-    def post(self, request, *args, **kwargs):
-        """
-        Override the 'post' method
-        """
-        request = self._format_primary_key_data(request)
-        return super(PurchaseOrderList, self).post(request, *args, **kwargs)
-        
     def get_queryset(self):
         """
         Override 'get_queryset' method in order to customize filter
@@ -293,11 +177,4 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
 
 class PurchaseOrderDetail(PurchaseOrderMixin,
                           generics.RetrieveUpdateDestroyAPIView):
-    
-    def put(self, request, *args, **kwargs):
-        """
-        Override the 'put' method
-        """
-        request = self._format_primary_key_data_for_put(request)
-        return super(PurchaseOrderDetail, self).put(request, *args, **kwargs)
-        
+    pass

@@ -17,28 +17,60 @@ from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
 from po.models import PurchaseOrder, Item, Log as POLog
 from projects.models import Project, Room, Phase
-from projects.serializers import RoomSerializer, PhaseSerializer, ProjectSerializer
+from projects.serializers import RoomFieldSerializer, PhaseFieldSerializer, ProjectFieldSerializer
 from contacts.serializers import AddressSerializer, SupplierSerializer
 from acknowledgements.models import Acknowledgement
-from acknowledgements.serializers import AcknowledgementSerializer
+from acknowledgements.serializers import AcknowledgementFieldSerializer
+from media.serializers import S3ObjectFieldSerializer
+from supplies.serializers import SupplyFieldSerializer
 
 
 logger = logging.getLogger(__name__)
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    supply = serializers.PrimaryKeyRelatedField(queryset=Supply.objects.all())
+    supply = SupplyFieldSerializer()
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     units = serializers.CharField(required=False, allow_null=True, allow_blank=True, write_only=True)
     id = serializers.IntegerField(required=False, allow_null=True)
+    image = serializers.SerializerMethodField()
+    cost = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Item
         read_only_fields = ('total', 'sticker')
         exclude = ('purchase_order', )
-        depth = 1
+        depth = 2
+
+    def to_internal_value(self, data):
+        logger.debug(data)
+
+        # Create supply
+        if "supply" not in data:
+            data['supply'] = {'id': 10346}
+        elif "id" not in data["supply"]:
+            data['supply']['id'] = 10346
+
+        # Unit Cost to cost
+        if "unit_cost" in data:
+            data['cost'] = data['unit_cost']
+
+        ret = super(ItemSerializer, self).to_internal_value(data)
+        logger.debug(ret['supply'])
+        
+        try:
+            ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
+        except (Supply.DoesNotExist) as e:
+            ret['supply'] = Supply.objects.create(**data['supply'])
+        except KeyError as e:
+            ret['supply'] = Supply.objects.get(pk=10436)
+
+        if "description" not in ret:
+            ret['description'] = ret['supply'].description
+
+        return ret
 
     def create(self, validated_data):
         """
@@ -47,7 +79,7 @@ class ItemSerializer(serializers.ModelSerializer):
         supply = validated_data['supply']
         supply.supplier = self.context['supplier']
         purchase_order = self.context['po']
-        logger.debug(validated_data)
+
         logger.debug(u"{0}: {1}:{2}".format(supply.description, 
                                            validated_data.get('unit_cost'),
                                            supply.cost))
@@ -60,7 +92,7 @@ class ItemSerializer(serializers.ModelSerializer):
                                        cost=validated_data.get('unit_cost', 0))
 
         description = validated_data.pop('description', supply.description)
-        unit_cost = validated_data.pop('unit_cost', supply.cost)
+        unit_cost = Decimal(validated_data.pop('unit_cost', validated_data.pop('cost', supply.cost)))
         discount = validated_data.pop('discount', supply.discount)
         units = validated_data.pop('units', supply.units)
 
@@ -93,19 +125,21 @@ class ItemSerializer(serializers.ModelSerializer):
                                        cost=validated_data.get('unit_cost', 0))
 
         instance.description = validated_data.pop('description', instance.description)
-        instance.unit_cost = validated_data.pop('unit_cost', instance.supply.cost)
+        instance.unit_cost = Decimal(validated_data.pop('unit_cost', validated_data.pop('cost', instance.supply.cost)))
         instance.quantity = Decimal(validated_data.get('quantity'))
         instance.discount = validated_data.get('discount', instance.discount)
         instance.comments = validated_data.get('comments', instance.comments)
         units = validated_data.pop('units', instance.supply.units)
-
+     
         instance.calculate_total()
         instance.save()
 
         #Check status change
         new_status = validated_data.get('status', instance.status)
-        if new_status != instance.status and instance.status.lower() == "ordered":
+
+        if new_status != instance.status and instance.status.lower() in ["awaiting approval", "ordered"]:
             instance.status = new_status
+            instance.save()
             old_quantity = instance.supply.quantity
 
             #Fix for if adding decimal and supply together
@@ -118,41 +152,25 @@ class ItemSerializer(serializers.ModelSerializer):
             instance.supply.save()
             self._log_quantity_change(instance.supply, old_quantity, new_quantity)
 
-        logger.debug(instance.unit_cost)
-        logger.debug(instance.supply.cost)
         if instance.unit_cost != instance.supply.cost:
             self._change_supply_cost(instance.supply, instance.unit_cost, units)
 
         return instance
 
-    def to_representation(self, instance):
-
-        ret = super(ItemSerializer, self).to_representation(instance)
-
+    def get_image(self, instance):
         """
+        Get Supply Image
+        """
+        logger.debug(instance.supply.image)
         try:
-            product = Product.objects.get(supply=instance.supply,
-                                          supplier=instance.purchase_order.supplier)
-
-            ret['units'] = product.purchasing_units
-
-        except Product.DoesNotExist as e:
+            return S3ObjectFieldSerializer(instance.supply.image).data
+        except Exception as e:
             logger.warn(e)
-            logger.debug(u"{0} : {1}".format(instance.supply.id, instance.description))
-            product = None
-        except Product.MultipleObjectsReturned:
-            product = Product.objects.filter(supply=instance.supply,
-                                          supplier=instance.purchase_order.supplier).order_by('id')[0]
-            ret['units'] = product.purchasing_units
-        """
-        try:
-            ret['image'] = {'url': instance.supply.image.generate_url(),
-                            'id': instance.supply.image.id}
-        except AttributeError as e:
-            pass
-           
-
-        return ret
+            try:
+                return {'url': instance.supply.image.generate_url(),
+                        'id': instance.supply.image.id}
+            except AttributeError as e:
+                return None
 
     def _change_supply_cost(self, supply, cost, units="pc"):
         """
@@ -161,7 +179,6 @@ class ItemSerializer(serializers.ModelSerializer):
         This will change the supply's product cost, respective of supplier, in the database
         and will log the event as 'PRICE CHANGE'
         """
-        logger.debug(cost)
         try:
             product = Product.objects.get(supply=supply, supplier=supply.supplier)
         except Product.MultipleObjectsReturned as e:
@@ -229,121 +246,46 @@ class ItemSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     supplier = SupplierSerializer() #serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
-    project = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Project.objects.all())
-    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
-                                              allow_null=True,
-                                              required=False)
-    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
-                                               allow_null=True,
-                                               required=False)
-
-    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(),
-                                                         required=False,
-                                                         allow_null=True)
+    project = ProjectFieldSerializer(required=False, allow_null=True)
+    room = RoomFieldSerializer(allow_null=True, required=False)
+    phase = PhaseFieldSerializer(allow_null=True, required=False)
+    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=False)
     items = ItemSerializer(many=True)
     order_date = serializers.DateTimeField(read_only=True)
+    pdf = S3ObjectFieldSerializer(read_only=True)
+    auto_print_pdf = S3ObjectFieldSerializer(read_only=True)
+    logs = serializers.SerializerMethodField(read_only=True)
+    approval_pass = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
-                  'subtotal', 'total', 'revision', 'pdf', 'paid_date', 'receive_date', 'deposit',
+                  'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments', 
-                  'acknowledgement')
+                  'acknowledgement', 'pdf', 'auto_print_pdf', 'logs', 'approval_pass')
 
-        read_only_fields = ('pdf', 'revision')
+        read_only_fields = ('pdf', 'revision', 'auto_print_pdf', 'logs', 'approval_pass')
 
     def to_internal_value(self, data):
         ret = super(PurchaseOrderSerializer, self).to_internal_value(data)
 
         try:
             ret['supplier'] = Supplier.objects.get(pk=data['supplier']['id'])
-        except (Customer.DoesNotExist, KeyError) as e:
+        except (Supplier.DoesNotExist, KeyError) as e:
             ret['supplier'] = Supplier.objects.create(**data['supplier'])
 
-        try:
-            ret['project'] = Project.objects.get(pk=data['project']['id'])
-        except (Project.DoesNotExist, KeyError, TypeError) as e:
-
+        library = {'project': Project, 
+                   'room': Room,
+                   'phase': Phase}
+        for key  in library:
             try:
-                ret['project'] = Project.objects.create(**data['project'])
-            except (KeyError, TypeError) as e:
-                pass
+                ret[key] = library[key].objects.get(pk=data[key]['id'])
+            except (library[key].DoesNotExist, KeyError, TypeError) as e:
 
-        try:
-            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
-        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            pass
-
-        return ret
-
-    def to_representation(self, instance):
-        """
-        Override the 'to_representation' in order to customize output for supplier
-        """
-        ret = super(PurchaseOrderSerializer, self).to_representation(instance)
-
-        """
-        ret['supplier'] = {'id': instance.supplier.id,
-                           'name': instance.supplier.name,
-                           'email': instance.supplier.email,
-                           'telephone': instance.supplier.telephone,
-                           'fax': instance.supplier.fax,
-                           'addresses': AddressSerializer(instance.supplier.addresses, many=True).data}
-        """
-        
-        try:
-            ret['project'] = ProjectSerializer(instance.project).data
-        except AttributeError:
-            pass
-
-        try:
-            ret['acknowledgement'] = ProjectSerializer(instance.acknowledgement).data
-        except AttributeError:
-            pass
-
-        try:
-            ret['phase'] = {'id': instance.phase.id,
-                            'description': instance.phase.description}
-        except AttributeError:
-            pass
-
-        try:
-            ret['room'] = {'id': instance.room.id,
-                           'description': instance.room.description}
-        except AttributeError:
-            pass
-
-        try:
-            iam_credentials = self.context['request'].user.aws_credentials
-            key = iam_credentials.access_key_id
-            secret = iam_credentials.secret_access_key
-        except AttributeError as e:
-            pass
-
-
-        try:
-            ret['pdf'] = {'url': instance.pdf.generate_url(),
-                          'filename': instance.pdf.key.split('/')[-1],
-                          'id': instance.pdf.id}
-        except AttributeError:
-            pass
-
-        try:
-            ret['auto_print_pdf'] = {'url': instance.auto_print_pdf.generate_url()}
-        except AttributeError:
-            pass
-
-        try:
-            ret['logs'] = [{'message': log.message,
-                            #'employee': get_employee(log),
-                            'timestamp': log.timestamp} for log in instance.logs]
-        except Exception as e:
-            logger.debug(e)
-
-
-        if instance.approval_pass:
-            if instance.approval_pass == instance.create_approval_pass():
-                ret['approval_pass'] = instance.approval_pass
+                try:
+                    ret[key] = library[key].objects.create(**data[key])
+                except (KeyError, TypeError) as e:
+                    pass
 
         return ret
 
@@ -355,11 +297,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
-        for item_data in items_data:
-            try:
-                item_data['supply'] = item_data['supply'].id
-            except AttributeError:
-                item_data['supply'] = item_data['supply']['id']
+        
 
         data = {}
         for key in ['currency', 'discount', 'terms']:
@@ -381,11 +319,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                   status="AWAITING APPROVAL",
                                                   **validated_data)
 
-        item_serializer = ItemSerializer(data=items_data, context={'supplier': instance.supplier, 'po':instance},
+        item_serializer = ItemSerializer(data=self.initial_data['items'], context={'supplier': instance.supplier, 'po':instance},
                                          many=True)
+
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
-
+        
         instance.calculate_total()
 
         instance.create_and_upload_pdf()
@@ -422,9 +361,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             type_label = "PURCHASE ORDER EMAIL ERROR"
             POLog.create(message=message, purchase_order=instance, user=employee, type=type_label)
 
-        # What is this line for? Unsure.
-        #p = Product.objects.get(supplier=instance.supplier, supply=instance.items.all()[0].supply)
-
         return instance
 
     def update(self, instance, validated_data):
@@ -456,8 +392,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
             old_status = instance.status
             instance.status = status
-
-            if old_status.lower() == "received" and instance.status.lower() != "received":
+            logger.debug(old_status)
+            logger.debug(instance.status)
+            if old_status.lower() != "ordered" and instance.status.lower() == "received":
                 self.receive_order(instance, validated_data)
 
             instance.save()
@@ -470,8 +407,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 
 
-        items_data = validated_data.pop('items', self.context['request'].data['items'])
+        items_data = self.initial_data['items']#validated_data.pop('items', self.context['request'].data['items'])
 
+        """
         for item_data in items_data:
             try:
                 item_data['supply'] = item_data['supply'].id
@@ -480,6 +418,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     item_data['supply'] = item_data['supply']['id']
                 except TypeError:
                     pass
+        """
 
         self._update_items(instance, items_data)
 
@@ -503,7 +442,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 message = message.format(instance.id, field, old_val, new_val)
                 POLog.create(message=message, purchase_order=instance, user=employee)
 
-        instance.status = status
         instance.calculate_total()
 
         instance.create_and_upload_pdf()
@@ -518,6 +456,24 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             POLog.objects.create(message=message, purchase_order=instance, user=employee)
 
         return instance
+
+    def get_logs(self, instance):
+        """
+        Return a list of logs
+        """
+        return [{'message': log.message,
+                 #'employee': get_employee(log),
+                 'timestamp': log.timestamp} for log in instance.logs.all()]
+    
+    def get_approval_pass(self, instance):
+        """
+        Returns the approval pass if this order has been approved
+        """
+        if instance.approval_pass:
+            if instance.approval_pass == instance.create_approval_pass():
+                return instance.approval_pass
+
+        return None
 
     def receive_order(self, instance, validated_data):
         """
@@ -536,6 +492,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             instance.status = "RECEIVED"
         instance.receive_date = datetime.now()
         instance.save()
+
+        for item_data in validated_data['items']:
+            item_data['status'] = "RECEIVED"
 
         self._email_purchaser(instance)
 
@@ -582,37 +541,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
-        logger.debug(items_data)
+
         #Update or Create Item
         for item_data in items_data:
+
             try:
-
                 item = Item.objects.get(pk=item_data['id'])
-                item_data['purchase_order'] = item.id
-                serializer = ItemSerializer(item, context={'supplier': instance.supplier}, data=item_data)
-                if serializer.is_valid(raise_exception=True):
-                    item = serializer.save()
-
-                """
-                item.supply.supplier = instance.supplier
-                item.discount = item_data.get('discount', None) or item.discount
-                item.quantity = item_data.get('quantity', None) or item.quantity
-                item.unit_cost = item_data.get('unit_cost', None) or item.unit_cost
-
-                #Change the cost of the supply and log price change
-                if item.unit_cost != item.supply.cost:
-                    self._change_supply_cost(item.supply, item.unit_cost)
-
-                item.calculate_total()
-                item.save()
-                """
+                item_data['purchase_order'] = item.purchase_order
+                serializer = ItemSerializer(item, context={'supplier': instance.supplier, 'po': instance}, data=item_data)
             except(KeyError, Item.DoesNotExist) as e:
-
-                logger.debug(e)
                 serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
-                if serializer.is_valid(raise_exception=True):
-                    item = serializer.save()
-                    id_list.append(item.id)
+            
+            if serializer.is_valid(raise_exception=True):
+                item = serializer.save()
+                id_list.append(item.id)
 
         #Delete Items
         for item in instance.items.all():
@@ -655,11 +597,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                   supplier=item.purchase_order.supplier,
                   action="ADD",
                   quantity=item.quantity,
-                  message=u"Received {0}{1} of {2} from {3}".format(item.quantity,
+                  message=u"Received {0:.0f}{1} of {2} from {3}".format(item.quantity,
                                                                    supply.purchasing_units,
                                                                    supply.description,
                                                                    item.purchase_order.supplier.name))
         log.save()
+        logger.debug(log.__dict__)
 
     def _email_purchaser(self, purchase_order):
         logger.debug(purchase_order.employee)

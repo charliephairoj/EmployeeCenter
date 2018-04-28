@@ -51,7 +51,7 @@ class S3Object(models.Model):
         obj.save()
         
         if upload:
-            obj._upload(filename, delete_original, encrypt_key=encrypt_key)
+            obj.upload(filename, delete_original, encrypt_key=encrypt_key)
             
         obj.save()
         return obj

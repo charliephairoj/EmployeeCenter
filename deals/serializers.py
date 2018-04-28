@@ -118,3 +118,9 @@ class DealSerializer(serializers.ModelSerializer):
 
         return ret
          
+
+class DealFieldSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Deal
+        fields = ('id', 'description', 'status', 'last_contacted')
