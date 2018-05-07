@@ -18,6 +18,7 @@ from products.models import Product
 from supplies.models import Fabric, Log
 from projects.models import Project
 from media.models import S3Object
+from media.serializers import S3ObjectFieldSerializer
 from acknowledgements.models import Acknowledgement
 
 
@@ -46,7 +47,7 @@ class PillowSerializer(serializers.ModelSerializer):
 
 class ItemListSerializer(serializers.ListSerializer):
 
-    def to_internal_value(self, data):
+    def xto_internal_value(self, data):
         logger.debug("\n\nItem List\n\n")
         logger.debug(data)
         return super(ItemListSerializer, self).to_internal_value(data)
@@ -75,9 +76,8 @@ class ItemSerializer(serializers.ModelSerializer):
     pillows = PillowSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
-    image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
+    image = S3ObjectFieldSerializer(required=False, allow_null=True)
     units = serializers.CharField(required=False, allow_null=True)
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
@@ -93,10 +93,21 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        field = ('description', 'id', 'width', 'depth', 'height', 'comments', 'unit_price')
+        fields = ('description', 'id', 'width', 'depth', 'height', 'comments', 
+                  'product', 'pillows', 'unit_price', 'fabric', 'image', 'units',
+                  'quantity', 'fabric_quantity', 'type')
         read_only_fields = ('total',)
-        exclude = ('estimate', )
         list_serializer_class = ItemListSerializer
+
+    def to_internal_value(self, data):
+        ret = super(ItemSerializer, self).to_internal_value(data)
+
+        try:
+            ret['image'] = S3Object.objects.get(pk=data['image']['id'])
+        except (KeyError, S3Object.DoesNotExist) as e:
+            pass
+        
+        return ret
 
     def create(self, validated_data):
         """
@@ -158,11 +169,13 @@ class ItemSerializer(serializers.ModelSerializer):
         except AttributeError:
             pass
 
+        """
         try:
             ret['image'] = {'id': instance.image.id,
                             'url': instance.image.generate_url()}
         except AttributeError:
             pass
+        """
 
         return ret
 
@@ -236,11 +249,11 @@ class EstimateSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create nested items
         """
-        items_data = validated_data.pop('items')
+        items_data = self.initial_data['items']
         #files = validated_data.pop('files', [])
 
         for item_data in items_data:
-            for field in ['product', 'fabric', 'image']:
+            for field in ['product', 'fabric']:
                 try:
                     item_data[field] = item_data[field].id
                 except KeyError:
@@ -259,7 +272,6 @@ class EstimateSerializer(serializers.ModelSerializer):
             files = []
 
         instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
-                                            
                                                   discount=discount,
                                                   status="open",
                                                   **validated_data)
@@ -268,6 +280,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
+
         instance.calculate_totals()
 
         try:
@@ -391,13 +404,16 @@ class EstimateSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             try:
                 item = Item.objects.get(pk=item_data['id'], estimate=instance)
+                serializer = ItemSerializer(item, context={'customer': instance.customer, 'estimate': instance}, data=item_data)
             except (KeyError, Item.DoesNotExist) as e:
-                try:
-                    item = Item(product=Product.objects.get(pk=item_data['product']))
-                except TypeError as e:
-                    item = Item(product=item_data['product'])
+                serializer = ItemSerializer(data=item_data, context={'customer': instance.customer, 'estimate': instance})
                 
-                
+            if serializer.is_valid(raise_exception=True):
+                item = serializer.save()
+                id_list.append(item.id)
+
+
+            """ 
             item.estimate = instance
             item.width = item_data.get('width', item.width)
             item.depth = item_data.get('depth', item.depth)
@@ -409,16 +425,10 @@ class EstimateSerializer(serializers.ModelSerializer):
 
             item.total = item.quantity * item.unit_price
 
-            try:
-                item.image = S3Object.objects.get(pk=item_data['image'])
-            except TypeError as e:
-                item.image = item_data['image']
-            except (S3Object.DoesNotExist, KeyError) as e:
-                logger.warn(item_data['image'])
-                logger.warn(e)
+          
                 
             item.save()
-                
+            """
             """
             try:
 

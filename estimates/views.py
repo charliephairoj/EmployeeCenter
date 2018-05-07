@@ -132,12 +132,14 @@ class EstimateMixin(object):
                             del request.data['items'][index]['id']
                         except KeyError as e:
                             request.data['items'][index]['product'] = 10436
-                            
+                        
+                        """
                         try:
                             request.data['items'][index]['image'] = item['image']['id']
                         except (KeyError, TypeError) as e:
                             request.data['items'][index]['image'] = None
-                            
+                        """
+                         
                 elif field == 'project':
                     try:
                         if "codename" in request.data['project'] and "id" not in request.data['project']:
@@ -179,12 +181,14 @@ class EstimateMixin(object):
                             
                         if 'product' not in request.data['items'][index]:
                             request.data['items'][index]['product'] = 10436
-                            
+
+                        """    
                         try:
                             request.data['items'][index]['image'] = item['image']['id']
                         except (KeyError, TypeError) as e:
                             request.data['items'][index]['image'] = None
-                            
+                        """
+
                 elif field == 'project':
                     try:
                         if "codename" in request.data['project'] and "id" not in request.data['project']:

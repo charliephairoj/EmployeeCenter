@@ -151,10 +151,11 @@ class Estimate(models.Model):
 
         self.save()
     
-    def create_and_update_deal(self):
+    def create_and_update_deal(self, employee=None):
         """
         Create a new deal based on the 
         """
+        employee = employee or self.employee
         # Check that a deal for this estimate does not already exist
         if self.deal:
             deal = self.deal
@@ -168,7 +169,8 @@ class Estimate(models.Model):
                                         currency=self.customer.currency,
                                         status='proposal',
                                         description=description,
-                                        total=self.total)
+                                        total=self.total,
+                                        employee=employee)
 
             self.deal = deal
             self.save()
