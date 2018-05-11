@@ -150,9 +150,13 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Updates the instance after the parent method is called
         """
-        instance = super(ItemSerializer, self).update(instance, validated_data)
+        #instance = super(ItemSerializer, self).update(instance, validated_data)
 
-        #instance.image = validated_data.get('image', instance.image)
+        instance.image = validated_data.get('image', instance.image)
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.unit_price = validated_data.get('unit_price', instance.unit_price)
+        instance.comments = validated_data.get('image', instance.comments)
+
         instance.save()
 
         return instance
