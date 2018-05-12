@@ -8,7 +8,7 @@ import os
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_protect
 from django.contrib.staticfiles.views import serve
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -110,6 +110,9 @@ def check_google_authenticated(request):
                                                        request.user)
         FLOW.params['access_type'] = 'offline'
         authorize_url = FLOW.step1_get_authorize_url()
+
+        logger.debug(authorize_url)
+
         return HttpResponseRedirect(authorize_url)
 
 
@@ -162,9 +165,6 @@ def app_login(request):
 
             #checks whether user authennticated
             if user is not None:
-                logger.debug(user)
-                logger.debug(user.is_active)
-                logger.debug(user.first_name.lower())
                 #checks if user is still active
                 if user.is_active:
                     
@@ -177,6 +177,8 @@ def app_login(request):
 
                     #Only require google login if not inventory
                     if user.first_name.lower() != 'inventory':
+                        #return HttpResponseRedirect('/main')
+
                         return check_google_authenticated(request)
 
                     #Gets user profile to do checks

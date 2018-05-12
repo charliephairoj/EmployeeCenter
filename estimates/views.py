@@ -219,7 +219,6 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        
         max_date = datetime.now(timezone('Asia/Bangkok')) - timedelta(days=30)
         queryset = self.queryset.exclude(status__icontains='cancelled', last_modified__lt=max_date)
 

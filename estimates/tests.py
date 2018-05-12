@@ -12,10 +12,13 @@ import logging
 import unittest
 import copy
 import subprocess
+import pprint
+from requests.auth import HTTPBasicAuth
 
+from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission, Group, ContentType
-from rest_framework.test import APIRequestFactory, APITestCase, APIClient
+from rest_framework.test import APIRequestFactory, APITestCase, APIClient, RequestsClient, APILiveServerTestCase
 
 from estimates.models import Estimate, Item, Pillow
 from supplies.models import Fabric, Reservation, Log
@@ -24,6 +27,10 @@ from products.models import Product
 from media.models import S3Object
 from projects.models import Project
 from administrator.models import User
+
+
+pp = pprint.PrettyPrinter(indent=1, width=1)
+logger = logging.getLogger(__name__)                
 
 
 base_delivery_date = dateutil.parser.parse("2013-04-26T13:59:01.143Z")
@@ -105,12 +112,7 @@ base_ack = {'customer': base_customer,
                           'is_custom_item': True,
                           "quantity": 1}]}
                           
-                         
-
-
-logger = logging.getLogger(__name__)                
-    
-
+                             
 class EstimateResourceTest(APITestCase):
     """"
     This tests the api acknowledgements:
@@ -150,6 +152,9 @@ class EstimateResourceTest(APITestCase):
         test that all the objects have been made.
         """
         super(EstimateResourceTest, self).setUp()
+        
+        # Set Base URL
+        self.base_url = '{0}'.format('/api/v1/estimate/')
 
         self.ct = ContentType(app_label="estimates")
         self.ct.save()
@@ -165,6 +170,8 @@ class EstimateResourceTest(APITestCase):
         self.user.user_permissions.add(p2)
         
         self.user.save()
+
+        self.xsetup_client()
         
         #Create supplier, customer and addrss
         customer = copy.deepcopy(base_customer)
@@ -225,26 +232,52 @@ class EstimateResourceTest(APITestCase):
                      'description': 'F-04 Sofa',
                      'quantity': 3}
         self.item2 = Item.create(estimate=self.ack, **item_data)
-        self.client.login(username="tester", password="pass")
         
         #Create fake S3Objects to test files attached to acknowledgements
         self.file1 = S3Object(key='test1', bucket='test')
         self.file2 = S3Object(key='test2', bucket='test')
         self.file1.save()
         self.file2.save()
+
         
-    def get_credentials(self):
-        return None#self.create_basic(username=self.username, password=self.password)
+
         
+    def xsetup_client(self):
+        # Login the Client
+
+        # APIClient
+        self.client = APIClient(enforce_csrf_checks=False)
+        self.client.login(username=self.username, password=self.password)
+        #self.client.force_authenticate(self.user)
+        
+
+        # RequestsClient
+        """
+        logger.debug(self)
+        self.client = RequestsClient()
+        self.client.auth = HTTPBasicAuth(self.username, self.password)
+        logger.debug(self.client.__dict__)
+
+        # Obtain a CSRF token.
+        response = self.client.post("{0}{1}".format(self.live_server_url,'/login'), 
+                                    data={'username': self.username,
+                                          'password': self.password})
+        logger.debug(response.cookies['csrftoken'])
+        assert response.status_code == 200
+        csrftoken = response.cookies['csrftoken']
+        self.client.headers.update({'X-CSRFTOKEN': csrftoken})
+        logger.debug(self.client.__dict__)
+        """
+
             
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
         """
         #Get and verify the resp
-        resp = self.client.get('/api/v1/estimate/')
+        resp = self.client.get(self.base_url)
         self.assertEqual(resp.status_code, 200, msg=resp)
-
+        logger.debug(resp)
         #Verify the data sent
         quotations = resp.data
         self.assertIsNotNone(quotations)
@@ -256,7 +289,7 @@ class EstimateResourceTest(APITestCase):
         Tests getting the acknowledgement
         """
         #Get and verify the resp
-        resp = self.client.get('/api/v1/estimate/1/')
+        resp = self.client.get(self.base_url)
         self.assertEqual(resp.status_code, 200, msg=resp)
 
         #Verify the data sent
@@ -282,7 +315,6 @@ class EstimateResourceTest(APITestCase):
         """
         Testing POSTing data to the api
         """
-        
         logger.debug("\n\n Testing creating acknowledgement with a discount \n")
         #Apply a discount to the customer
         self.customer.discount = 50

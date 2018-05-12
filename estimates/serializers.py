@@ -254,6 +254,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         Override the 'create' method in order to create nested items
         """
         items_data = self.initial_data['items']
+        validated_data.pop('items', [])
         #files = validated_data.pop('files', [])
 
         for item_data in items_data:
