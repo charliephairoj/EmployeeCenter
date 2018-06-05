@@ -95,8 +95,8 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'comments', 
                   'product', 'pillows', 'unit_price', 'fabric', 'image', 'units',
-                  'quantity', 'fabric_quantity', 'type')
-        read_only_fields = ('total',)
+                  'quantity', 'fabric_quantity', 'type', )
+        read_only_fields = ('total', )
         list_serializer_class = ItemListSerializer
 
     def to_internal_value(self, data):
@@ -104,7 +104,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
-        except (KeyError, S3Object.DoesNotExist) as e:
+        except (KeyError, S3Object.DoesNotExist, TypeError) as e:
             pass
         
         return ret
@@ -155,8 +155,10 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.image = validated_data.get('image', instance.image)
         instance.quantity = validated_data.get('quantity', instance.quantity)
         instance.unit_price = validated_data.get('unit_price', instance.unit_price)
-        instance.comments = validated_data.get('image', instance.comments)
+        instance.comments = validated_data.get('comments', instance.comments)
 
+        instance.total = instance.quantity * instance.unit_price
+        
         instance.save()
 
         return instance
@@ -166,7 +168,7 @@ class ItemSerializer(serializers.ModelSerializer):
         Override the 'to_representation' method to transform the output for related and nested items
         """
         ret = super(ItemSerializer, self).to_representation(instance)
-
+        logger.debug(ret)
         try:
             ret['fabric'] = {'id': instance.fabric.id,
                              'description': instance.fabric.description}
@@ -245,7 +247,6 @@ class EstimateSerializer(serializers.ModelSerializer):
             pass
 
         logger.debug("\n\nEstimate to internal value\n\n")
-        logger.debug(ret['items'])
 
         return ret
 
@@ -293,7 +294,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.warn(e)
             
-        instance.create_and_upload_pdf()
+        #instance.create_and_upload_pdf()
      
         #Assign files
         #for file in files:
@@ -348,6 +349,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.status = new_status
 
         items_data = validated_data.pop('items')
+        items_data = self.initial_data['items']
 
         self._update_items(instance, items_data)
 

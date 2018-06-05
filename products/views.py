@@ -212,6 +212,13 @@ class UpholsteryList(UpholsteryMixin, generics.ListCreateAPIView):
                                        Q(model__model__icontains=query) |
                                        Q(model__name__icontains=query) |
                                        Q(configuration__configuration__icontains=query))
+
+        # Exclude based on list of ids
+        exclude = self.request.query_params.getlist('exclude[]', None)
+        if exclude:
+            # Converts all ids to ints
+            exclude = [int(x) for x in exclude]
+            queryset = queryset.exclude(id__in=exclude)
                                       
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', self.request.query_params.get('page_size', settings.REST_FRAMEWORK['PAGINATE_BY'])))

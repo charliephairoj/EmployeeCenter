@@ -337,7 +337,7 @@ class EstimateResourceTest(APITestCase):
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Estimate.objects.count(), 2)
-        
+        logger.debug(pp.pformat(resp.data))
         #Verify the resulting acknowledgement
         #that is returned from the post data
         ack = resp.data
@@ -346,7 +346,7 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(ack['customer']['id'], 1)
         self.assertEqual(ack['employee']['id'], 1)
         self.assertEqual(ack['vat'], 0)
-        self.assertEqual(Decimal(ack['total']), Decimal(158500))
+        self.assertEqual(Decimal(ack['total']), Decimal(150000))
         self.assertEqual(len(ack['items']), 3)
         self.assertIn('project', ack)
         self.assertEqual(ack['project']['id'], 1)
@@ -359,14 +359,13 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item1['id'], 3)
         self.assertEqual(item1['description'], 'Test Sofa Max')
         self.assertEqual(Decimal(item1['quantity']), Decimal('2.00'))
-        self.assertFalse(item1['is_custom_size'])
-        self.assertFalse(item1['is_custom_item'])
         self.assertEqual(item1['width'], 1000)
         self.assertEqual(item1['height'], 320)
         self.assertEqual(item1['depth'], 760)
         self.assertEqual(item1['fabric']['id'], 1)
         self.assertEqual(len(item1['pillows']), 4)
         self.assertEqual(Decimal(item1['unit_price']), Decimal(100000))
+        self.assertIn('total', item1)
         self.assertEqual(Decimal(item1['total']), Decimal(200000))
         
         #Test custom sized item
@@ -374,8 +373,6 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item2['id'], 4)
         self.assertEqual(item2['description'], 'High Gloss Table')
         self.assertEqual(Decimal(item2['quantity']), Decimal('1.00'))
-        self.assertTrue(item2['is_custom_size'])
-        self.assertFalse(item2['is_custom_item'])
         self.assertEqual(item2['width'], 1500)
         self.assertEqual(item2['height'], 320)
         self.assertEqual(item2['depth'], 760)
@@ -387,7 +384,6 @@ class EstimateResourceTest(APITestCase):
         item3 = ack['items'][2]
         self.assertEqual(item3['width'], 1)
         self.assertEqual(item3['description'], 'test custom item')
-        self.assertTrue(item3['is_custom_item'])
         self.assertEqual(Decimal(item3['quantity']), Decimal('1.00'))
         self.assertEqual(Decimal(item3['unit_price']), 0)
         self.assertEqual(item3['fabric']['id'], 1)
@@ -418,19 +414,14 @@ class EstimateResourceTest(APITestCase):
         self.assertEqual(item1.width, 1000)
         self.assertEqual(item1.height, 320)
         self.assertEqual(item1.depth, 760)
-        self.assertFalse(item1.is_custom_item)
-        self.assertFalse(item1.is_custom_size)
         self.assertEqual(item2.estimate.id, 2)
         self.assertEqual(item2.description, 'High Gloss Table')
         self.assertEqual(item2.width, 1500)
         self.assertEqual(item2.height, 320)
         self.assertEqual(item2.depth, 760)
-        self.assertTrue(item2.is_custom_size)
-        self.assertFalse(item2.is_custom_item)
         self.assertEqual(item3.estimate.id, 2)
         self.assertEqual(item3.description, 'test custom item')
         self.assertEqual(item3.width, 1)
-        self.assertTrue(item3.is_custom_item)
         self.assertEqual(item3.quantity, 1)
         
         #Tests files attached to acknowledgements
