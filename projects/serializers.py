@@ -166,7 +166,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class ProjectFieldSerializer(serializers.ModelSerializer):
-    
+    codename = serializers.CharField(required=True, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Project
         fields = ('id', 'codename', 'quantity', 'status')

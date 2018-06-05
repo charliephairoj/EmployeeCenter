@@ -45,7 +45,6 @@ class ItemSerializer(serializers.ModelSerializer):
         depth = 2
 
     def to_internal_value(self, data):
-        logger.debug(data)
 
         # Create supply
         if "supply" not in data:
@@ -58,7 +57,6 @@ class ItemSerializer(serializers.ModelSerializer):
             data['cost'] = data['unit_cost']
 
         ret = super(ItemSerializer, self).to_internal_value(data)
-        logger.debug(ret['supply'])
         
         try:
             ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
@@ -161,7 +159,6 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Get Supply Image
         """
-        logger.debug(instance.supply.image)
         try:
             return S3ObjectFieldSerializer(instance.supply.image).data
         except Exception as e:
@@ -249,7 +246,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     project = ProjectFieldSerializer(required=False, allow_null=True)
     room = RoomFieldSerializer(allow_null=True, required=False)
     phase = PhaseFieldSerializer(allow_null=True, required=False)
-    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=False)
+    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
     items = ItemSerializer(many=True)
     order_date = serializers.DateTimeField(read_only=True)
     pdf = S3ObjectFieldSerializer(read_only=True)
@@ -276,7 +273,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         library = {'project': Project, 
                    'room': Room,
-                   'phase': Phase}
+                   'phase': Phase,
+                   'acknowledgement': Acknowledgement}
         for key  in library:
             try:
                 ret[key] = library[key].objects.get(pk=data[key]['id'])
@@ -373,6 +371,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.current_user = employee
 
         status = validated_data.pop('status', instance.status)
+        instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
         instance.project = validated_data.pop('project', instance.project)
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
@@ -399,12 +398,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
             instance.save()
 
-
-            message = "The status of purchase order #{0} has been changed from {1} to {2}.".format(instance.id, 
-                                                                                                   old_status.lower(),
-                                                                                                   instance.status.lower())
-            log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
-
+            try:
+                message = "The status of purchase order #{0} has been changed from {1} to {2}.".format(instance.id, 
+                                                                                                    old_status.lower(),
+                                                                                                    instance.status.lower())
+                log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            except ValueError as e:
+                logger.warn(e)
 
 
         items_data = self.initial_data['items']#validated_data.pop('items', self.context['request'].data['items'])
@@ -438,9 +438,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 setattr(instance, field, new_val)
 
                 # Log changing of values
-                message = "Purchase Order #{0}: {1} changed from {2} to {3}."
-                message = message.format(instance.id, field, old_val, new_val)
-                POLog.create(message=message, purchase_order=instance, user=employee)
+                try:
+                    message = "Purchase Order #{0}: {1} changed from {2} to {3}."
+                    message = message.format(instance.id, field, old_val, new_val)
+                    POLog.create(message=message, purchase_order=instance, user=employee)
+                except ValueError as e:
+                    logger.warn(e)
 
         instance.calculate_total()
 
@@ -451,9 +454,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             instance.update_calendar_event()
         except Exception as e:
-            message = "Unable to create calendar event because: {0}"
-            message = message.format(e)
-            POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            try:
+                message = "Unable to create calendar event because: {0}"
+                message = message.format(e)
+                POLog.objects.create(message=message, purchase_order=instance, user=employee)
+            except ValueError as e:
+                logger.warn(e)
 
         return instance
 
