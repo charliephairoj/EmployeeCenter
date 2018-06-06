@@ -59,10 +59,13 @@ class ProjectSerializer(serializers.ModelSerializer):
             for acknowledgement in instance.acknowledgements.all():
                 ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
 
-        ret['files'] = [{'id':f.file.id,
-                         'web_active': f.web_active,
-                         'primary': f.primary,
-                         'url':f.file.generate_url()} for f in instance.files.all()]     
+        try:
+            ret['files'] = [{'id':f.file.id,
+                            'web_active': f.web_active,
+                            'primary': f.primary,
+                            'url':f.generate_url()} for f in instance.files.all()]     
+        except AttributeError as e:
+            ret['files'] = []
         #ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
         
         return ret

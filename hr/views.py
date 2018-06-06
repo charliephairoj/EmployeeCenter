@@ -275,10 +275,10 @@ class EmployeeList(EmployeeMixin, generics.ListCreateAPIView):
                                     Q(telephone__icontains=query))
                                     
         
-        
+        logger.debug(status)
         if status:
             queryset = queryset.filter(status__icontains=status)
-            
+        logger.debug(queryset.count())   
         if offset != None and limit == 0:
             queryset = queryset[offset:]
         elif offset == 0 and limit != 0:
