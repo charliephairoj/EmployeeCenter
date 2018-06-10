@@ -180,8 +180,8 @@ class SupplySerializer(serializers.ModelSerializer):
     sticker = S3ObjectSerializer(read_only=True, required=False, allow_null=True)
 
     # Method Fields
-    supplier = serializers.SerializerMethodField()
-    #supplier = None
+    #supplier = serializers.SerializerMethodField()
+    supplier = None
     unit_cost = serializers.SerializerMethodField()
     cost = serializers.SerializerMethodField()
     reference = serializers.SerializerMethodField()
@@ -194,25 +194,20 @@ class SupplySerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         logger.debug(kwargs)
-        """
-        # Set the supplier first so the other fields can be set
-        if 'supplier_id' in kwargs['context']['request'].query_params:
-            supplier_id = kwargs['context']['request'].query_params['supplier_id']
-            self.supplier = Supplier.objects.get(pk=supplier_id)
-        logger.debug(self.supplier)
-        """
+        
+        try:
+            # Set the supplier first so the other fields can be set
+            if 'supplier_id' in kwargs['context']['request'].query_params:
+                supplier_id = kwargs['context']['request'].query_params['supplier_id']
+                self.supplier = Supplier.objects.get(pk=supplier_id)
+            logger.debug(self.supplier)
+        except Exception as e:
+            logger.warn(e)
         
         # Call parent init
         return super(SupplySerializer, self).__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
-        # Set the supplier first so the other fields can be set
-        if 'supplier_id' in self.context['request'].query_params:
-            supplier_id = self.context['request'].query_params['supplier_id']
-            self.supplier = Supplier.objects.get(pk=supplier_id)
-
-        ret = super(SupplySerializer, self).to_internal_value(data)
-
         # Serializing associated data
         library = {'employee': Employee,
                    'acknowledgement': Acknowledgement,
@@ -334,6 +329,9 @@ class SupplySerializer(serializers.ModelSerializer):
         except KeyError:
             products_data = validated_data.pop('products', None)
 
+        # Extract other data that is part of the product info
+        
+
         old_quantity = instance.quantity
         new_quantity = validated_data.get('quantity', instance.quantity)
 
@@ -373,7 +371,6 @@ class SupplySerializer(serializers.ModelSerializer):
 
         Returns a unit cost if the supplier is set
         """
-        logger.debug(self.supplier)
         if self.supplier:
             obj.supplier = self.supplier
             return obj.cost

@@ -168,7 +168,6 @@ class ItemSerializer(serializers.ModelSerializer):
         Override the 'to_representation' method to transform the output for related and nested items
         """
         ret = super(ItemSerializer, self).to_representation(instance)
-        logger.debug(ret)
         try:
             ret['fabric'] = {'id': instance.fabric.id,
                              'description': instance.fabric.description}
@@ -220,7 +219,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         ret = super(EstimateSerializer, self).to_internal_value(data)
-
+        logger.debug(data)
         try:
             ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
         except (Customer.DoesNotExist, KeyError) as e:
@@ -234,6 +233,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                 ret['project'] = Project.objects.create(**data['project'])
             except (TypeError) as e:
                 logger.warn(e)
+                logger.debug(ret['project'])
                 try:
                     del ret['project']
                 except Exception as e:
@@ -363,7 +363,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def xto_representation(self, instance):
+    def to_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """
