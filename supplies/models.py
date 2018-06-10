@@ -230,9 +230,10 @@ class Supply(models.Model):
         """
         if not hasattr(self, 'product'):
             try:
-                self.product = self.products.filter(supplier=supplier)[0]
+                self.product = self.products.filter(supplier=supplier).order_by('id')[0]
 
             except (IndexError, KeyError) as e:
+                logger.warn(e)
                 try:
                     self.product = Product.objects.get(supply=self, supplier=supplier)
                 except Product.DoesNotExist:
@@ -249,7 +250,7 @@ class Supply(models.Model):
                     
                     self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
                     #raise ValueError("Too many products return for this supply and supplier combo")
-
+        logger.debug(self.product.__dict__)
         return self.product
         
     def test_if_critically_low_quantity(self):
@@ -307,6 +308,7 @@ class Supply(models.Model):
             
         super(Supply, self).save(*args, **kwargs)
      
+     
 class Product(models.Model):
     supplier = models.ForeignKey(Supplier)
     supply = models.ForeignKey(Supply, related_name='products')
@@ -363,16 +365,25 @@ class Log(models.Model):
     cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
     employee = models.ForeignKey(Employee, null=True)
-    acknowledgement_id = models.TextField(null=True)
+    acknowledgement = models.ForeignKey('acknowledgements.Acknowledgement', null=True)
 
     @classmethod
-    def create(cls, supply, event, quantity, employee, acknowledgement_id=None):
+    def create(cls, supply, event, quantity, employee, acknowledgement_id=None, acknowledgement=None):
         supplyObj = cls()
         supplyObj.quantity = quantity
         supplyObj.supply = supply
         supplyObj.employee = employee
         supplyObj.event = event
-        supplyObj.acknowledgement_id = acknowledgement_id
+        try:
+            supplyObj.acknowledgement_id = acknowledgement_id
+        except Exception as e:
+            logger.warn(e)
+
+        try:
+            supplyObj.acknowledgement = acknowledgement
+        except Exception as e:
+            logger.warn(e)
+
         supplyObj.save()
 
 

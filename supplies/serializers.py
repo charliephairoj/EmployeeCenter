@@ -7,10 +7,15 @@ from rest_framework import serializers
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Fabric, Log
 from hr.models import Employee
+from media.models import S3Object
+from acknowledgements.models import Acknowledgement
 from contacts.serializers import SupplierSerializer
+from hr.serializers import EmployeeFieldSerializer
+from media.serializers import S3ObjectSerializer
 
 
 logger = logging.getLogger(__name__)
+
 
 class ProductListSerializer(serializers.ListSerializer):
 
@@ -92,8 +97,7 @@ class ProductSerializer(serializers.ModelSerializer):
     purchasing_units = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cost = serializers.DecimalField(decimal_places=4, max_digits=16, required=False)
-    supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all(), required=False)
-
+    supplier = SupplierSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -151,34 +155,78 @@ class SupplyListSerializer(serializers.ListSerializer):
         return ret
 
 
+class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+    """ Duplicate of the AcknowledgementFieldSerializer use in acknowledgements.serializers
+
+        Recreated here to prevent circular import"""
+
+    class Meta:
+        model = Acknowledgement
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created')
+
+
 class SupplySerializer(serializers.ModelSerializer):
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False)
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     suppliers = ProductSerializer(source="products", required=False, many=True, write_only=True)
-    employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, required=False, allow_null=True)
+    employee = EmployeeFieldSerializer(write_only=True, required=False, allow_null=True)
+    acknowledgement = AcknowledgementFieldSerializer(write_only=True, required=False, allow_null=True)
+    quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False, allow_null=True)
     id = serializers.IntegerField(required=False)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
-    #supplier = SupplierSerializer(required=False, allow_null=True)
-    supplier = None
+    image = S3ObjectSerializer(required=False, allow_null=True)
+    sticker = S3ObjectSerializer(read_only=True, required=False, allow_null=True)
+
+    # Method Fields
+    supplier = serializers.SerializerMethodField()
+    #supplier = None
+    unit_cost = serializers.SerializerMethodField()
+    cost = serializers.SerializerMethodField()
+    reference = serializers.SerializerMethodField()
+
     class Meta:
         model = Supply
         list_serializer_class = SupplyListSerializer
         #read_only_fields = ['suppliers']
         exclude = ['quantity_th', 'quantity_kh', 'shelf']
 
+    def __init__(self, *args, **kwargs):
+        logger.debug(kwargs)
+        """
+        # Set the supplier first so the other fields can be set
+        if 'supplier_id' in kwargs['context']['request'].query_params:
+            supplier_id = kwargs['context']['request'].query_params['supplier_id']
+            self.supplier = Supplier.objects.get(pk=supplier_id)
+        logger.debug(self.supplier)
+        """
+        
+        # Call parent init
+        return super(SupplySerializer, self).__init__(*args, **kwargs)
+
     def to_internal_value(self, data):
+        # Set the supplier first so the other fields can be set
+        if 'supplier_id' in self.context['request'].query_params:
+            supplier_id = self.context['request'].query_params['supplier_id']
+            self.supplier = Supplier.objects.get(pk=supplier_id)
+
         ret = super(SupplySerializer, self).to_internal_value(data)
 
+        # Serializing associated data
+        library = {'employee': Employee,
+                   'acknowledgement': Acknowledgement,
+                   'image': S3Object}
 
+        for key  in library:
+            try:
+                ret[key] = library[key].objects.get(pk=data[key]['id'])
+            except (library[key].DoesNotExist, KeyError, TypeError) as e:
+                logger.warn(e)
 
-        if not self.supplier:
-            if 'supplier_id' in self.context['request'].query_params:
-                self.supplier = Supplier.objects.get(pk=self.context['request'].query_params['supplier_id'])
-            
-            ret.supplier = self.supplier
+        if 'supplier_id' in self.context['request'].query_params:
+            supplier_id = self.context['request'].query_params['supplier_id']
+            self.supplier = Supplier.objects.get(pk=supplier_id)
 
         logger.debug(ret)
 
@@ -191,13 +239,6 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         ret = super(SupplySerializer, self).to_representation(instance)
 
-        try:
-            iam_credentials = self.context['request'].user.aws_credentials
-            key = iam_credentials.access_key_id
-            secret = iam_credentials.secret_access_key
-        except AttributeError as e:
-            logger.warn(e)
-
         view = self.context['view']
         if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post']:
             ret['suppliers'] = [{'id': product.id,
@@ -209,18 +250,8 @@ class SupplySerializer(serializers.ModelSerializer):
                                  'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
                                  'upc': product.upc} for product in instance.products.all()]
 
-            #Add sticker url or create stickers if they do not exists
-            """
-            try:
-                ret['sticker'] = {'id': instance.sticker.id,
-                                  'url': instance.sticker.generate_url(key, secret)}
-            except AttributeError:
-                instance.create_stickers(key, secret)
-                ret['sticker'] = {'id': instance.sticker.id,
-                                  'url': instance.sticker.generate_url(key, secret)}
-            """
-
         # Apply data attributes from the product associate between the supply and supplier if it exists
+        """
         try:
             if 'supplier_id' in self.context['request'].query_params:
                 if not self.supplier:
@@ -233,15 +264,7 @@ class SupplySerializer(serializers.ModelSerializer):
 
         except (KeyError, ValueError) as e:
             logger.debug(e)
-
-        ret['quantity'] = instance.quantity
-
-
-        try:
-            ret['image'] = {'id': instance.image.id,
-                            'url': instance.image.generate_url()}
-        except AttributeError:
-            pass
+        """
 
         return ret
 
@@ -306,15 +329,17 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         Override the 'update' method in order to customize create, update and delete of products
         """
-        logger.debug(validated_data)
         try:
             products_data = validated_data.pop('suppliers')
         except KeyError:
             products_data = validated_data.pop('products', None)
 
         old_quantity = instance.quantity
-        new_quantity = validated_data['quantity']
+        new_quantity = validated_data.get('quantity', instance.quantity)
+
+        # Associated data for the logs
         employee = validated_data.pop('employee', None)
+        acknowledgement = validated_data.pop('acknowledgement', None)
 
         for field in validated_data.keys():
             setattr(instance, field, validated_data[field])
@@ -327,12 +352,57 @@ class SupplySerializer(serializers.ModelSerializer):
         instance.save()
 
         assert instance.quantity == new_quantity
-        self._log_quantity(instance, old_quantity, new_quantity, employee)
+        self._log_quantity(instance, old_quantity, new_quantity, employee, acknowledgement)
         assert instance.quantity == new_quantity
 
         return instance
 
-    def _log_quantity(self, obj, old_quantity, new_quantity, employee=None):
+    def get_supplier(self, obj):
+        """Get Supplier
+
+        Returns a supplier if the supplier_id is in the query params
+        """
+        if 'supplier_id' in self.context['request'].query_params:
+            supplier_id = self.context['request'].query_params['supplier_id']
+            return Supplier.objects.get(pk=supplier_id)
+        else:
+            return None
+
+    def get_unit_cost(self, obj):
+        """Get Unit Cost
+
+        Returns a unit cost if the supplier is set
+        """
+        logger.debug(self.supplier)
+        if self.supplier:
+            obj.supplier = self.supplier
+            return obj.cost
+        else:
+            return Decimal('0')
+
+    def get_cost(self, obj):
+        """Get Cost
+
+        Returns a cost if the supplier is set
+        """
+        if self.supplier:
+            obj.supplier = self.supplier
+            return obj.cost
+        else:
+            return Decimal('0')
+    
+    def get_reference(self, obj):
+        """Get Reference
+
+        Returns a reference if the supplier is set
+        """
+        if self.supplier:
+            obj.supplier = self.supplier
+            return obj.reference
+        else:
+            return u''
+
+    def _log_quantity(self, obj, old_quantity, new_quantity, employee=None, acknowledgement=None):
         """
         Internal method to apply the new quantity to the obj and
         create a log of the quantity change
@@ -358,6 +428,7 @@ class SupplySerializer(serializers.ModelSerializer):
                       action=action,
                       quantity=diff,
                       employee=employee,
+                      acknowledgement=acknowledgement,
                       message=u"{0}ed {1}{2} {3} {4}".format(action.capitalize(),
                                                              diff,
                                                              obj.units,

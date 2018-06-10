@@ -294,8 +294,8 @@ class EstimateSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.warn(e)
             
-        #instance.create_and_upload_pdf()
-     
+        instance.create_and_upload_pdf()
+ 
         #Assign files
         #for file in files:
         #    File.objects.create(file=S3Object.objects.get(pk=file['id']),

@@ -262,7 +262,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
                               'description': e.description} for e in instance.equipments.all()]
          
         return ret
-        
+
+
+class EmployeeFieldSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Employee
+        fields = ('id', 'name', 'first_name', 'last_name', 'nationality', 'department', 'company', 'card_id')
+
         
 class PayrollSerializer(serializers.ModelSerializer):
     

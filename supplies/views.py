@@ -91,7 +91,7 @@ class SupplyMixin(object):
         Format fields that are primary key related so that they may
         work with DRF
         """
-        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
+        fields = ['supplier', 'suppliers']
 
         if type(request.data) == list:
             for index, data in enumerate(request.data):
@@ -103,7 +103,7 @@ class SupplyMixin(object):
 
     def _format_individual_data(self, data):
 
-        fields = ['supplier', 'image', 'suppliers', 'sticker', 'employee']
+        fields = ['supplier', 'suppliers']
 
         for field in fields:
             if field in data:
@@ -123,7 +123,7 @@ class SupplyMixin(object):
                                 data[field][index]['supplier'] = supplier['id']
                             except KeyError:
                                 pass
-        logger.debug(data)
+
         return data
 
 
@@ -210,7 +210,6 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         #partial = kwargs.pop('partial', False)
 
         for index, d in enumerate(request.data):
-            logger.debug(d)
             try:
                 print d['id']
             except KeyError as e:
@@ -356,9 +355,8 @@ class LogList(generics.ListAPIView):
     serializer_class = LogSerializer
 
     def get_queryset(self):
-
-        queryset = self.queryset.all()[0:50]
-
+        queryset = self.queryset
+        
         supply_id = self.request.query_params.get('supply', None)
         supply_id = self.request.query_params.get('supply_id', None) or supply_id
 
@@ -371,6 +369,8 @@ class LogList(generics.ListAPIView):
             queryset = queryset.filter(action=action)
 
         queryset = queryset.select_related('supply', 'employee', 'supplier', 'supply__image')
+
+        queryset = self.queryset.all()[0:50]
 
         return queryset
 
