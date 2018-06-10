@@ -13,7 +13,7 @@ import products.views
 import acknowledgements.views
 import ivr.views
 from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
-from supplies.views import SupplyList, SupplyDetail, supply_type_list, LogViewSet
+from supplies.views import SupplyList, SupplyDetail, supply_type_list
 from supplies.views import FabricList, FabricDetail
 from supplies.views import LogList, LogDetail
 from supplies.views import supply_image, sticker as SupplySticker, fabric_sticker
@@ -131,8 +131,8 @@ urlpatterns = [
     url(r'^api/v1/permission/(?P<pk>[0-9]+)/$', PermissionDetail.as_view()),
     url(r'^api/v1/equipment/$', EquipmentList.as_view()),
     url(r'^api/v1/equipment/(?P<pk>[0-9]+)/$', EquipmentDetail.as_view()),
-    url(r'^api/v1/log/$', LogList.as_view()),
-    url(r'^api/v1/log/(?P<pk>[0-9]+)/$', LogDetail.as_view()),
+    #url(r'^api/v1/log/$', LogList.as_view()),
+    #url(r'^api/v1/log/(?P<pk>[0-9]+)/$', LogDetail.as_view()),
     url(r'^api/v1/deal/$', DealList.as_view()),
     url(r'^api/v1/deal/(?P<pk>[0-9]+)/$', DealDetail.as_view()),
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
@@ -181,6 +181,8 @@ urlpatterns += [
     url(r'api/v1/fabric/(?P<pk>\d+)/sticker$', fabric_sticker),
     url(r'api/v1/fabric/(?P<pk>\d+)/sticker/$', fabric_sticker),
 
+    # Supply Log api
+    url(r'^api/v1/supply/log/$', LogList.as_view()),
 ]
 
 urlpatterns += [

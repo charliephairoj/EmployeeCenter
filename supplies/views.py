@@ -13,6 +13,7 @@ from django.conf import settings
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.renderers import JSONRenderer
 
 from contacts.models import Supplier
 from supplies.models import Supply, Fabric, Log, Product
@@ -21,6 +22,7 @@ from utilities.http import save_upload
 from auth.models import S3Object
 from supplies.serializers import SupplySerializer, FabricSerializer, LogSerializer
 from media.stickers import StickerPage, Sticker, FabricSticker
+from supplies.renderers import SupplyLogCSVRenderer
 
 
 logger = logging.getLogger(__name__)
@@ -320,45 +322,18 @@ class FabricViewSet(viewsets.ModelViewSet):
     serializer_class = FabricSerializer
 
 
-class LogViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint to view and edit upholstery
-    """
-    queryset = Log.objects.all().order_by('-id')
-    serializer_class = LogSerializer
-
-    def get_queryset(self):
-
-        queryset = self.queryset.all()
-
-        supply_id = self.request.query_params.get('supply', None)
-        supply_id = self.request.query_params.get('supply_id', None) or supply_id
-
-        if supply_id:
-            queryset = queryset.filter(supply_id=supply_id)
-
-        action = self.request.query_params.get('action', None)
-
-        if action:
-            queryset = queryset.filter(action=action)
-
-        return queryset
-
-    def update(self, request, *args, **kwargs):
-
-        logger.debug(request)
-
-
 class LogList(generics.ListAPIView):
 
-    queryset = Log.objects.all().order_by('-id')
+    queryset = Log.objects.all().order_by('-timestamp')
     serializer_class = LogSerializer
+    renderer_classes = (SupplyLogCSVRenderer, )
+    
 
     def get_queryset(self):
         queryset = self.queryset
         
         supply_id = self.request.query_params.get('supply', None)
-        supply_id = self.request.query_params.get('supply_id', None) or supply_id
+        supply_id = self.request.query_params.get('supply_id', supply_id)
 
         if supply_id:
             queryset = queryset.filter(supply_id=supply_id)
@@ -370,9 +345,9 @@ class LogList(generics.ListAPIView):
 
         queryset = queryset.select_related('supply', 'employee', 'supplier', 'supply__image')
 
-        queryset = self.queryset.all()[0:50]
+        queryset = self.queryset.filter(timestamp__gte="2018-01-01")
 
-        return queryset
+        return queryset[0:100]
 
 
 class LogDetail(generics.RetrieveUpdateAPIView):

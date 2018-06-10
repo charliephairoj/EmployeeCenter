@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 from datetime import datetime
 import logging
@@ -508,11 +510,13 @@ class FabricSerializer(SupplySerializer):
 
 
 class LogSerializer(serializers.ModelSerializer):
-    supply = SupplySerializer(required=False, allow_null=True)
+    supply = SupplyFieldSerializer(required=True)
+    employee = EmployeeFieldSerializer(read_only=True)
 
     class Meta:
         model = Log
-        fields = '__all__'
+        fields = ('id', 'supply', 'employee', 'acknowledgement', 'message', 
+                  'action', 'quantity', 'cost', 'timestamp')
 
     def update(self, instance, validated_data):
 
