@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+import csv
 import os
 import requests
 import json
@@ -34,48 +35,22 @@ from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
 from hr.models import Attendance, Employee
 from hr.PDF import AttendancePDF
+from supplies.models import Log
 
 from django.contrib.auth.models import User as U
 
 
 if __name__ == '__main__':
-    ed = date.today()
-    m = abs(ed.month - 1) or 12 if ed.day <= 25 else ed.month
-    y = ed.year
-    sd = date(y, m, 26)
-    logger.debug(sd.strftime('%B %d, %Y'))
-    logger.debug(ed.strftime('%B %d, %Y'))
+    logs = Log.objects.filter(timestamp__gte='2018-01-01').exclude(action='PRICE CHANGE').order_by('-timestamp')
+    for l in logs:
+        print l.id, l.action, l.message, l.timestamp
 
-    employees = Employee.objects.filter(status='active').order_by('-nationality', 'name')
+    with open('supply_transaction.csv', 'wb') as file:
+        writer = csv.writer(file, delimiter=',')
 
-    pdf = AttendancePDF(start_date=sd, end_date=ed, employees=employees)
-    filename = pdf.create()
+        for l in logs:
+            data = [str(l.id), l.action, l.message, l.timestamp.strftime('%H:%M:%S %d-%m-%Y')]
+            encoded_data = [d.encode('utf-8') for d in data]
+            writer.writerow(encoded_data)
 
-
-    # via http://codeadict.wordpress.com/2010/02/11/send-e-mails-with-attachment-in-python/
-    subject = "Attendance from {0} to {1}".format(sd.strftime('%B %d, %Y'), ed.strftime('%B %d, %Y'))
-    msg = MIMEMultipart()
-    msg['Subject'] = subject
-    msg['From'] = 'noreply@alineagroup.co'
-    msg['To'] = 'charliep@alineagroup.co'
-
-    # what a recipient sees if they don't use an email reader
-    msg.preamble = 'Multipart message.\n'
-
-    # the message body
-    part = MIMEText(subject)
-    msg.attach(part)
-
-    # the attachment
-    part = MIMEApplication(open(filename, 'rb').read())
-    part.add_header('Content-Disposition', 'attachment', filename='Attendance.pdf')
-    msg.attach(part)
-
-    # connect to SES
-    connection = boto.connect_ses()
-
-    # and send the message
-    result = connection.send_raw_email(msg.as_string()
-        , source=msg['From']
-        , destinations=[msg['To']])
-    logger.debug(result)
+       
