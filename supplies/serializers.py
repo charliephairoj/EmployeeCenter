@@ -210,6 +210,8 @@ class SupplySerializer(serializers.ModelSerializer):
         return super(SupplySerializer, self).__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
+        ret = super(SupplySerializer, self).to_internal_value(data)
+        
         # Serializing associated data
         library = {'employee': Employee,
                    'acknowledgement': Acknowledgement,
@@ -221,9 +223,6 @@ class SupplySerializer(serializers.ModelSerializer):
             except (library[key].DoesNotExist, KeyError, TypeError) as e:
                 logger.warn(e)
 
-        if 'supplier_id' in self.context['request'].query_params:
-            supplier_id = self.context['request'].query_params['supplier_id']
-            self.supplier = Supplier.objects.get(pk=supplier_id)
 
         logger.debug(ret)
 

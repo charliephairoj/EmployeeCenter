@@ -297,6 +297,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         
 
+
         data = {}
         for key in ['currency', 'discount', 'terms']:
             try:
@@ -316,8 +317,14 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                   receive_date=receive_date,
                                                   status="AWAITING APPROVAL",
                                                   **validated_data)
+        raw_items_data = self.initial_data['items']
+        # Format items data by moving supply id to supply attribute
+        for item_data in raw_items_data:
+            if "id" in item_data:
+                item_data['supply'] = {'id': item_data['id']}
+                del item_data['id']
 
-        item_serializer = ItemSerializer(data=self.initial_data['items'], context={'supplier': instance.supplier, 'po':instance},
+        item_serializer = ItemSerializer(data=raw_items_data, context={'supplier': instance.supplier, 'po':instance},
                                          many=True)
 
         if item_serializer.is_valid(raise_exception=True):

@@ -93,7 +93,7 @@ class SupplyMixin(object):
         Format fields that are primary key related so that they may
         work with DRF
         """
-        fields = ['supplier', 'suppliers']
+        fields = ['suppliers']
 
         if type(request.data) == list:
             for index, data in enumerate(request.data):
@@ -105,7 +105,7 @@ class SupplyMixin(object):
 
     def _format_individual_data(self, data):
 
-        fields = ['supplier', 'suppliers']
+        fields = ['suppliers']
 
         for field in fields:
             if field in data:
