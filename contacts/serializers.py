@@ -312,9 +312,15 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         for address in instance.addresses.all():
             if address.id not in id_list:
                 address.delete()
-    
-                
-                
+
+
+class SupplierFieldSerializer(ContactMixin, serializers.ModelSerializer):
+    name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    class Meta:
+        model = Supplier
+        fields = ('id', 'name')
+          
                 
     
         

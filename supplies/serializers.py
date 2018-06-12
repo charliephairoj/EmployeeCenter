@@ -11,7 +11,7 @@ from supplies.models import Supply, Product, Fabric, Log
 from hr.models import Employee
 from media.models import S3Object
 from acknowledgements.models import Acknowledgement
-from contacts.serializers import SupplierSerializer
+from contacts.serializers import SupplierSerializer, SupplierFieldSerializer
 from hr.serializers import EmployeeFieldSerializer
 from media.serializers import S3ObjectSerializer
 
@@ -70,7 +70,7 @@ class ProductListSerializer(serializers.ListSerializer):
             try:
                 logger.debug(item)
                 data_mapping[int(item['supplier'].id)] = item
-            except KeyError as e:
+            except (KeyError, AttributeError) as e:
                 pass
 
         # Perform creations and updates.
@@ -99,7 +99,7 @@ class ProductSerializer(serializers.ModelSerializer):
     purchasing_units = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     quantity_per_purchasing_unit = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cost = serializers.DecimalField(decimal_places=4, max_digits=16, required=False)
-    supplier = SupplierSerializer(required=False, allow_null=True)
+    supplier = SupplierFieldSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Product

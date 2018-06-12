@@ -132,13 +132,13 @@ class SupplyMixin(object):
 class SupplyList(SupplyMixin, generics.ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
-        request = self._format_primary_key_data(request)
+        #request = self._format_primary_key_data(request)
         response = super(SupplyList, self).post(request, *args, **kwargs)
 
         return response
 
     def put(self, request, *args, **kwargs):
-        request = self._format_primary_key_data(request)
+        #request = self._format_primary_key_data(request)
         return self.bulk_update(request, *args, **kwargs)
 
     def get_queryset(self):
