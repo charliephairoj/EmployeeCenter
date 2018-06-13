@@ -116,10 +116,18 @@ class GroupSerializer(serializers.ModelSerializer):
                 instance.permissions.remove(perm)
                 
         return instance
-        
+
+
+class GroupFieldSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False)
+    id = serializers.IntegerField(required=False)
+
+    class Meta:
+        fields = ('id', 'name')
+
              
 class UserSerializer(serializers.ModelSerializer):
-    #groups = GroupSerializer(many=True, required=False)
+    groups = GroupFieldSerializer(many=True, required=False)
     #password = serializers.CharField(write_only=True, required=False)
     
     class Meta:
