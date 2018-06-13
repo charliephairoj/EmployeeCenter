@@ -123,6 +123,7 @@ class GroupFieldSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
 
     class Meta:
+        model = Group
         fields = ('id', 'name')
 
              
