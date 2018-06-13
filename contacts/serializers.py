@@ -315,6 +315,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
 
 
 class SupplierFieldSerializer(ContactMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:

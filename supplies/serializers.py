@@ -107,6 +107,16 @@ class ProductSerializer(serializers.ModelSerializer):
         list_serializer_class = ProductListSerializer
         fields = '__all__'
 
+    def to_internal_value(self, data):
+        ret = super(ProductSerializer, self).to_internal_value(data)
+
+        try:
+            ret['supplier'] = Supplier.objects.get(pk=data['supplier']['id'])
+        except (KeyError) as e:
+            logger.debug(e)
+
+        return ret
+
     def create(self, validated_data):
         """
         Override the 'create' method in order to assign the supply passed via context
@@ -245,6 +255,10 @@ class SupplySerializer(serializers.ModelSerializer):
                                  'purchasing_units': product.purchasing_units,
                                  'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
                                  'upc': product.upc} for product in instance.products.all()]
+
+            if len(ret['suppliers']) == 1:
+                ret['cost'] = ret['suppliers'][0]['cost']
+                ret['unit_cost'] = ret['suppliers'][0]['cost']
 
         # Apply data attributes from the product associate between the supply and supplier if it exists
         """
