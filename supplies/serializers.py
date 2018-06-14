@@ -282,12 +282,17 @@ class SupplySerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to customize creation of products
         """
+        logger.debug(self.initial_data)
         if 'supplier' in validated_data:
             suppliers_data = [validated_data.pop('supplier')]
+            suppliers_data = [self.initial_data['supplier']]
         elif 'suppliers' in validated_data:
             suppliers_data = validated_data.pop('suppliers')
+            logger.debug(self.initial_data)
+            suppliers_data = self.initial_data.get('suppliers', suppliers_data)
         elif 'products' in validated_data:
             suppliers_data = validated_data.pop('products')
+            suppliers_data = self.initial_data.get('suppliers', suppliers_data)
         else:
 
             data = {}
