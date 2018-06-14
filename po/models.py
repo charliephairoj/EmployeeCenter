@@ -149,7 +149,7 @@ class PurchaseOrder(models.Model):
         """
         Creates a pdf and returns the filename
         """
-        items = self.items.all().order_by('-id')
+        items = self.items.all().order_by('id')
         for item in items:
             item.supply.supplier = item.purchase_order.supplier
         
