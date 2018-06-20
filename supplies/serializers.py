@@ -156,6 +156,7 @@ class SupplyListSerializer(serializers.ListSerializer):
         Currently can only update the quantity
         """
         ret = []
+        logger.debug(validated_data)
         #Update the quantity for each supply
         for data in validated_data:
             supply = Supply.objects.get(pk=data['id'])
@@ -246,7 +247,8 @@ class SupplySerializer(serializers.ModelSerializer):
         ret = super(SupplySerializer, self).to_representation(instance)
 
         view = self.context['view']
-        if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post']:
+        bulk = self.context.get('bulk', False)
+        if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post'] and not bulk:
             ret['suppliers'] = [{'id': product.id,
                                  'supplier': {'id': product.supplier.id,
                                               'name': product.supplier.name},

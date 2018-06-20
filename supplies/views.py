@@ -211,13 +211,15 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
     def bulk_update(self, request, *args, **kwargs):
         #partial = kwargs.pop('partial', False)
 
+        # Create a new supply 
         for index, d in enumerate(request.data):
             try:
                 print d['id']
             except KeyError as e:
                 serializer = SupplySerializer(data=d, context={'request': request, 
                                                                'view': self,
-                                                               'index': index})
+                                                               'index': index,
+                                                               'bulk': True})
                 if serializer.is_valid(raise_exception=True):
                     serializer.save()
                     d['id'] = serializer.data['id']
@@ -227,7 +229,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
         # restrict the update to the filtered queryset
         serializer = SupplySerializer(Supply.objects.filter(id__in=[d['id'] for d in request.data]),
                                       data=request.data,
-                                      context={'request': request, 'view': self},
+                                      context={'request': request, 'view': self, 'bulk': True},
                                       many=True)
 
         if serializer.is_valid(raise_exception=True):
