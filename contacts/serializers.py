@@ -211,7 +211,15 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
                             
         return ret
     
-                
+
+class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
+    name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    class Meta:
+        model = Customer
+        fields = ('id', 'name')
+
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, allow_null=True)
     address = AddressSerializer(required=False, write_only=True, allow_null=True)

@@ -5,15 +5,19 @@ from decimal import Decimal
 import traceback
 
 import boto
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 from pytz import timezone
 
 from administrator.models import User
+from administrator.serializers import UserFieldSerializer
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
-from contacts.serializers import CustomerSerializer
+from contacts.serializers import CustomerFieldSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
+from projects.serializers import ProjectFieldSerializer, RoomFieldSerializer, PhaseFieldSerializer
+from media.serializers import S3ObjectFieldSerializer
 from contacts.models import Customer
 from products.models import Product
 from supplies.models import Fabric, Log
@@ -75,6 +79,10 @@ class PillowSerializer(serializers.ModelSerializer):
         return ret
 
 
+class ItemListSerializer(serializers.ListSerializer):
+    pass
+
+
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
@@ -83,7 +91,7 @@ class ItemSerializer(serializers.ModelSerializer):
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     #location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
-    image = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=S3Object.objects.all())
+    image = S3ObjectFieldSerializer(required=False, allow_null=True)
     units = serializers.CharField(required=False, allow_null=True)
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
@@ -107,6 +115,17 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product',
                   'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components', 'type')
         read_only_fields = ('total',)
+        list_serializer_class = ItemListSerializer
+
+    def to_internal_value(self, data):
+        ret = super(ItemSerializer, self).to_internal_value(data)
+
+        try:
+            ret['image'] = S3Object.objects.get(pk=data['image']['id'])
+        except (KeyError, S3Object.DoesNotExist, TypeError) as e:
+            pass
+        
+        return ret
 
     def create(self, validated_data):
         """
@@ -225,22 +244,6 @@ class ItemSerializer(serializers.ModelSerializer):
                              'description': instance.fabric.description}
         except AttributeError:
             pass
-
-        try:
-            iam_credentials = self.context['request'].user.aws_credentials
-            key = iam_credentials.access_key_id
-            secret = iam_credentials.secret_access_key
-        except:
-            key, secret = ('', '')
-
-        try:
-            ret['image'] = {'id': instance.image.id,
-                            'url': instance.image.generate_url(key, secret)}
-
-            logger.debug(ret['image'])
-        except AttributeError as e:
-            logger.debug(e)
-            
         return ret
 
 class FileSerializer(serializers.ModelSerializer):
@@ -251,19 +254,15 @@ class FileSerializer(serializers.ModelSerializer):
 
 
 class AcknowledgementSerializer(serializers.ModelSerializer):
+    item_queryset = Item.objects.exclude(deleted=True)
+
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
-    employee = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = serializers.PrimaryKeyRelatedField(required=False,
-                                                 allow_null=True,
-                                                 queryset=Project.objects.all())
-    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(),
-                                              allow_null=True,
-                                              required=False)
-    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(),
-                                               allow_null=True,
-                                               required=False)
-    items = ItemSerializer(many=True, write_only=True)
+    customer = CustomerFieldSerializer()
+    employee = UserFieldSerializer(required=False, read_only=True)
+    project = ProjectFieldSerializer(required=False, allow_null=True)
+    room = RoomFieldSerializer(allow_null=True, required=False)
+    phase = PhaseFieldSerializer(allow_null=True, required=False)
+    items = ItemSerializer(item_queryset, many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
@@ -274,11 +273,44 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created')
-        write_only_fields = ('customer', 'employee', 'project', 'room', 'phase', 'items')
+        write_only_fields = ('items')
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id',
                    'trcloud_document_number')
         depth = 3
 
+    def to_internal_value(self, data):
+        ret = super(AcknowledgementSerializer, self).to_internal_value(data)
+        logger.debug(data)
+
+        try:
+            ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            ret['customer'] = Customer.objects.create(**data['customer'])
+
+        try:
+            ret['project'] = Project.objects.get(pk=data['project']['id'])
+        except (Project.DoesNotExist, KeyError, TypeError) as e:
+
+            try:
+                ret['project'] = Project.objects.create(**data['project'])
+            except (TypeError) as e:
+                logger.warn(e)
+                logger.debug(ret['project'])
+                try:
+                    del ret['project']
+                except Exception as e:
+                    logger.warn(e)
+            except KeyError as e:
+                pass
+
+        try:
+            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
+        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
+            logger.warn(e)
+
+        logger.debug("\n\nEstimate to internal value\n\n")
+
+        return ret
 
     def create(self, validated_data):
         """
@@ -286,10 +318,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
+        # Get user 
         employee = self.context['request'].user
+        if settings.DEBUG:
+            employee = User.objects.get(pk=1)
         
         for item_data in items_data:
-            for field in ['product', 'fabric', 'image']:
+            for field in ['product', 'fabric']:
                 try:
                     item_data[field] = item_data[field].id
                 except KeyError:
@@ -430,11 +465,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             logger.debug(item_data)
 
             try:
-                item_data['image'] = item_data['image'].id
-            except (AttributeError, TypeError) as e:
-                pass
-
-            try:
                 item_data['product'] = item_data['product'].id
             except KeyError as e:
                 pass
@@ -573,27 +603,8 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         ret = super(AcknowledgementSerializer, self).to_representation(instance)
 
-        ret['customer'] = {'id': instance.customer.id,
-                           'name': instance.customer.name}
-
-        try:
-            ret['project'] = {'id': instance.project.id,
-                              'codename': instance.project.codename}
-        except AttributeError:
-            pass
-
-        try:
-            ret['phase'] = {'id': instance.phase.id,
-                            'description': instance.phase.description}
-        except AttributeError:
-            pass
-
-        try:
-            ret['room'] = {'id': instance.room.id,
-                            'description': instance.room.description}
-        except AttributeError:
-            pass
-
+        
+        """
         # Retrieve and serialize logs for the acknowledgements
         def get_employee(log):
             try:
@@ -607,6 +618,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                             'timestamp': log.timestamp} for log in instance.logs.all()]
         except Exception as e:
             logger.warn(e)
+        """
 
         # Retrieve more acknowledgement data if the request is specific
         pk = self.context['view'].kwargs.get('pk', None)

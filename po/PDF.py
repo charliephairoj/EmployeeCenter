@@ -192,7 +192,7 @@ class PurchaseOrderPDF():
             data.append(['', u"{0}, {1}".format(address.city, address.territory)])
             data.append(['', u"{0} {1}".format(address.country, address.zipcode)])
         except Exception as e:
-            logger.warn(e)
+            logger.info(e)
             
         if self.supplier.telephone:
             data.append(['', u"T: {0}".format(self.supplier.telephone)])

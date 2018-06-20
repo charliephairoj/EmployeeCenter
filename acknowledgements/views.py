@@ -228,26 +228,10 @@ class AcknowledgementMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['project', 'customer', 'fabric', 'items', 'phase']
+        fields = ['fabric', 'items']
         
         for field in fields:
             if field in request.data:
-
-                if field == 'project':
-                    try:
-                        request.data['room'] = request.data[field]['room']['id']
-                        logger.debug(request.data)
-                    except (KeyError, TypeError) as e:
-                        logger.debug(e)
-
-                    try: 
-                        room = Room(description=request.data['project']['room']['description'],
-                                    project_id=request.data["project"]["id"])
-                        room.save()
-                        request.data["room"] = room.id
-                    except (KeyError, AttributeError, TypeError) as e:
-                        logger.debug(e)
-
                         
                 if 'id' in request.data[field]:
                     request.data[field] = request.data[field]['id']
@@ -265,20 +249,6 @@ class AcknowledgementMixin(object):
                             del request.data['items'][index]['id']
                         except KeyError as e:
                             request.data['items'][index]['product'] = 10436
-                            
-                        try:
-                            request.data['items'][index]['image'] = item['image']['id']
-                        except (KeyError, TypeError) as e:
-                            request.data['items'][index]['image'] = None
-                            
-                elif field == 'project':
-                    try:
-                        if "codename" in request.data['project'] and "id" not in request.data['project']:
-                            project = Project(codename=request.data['project']['codename'])
-                            project.save()
-                            request.data['project'] = project.id
-                    except TypeError:
-                        pass
                    
         return request
         
@@ -287,7 +257,7 @@ class AcknowledgementMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
-        fields = ['project', 'customer', 'fabric', 'items', 'room', 'phase']
+        fields = ['fabric', 'items']
         
         for field in fields:
             if field in request.data:
@@ -303,39 +273,6 @@ class AcknowledgementMixin(object):
                             request.data['items'][index]['fabric'] = item['fabric']['id']
                         except (KeyError, TypeError):
                             pass
-                            
-                        try:
-                            request.data['items'][index]['image'] = item['image']['id']
-                        except (KeyError, TypeError) as e:
-                            request.data['items'][index]['image'] = None
-                            
-                elif field == 'project':
-
-                    try: 
-                        room = Room(description=request.data['project']['room']['description'],
-                                    project_id=request.data["project"]["id"])
-                        room.save()
-                        request.data["room"] = room.id
-                    except (KeyError, TypeError) as e:
-                        logger.debug(e)
-
-                    try:
-                        if "codename" in request.data['project'] and "id" not in request.data['project']:
-                            project = Project(codename=request.data['project']['codename'])
-                            project.save()
-                            request.data['project'] = project.id
-                    except TypeError:
-                        pass
-
-                elif field == 'room':
-                    try:
-                        if "description" in request.data['room'] and "id" not in request.data['room']:
-                            room = Room(description=request.data['room']['description'],
-                                        project_id=request.data["project"])
-                            room.save()
-                            request.data['room'] = room.id
-                    except (TypeError, KeyError) as e:
-                        logger.debug(e)
 
         return request
 

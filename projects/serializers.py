@@ -3,7 +3,6 @@ import logging
 from rest_framework import serializers
 
 from supplies.serializers import SupplySerializer
-from acknowledgements.serializers import ItemSerializer as AckItemSerializer
 from projects.models import Project, Phase, Room, Item, File, ItemSupply, Part, ProjectSupply
 from media.models import S3Object
 from supplies.models import Supply
@@ -53,11 +52,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         Override the 'to_representation' method
         """
         ret = super(ProjectSerializer, self).to_representation(instance)
-        
+        """
         if 'pk' in self.context:
             ret['items'] = []
             for acknowledgement in instance.acknowledgements.all():
                 ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
+        """
 
         try:
             ret['files'] = [{'id':f.file.id,

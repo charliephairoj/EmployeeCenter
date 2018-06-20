@@ -5,6 +5,7 @@ from decimal import Decimal
 import pprint
 
 from django.db import models
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
@@ -14,7 +15,7 @@ from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
 from administrator.serializers import UserFieldSerializer as EmployeeSerializer
 from projects.serializers import ProjectFieldSerializer
-from acknowledgements.serializers import AcknowledgementSerializer
+from acknowledgements.serializers import AcknowledgementFieldSerializer
 from contacts.models import Customer
 from products.models import Product
 from supplies.models import Fabric, Log
@@ -198,9 +199,9 @@ class EstimateSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
 
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    customer = CustomerSerializer()#serializers.PrimaryKeyRelatedField()
-    employee = EmployeeSerializer(required=False, read_only=True)#serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-    project = ProjectFieldSerializer(allow_null=True, required=False) #serializers.PrimaryKeyRelatedField(required=False, allow_null=True)
+    customer = CustomerSerializer()
+    employee = EmployeeSerializer(required=False, read_only=True)
+    project = ProjectFieldSerializer(allow_null=True, required=False)
     items = ItemSerializer(item_queryset, many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     po_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -211,7 +212,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     discount = serializers.IntegerField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), required=False,
                                   allow_null=True)
-    acknowledgement = AcknowledgementSerializer(required=False, allow_null=True) #serializers.PrimaryKeyRelatedField(allow_null=True, required=False)
+    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Estimate
@@ -244,9 +245,9 @@ class EstimateSerializer(serializers.ModelSerializer):
                 pass
 
         try:
-            ret['acknowledgement'] = Project.objects.get(pk=data['acknowledgement']['id'])
-        except (Customer.DoesNotExist, KeyError, TypeError) as e:
-            pass
+            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
+        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
+            logger.warn(e)
 
         logger.debug("\n\nEstimate to internal value\n\n")
 
@@ -270,7 +271,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                     pass
 
         try:
-            discount = validated_data.pop('discount', validated_data['customer'].discount)
+            discount = validated_data.get('discount', validated_data['customer'].discount)
         except AttributeError as e:
             discount = 0
 
@@ -279,7 +280,12 @@ class EstimateSerializer(serializers.ModelSerializer):
         except KeyError as e:
             files = []
 
-        instance = self.Meta.model.objects.create(employee=self.context['request'].user, 
+        #Get User
+        employee = self.context['request'].user
+        if settings.DEBUG:
+            employee = User.objects.get(pk=1) 
+
+        instance = self.Meta.model.objects.create(employee=employee, 
                                                   discount=discount,
                                                   status="open",
                                                   **validated_data)
@@ -322,11 +328,15 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-
+        logger.debug(validated_data)
+        logger.debug(self.initial_data)
         instance.vat = validated_data.pop('vat', instance.vat)
         instance.discount = validated_data.pop('discount', instance.discount)
         instance.remarks = validated_data.pop('remarks', instance.remarks)
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+
+        instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
+
         #instance.project = validated_data.pop('project', instance.project)
         #Update attached files
         #files = validated_data.pop('files', [])
@@ -351,8 +361,9 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.status = new_status
 
         items_data = validated_data.pop('items')
+        logger.debug(items_data)
         items_data = self.initial_data['items']
-
+        logger.debug(items_data)
         self._update_items(instance, items_data)
 
         instance.save()
@@ -402,13 +413,18 @@ class EstimateSerializer(serializers.ModelSerializer):
         """
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
+        logger.debug(id_list)
 
         #Delete Items
         for item in instance.items.all():
             if item.id not in id_list:
-                item.deleted = True
-                item.save()
-
+                item.delete()
+                instance.items.filter(pk=item.id).delete()
+                logger.debug(item)
+                logger.debug(instance.items.all())
+                #item.deleted = True
+                #item.save()
+        logger.debug(items_data)
         #Update or Create Item
         for item_data in items_data:
             try:
