@@ -41,7 +41,8 @@ from administrator.models import User
 
 
 if __name__ == '__main__':
-    
+    # Remove duplicate products
+    """
     supplies = Supply.objects.annotate(dup=Count('products__supplier_id'), tot=Count('products__supply_id')).order_by('-dup', 'id').filter(dup__gt=1)[0:1]
     for s in supplies:
         products = s.products.all().order_by('id')
@@ -70,9 +71,8 @@ if __name__ == '__main__':
 
         print '\n\n\n'
     """
+    
+    dup_customers = Customer.annotate(num=Count('name')).order_by('-num')
 
-    products = Product.objects.annotate(num=Count('supply_id', 'supplier')).order_by('-num')[0:20]
-    for p in products:
-        print p.supply.id, p.supplier_id, p.supply.description
-
-    """
+    for c in dup_customers:
+        print c.id, u"{0}".format(c.name)
