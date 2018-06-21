@@ -17,6 +17,7 @@ from administrator.serializers import UserFieldSerializer as EmployeeSerializer
 from projects.serializers import ProjectFieldSerializer
 from acknowledgements.serializers import AcknowledgementFieldSerializer
 from contacts.models import Customer
+from administrator.models import User
 from products.models import Product
 from supplies.models import Fabric, Log
 from projects.models import Project

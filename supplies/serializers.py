@@ -247,6 +247,11 @@ class SupplySerializer(serializers.ModelSerializer):
         ret = super(SupplySerializer, self).to_representation(instance)
 
         view = self.context['view']
+        try:
+            bulk = self.context['request'].query_params.get('bulk', False)
+        except Exception as e:
+            logger.warn(e)
+            
         bulk = self.context.get('bulk', False)
         if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post'] and not bulk:
             ret['suppliers'] = [{'id': product.id,
