@@ -82,63 +82,13 @@ def shopping_list(request):
 
 
 class SupplyMixin(object):
-    queryset = Supply.objects.all().order_by('description')
+    queryset = Supply.objects.all().order_by('id')
     serializer_class = SupplySerializer
-    supplier = None
-    
-    
-
-    def _format_primary_key_data(self, request):
-        """
-        Format fields that are primary key related so that they may
-        work with DRF
-        """
-        fields = ['xsuppliers']
-
-        if type(request.data) == list:
-            for index, data in enumerate(request.data):
-                request.data[index] = self._format_individual_data(request.data[index])
-        elif type(request.data) == dict:
-            self._format_individual_data(request.data)
-
-        return request
-
-    def _format_individual_data(self, data):
-
-        fields = ['xsuppliers']
-
-        for field in fields:
-            if field in data:
-                try:
-                    if 'id' in data[field]:
-                        data[field] = data[field]['id']
-                except TypeError:
-                    pass
-
-                #format for supplier in suppliers list
-                if field == 'xsuppliers':
-                    for index, supplier in enumerate(data[field]):
-                        try:
-                            data[field][index]['supplier'] = supplier['supplier']['id']
-                        except (KeyError, TypeError):
-                            try:
-                                data[field][index]['supplier'] = supplier['id']
-                            except KeyError:
-                                pass
-
-        return data
 
 
 class SupplyList(SupplyMixin, generics.ListCreateAPIView):
 
-    def post(self, request, *args, **kwargs):
-        #request = self._format_primary_key_data(request)
-        response = super(SupplyList, self).post(request, *args, **kwargs)
-
-        return response
-
     def put(self, request, *args, **kwargs):
-        #request = self._format_primary_key_data(request)
         return self.bulk_update(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -242,12 +192,7 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
 
 
 class SupplyDetail(SupplyMixin, generics.RetrieveUpdateDestroyAPIView):
-    def put(self, request, *args, **kwargs):
-
-        request = self._format_primary_key_data(request)
-        response = super(SupplyDetail, self).put(request, *args, **kwargs)
-
-        return response
+    pass
 
 
 class SupplyTypeList(viewsets.ModelViewSet):

@@ -183,7 +183,7 @@ class SupplySerializer(serializers.ModelSerializer):
     description_th = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    suppliers = ProductSerializer(source="products", required=False, many=True, write_only=True)
+    suppliers = ProductSerializer(source="products", required=False, many=True, allow_null=True)
     employee = EmployeeFieldSerializer(write_only=True, required=False, allow_null=True)
     acknowledgement = AcknowledgementFieldSerializer(write_only=True, required=False, allow_null=True)
     quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False, allow_null=True)
@@ -206,14 +206,12 @@ class SupplySerializer(serializers.ModelSerializer):
         exclude = ['quantity_th', 'quantity_kh', 'shelf']
 
     def __init__(self, *args, **kwargs):
-        logger.debug(kwargs)
         
         try:
             # Set the supplier first so the other fields can be set
             if 'supplier_id' in kwargs['context']['request'].query_params:
                 supplier_id = kwargs['context']['request'].query_params['supplier_id']
                 self.supplier = Supplier.objects.get(pk=supplier_id)
-            logger.debug(self.supplier)
         except Exception as e:
             logger.warn(e)
         
@@ -234,9 +232,6 @@ class SupplySerializer(serializers.ModelSerializer):
             except (library[key].DoesNotExist, KeyError, TypeError) as e:
                 logger.warn(e)
 
-
-        logger.debug(ret)
-
         return ret
 
     def to_representation(self, instance):
@@ -245,15 +240,21 @@ class SupplySerializer(serializers.ModelSerializer):
         output data
         """
         ret = super(SupplySerializer, self).to_representation(instance)
-
-        view = self.context['view']
-        try:
-            bulk = self.context['request'].query_params.get('bulk', False)
-        except Exception as e:
-            logger.warn(e)
+        
+        bulk_qp = bool(self.context['request'].query_params.get('bulk', False))
+        bulk_flag = bulk if bulk else self.context.get('bulk', False)
+        pk = self.context['view'].kwargs.get('pk', False)
+        request_m = True if self.context['request'].method.lower() == 'get' else False
+       
+        if (pk and request_m) or bulk_qp or bulk_flag:
+            del ret['suppliers']
             
-        bulk = self.context.get('bulk', False)
-        if view.kwargs.get('pk', None) or self.context['request'].method.lower() in ['put', 'post'] and not bulk:
+
+            #product_serializer = ProductSerializer(instance.products.all(), many=True)
+            #logger.debug(product_serializer.data)
+            """
+            products = instance.products.all()
+            products = products.prefetch_related('supplier')
             ret['suppliers'] = [{'id': product.id,
                                  'supplier': {'id': product.supplier.id,
                                               'name': product.supplier.name},
@@ -261,35 +262,18 @@ class SupplySerializer(serializers.ModelSerializer):
                                  'reference': product.reference,
                                  'purchasing_units': product.purchasing_units,
                                  'quantity_per_purchasing_unit': product.quantity_per_purchasing_unit,
-                                 'upc': product.upc} for product in instance.products.all()]
+                                 'upc': product.upc} for product in products]
 
             if len(ret['suppliers']) == 1:
                 ret['cost'] = ret['suppliers'][0]['cost']
                 ret['unit_cost'] = ret['suppliers'][0]['cost']
-
-        # Apply data attributes from the product associate between the supply and supplier if it exists
-        """
-        try:
-            if 'supplier_id' in self.context['request'].query_params:
-                if not self.supplier:
-                    self.supplier = view.supplier
-                    instance.supplier = self.supplier
-
-                ret['unit_cost'] = instance.cost
-                ret['cost'] = instance.cost
-                ret['reference'] = instance.reference
-
-        except (KeyError, ValueError) as e:
-            logger.debug(e)
-        """
-
+            """
         return ret
 
     def create(self, validated_data):
         """
         Override the 'create' method in order to customize creation of products
         """
-        logger.debug(self.initial_data)
         if 'supplier' in validated_data:
             suppliers_data = [validated_data.pop('supplier')]
             suppliers_data = [self.initial_data['supplier']]
@@ -333,14 +317,10 @@ class SupplySerializer(serializers.ModelSerializer):
                         pass
 
             suppliers_data = [data]
-        logger.debug(suppliers_data)
-        #iam_credentials = self.context['request'].user.aws_credentials
-        #key = iam_credentials.access_key_id
-        #secret = iam_credentials.secret_access_key
-        logger.debug(validated_data)
+        
         instance = self.Meta.model.objects.create(**validated_data)
         #instance.create_stickers(key, secret)
-        logger.debug(instance.__dict__)
+
         product_serializer = ProductSerializer(data=suppliers_data, context={'supply': instance}, many=True)
         if product_serializer.is_valid(raise_exception=True):
             product_serializer.save()

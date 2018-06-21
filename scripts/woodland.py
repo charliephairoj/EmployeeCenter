@@ -28,6 +28,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
 import boto
+from django.db.models import Count
 from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
@@ -35,22 +36,19 @@ from estimates.models import Estimate as E
 from po.models import PurchaseOrder as PO
 from hr.models import Attendance, Employee
 from hr.PDF import AttendancePDF
-from supplies.models import Log
-
-from django.contrib.auth.models import User as U
+from supplies.models import Log, Supply, Product
+from administrator.models import User 
 
 
 if __name__ == '__main__':
-    logs = Log.objects.filter(timestamp__gte='2018-01-01').exclude(action='PRICE CHANGE').order_by('-timestamp')
-    for l in logs:
-        print l.id, l.action, l.message, l.timestamp
+    
+    supplies = Supply.objects.annotate(dup=Count('products__supplier_id'), tot=Count('products__supply_id')).order_by('-dup', 'id').filter(dup__gt=1)
+    for s in supplies:
+        products = s.products.all().order_by('id')
+    """
 
-    with open('supply_transaction.csv', 'wb') as file:
-        writer = csv.writer(file, delimiter=',')
+    products = Product.objects.annotate(num=Count('supply_id', 'supplier')).order_by('-num')[0:20]
+    for p in products:
+        print p.supply.id, p.supplier_id, p.supply.description
 
-        for l in logs:
-            data = [str(l.id), l.action, l.message, l.timestamp.strftime('%H:%M:%S %d-%m-%Y')]
-            encoded_data = [d.encode('utf-8') for d in data]
-            writer.writerow(encoded_data)
-
-       
+    """
