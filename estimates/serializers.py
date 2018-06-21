@@ -271,10 +271,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                 except AttributeError:
                     pass
 
-        try:
-            discount = validated_data.get('discount', validated_data['customer'].discount)
-        except AttributeError as e:
-            discount = 0
+        discount = validated_data.pop('discount', validated_data['customer'].discount)
 
         try:
             files = validated_data.pop('files', [])
