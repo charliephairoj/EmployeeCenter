@@ -42,9 +42,33 @@ from administrator.models import User
 
 if __name__ == '__main__':
     
-    supplies = Supply.objects.annotate(dup=Count('products__supplier_id'), tot=Count('products__supply_id')).order_by('-dup', 'id').filter(dup__gt=1)
+    supplies = Supply.objects.annotate(dup=Count('products__supplier_id'), tot=Count('products__supply_id')).order_by('-dup', 'id').filter(dup__gt=1)[0:1]
     for s in supplies:
         products = s.products.all().order_by('id')
+        dd = {}
+        logger.debug(u"{0} {1}".format(s.id, s.description))
+        for p in products:
+            print "\n"
+            logger.debug(u"    {0} {1}".format(p.supplier_id, p.supplier.name))
+
+            if p.supplier_id in dd:
+                dd[p.supplier_id].append(p)
+            else:
+                dd[p.supplier_id] = [p,]
+
+        for k in dd:
+            if len(dd[k]) > 1:
+                for i, sp in enumerate(dd[k]):
+                    if i == 0:
+                        logger.debug(sp.__dict__)
+                        main = sp
+                    else:
+                        logger.debug(u"        {0} {1} {2}".format(sp.id, sp.supplier_id, sp.supplier.name))
+                        #s.products.filter(pk=sp.id).delete()
+
+                assert s.products.filter(pk=sp.id).count() <= 0
+
+        print '\n\n\n'
     """
 
     products = Product.objects.annotate(num=Count('supply_id', 'supplier')).order_by('-num')[0:20]
