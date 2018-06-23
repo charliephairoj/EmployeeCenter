@@ -242,7 +242,7 @@ class SupplySerializer(serializers.ModelSerializer):
         ret = super(SupplySerializer, self).to_representation(instance)
         
         bulk_qp = bool(self.context['request'].query_params.get('bulk', False))
-        bulk_flag = bulk if bulk else self.context.get('bulk', False)
+        bulk_flag = self.context.get('bulk', False)
         pk = self.context['view'].kwargs.get('pk', False)
         request_m = True if self.context['request'].method.lower() == 'get' else False
        
