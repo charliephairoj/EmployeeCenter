@@ -72,7 +72,25 @@ if __name__ == '__main__':
         print '\n\n\n'
     """
     
-    dup_customers = Customer.annotate(num=Count('name')).order_by('-num')
+    dup_customers = Customer.objects.values('name').annotate(num=Count('name')).order_by('name')
 
     for c in dup_customers:
-        print c.id, u"{0}".format(c.name)
+        #logger.debug(u'{0}  {1}'.format(c['num'], c['name']))
+
+
+        cs = Customer.objects.filter(name=c['name'].strip())
+        if cs.count() > 1:
+
+            for cc in cs:
+            
+                a = [f for f in cc._meta.get_fields()
+                if (f.one_to_many or f.one_to_one)
+                and f.auto_created and not f.concrete]
+
+
+                logger.debug(a)
+
+                for f in a:
+                    logger.debug(f.name)
+                    logger.debug(f.related_model)
+
