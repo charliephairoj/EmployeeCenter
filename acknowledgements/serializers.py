@@ -473,7 +473,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                 item_data['product'] = item_data['product'].id
             except AttributeError as e:
                 
-                item_data['product'] = Product.objects.get(pk=item_data['product'])
+                pass
                 
             except KeyError as e:
                 pass
