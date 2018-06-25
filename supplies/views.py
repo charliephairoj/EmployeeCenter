@@ -87,7 +87,8 @@ class SupplyMixin(object):
 
 
 class SupplyList(SupplyMixin, generics.ListCreateAPIView):
-
+    supplier = None
+    
     def put(self, request, *args, **kwargs):
         return self.bulk_update(request, *args, **kwargs)
 
