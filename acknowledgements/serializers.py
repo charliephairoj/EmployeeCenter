@@ -318,6 +318,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
+        
         # Get user 
         employee = self.context['request'].user
         if settings.DEBUG:
@@ -429,7 +430,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
 
+        # Get user 
         employee = self.context['request'].user
+        if settings.DEBUG:
+            employee = User.objects.get(pk=1)
         
         instance.current_user = employee
         dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
