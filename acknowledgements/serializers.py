@@ -462,6 +462,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         # Extract items data
         items_data = validated_data.pop('items')
+        items_data = self.initial_data['items']
         fabrics = {}
 
         #Update items individually
