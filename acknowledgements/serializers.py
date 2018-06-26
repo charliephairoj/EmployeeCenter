@@ -317,6 +317,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         Override the 'create' method in order to create nested items
         """
         items_data = validated_data.pop('items')
+        items_data = self.initial_data['items']
         files = validated_data.pop('files', [])
         
         # Get user 
