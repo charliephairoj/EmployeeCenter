@@ -178,6 +178,7 @@ class Company(models.Model):
 
 class User(AbstractUser):
     reset_password = models.BooleanField(default=False)
+    web_ui_version = models.TextField(default="V1")
     #company = model.ForeignKey(Company)
     
 
