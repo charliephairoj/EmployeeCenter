@@ -491,6 +491,8 @@ class EstimatePDF(object):
                     s_discount = total * (Decimal(self.ack.second_discount) / Decimal('100'))
                     total -= s_discount
                     data.append(['', '', '', 'Total', "{0:,.2f}".format(total)])
+
+                    prevat_total = total
                 elif self.ack.discount != 0 and self.ack.second_discount == 0:
                     #append total to pdf
                     discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
