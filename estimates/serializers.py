@@ -211,6 +211,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     delivery_date = serializers.DateTimeField(required=True)
     #vat = serializers.DecimalField(required=False, allow_null=True)
     discount = serializers.IntegerField(required=False, allow_null=True)
+    second_discount = serializers.IntegerField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), required=False,
                                   allow_null=True)
     acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
@@ -330,6 +331,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         logger.debug(self.initial_data)
         instance.vat = validated_data.pop('vat', instance.vat)
         instance.discount = validated_data.pop('discount', instance.discount)
+        instance.second_discount = validated_data.pop('second_discount', instance.second_discount)
         instance.remarks = validated_data.pop('remarks', instance.remarks)
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
 
