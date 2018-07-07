@@ -134,7 +134,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         write_only_fields = ['password',]
-        fields = ('email', 'username', 'first_name', 'last_name', 'groups', 'id', 'last_login', 'is_active')
+        fields = ('email', 'username', 'first_name', 'last_name', 'groups', 
+                  'id', 'last_login', 'is_active', 'web_ui_version')
         depth = 0
     
     def create(self, validated_data):
@@ -172,7 +173,7 @@ class UserSerializer(serializers.ModelSerializer):
                 instance.groups.remove(group)
 
         # Update and Log attributes that have changed
-        update_fields = ['username', 'email', 'first_name', 'last_name', 'is_active']
+        update_fields = ['username', 'email', 'first_name', 'last_name', 'is_active', 'web_ui_version']
         for field in update_fields:
             data = validated_data.get(field, getattr(instance, field))
             current_data = getattr(instance, field)
