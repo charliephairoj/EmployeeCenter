@@ -524,7 +524,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             products = Product.objects.filter(supply=item.supply, supplier=po.supplier)
             product = products.order_by('id')[0]
         except Product.DoesNotExist as e:
-            msg = "There is no product for supply {0}: {1} and supplier {2}: {3}\n\n{4}"
+            msg = u"There is no product for supply {0}: {1} and supplier {2}: {3}\n\n{4}"
             msg = msg.format(item.supply.id,
                              item.supply.description,
                              po.supplier.id,
