@@ -167,8 +167,7 @@ def app_login(request):
             cleanUsername = form.cleaned_data['username']
             cleanPassword = form.cleaned_data['password']
             
-            user = authenticate(request,
-                                username=cleanUsername,
+            user = authenticate(username=cleanUsername,
                                 password=cleanPassword)
 
             #checks whether user authennticated
