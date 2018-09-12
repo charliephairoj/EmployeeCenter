@@ -156,6 +156,9 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         #instance = super(ItemSerializer, self).update(instance, validated_data)
 
+        instance.width = validated_data.get('width', instance.width)
+        instance.depth = validated_data.get('depth', instance.depth)
+        instance.height = validated_data.get('height', instance.height)
         instance.image = validated_data.get('image', instance.image)
         instance.quantity = validated_data.get('quantity', instance.quantity)
         instance.unit_price = validated_data.get('unit_price', instance.unit_price)
