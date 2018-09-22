@@ -171,6 +171,13 @@ class EstimatePDF(object):
         data = []
         #Add supplier name
         data.append(['Customer:', self.customer.name])
+
+        if self.customer.telephone:
+            data.append(['Telephone:', self.customer.telephone])
+        
+        if self.customer.email:
+            data.append(['Email:', self.customer.email])
+            
         try:
             #extract supplier address
             address = self.customer.addresses.all()[0]
