@@ -128,7 +128,11 @@ class SupplyList(SupplyMixin, generics.ListCreateAPIView):
             queryset = queryset.order_by('-supply_count')
             #queryset = queryset.extra(select={'order_count': sql})
             #queryset = queryset.extra(order_by = ['-order_count'])
-
+    
+        # If supplier is not given
+        else:
+            queryset = queryset.distinct('id')
+            
         #Filter based on product upc code
         upc = self.request.query_params.get('upc', None)
         if upc:

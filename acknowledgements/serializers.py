@@ -189,6 +189,10 @@ class ItemSerializer(serializers.ModelSerializer):
         instance.fabric = validated_data.pop('fabric', instance.fabric)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         instance.comments = validated_data.pop('comments', instance.comments)
+
+        instance.width = validated_data.pop('width', instance.width)
+        instance.depth = validated_data.pop('depth', instance.depth)
+        instance.height = validated_data.pop('height', instance.height)
         
         if new_qty != instance.quantity:
             # Log Changing delivery date
