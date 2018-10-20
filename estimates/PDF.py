@@ -314,12 +314,15 @@ class EstimatePDF(object):
         dimension_str = u''
 
         for x in [
-            ('Width: {0}mm  ', product.width),
-            ('Depth: {0}mm  ', product.depth)
-            ('Height: {0}mm  ', product.height)
+            ['Width: {0}mm  ', product.width],
+            ['Depth: {0}mm  ', product.depth]
+            ('Height: {0}mm  ', product.height]
         ]:
             if x[1] > 0:
-                dimension_str += x[0].format(x[1])
+                try:
+                    dimension_str += x[0].format(x[1])
+                except Exception as e:
+                    logger.warn(e)
 
         data.append(['', dimension_str])
 
