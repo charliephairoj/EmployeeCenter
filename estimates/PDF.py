@@ -315,8 +315,8 @@ class EstimatePDF(object):
 
         for x in [
             ['Width: {0}mm  ', product.width],
-            ['Depth: {0}mm  ', product.depth]
-            ('Height: {0}mm  ', product.height]
+            ['Depth: {0}mm  ', product.depth],
+            ['Height: {0}mm  ', product.height]
         ]:
             if x[1] > 0:
                 try:
