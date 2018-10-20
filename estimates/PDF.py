@@ -311,6 +311,16 @@ class EstimatePDF(object):
             print e
 
         #if product.is_custom_size:
+        dimension_str = u''
+
+        for x in [
+            ('Width: {0}mm  ', product.width),
+            ('Depth: {0}mm  ', product.depth)
+            ('Height: {0}mm  ', product.height)
+        ]:
+            if x[1] > 0:
+                dimension_str += x[0].format(x[1])
+
         dimension_str = u'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
         data.append(['', dimension_str])
 
