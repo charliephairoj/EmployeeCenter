@@ -321,7 +321,6 @@ class EstimatePDF(object):
             if x[1] > 0:
                 dimension_str += x[0].format(x[1])
 
-        dimension_str = u'Width: {0}mm Depth: {1}mm Height: {2}mm'.format(product.width, product.depth, product.height)
         data.append(['', dimension_str])
 
         #increase the item number
