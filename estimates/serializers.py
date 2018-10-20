@@ -212,7 +212,8 @@ class EstimateSerializer(serializers.ModelSerializer):
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
     delivery_date = serializers.DateTimeField(required=True)
-    #vat = serializers.DecimalField(required=False, allow_null=True)
+    lead_time = serializers.CharField(required=False, allow_null=True)
+    vat = serializers.DecimalField(required=False, allow_null=True, decimal_places=2, max_digits=12)
     discount = serializers.IntegerField(required=False, allow_null=True)
     second_discount = serializers.IntegerField(required=False, allow_null=True)
     files = serializers.ListField(child=serializers.DictField(), required=False,
@@ -337,6 +338,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.second_discount = validated_data.pop('second_discount', instance.second_discount)
         instance.remarks = validated_data.pop('remarks', instance.remarks)
         instance.delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
+        instance.lead_time = validated_data.pop('lead_time', instance.lead_time)
 
         instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
 
@@ -351,8 +353,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         #                            acknowledgement=instance)
 
         new_status = validated_data.pop('status', instance.status)
-        logger.debug(new_status)
-        logger.debug(instance.status)
+     
         # Set the corresponding deal as closed lost
         if new_status.lower() != instance.status.lower() and new_status.lower() == 'cancelled':
             try:
@@ -364,9 +365,9 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.status = new_status
 
         items_data = validated_data.pop('items')
-        logger.debug(items_data)
+
         items_data = self.initial_data['items']
-        logger.debug(items_data)
+
         self._update_items(instance, items_data)
 
         instance.save()

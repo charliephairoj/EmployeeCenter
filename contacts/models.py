@@ -29,7 +29,7 @@ class Contact(models.Model):
     is_supplier = models.BooleanField(default=False)
     is_customer = models.BooleanField(default=False)
     discount = models.IntegerField(default=0)
-    currency = models.CharField(max_length=10, null=True)
+    currency = models.CharField(max_length=10, null=True, default="THB")
     notes = models.TextField(null=True, default="", blank=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)

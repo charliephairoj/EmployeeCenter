@@ -49,6 +49,7 @@ class Estimate(models.Model):
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimates")
     acknowledgement = models.ForeignKey(Acknowledgement, null=True, related_name="quotations")
     deal = models.ForeignKey(Deal, null=True, related_name="quotations")
+    lead_time = models.TextField(default="4 weeks")
 
     """
     @property

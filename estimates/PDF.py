@@ -226,8 +226,9 @@ class EstimatePDF(object):
         order_date, odObj = self.outputBKKTime(self.ack.time_created, '%B %d, %Y')
         delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
         data.append(['Currency:', self._get_currency()])
-        data.append(['Order Date:', order_date])
-        data.append(['Delivery Date:', delivery_date])
+        data.append(['Date:', order_date])
+        data.append(['Lead Time:', self.ack.lead_time])
+
         #Adds po if exists
         if self.ack.po_id != None:
             data.append(['PO #:', self.ack.po_id])
@@ -401,7 +402,7 @@ class EstimatePDF(object):
         elif self.po.currency == "USD":
             currency = "US Dollar(USD)"
         #return currency"""
-        return self.customer.currency
+        return self.customer.currency or 'Thai Baht (THB)'
 
     def _get_description(self, supply):
         #Set description

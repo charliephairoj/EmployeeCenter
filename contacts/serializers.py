@@ -157,13 +157,14 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     contacts = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
     bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-
+    currency = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
     class Meta:
         model = Customer
         exclude = ('contact', 'google_contact_id', 'type', 'job_title')
@@ -215,10 +216,13 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
 class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    addresses = AddressSerializer(required=False,  many=True, allow_null=True)
 
     class Meta:
         model = Customer
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'telephone', 'email', 'addresses')
 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, allow_null=True)
