@@ -155,6 +155,7 @@ class ItemSerializer(serializers.ModelSerializer):
         Updates the instance after the parent method is called
         """
         #instance = super(ItemSerializer, self).update(instance, validated_data)
+        instance.description = validated_data.get('description', instance.description)
 
         instance.width = validated_data.get('width', instance.width)
         instance.depth = validated_data.get('depth', instance.depth)
