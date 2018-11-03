@@ -28,8 +28,6 @@ logger = logging.getLogger(__name__)
 class Estimate(models.Model):
     po_id = models.TextField(default=None, null=True, blank=True)
     company = models.TextField(default="Alinea Group")
-    discount = models.IntegerField(default=0)
-    second_discount = models.IntegerField(default=0)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
@@ -38,9 +36,7 @@ class Estimate(models.Model):
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)
-    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    vat = models.IntegerField(default=0, null=True)
+    
     project = models.ForeignKey(Project, null=True, blank=True, related_name='estimates')
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
@@ -51,6 +47,27 @@ class Estimate(models.Model):
     deal = models.ForeignKey(Deal, null=True, related_name="quotations")
     lead_time = models.TextField(default="4 weeks")
 
+    #VATs
+    vat = models.IntegerField(default=0, null=True)
+    vat_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    #Discounts
+    discount = models.IntegerField(default=0)
+    second_discount = models.IntegerField(default=0)
+    discount_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    second_discount_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    #Totals
+    # Totals of item totals
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # Total after first discount
+    post_discount_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # Total after second Discount
+    total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # Total after all discounts and Vats
+    grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+
     """
     @property
     def delivery_date(self):
@@ -60,61 +77,6 @@ class Estimate(models.Model):
     def delivery_date(self, value):
         self._delivery_date = value
     """
-        
-    
-
-    @classmethod
-    def xcreate(cls, user, **kwargs):
-        """Creates the acknowledgement (DEPRECATED)
-
-        This method accept data to set and then creates
-        an accompanying PDF and logs the event. A User
-        Object is required to authorize certain data
-        """
-        acknowledgement = cls()
-        acknowledgement.customer = Customer.objects.get(id=kwargs['customer']['id'])
-        acknowledgement.employee = user
-
-        acknowledgement.delivery_date = dateutil.parser.parse(kwargs['delivery_date'])
-        acknowledgement.status = 'ACKNOWLEDGED'
-        try:
-            acknowledgement.vat = int(kwargs["vat"])
-        except KeyError:
-            acknowledgement.vat = 0
-        try:
-            acknowledgement.po_id = kwargs["po_id"]
-        except KeyError:
-            raise AttributeError("Missing Purchase Order number.")
-        try:
-            acknowledgement.remarks = kwargs["remarks"]
-        except KeyError:
-            pass
-        #Create the products without saving
-        acknowledgement.items = [Item.create(acknowledgement=acknowledgement,
-                                             commit=False,
-                                             **product_data) for product_data in kwargs['products']]
-
-        acknowledgement.calculate_totals(acknowledgement.items)
-        
-        #Save the ack and by overriden method, the items
-        acknowledgement.save()
-
-        #Create the order PDFs
-        ack, production = acknowledgement._create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(acknowledgement.id)
-        production_key = "acknowledgement/Production-{0}.pdf".format(acknowledgement.id)
-        bucket = "document.dellarobbiathailand.com"
-        ack_pdf = S3Object.create(ack, ack_key, bucket, encrypt_key=True)
-        prod_pdf = S3Object.create(production, production_key, bucket, encrypt_key=True)
-        acknowledgement.acknowledgement_pdf = ack_pdf
-        acknowledgement.production_pdf = prod_pdf
-        acknowledgement.original_acknowledgement_pdf = ack_pdf
-
-        #Save Ack with pdf data
-        acknowledgement.save()
-
-        
-        return acknowledgement
     
     def delete(self):
         """
@@ -213,8 +175,30 @@ class Estimate(models.Model):
         
         return estimate_filename
 
-        
     def calculate_totals(self, items=None):
+        #Define items if not already defined
+        if not items:
+            items = self.items.exclude(deleted=True)
+
+        totals = self._calculate_totals(items)
+
+        # Totals
+        self.subtotal = totals['subtotal']
+        self.post_discount_total = totals['post_discount_total']
+        self.total = totals['total']
+        self.grand_total = totals['grand_total']
+
+        # VAT
+        self.vat_amount = totals['vat_amount']
+        self.second_discount_amount = totals['second_discount_amount']
+
+        # Discounts
+        self.discount_amount = totals['discount_amount']
+        self.second_discount_amount = totals['second_discount_amount']
+
+        self.save()
+
+    def _calculate_totals(self, items=None):
         """Calculates the total of the order
 
         Uses the items argument to calculate the cost
@@ -224,40 +208,109 @@ class Estimate(models.Model):
         we are creating a new Acknowledgement, and the
         items and acknowledgement have not yet been saved
         """
+        # Totals
+        # Total of items totals
+        subtotal = 0
+        # Total after discount        
+        post_discount_total = 0
+        # Total after second discount
+        total = 0
+        # Total after Vat
+        grand_total = 0
+
+        # Running total to check
         running_total = 0
 
-        #Define items if not already defined
-        if not items:
-            items = self.items.exclude(deleted=True)
+        # Discount amounts
+        # First Discount
+        discount_amount = 0
+        # Second Amount
+        second_discount_amount = 0
+
+        # Calculations
+        # Calculate the subtotal
         for product in items:
             logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(product.unit_price, product.quantity, product.total))
-            running_total += product.total
+            subtotal += product.total
+
+        # Set running_total to subtotal
+        running_total += subtotal
             
-        #Set the subtotal
+        # Set the subtotal
         logger.debug("subtotal: = {0:.2f}".format(running_total))
-        self.subtotal = running_total
+        subtotal = running_total
         
-        #Calculate and apply discount
-        discount = (Decimal(self.discount) / 100) * running_total
-        running_total -= discount
-        logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount))
+        # Calculate discount
+        discount_amount = (Decimal(self.discount) / 100) * subtotal
+        logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount_amount))
 
-        # Calculate and apply a second discount
-        second_discount = (Decimal(self.second_discount) / 100) * running_total
-        running_total -= second_discount
-        logger.debug("second discount {0}%: - {1:.2f}".format(self.second_discount, second_discount))
+        # Assert Discount amount is proportional to subtotal percent
+        assert (discount_amount / subtotal) == Decimal(self.discount) / 100, "{0}: {1}".format((discount_amount / subtotal), Decimal(self.discount) / 100)
+
+        # Apply discount
+        post_discount_total = subtotal - discount_amount
+        running_total -= discount_amount
+
+        # Assert Discounted amount is proportional to discount and subtotal
+        assert post_discount_total == running_total
+        assert (post_discount_total / subtotal) == ((100 - Decimal(self.discount)) / 100)
+
+        # Calculate a second discount
+        second_discount_amount = (Decimal(self.second_discount) / 100) * post_discount_total
+        logger.debug("second discount {0}%: - {1:.2f}".format(self.second_discount, second_discount_amount))
         
-        logger.debug("total: = {0:.2f}".format(running_total))
+        # Assert second discount amount is proportional to total percent
+        assert (second_discount_amount / post_discount_total) == Decimal(self.second_discount) / 100
+        # Assert second discount amount is not proportional to total percent
+        if self.second_discount > 0:
+            assert (second_discount_amount / subtotal) != Decimal(self.second_discount) / 100
+
+        # Apply second discount
+        total = post_discount_total - second_discount_amount
+        running_total -= second_discount_amount
+        logger.debug("total: = {0:.2f}".format(total))
+
+        # Assert total is proportional to subtotal
+        assert total == running_total
+        tpart1 = (total / subtotal)
+        tpart2 = 1 - (Decimal(self.discount) / 100) 
+        tpart2 = tpart2 - ((Decimal(self.discount) / 100) * (Decimal(self.second_discount) / 100))
+        assert tpart2 > 0 and tpart2 <= 1
+        assert tpart1 == tpart2, "{0}: {1}".format(tpart1, tpart2)
+        if self.second_discount > 0:
+            t2part1 = (total / subtotal)
+            t2part2 = 1 - (Decimal(self.discount) / 100) 
+            t2part2 = tpart2 - (Decimal(self.second_discount) / 100)
+            assert t2part2 > 0 and t2part2 <= 1
+            assert t2part1 != t2part2
 
         
-        #Calculate and apply vat
-        vat = (Decimal(self.vat) / 100) * running_total
-        running_total += vat
-        logger.debug("vat: + {0:.2f}".format(vat))
-        logger.debug("grand total: = {0:.2f}".format(running_total))
-        
-        #Apply total
-        self.total = running_total
+        #Calculate VAT
+        vat_amount = (Decimal(self.vat) / 100) * total
+        logger.debug("vat: + {0:.2f}".format(vat_amount))
+
+        # Assert VAT
+        assert (vat_amount / total) == (Decimal(self.vat) / 100)
+
+        # Apply VAT
+        grand_total = total + vat_amount
+        running_total += vat_amount
+        logger.debug("grand total: = {0:.2f}".format(grand_total))
+
+        # Assert second discounted amount is proportional to discount and total
+        assert grand_total == running_total
+        assert (grand_total / total) == Decimal('1') + (Decimal(self.vat) / 100)
+        assert grand_total == (subtotal - discount_amount - second_discount_amount + vat_amount)
+
+        return {
+            'subtotal': subtotal,
+            'post_discount_total': post_discount_total,
+            'total': total,
+            'grand_total': grand_total,
+            'vat_amount': vat_amount,
+            'discount_amount': discount_amount,
+            'second_discount_amount': second_discount_amount
+        }
 
     def _change_fabric(self, product, fabric, employee=None):
         """Changes the fabric for a product
@@ -343,13 +396,6 @@ class Item(models.Model):
     estimate = models.ForeignKey(Estimate, related_name="items")
     product = models.ForeignKey(Product, related_name="estimate_item_product")
     type = models.TextField(null=True, blank=True)
-    quantity = models.IntegerField(null=False)
-    unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
-    total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
-    width = models.IntegerField(db_column='width', default=0, null=True)
-    depth = models.IntegerField(db_column='depth', default=0, null=True)
-    height = models.IntegerField(db_column='height', default=0, null=True)
-    units = models.CharField(max_length=20, default='mm', blank=True, null=True)
     fabric = models.ForeignKey(Fabric, null=True, blank=True, related_name="estimate_item_fabric")
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
@@ -361,6 +407,17 @@ class Item(models.Model):
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
+
+    # Dimensions
+    width = models.IntegerField(db_column='width', default=0, null=True)
+    depth = models.IntegerField(db_column='depth', default=0, null=True)
+    height = models.IntegerField(db_column='height', default=0, null=True)
+    units = models.CharField(max_length=20, default='mm', blank=True, null=True)
+
+    # Price Related
+    quantity = models.IntegerField(null=False)
+    unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
+    total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
 
     class Meta:
         permissions = (('change_item_price', 'Can edit item price'),

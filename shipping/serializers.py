@@ -173,13 +173,14 @@ class ShippingSerializer(serializers.ModelSerializer):
             pass
             
         try:
-            ret['acknowledgement'] = {'id': instance.acknowledgement.id}
+            ret['acknowledgement'] = {'id': instance.acknowledgement.id,
+                                      'status': instance.acknowledgement.status}
         except AttributeError:
             pass
             
         try:
-            ret['project'] = {'id': instance.project.id,
-                              'codename': instance.project.codename}
+            ret['project'] = {'id': instance.project.id or instance.acknowledgement.project.id,
+                              'codename': instance.project.codename or instance.acknowledgement.project.codename}
         except AttributeError:
             pass
 

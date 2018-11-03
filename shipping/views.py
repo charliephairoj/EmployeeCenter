@@ -90,7 +90,7 @@ class ShippingMixin(object):
             request.data['customer'] = Acknowledgement.objects.get(pk=request.data['acknowledgement']).customer.id
         except Exception:
             pass
-        logger.debug(request.data)
+
         return request
 
     def _format_primary_key_data_for_put(self, request):

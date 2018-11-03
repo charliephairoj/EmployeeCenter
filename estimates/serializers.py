@@ -78,7 +78,7 @@ class ItemListSerializer(serializers.ListSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
     pillows = PillowSerializer(required=False, many=True)
-    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
+    
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = S3ObjectFieldSerializer(required=False, allow_null=True)
@@ -86,7 +86,7 @@ class ItemSerializer(serializers.ModelSerializer):
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
-    quantity = serializers.DecimalField(decimal_places=2, max_digits=12, default=1)
+    
     #custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
     #                                        allow_null=True)
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12,
@@ -95,11 +95,15 @@ class ItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     type = serializers.CharField(required=False, allow_null=True)
 
+    # Price Related
+    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
+    quantity = serializers.DecimalField(decimal_places=2, max_digits=12, default=1)
+    
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'comments', 
                   'product', 'pillows', 'unit_price', 'fabric', 'image', 'units',
-                  'quantity', 'fabric_quantity', 'type', )
+                  'quantity', 'fabric_quantity', 'type', 'total')
         read_only_fields = ('total', )
         list_serializer_class = ItemListSerializer
 
@@ -221,15 +225,25 @@ class EstimateSerializer(serializers.ModelSerializer):
                                   allow_null=True)
     acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
 
+    # Totals
+
     class Meta:
         model = Estimate
-        read_only_fields = ('total', 'subtotal', 'time_created', 'employee')
+        fields = ('grand_total', 'total', 'post_discount_total', 'subtotal',
+                  'time_created', 'employee')
+        read_only_fields = ('grand_total',
+                            'total',
+                            'post_discount_total',
+                            'subtotal',
+                            'time_created',
+                            'employee')
+
         exclude = ('pdf', 'deal')
         depth = 1
 
     def to_internal_value(self, data):
         ret = super(EstimateSerializer, self).to_internal_value(data)
-        logger.debug(data)
+
         try:
             ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
         except (Customer.DoesNotExist, KeyError) as e:
@@ -332,8 +346,6 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        logger.debug(validated_data)
-        logger.debug(self.initial_data)
         instance.vat = validated_data.pop('vat', instance.vat)
         instance.discount = validated_data.pop('discount', instance.discount)
         instance.second_discount = validated_data.pop('second_discount', instance.second_discount)

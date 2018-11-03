@@ -2,6 +2,8 @@
 import os
 from EmployeeCenter.settings import *
 
+#AUTH_PROFILE_MODULE = "auth.User"
+
 
 DATABASES = {
     'default': {

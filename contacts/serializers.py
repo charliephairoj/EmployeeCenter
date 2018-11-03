@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AddressSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     address1 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    address2 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    #address2 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     city = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     zipcode = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -19,7 +19,7 @@ class AddressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Address
-        fields = ("id", 'address1', 'address2', 'city', 'territory', 'country', 'zipcode', 'latitude', 'longitude', 'user_defined_latlng')
+        fields = ("id", 'address1', 'city', 'territory', 'country', 'zipcode')
         
     def create(self, validated_data):
         """
@@ -59,7 +59,7 @@ class ContactMixin(object):
         """
         addresses_data = validated_data.pop('addresses', None)
         if addresses_data is None:
-            addresses_data = [validated_data.pop('address', None)]
+            addresses_data = [validated_data.pop('address', [])]
         contacts_data = validated_data.pop('contacts', None)
         
         try:
@@ -79,6 +79,7 @@ class ContactMixin(object):
             address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
             if address_serializer.is_valid(raise_exception=True):
                 address_serializer.save()
+
         if contacts_data:
             self._sync_contacts(instance, contacts_data)
                         
@@ -88,7 +89,8 @@ class ContactMixin(object):
         instance.save()
         
         try:
-            instance.sync_google_contacts()
+
+            instance.sync_google_contacts(self.context['request'].user)
         except Exception as e:
             logger.warn(e)
 
@@ -176,8 +178,10 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         addresses_data = validated_data.pop('addresses', None)
         if addresses_data is None:
             addresses_data = [validated_data.pop('addresss', None)]
+            if addresses_data[0] is None:
+                addresses_data = []
             
-        addresses_data = self.context['request'].data.get('addresses', None)
+        #addresses_data = self.context['request'].data.get('addresses', None)
         
         contacts_data = validated_data.pop('contacts', None)
 

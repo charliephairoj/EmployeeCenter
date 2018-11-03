@@ -171,28 +171,31 @@ class EstimatePDF(object):
         data = []
         #Add supplier name
         data.append(['Customer:', self.customer.name])
-
-        if self.customer.telephone:
-            data.append(['Telephone:', self.customer.telephone])
-        
-        if self.customer.email:
-            data.append(['Email:', self.customer.email])
             
         try:
             #extract supplier address
             address = self.customer.addresses.all()[0]
             #Extract address
-            addr = address.address1 if address.address1 != None else ''
-            city = address.city if address.city != None else ''
-            territory = address.territory if address.territory != None else ''
-            country = address.country if address.country != None else ''
-            zipcode = address.zipcode if address.zipcode != None else ''
+            addr = address.address1 or ''
+            city = address.city or ''
+            territory = address.territory or ''
+            country = address.country or ''
+            zipcode = address.zipcode or ''
             #add supplier address data
             data.append(['', addr])
             data.append(['', u'{0}, {1}'.format(city, territory)])
             data.append(['', u"{0} {1}".format(country, zipcode)])
         except IndexError:
             pass
+
+        if self.customer.telephone:
+            data.append(['Telephone:', self.customer.telephone])
+        
+        if self.customer.email:
+            data.append(['Email:', self.customer.email])
+
+        if self.customer.tax_id:
+            data.append(['Tax ID:', self.customer.tax_id])
 
         #Create Table
         table = Table(data, colWidths=(80, 440))
@@ -464,7 +467,7 @@ class EstimatePDF(object):
         #what to do if there is vat or discount
         # Provide account details for 'Dellarobbia Thailand'
         if self.ack.company.lower() == 'dellarobbia thailand':
-            quotation_details = "Prices are valid for 30 Days\n"
+            quotation_details = u"Prices are valid for 30 Days\n"
             quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
             quotation_details += "Transfer deposit to:\n"
             quotation_details += "Dellarobbia (Thailand) Co., Ltd.\n"
@@ -472,7 +475,7 @@ class EstimatePDF(object):
             quotation_details += "Bank: Thanachart, Branch: Lam Lukka Khlong 4"
         # Provide account details for 'Alinea Group'
         else: 
-            quotation_details = "Prices are valid for 30 Days\n"
+            quotation_details = u"Prices are valid for 30 Days\n"
             quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
             quotation_details += "Transfer deposit to:\n"
             if self.ack.vat > 0:
@@ -484,12 +487,59 @@ class EstimatePDF(object):
                 quotation_details += "404-414-523-0\n"
                 quotation_details += "Bank: Siam Commercial Bank, Branch: Lam Lukka Khlong 4"
 
+        # Adding Totals to the data container
+
+        # Add Subtotal
+        if self.ack.vat or self.ack.discount or self.ack.second_discount:
+            data.append([quotation_details,
+                        '',
+                        '',
+                        u'Subtotal',
+                        "{0:,.2f}".format(self.ack.subtotal)])
+        # Add Discount if greater than 0
+        if self.ack.discount_amount > 0:
+            data.append(['',
+                         '',
+                         '',
+                         u'Discount {0}%'.format(self.ack.discount),
+                         u"-{:,.2f}".format(self.ack.discount_amount)])
+        # Add Second Discount if greater than 0
+        if self.ack.second_discount_amount > 0:
+            data.append(['',
+                         '',
+                         '',
+                         u'Additional Discount {0}%'.format(self.ack.second_discount),
+                         u"-{:,.2f}".format(self.ack.second_discount_amount)])
+        if (self.ack.second_discount > 0 or self.ack.discount > 0) and self.ack.vat:
+            data.append(['',
+                         '',
+                         '',
+                         'Total',
+                         "{0:,.2f}".format(self.ack.total)])
+
+        if self.ack.vat_amount:
+            data.append(['',
+                         '',
+                         '',
+                         'Vat {0:.0f}%'.format(self.ack.vat),
+                         "{0:,.2f}".format(self.ack.vat_amount)])
+
+        final_total_title = u"Grand Total" if (self.ack.discount or self.ack.second_discount) and self.ack.vat else u"Total"
+        data.append(['',
+                     '',
+                     '',
+                     final_total_title,
+                     "{0:,.2f}".format(self.ack.grand_total)])
+        
+        # To be deleted. replaced by above.
+        """
         if self.ack.vat > 0 or self.ack.discount > 0 or self.ack.deposit:
             
 
             #get subtotal and add to pdf
             data.append([quotation_details, '', '', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
             total = self.ack.subtotal
+
             #add discount area if discount greater than 0
             if self.ack.discount != 0:
                 discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
@@ -526,14 +576,15 @@ class EstimatePDF(object):
                 #calculate vat and add to pdf
                 vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
                 data.append(['', '', '', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
-        data.append([quotation_details, '', '', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
+        data.append([quotation_details, '', '', 'Grand Total', "{0:,.2f}".format(self.ack.grand_total)])
+        """
         style_list.append(('VALIGN', (0,-1), (-1,-1), 'TOP'))
 
         if self.ack.deposit > 0:
-            deposit_amount = self.ack.total * (self.ack.deposit/Decimal('100'))
+            deposit_amount = self.ack.grand_total * (self.ack.deposit/Decimal('100'))
             data.append(['', '', '', 'Deposit {0}%'.format(self.ack.deposit), "{0:,.2f}".format(deposit_amount)])
 
-            balance_amount = self.ack.total - deposit_amount
+            balance_amount = self.ack.grand_total - deposit_amount
             data.append(['', '', '', 'Balance {0}%'.format(Decimal('100') - self.ack.deposit), "{0:,.2f}".format(balance_amount)])
 
             style_list.append(('LINEABOVE', (-2, -2), (-1,-1), 1, colors.CMYKColor(black=80)))

@@ -5,11 +5,14 @@ import logging
 
 from django.db import models
 from django.contrib import admin
-from administrator.models import User
+from administrator.models import User, CredentialsModel, OAuth2TokenFromCredentials, Storage
 from django.conf import settings
 from boto.s3.connection import S3Connection, Location
 from boto.s3.key import Key
 import boto
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from httplib2 import Http
 
 
 logger = logging.getLogger(__name__)
@@ -160,5 +163,34 @@ class Employee(models.Model):
     user = models.OneToOneField(User)
     telephone = models.TextField(null=True)
     #image = models.ForeignKey(S3Object, null=True)
+
+
+class DriveObject(models.Model):
+    service = None
+    file_id = models.TextField()
+    filename = models.TextField()
+    url = models.TextField()
+
+    def upload(self, filename, user=None):
+        service = self.get_service(user)
+        file_metadata = {
+            'name': filename,
+        }
+        media = MediaFileUpload(filename)
+        file = service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
+        logger.debug(file)
+        self.file_id = file.get('id')
+        self.url = file.get('webViewLink')
+        self.filename = filename
+        self.save()
+
+    def get_service(self, user=None):
+        return self.service or self._build_service(user)
     
+    def _build_service(self, user=None):
+        storage = Storage(CredentialsModel, 'id', user, 'credential')
+        cred = storage.get()
+        self.service = build('drive', 'v3', credentials=cred)
+
+        return self.service
     

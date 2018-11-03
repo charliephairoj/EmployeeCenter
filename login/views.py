@@ -33,11 +33,13 @@ CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 scopes = 'https://www.googleapis.com/auth/calendar'
 scopes += ' https://www.googleapis.com/auth/calendar.readonly'
 scopes += ' https://www.google.com/m8/feeds/'
+scopes += ' https://www.googleapis.com/auth/drive.appdata'
+scopes += ' https://www.googleapis.com/auth/drive.file'
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope=scopes,
-    redirect_uri='https://employee.alineagroup.co/oauth2callback')
-    #redirect_uri='http://localhost:8000/oauth2callback')
+    #redirect_uri='https://employee.alineagroup.co/oauth2callback')
+    redirect_uri='http://localhost:8000/oauth2callback')
 
 
 

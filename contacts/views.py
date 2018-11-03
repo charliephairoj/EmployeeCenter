@@ -86,18 +86,6 @@ class CustomerMixin(object):
     
 class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         
-    def post(self, request, *args, **kwargs):
-        """
-        Override the 'put' method in order
-        to populate fields
-        """
-        
-        try:
-            request.data['addresses'] = list(request.data['addresses'].values())
-        except Exception as e:
-            logger.warn(e)
-
-        return super(CustomerList, self).post(request, *args, **kwargs)
 
     def get_queryset(self):
         """
