@@ -229,8 +229,6 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estimate
-        fields = ('grand_total', 'total', 'post_discount_total', 'subtotal',
-                  'time_created', 'employee')
         read_only_fields = ('grand_total',
                             'total',
                             'post_discount_total',
