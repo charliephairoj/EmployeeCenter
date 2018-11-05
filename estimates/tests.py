@@ -71,6 +71,7 @@ base_ack = {'customer': base_customer,
             'po_id': '123-213-231',
             'vat': 0,
             'delivery_date': base_delivery_date.isoformat(),
+            'lead_time': '4 Weeks',
             'employee': {'id': 1},
             #New Project to be created
             'project': {'codename': 'Ladawan1'},
@@ -84,6 +85,7 @@ base_ack = {'customer': base_customer,
                        {'id': 1,
                        'description': 'Test Sofa Max',
                        'quantity': 2,
+                        'unit_price': 100000,
                        'fabric': {'id':1},
                        'fabric_quantity': 10,
                        'pillows':[{"type": "back",
@@ -101,6 +103,7 @@ base_ack = {'customer': base_customer,
                           'description': 'High Gloss Table',
                           'quantity': 1,
                           'is_custom_size': True,
+                          'unit_price': 100000,
                           'width': 1500,
                           'depth': 760,
                           'height': 320,
@@ -275,7 +278,7 @@ class EstimateResourceTest(APITestCase):
         return self.user
 
     def open_url(self, url):
-        webbrowser.open(url)
+        pass #webbrowser.open(url)
             
     def test_get_list(self):
         """
@@ -304,7 +307,6 @@ class EstimateResourceTest(APITestCase):
         self.assertIsNotNone(ack)
         self.assertEqual(ack['id'], 1)
         self.assertEqual(ack['customer']['id'], 1)
-        self.assertEqual(ack['po_id'], '123-213-231')
         self.assertEqual(dateutil.parser.parse(ack['delivery_date']), base_delivery_date)
         self.assertEqual(Decimal(ack['vat']), 0)
         self.assertEqual(Decimal(ack['grand_total']), Decimal(0))
@@ -318,16 +320,14 @@ class EstimateResourceTest(APITestCase):
         ack1_data['company'] = 'Dellarobbia Thailand'
         ack
         
-    def test_post_with_discount(self):
+    def test_post_with_discount_on_data(self):
         """
         Testing POSTing data to the api
         """
         logger.debug("\n\n Testing creating acknowledgement with a discount \n")
-        #Apply a discount to the customer
-        self.customer.discount = 50
-        self.customer.save()
         
         modified_data = copy.deepcopy(base_ack)
+        modified_data['discount'] = 50
         modified_data['items'][-1]['fabric'] = {'id': 1,
                                                 'image': {'id': 1}}
         modified_data['items'][-1]['fabric_quantity'] = 8
@@ -344,7 +344,7 @@ class EstimateResourceTest(APITestCase):
         
         #Verify that an acknowledgement is created in the system
         self.assertEqual(Estimate.objects.count(), 2)
-        logger.debug(pp.pformat(resp.data))
+
         #Verify the resulting acknowledgement
         #that is returned from the post data
         ack = resp.data
@@ -710,13 +710,10 @@ class EstimateResourceTest(APITestCase):
         """
         logger.debug("\n\n Testing creating acknowledgement with a discount and vat \n")
         
-        #Set customer discount
-        self.customer.discount = 50
-        self.customer.save()
-        
         #POST and verify the response
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
+        ack_data['discount'] = 50
         self.assertEqual(Estimate.objects.count(), 1)
         resp = self.client.post('/api/v1/estimate/', format='json',
                                     data=ack_data,
@@ -789,15 +786,13 @@ class EstimateResourceTest(APITestCase):
         Testing POSTing data to the api if there
         is vat
         """
-        logger.debug("\n\n Testing creating acknowledgement with a discount and vat \n")
+        logger.debug("\n\n Testing creating acknowledgement with both discounts and vat \n")
         
-        #Set customer discount
-        self.customer.discount = 50
-        self.customer.save()
-        
+
         #POST and verify the response
         ack_data = base_ack.copy()
         ack_data['vat'] = 7
+        ack_data['discount'] = 50
         ack_data['second_discount'] = 10
         self.assertEqual(Estimate.objects.count(), 1)
         resp = self.client.post('/api/v1/estimate/', format='json',
@@ -1022,7 +1017,7 @@ class EstimateResourceTest(APITestCase):
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Estimate.objects.count(), 1)
         
@@ -1041,17 +1036,16 @@ class EstimateResourceTest(APITestCase):
         item2 = items[1]
         self.assertEqual(item2.description, 'F-04 Sofa')
     
-    def test_changing_delivery_date(self):
+    def test_changing_lead_time(self):
         """
         Test making a PUT call
         """
-        logger.debug("\n\n Testing updating via put \n")
+        logger.debug("\n\n Testing updating lead time via put \n")
         
-        d = datetime.now(pytz.utc)
     
         ack_data = copy.deepcopy(base_ack)
        
-        ack_data['delivery_date'] = d
+        ack_data['lead_time'] = '6 Weeks'
         self.assertEqual(Estimate.objects.count(), 1)
         resp = self.client.put('/api/v1/estimate/1/', 
                                    format='json',
@@ -1064,10 +1058,10 @@ class EstimateResourceTest(APITestCase):
         #logger.debug(ack['delivery_date'])
         #d1 = datetime.strptime(ack['delivery_date'])
         
-        #self.assertEqual(d1.date(), d.date())
+        self.assertEqual(ack['lead_time'], '6 Weeks')
         
         ack = Estimate.objects.all()[0]
-        self.assertEqual(ack.delivery_date.date(), d.date())
+        self.assertEqual(ack.lead_time, '6 Weeks')
         
     #@unittest.skip('ok')    
     def test_delete(self):

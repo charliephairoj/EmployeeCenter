@@ -26,29 +26,32 @@ logger = logging.getLogger(__name__)
 
 
 class Estimate(models.Model):
-    po_id = models.TextField(default=None, null=True, blank=True)
+    po_id = models.TextField(default=None, null=True)
     company = models.TextField(default="Alinea Group")
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
+    delivery_date = models.DateTimeField(db_column='delivery_date', null=True, default=None)
     status = models.TextField(default='ACKNOWLEDGED', db_column='status')
-    remarks = models.TextField(null=True, default=None, blank=True)
-    fob = models.TextField(null=True, blank=True)
-    shipping_method = models.TextField(null=True, blank=True)
+    remarks = models.TextField(default='', blank=True)
+    fob = models.TextField(default="Bangkok", blank=True)
+    shipping_method = models.TextField(default="Truck", blank=True)
     
-    project = models.ForeignKey(Project, null=True, blank=True, related_name='estimates')
+    project = models.ForeignKey(Project, null=True, related_name='estimates')
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object, null=True, related_name='+')
-    deposit = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimates")
     acknowledgement = models.ForeignKey(Acknowledgement, null=True, related_name="quotations")
     deal = models.ForeignKey(Deal, null=True, related_name="quotations")
-    lead_time = models.TextField(default="4 weeks")
 
-    #VATs
-    vat = models.IntegerField(default=0, null=True)
+    # Order Terms
+    currency = models.TextField(default='THB')
+    lead_time = models.TextField(default="4 weeks")
+    deposit = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    # VATs
+    vat = models.IntegerField(default=0)
     vat_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     #Discounts
@@ -67,7 +70,7 @@ class Estimate(models.Model):
     # Total after all discounts and Vats
     grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
-
+    # To Be Deprecated
     """
     @property
     def delivery_date(self):
@@ -238,8 +241,19 @@ class Estimate(models.Model):
             
         # Set the subtotal
         logger.debug("subtotal: = {0:.2f}".format(running_total))
-        subtotal = running_total
         
+        if subtotal == 0:
+            return {
+                'subtotal': 0,
+                'post_discount_total': 0,
+                'total': 0,
+                'grand_total': 0,
+                'vat_amount': 0,
+                'discount_amount': 0,
+                'second_discount_amount': 0
+            }
+
+
         # Calculate discount
         discount_amount = (Decimal(self.discount) / 100) * subtotal
         logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount_amount))
@@ -394,30 +408,30 @@ class File(models.Model):
     
 class Item(models.Model):
     estimate = models.ForeignKey(Estimate, related_name="items")
-    product = models.ForeignKey(Product, related_name="estimate_item_product")
+    product = models.ForeignKey(Product, null=True, related_name="estimate_item_product")
     type = models.TextField(null=True, blank=True)
-    fabric = models.ForeignKey(Fabric, null=True, blank=True, related_name="estimate_item_fabric")
+    fabric = models.ForeignKey(Fabric, null=True, related_name="estimate_item_fabric")
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
-    status = models.CharField(max_length=50, default="ACKNOWLEDGED")
-    comments = models.TextField(null=True, blank=True)
-    location = models.TextField(null=True, blank=True)
-    image = models.ForeignKey(S3Object, null=True, blank=True, related_name="estimate_item_image")
+    status = models.TextField(default="open")
+    comments = models.TextField(default="", blank=True)
+    location = models.TextField(default="", blank=True)
+    image = models.ForeignKey(S3Object, null=True, related_name="estimate_item_image")
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     # Dimensions
-    width = models.IntegerField(db_column='width', default=0, null=True)
-    depth = models.IntegerField(db_column='depth', default=0, null=True)
-    height = models.IntegerField(db_column='height', default=0, null=True)
-    units = models.CharField(max_length=20, default='mm', blank=True, null=True)
+    width = models.IntegerField(db_column='width', default=0)
+    depth = models.IntegerField(db_column='depth', default=0)
+    height = models.IntegerField(db_column='height', default=0)
+    units = models.TextField(default='mm')
 
     # Price Related
-    quantity = models.IntegerField(null=False)
-    unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
-    total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
+    quantity = models.IntegerField(default=1)
+    unit_price = models.DecimalField(default=0, max_digits=15, decimal_places=2)
+    total = models.DecimalField(default=0, max_digits=15, decimal_places=2)
 
     class Meta:
         permissions = (('change_item_price', 'Can edit item price'),

@@ -275,6 +275,7 @@ class PayrollSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Payroll
+        fields = ('start_date', 'end_date')
         
     def create(self, validated_data):
         

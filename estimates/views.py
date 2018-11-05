@@ -128,10 +128,10 @@ class EstimateMixin(object):
                             pass
                             
                         try:
-                            request.data['items'][index]['product'] = item['id']
+                            request.data['items'][index]['product'] = {'id': item['id']}
                             del request.data['items'][index]['id']
                         except KeyError as e:
-                            request.data['items'][index]['product'] = 10436
+                            request.data['items'][index]['product'] = {'id': 10436}
                         
                         """
                         try:
@@ -180,7 +180,12 @@ class EstimateMixin(object):
                             pass
                             
                         if 'product' not in request.data['items'][index]:
-                            request.data['items'][index]['product'] = 10436
+                            try:
+                                request.data['items'][index]['product'] = {'id': item['id']}
+                                del request.data['items'][index]['id']
+                            except KeyError as e:
+                                request.data['items'][index]['product'] = {'id': 10436}
+
 
                         """    
                         try:
@@ -284,34 +289,3 @@ class EstimateDetail(EstimateMixin, generics.RetrieveUpdateDestroyAPIView):
             
         return super(EstimateDetail, self).put(request, *args, **kwargs)
     
-class AcknowledgementViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows acknowledgements to be view or editted
-    """
-    queryset = Estimate.objects.all()
-    serializer_class = EstimateSerializer
-    
-    def create(self, request):
-        data = request.data
-        customer = self._get_customer(request.data['customer']['id'])
-        serializer = self.get_serializer(data=request.data)
-        
-        if serializer.is_valid():
-           
-            serializer.save()
-        else:
-            logger.debug(serializer.errors)
-        logger.debug(serializer.data)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        
-    def _get_customer(self, customer_id):
-        return Customer.objects.get(pk=customer_id)
-        
-
-class AcknowledgementItemViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows acknowledgement items to be viewed or editted
-    """
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer

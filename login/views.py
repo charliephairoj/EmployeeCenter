@@ -38,8 +38,8 @@ scopes += ' https://www.googleapis.com/auth/drive.file'
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
     scope=scopes,
-    #redirect_uri='https://employee.alineagroup.co/oauth2callback')
-    redirect_uri='http://localhost:8000/oauth2callback')
+    redirect_uri='https://employee.alineagroup.co/oauth2callback')
+    #redirect_uri='http://localhost:8000/oauth2callback')
 
 
 

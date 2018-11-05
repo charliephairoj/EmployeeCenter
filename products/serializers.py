@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ConfigurationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Configuration
-        field = ('id', 'configuration')
+        fields = ('id', 'configuration')
 
 
 class ModelSerializer(serializers.ModelSerializer):
@@ -29,7 +29,6 @@ class ModelSerializer(serializers.ModelSerializer):
      
     class Meta:
         model = Model
-        field = ('id', 'model', 'images', 'has_back_pillows',)
         exclude = ('image_url', 'bucket', 'image_key')
 
     def create(self, validated_data):
@@ -125,13 +124,14 @@ class ModelSerializer(serializers.ModelSerializer):
 class PillowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillow
-        field = ('id', 'type', 'quantity')
+        fields = ('id', 'type', 'quantity')
 
 
 class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
+        fields = ('width', 'height', 'depth', 'price', 'id')
 
 
 class UpholsterySerializer(serializers.ModelSerializer):
@@ -333,7 +333,7 @@ class ProductSupplySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductSupply
-        field = ('id', 'description', 'cost', 'quantity')
+        fields = ('id', 'description', 'cost', 'quantity', 'product', 'supply')
 
     def to_representation(self, instance):
         """
