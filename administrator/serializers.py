@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import Permission, Group
 from django.db import models
 import boto
+from django.conf import settings
 
 from administrator.models import User, AWSUser, Log, Label
 
@@ -162,6 +163,7 @@ class UserSerializer(serializers.ModelSerializer):
         client_groups = validated_data.pop('groups', [])
         server_groups = instance.groups.all()
         id_list = [group['id'] for group in client_groups]
+        user = self.context['request'].user
         
         #Add new groups
         for client_group in client_groups:
@@ -183,8 +185,10 @@ class UserSerializer(serializers.ModelSerializer):
                                                                 data)
                 Log.objects.create(message=message, 
                                    type="ADMINISTRATION", 
-                                   user=self.context['request'].user)
+                                   user=user)
                 setattr(instance, field, data)
+
+        instance.save()
         
         return instance
 
@@ -210,7 +214,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active')
+        fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active', 'web_ui_version')
         depth = 0
         
 
