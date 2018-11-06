@@ -81,7 +81,7 @@ class ItemSerializer(serializers.ModelSerializer):
     comments = serializers.CharField(default='', allow_blank=True, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = S3ObjectFieldSerializer(required=False, allow_null=True)
-    units = serializers.CharField(default='mm')
+    units = serializers.CharField(default='mm', allow_null=True)
     width = serializers.IntegerField(default=0)
     depth = serializers.IntegerField(default=0)
     height = serializers.IntegerField(default=0)
