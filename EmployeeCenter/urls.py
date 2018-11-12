@@ -252,7 +252,7 @@ urlpatterns += [
 
 
 urlpatterns += [
-    url(r'^(?P<path>.*)$', views.serve)
+    url(r'^static/(?P<path>.*)$', views.serve)
 ]
    # url(r'^(?P<path>.*)$', 'django.views.static.serve',
    #     {'document_root': settings.STATIC_ROOT})
