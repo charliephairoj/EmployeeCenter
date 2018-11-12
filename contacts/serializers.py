@@ -169,7 +169,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     
     class Meta:
         model = Customer
-        exclude = ('contact', 'google_contact_id', 'type', 'job_title')
+        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
         
     def update(self, instance, validated_data):
         """
@@ -231,18 +231,17 @@ class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, allow_null=True)
     address = AddressSerializer(required=False, write_only=True, allow_null=True)
-    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(default="", allow_null=True, allow_blank="")
+    telephone = serializers.CharField(default="", allow_null=True, allow_blank="")
     #name_th = serializers.CharField(required=False)
     contacts = ContactSerializer(required=False, many=True, write_only=True, allow_null=True)
-    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    notes = serializers.CharField(default="", allow_null=True, allow_blank=True)
+    bank = serializers.CharField(default="", allow_null=True, allow_blank=True)
+    bank_account_number = serializers.CharField(default="", allow_null=True, allow_blank=True)
 
     class Meta:
         model = Supplier
-        exclude = ('contact', 'google_contact_id')
+        exclude = ('contact', 'google_contact_id', 'trcloud_id', 'fax')
 
     def to_representation(self, instance):
         

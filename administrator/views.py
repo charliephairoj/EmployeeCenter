@@ -237,6 +237,8 @@ def current_user(request):
         modules.append('po')
     if user.has_module_perms('acknowledgements'):
         modules.append('acknowledgements')
+    if user.has_module_perms('estimates'):
+        modules.append('quotations')
     if user.has_module_perms('shipping'):
         modules.append('shipping')
     if user.has_module_perms('supplies'):
