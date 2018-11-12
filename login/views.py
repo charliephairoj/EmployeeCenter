@@ -47,15 +47,10 @@ FLOW = flow_from_clientsecrets(
 @login_required
 @ensure_csrf_cookie
 def main(request):
-    try:
-        if request.user.web_ui_version.lower() == 'v2':
-            return render(request, '/home/djano_worker/athena/index.html')
-        else:
-            return render(request, 'index.html')
-    except Exception as e:
-        logger.warn(e)
-        return render(request, 'index.html')
-        
+    if request.user.web_ui_version.lower() == 'v2':
+        return render(request, '/home/django_worker/athena/index.html')
+    else:
+        return render(request, '/home/django_worker/frontend/dist/index.html')
 
 @login_required
 def password_reset(request):
