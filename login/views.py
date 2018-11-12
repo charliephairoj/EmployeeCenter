@@ -49,7 +49,7 @@ FLOW = flow_from_clientsecrets(
 def main(request):
     try:
         if request.user.web_ui_version.lower() == 'v2':
-            return render(request, 'v2/index.html')
+            return render(request, '/home/djano_worker/athena/index.html')
         else:
             return render(request, 'index.html')
     except Exception as e:

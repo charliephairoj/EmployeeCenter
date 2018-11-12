@@ -612,7 +612,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
            
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """
@@ -635,41 +635,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             logger.warn(e)
         """
 
-        # Retrieve more acknowledgement data if the request is specific
-        pk = self.context['view'].kwargs.get('pk', None)
-        if pk or self.context['request'].method.lower() in ['post', 'put']:
-
-            ret['items'] = ItemSerializer(instance.items.all(), many=True).data
-
-            try:
-                address = instance.customer.addresses.all()[0]
-                ret['customer']['latitude'] = address.latitude
-                ret['customer']['longitude'] = address.longitude
-            except (IndexError, KeyError):
-                pass
-
-            ret['employee'] = {'id': instance.employee.id,
-                               'name': u"{0} {1}".format(instance.employee.first_name, instance.employee.last_name)}
-
-
-
-            
-
-            try:
-                iam_credentials = self.context['request'].user.aws_credentials
-                key = iam_credentials.access_key_id
-                secret = iam_credentials.secret_access_key
-            except:
-                key, secret = ('', '')
-
-            try:
-                ret['files'] = [{'id': file.id,
-                                 'filename': file.key.split('/')[-1],
-                                 'type': file.key.split('.')[-1],
-                                 'url': file.generate_url(key, secret)} for file in instance.files.all()]
-            except AttributeError:
-                pass
-
+       
         return ret
 
     def reserve_fabric(self, fabric, quantity, acknowledgement_id, employee=None):
