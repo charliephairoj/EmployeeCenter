@@ -160,7 +160,6 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    fax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     contacts = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
     bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
