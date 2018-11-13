@@ -70,6 +70,7 @@ router.register(r'api/v1/project-part', PartViewSet)
 router.register(r'api/v1/shift', ShiftViewSet)
 
 if settings.DEBUG:
+    pass
     """
     schema_view = get_schema_view(
     openapi.Info(
@@ -87,6 +88,7 @@ if settings.DEBUG:
 urlpatterns = [
 
 ]
+
 if settings.DEBUG:
     urlpatterns += [
         #url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
@@ -255,6 +257,7 @@ urlpatterns += [
 
 
 urlpatterns += [
+    url(r'^static/(?P<path>.*)$', views.serve)
     url(r'^(?P<path>.*)$', views.serve)
 ]
    # url(r'^(?P<path>.*)$', 'django.views.static.serve',
