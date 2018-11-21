@@ -36,7 +36,7 @@ class ItemSerializer(serializers.ModelSerializer):
     units = serializers.CharField(required=False, allow_null=True, allow_blank=True, write_only=True)
     id = serializers.IntegerField(required=False, allow_null=True)
     image = serializers.SerializerMethodField()
-    cost = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    cost = serializers.DecimalField(default=0, allow_null=True, decimal_places=2, max_digits=15)
 
     class Meta:
         model = Item
@@ -100,11 +100,8 @@ class ItemSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        logger.debug("{0}:{1}".format(unit_cost, supply.cost))
         if unit_cost != supply.cost:
             self._change_supply_cost(supply, unit_cost)
-
-        logger.debug(supply.cost)
 
         return instance
 

@@ -102,7 +102,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     incentive_pay = serializers.DecimalField(required=False, decimal_places=2, max_digits=15, allow_null=True)
     shift = ShiftSerializer(required=False)
     card_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    employment_date = serializers.DateTimeField(required=False, allow_null=True)
+    employment_date = serializers.DateField(required=False, allow_null=True)
     
     class Meta:
         model = Employee
