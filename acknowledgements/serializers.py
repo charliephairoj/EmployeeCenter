@@ -250,6 +250,7 @@ class ItemSerializer(serializers.ModelSerializer):
             pass
         return ret
 
+
 class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -271,8 +272,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
-    files = serializers.ListField(child=serializers.DictField(), write_only=True, required=False,
-                                  allow_null=True)
+    files = S3ObjectFieldSerializer(many=True, allow_null=True)
     delivery_date = serializers.DateTimeField(required=True)
 
     class Meta:
