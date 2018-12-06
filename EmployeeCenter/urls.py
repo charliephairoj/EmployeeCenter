@@ -5,7 +5,7 @@ from django.conf import settings
 from rest_framework.routers import DefaultRouter
 import debug_toolbar
 from django.contrib.staticfiles import views
-#from rest_framework.documentation import include_docs_urls
+from rest_framework.documentation import include_docs_urls
 if settings.DEBUG:
     pass
     #from drf_yasg.views import get_schema_view
@@ -82,6 +82,7 @@ if settings.DEBUG:
     public=True,
     )
     """
+
 
 
 #primary login and url routing

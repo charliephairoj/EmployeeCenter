@@ -32,7 +32,7 @@ class DealSerializer(serializers.ModelSerializer):
     #employee = serializers.PrimaryKeyRelatedField(read_only=True, queryset=User.objects.all())
     status = serializers.CharField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_null=True)
-    last_contacted = serializers.DateTimeField(required=False, allow_null=True)
+    last_contacted = serializers.DateField(required=False, allow_null=True)
     total = serializers.DecimalField(decimal_places=2, max_digits=12, required=False, allow_null=True)
     events = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
 

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    supply = SupplyFieldSerializer()
+    supply = SupplyFieldSerializer(required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -527,9 +527,14 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                              po.supplier.id,
                              po.supplier.name,
                              e)
-            product = Product.objects.create(supply=item.supply, 
+            try:           
+                product = Product.objects.create(supply=item.supply, 
                                              supplier=po.supplier,
                                              unit_cost=item.unit_cost)
+            except TypeError as e:
+                product = Product.objects.create(supply=item.supply, 
+                                             supplier=po.supplier,
+                                             unit_cost=item.cost)
 
         #Calculate the quantity to add to current supply qty
         try:
