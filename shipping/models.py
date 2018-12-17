@@ -21,7 +21,7 @@ from projects.models import Project, Phase, Room
 
 class Shipping(models.Model):
     delivery_date = models.DateTimeField()
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='shippings')
     acknowledgement = models.ForeignKey(Acknowledgement, null=True,
                                         on_delete=models.PROTECT)
     employee = models.ForeignKey(User, on_delete=models.PROTECT)

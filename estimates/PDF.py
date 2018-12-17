@@ -10,6 +10,7 @@ production
  
 from decimal import Decimal
 from pytz import timezone
+import logging
 
 from django.conf import settings
 from django.db import models
@@ -26,6 +27,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.barcode import code39
 from reportlab.graphics.barcode import code128
 
+
+logger = logging.getLogger(__name__)
 
 pdfmetrics.registerFont(TTFont('Tahoma', settings.FONT_ROOT + 'Tahoma.ttf'))
 pdfmetrics.registerFont(TTFont('Garuda', settings.FONT_ROOT + 'Garuda.ttf'))
@@ -227,7 +230,8 @@ class EstimatePDF(object):
         data = []
         #Add Data
         order_date, odObj = self.outputBKKTime(self.ack.time_created, '%B %d, %Y')
-        delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
+        if self.ack.delivery_date:
+            delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
         data.append(['Currency:', self._get_currency()])
         data.append(['Date:', order_date])
         data.append(['Lead Time:', self.ack.lead_time])
@@ -311,7 +315,7 @@ class EstimatePDF(object):
         try:
             data.append(['', self._get_fabric_table(product.fabric, "   Fabric:"), '', '', ''])
         except Exception as e:
-            print e
+            logger.debug(e)
 
         #if product.is_custom_size:
         dimension_str = u''

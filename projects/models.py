@@ -13,7 +13,7 @@ from media.models import S3Object
 
 
 class Project(models.Model):
-    customer = models.ForeignKey(Customer, null=True)
+    customer = models.ForeignKey(Customer, null=True, related_name='projects')
     type = models.TextField(null=True)
     reference = models.TextField(null=True)
     codename = models.TextField(null=True)

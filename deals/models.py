@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class Deal(models.Model):
     description = models.TextField(null=False)
-    customer = models.ForeignKey(Customer, null=True)
+    customer = models.ForeignKey(Customer, null=True, related_name="deals")
     contact = models.ForeignKey(Contact, related_name="deals", null=True)
     acknowledgement = models.ForeignKey(Acknowledgement, null=True)
     #quotation = models.ForeignKey(Estimate, null=True)

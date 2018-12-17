@@ -38,7 +38,7 @@ class Acknowledgement(models.Model):
     po_id = models.TextField(default=None, null=True)
     company = models.TextField(default="Dellarobbia Thailand")
     discount = models.IntegerField(default=0)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='acknowledgements')
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     _delivery_date = models.DateTimeField(db_column='delivery_date', null=True)

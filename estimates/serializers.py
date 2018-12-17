@@ -110,9 +110,12 @@ class ItemSerializer(serializers.ModelSerializer):
             ret['product'] = Product.objects.get(pk=data['product']['id'])
         except (KeyError, Product.DoesNotExist, TypeError) as e:
             try:
-                ret['product'] = Product.objects.get(pk=10436)
-            except Product.DoesNotExist as e:
-                ret['product'] = Product.objects.create()
+                ret['product'] = Product.objects.get(description=data['description'])
+            except (Product.DoesNotExist) as e:
+                try:
+                    ret['product'] = Product.objects.get(pk=10436)
+                except Product.DoesNotExist as e:
+                    ret['product'] = Product.objects.create()
 
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
@@ -272,7 +275,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            logger.warn(e)
+            pass #logger.warn(e)
 
         logger.debug("\n\nEstimate to internal value\n\n")
 
