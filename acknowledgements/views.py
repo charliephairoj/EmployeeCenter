@@ -245,10 +245,10 @@ class AcknowledgementMixin(object):
                             pass
                             
                         try:
-                            request.data['items'][index]['product'] = item['id']
+                            request.data['items'][index]['product'] = {'id': item['id']}
                             del request.data['items'][index]['id']
                         except KeyError as e:
-                            request.data['items'][index]['product'] = 10436
+                            request.data['items'][index]['product'] = {'id': 10436}
                    
         return request
         
