@@ -84,7 +84,7 @@ class ItemListSerializer(serializers.ListSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(required=False, queryset=Product.objects.all())
+    product = ProductSerializer(required=False, allow_null=True)
     pillows = PillowSerializer(required=False, many=True)
     components = ComponentSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, default=0)
@@ -119,6 +119,17 @@ class ItemSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         ret = super(ItemSerializer, self).to_internal_value(data)
+
+        try:
+            ret['product'] = Product.objects.get(pk=data['product']['id'])
+        except (KeyError, Product.DoesNotExist, TypeError) as e:
+            try:
+                ret['product'] = Product.objects.get(description=data['description'])
+            except (Product.DoesNotExist) as e:
+                try:
+                    ret['product'] = Product.objects.get(pk=10436)
+                except Product.DoesNotExist as e:
+                    ret['product'] = Product.objects.create()
 
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
@@ -186,6 +197,7 @@ class ItemSerializer(serializers.ModelSerializer):
         employee = self.context['employee']
         new_qty = validated_data.pop('quantity', instance.quantity)
         new_price = validated_data.pop('unit_price', instance.unit_price)
+        instance.description = validated_data.pop('description', instance.description)
         instance.fabric = validated_data.pop('fabric', instance.fabric)
         instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
         instance.comments = validated_data.pop('comments', instance.comments)
@@ -437,13 +449,19 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         # Get user 
-        employee = self.context['request'].user
+        try:
+            employee = self.context['request'].user
+        except KeyError as e:
+            employee = self.context['employee']
+
         if settings.DEBUG:
             employee = User.objects.get(pk=1)
         
         instance.current_user = employee
         dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
         instance.project = validated_data.pop('project', instance.project)
+        instance.vat = validated_data.pop('vat', instance.vat)
+        instance.discount = validated_data.pop('discount', instance.discount)
         instance.room = validated_data.pop('room', instance.room)
         status = validated_data.pop('status', instance.status)
 
@@ -471,9 +489,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         items_data = self.initial_data['items']
         fabrics = {}
 
+        self._update_items(instance, items_data)
+
+        """
         #Update items individually
         for item_data in items_data:
-            logger.debug(item_data)
 
             try:
                 item_data['product'] = item_data['product'].id
@@ -490,6 +510,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
+
 
             # Update the fabric for this item if 'fabric' key exists
             try:
@@ -551,6 +572,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                             except TypeError:
                                 fabrics[pillow.fabric] = Decimal('0')
 
+        """
         # Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
@@ -637,6 +659,45 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
        
         return ret
+
+    def _update_items(self, instance, items_data):
+        """
+        Handles creation, update, and deletion of items
+        """
+
+        
+        #Maps of id
+        id_list = [item_data.get('id', None) for item_data in items_data]
+        logger.debug(id_list)
+
+        #Delete Items
+        for item in instance.items.all():
+            if item.id not in id_list:
+                item.delete()
+                instance.items.filter(pk=item.id).delete()
+                logger.debug(item)
+                logger.debug(instance.items.all())
+                #item.deleted = True
+                #item.save()
+
+        #Update or Create Item
+        for item_data in items_data:
+            try:
+                item = Item.objects.get(pk=item_data['id'], acknowledgement=instance)
+                serializer = ItemSerializer(item, context={
+                    'customer': instance.customer, 
+                    'acknowledgement': instance, 
+                    'employee': instance.employee}, data=item_data)
+            except (KeyError, Item.DoesNotExist) as e:
+                serializer = ItemSerializer(data=item_data, context={
+                    'customer': instance.customer, 
+                    'acknowledgement': instance,
+                    'employee': instance.employee})
+                
+            if serializer.is_valid(raise_exception=True):
+                item = serializer.save()
+                id_list.append(item.id)
+
 
     def reserve_fabric(self, fabric, quantity, acknowledgement_id, employee=None):
         """

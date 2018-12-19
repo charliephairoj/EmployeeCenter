@@ -42,7 +42,7 @@ class Estimate(models.Model):
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object, null=True, related_name='+')
     #files = models.ManyToManyField(S3Object, through="File", related_name="estimates")
-    acknowledgement = models.ForeignKey(Acknowledgement, null=True, related_name="quotations")
+    acknowledgement = models.OneToOneField(Acknowledgement, null=True, related_name="quotation")
     deal = models.ForeignKey(Deal, null=True, related_name="quotations")
 
     # Order Terms
