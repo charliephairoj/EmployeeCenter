@@ -27,15 +27,17 @@ class Log(models.Model):
 class S3Object(models.Model):
     access_key = ''
     secret_key = ''
+    version_id = models.TextField(default=None)
+    last_modified = models.DateTimeField(auto_now=True)
     bucket = models.TextField()
-    key = models.TextField()   
-    
+    key = models.TextField()  
+
     @classmethod
     def create(cls, filename, key, bucket, access_key='', secret='', delete_original=True, encrypt_key=False, upload=True):
         """
         Creates S3object for a file
         """
-        obj = cls()
+        obj = cls(key=key, bucket=bucket)
         
         
         obj.access_key = access_key
@@ -59,6 +61,33 @@ class S3Object(models.Model):
         obj.save()
         return obj
 
+    @property
+    def data(self):
+        """
+        Return the objects attributes
+        as a dictionary
+        """
+
+        return {'id': self.id,
+                'url': self.generate_url(),
+                'last_modified': self.last_modified}
+
+    @property
+    def _bucket_obj(self):
+        return self._get_bucket()
+
+    @property
+    def key_name(self):
+        return self.key
+
+    @key_name.setter
+    def key_name(self, value):
+        self.key = value
+
+    @property
+    def _key_obj(self):
+        return self._bucket_object.get_key(self.key_name, self.version_id)
+
     def upload(self, filename, delete_original=True, encrypt_key=True):
         """
         Uploads a file for this key
@@ -66,11 +95,11 @@ class S3Object(models.Model):
         self._upload(filename, delete_original, encrypt_key)
         self.save()
 
-    def download(self, filename):
-        bucket = self._get_bucket()
-        k = Key(bucket)
-        k.key = self.key
-        k.get_contents_to_filename(filename)
+    def download(self, filename=None):
+        if filename is None:
+            filename = self.key_name.split('/')[-1]
+
+        self._key_obj.get_contents_to_filename(filename)
        
         return filename
 
@@ -82,7 +111,7 @@ class S3Object(models.Model):
         return conn.generate_url(time,
                                  'GET',
                                  bucket=self.bucket,
-                                 key=self.key,
+                                 key=self.key_name,
                                  force_http=force_http)
 
     def dict(self):
@@ -146,9 +175,10 @@ class S3Object(models.Model):
         """
         bucket = self._get_bucket()
         k = Key(bucket)
-        k.key = self.key
+        k.key = self.key_name
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
+        
         try:
             self.last_modified = dateutil.parser.parse(k.last_modified)
         except:

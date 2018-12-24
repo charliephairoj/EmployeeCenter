@@ -310,7 +310,7 @@ class Supply(models.Model):
      
      
 class Product(models.Model):
-    supplier = models.ForeignKey(Supplier)
+    supplier = models.ForeignKey(Supplier, related_name="products")
     supply = models.ForeignKey(Supply, related_name='products')
     upc = models.TextField(null=True, blank=True)
     cost = models.DecimalField(decimal_places=4, max_digits=16, default=0)

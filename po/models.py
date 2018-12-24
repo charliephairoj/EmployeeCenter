@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class PurchaseOrder(models.Model):
     company = models.TextField(default="Alinea Group")
-    supplier = models.ForeignKey(Supplier)
+    supplier = models.ForeignKey(Supplier, related_name="purchase_orders")
     order_date = models.DateTimeField(auto_now_add=True)
     created = models.DateTimeField(auto_now_add=True)
     receive_date = models.DateTimeField(null=True)

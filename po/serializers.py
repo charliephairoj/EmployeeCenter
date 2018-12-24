@@ -61,9 +61,15 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
         except (Supply.DoesNotExist) as e:
-            ret['supply'] = Supply.objects.create(**data['supply'])
-        except KeyError as e:
-            ret['supply'] = Supply.objects.get(pk=10436)
+            try:
+                ret['supply'] = Supply.objects.get(description=data['description'], product__supplier=self.context['supplier'])
+            except Supply.DoesNotExist as e:
+                ret['supply'] = Supply.objects.create(**data['supply'])
+            except KeyError as e:
+                ret['supply'] = Supply.objects.get(pk=10436)
+            except Supply.MultipleObjectsReturned as e:
+                ret['supply'] = Supply.objects.filter(description=data['description'],              
+                                                      product__supplier=self.context['supplier']).order_by('-id')[0]
 
         if "description" not in ret:
             ret['description'] = ret['supply'].description
@@ -266,7 +272,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             ret['supplier'] = Supplier.objects.get(pk=data['supplier']['id'])
         except (Supplier.DoesNotExist, KeyError) as e:
-            ret['supplier'] = Supplier.objects.create(**data['supplier'])
+            try:
+                ret['supplier'] = Supplier.objects.get(name=data['supplier']['name'])
+            except Supplier.DoesNotExist as e:
+                ret['supplier'] = Supplier.objects.create(**data['supplier'])
+            except Supplier.MultipleObjectsReturned as e:
+                logger.warn(e)
 
         library = {'project': Project, 
                    'room': Room,
@@ -370,7 +381,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         Override the 'update' method in order to increase the revision number and create a new version of the pdf
         """
 
-        employee = self.context['request'].user
+        try:
+            employee = self.context['request'].user
+        except KeyError as e:
+            employee = self.context['employee']
         
         instance.current_user = employee
 
