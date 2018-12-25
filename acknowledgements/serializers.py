@@ -284,7 +284,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
-    files = S3ObjectFieldSerializer(many=True, allow_null=True)
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     delivery_date = serializers.DateTimeField(required=True)
 
     class Meta:
