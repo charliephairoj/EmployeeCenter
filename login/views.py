@@ -48,9 +48,9 @@ FLOW = flow_from_clientsecrets(
 @ensure_csrf_cookie
 def main(request):
     if request.user.web_ui_version.lower() == 'v2':
-        return render(request, 'index.html')
+        #return render(request, 'index.html')
 
-        #return render(request, '/home/webserver-data/athena/index.html')
+        return render(request, '/home/webserver-data/athena/index.html')
     else:
         return render(request, 'index.html')
 
