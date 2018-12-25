@@ -3,6 +3,7 @@
 import logging
 from decimal import Decimal
 import pprint
+from datetime import datetime
 
 from django.db import models
 from django.conf import settings
@@ -233,7 +234,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     files = serializers.ListField(child=serializers.DictField(), required=False,
                                   allow_null=True)
     acknowledgement = AcknowledgementSerializer(required=False, allow_null=True)
-
+    delivery_date = serializers.DateTimeField(required=False, allow_null=True, default=datetime.now())
     # Totals
 
     class Meta:

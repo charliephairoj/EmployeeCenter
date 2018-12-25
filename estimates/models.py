@@ -3,6 +3,7 @@ import dateutil.parser
 import math
 import logging
 from decimal import *
+from datetime import datetime
 
 from pytz import timezone
 from django.conf import settings
@@ -31,7 +32,7 @@ class Estimate(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='quotations')
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
-    delivery_date = models.DateTimeField(db_column='delivery_date', null=True, default=None)
+    delivery_date = models.DateTimeField(db_column='delivery_date', null=True, default=datetime.now())
     status = models.TextField(default='ACKNOWLEDGED', db_column='status')
     remarks = models.TextField(default='', blank=True)
     fob = models.TextField(default="Bangkok", blank=True)
