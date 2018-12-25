@@ -5,6 +5,8 @@ import json
 import time
 import dateutil
 import unicodecsv as csv
+from pytz import timezone
+from datetime import datetime
 
 from rest_framework import viewsets, status
 from rest_framework import generics
@@ -228,6 +230,13 @@ class AcknowledgementMixin(object):
         Format fields that are primary key related so that they may 
         work with DRF
         """
+
+        if request.data['delivery_date'] in [0, '0']:
+            d = datetime.now()
+            bkk_tz = timezone('Asia/Bangkok')
+            d = bkk_tz.localize(d) + timedelta(days=30)
+            request.data['delivery_date'] = d.isoformat()
+
         fields = ['fabric', 'items']
         
         for field in fields:

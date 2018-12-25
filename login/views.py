@@ -48,11 +48,11 @@ FLOW = flow_from_clientsecrets(
 @ensure_csrf_cookie
 def main(request):
     if request.user.web_ui_version.lower() == 'v2':
-        #return render(request, '/home/django_worker/frontend/dist/index.html')
+        return render(request, 'index.html')
 
-        return render(request, '/home/webserver-data/athena/index.html')
+        #return render(request, '/home/webserver-data/athena/index.html')
     else:
-        return render(request, '/home/webserver-data/frontend/dist/index.html')
+        return render(request, 'index.html')
 
 @login_required
 def password_reset(request):
