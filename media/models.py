@@ -30,7 +30,15 @@ class S3Object(models.Model):
     version_id = models.TextField(default=None)
     last_modified = models.DateTimeField(auto_now=True)
     bucket = models.TextField()
-    key = models.TextField()  
+    key = models.TextField() 
+    _size = models.IntegerField(db_column='size', max_length=30, null=True, default=None) 
+
+    def __init__(self, *args, **kwargs):
+
+        super(S3Object, self).__init__(*args, **kwargs)
+
+        self._key_obj = None
+        self._bucket_obj = None
 
     @classmethod
     def create(cls, filename, key, bucket, access_key='', secret='', delete_original=True, encrypt_key=False, upload=True):
@@ -73,8 +81,12 @@ class S3Object(models.Model):
                 'last_modified': self.last_modified}
 
     @property
-    def _bucket_obj(self):
-        return self._get_bucket()
+    def bucket_obj(self):
+
+        if self._bucket_obj is None:
+            self._bucket_obj = self._get_bucket()
+
+        return self._bucket_obj
 
     @property
     def key_name(self):
@@ -85,8 +97,23 @@ class S3Object(models.Model):
         self.key = value
 
     @property
-    def _key_obj(self):
-        return self._bucket_object.get_key(self.key_name, self.version_id)
+    def key_obj(self):
+
+        if self._key_obj is None:
+            self._key_obj = self.bucket_obj.get_key(self.key_name,
+                                                    version_id=self.version_id)
+            self._size = self._key_obj.size
+            self.version_id = self._key_obj.version_id
+            self.save()
+
+        return self._key_obj
+
+    @property
+    def size(self):
+        if self._size is None:
+            self._size = self.key_obj.size
+
+        return self._size
 
     def upload(self, filename, delete_original=True, encrypt_key=True):
         """
@@ -99,7 +126,7 @@ class S3Object(models.Model):
         if filename is None:
             filename = self.key_name.split('/')[-1]
 
-        self._key_obj.get_contents_to_filename(filename)
+        self.key_obj.get_contents_to_filename(filename)
        
         return filename
 
@@ -135,7 +162,7 @@ class S3Object(models.Model):
     def delete(self, **kwargs):
         try:
             bucket = self._get_bucket()
-            bucket.delete_key(self.key)
+            bucket.delete_key(self.key, version_id=self.version_id)
         except Exception as e:
             logger.warn(e)
             
@@ -164,7 +191,7 @@ class S3Object(models.Model):
         Returns the S3 Key of the object
         """
         bucket = self._get_bucket()
-        return bucket.get_key(self.key)
+        return bucket.get_key(self.key, version_id=self.version_id)
 
     def _upload(self, filename, delete_original=True, encrypt_key=False):
         """

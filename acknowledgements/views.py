@@ -337,6 +337,8 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         
         if offset != None and limit:
             queryset = queryset[int(offset):limit + int(offset)]
+        elif offset is None and limit:
+            queryset = queryset[0:limit]
         else:
             queryset = queryset[0:50]
         
@@ -350,8 +352,16 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
                                             'production_pdf',
                                             'confirmation_pdf',
                                             'label_pdf',
-                                            'original_acknowledgement_pdf')
-        queryset = queryset.prefetch_related('logs')
+                                            'original_acknowledgement_pdf',
+                                            'quotation',)
+        queryset = queryset.prefetch_related('logs', 
+                                             'customer__addresses',
+                                             'items',
+                                             'items__image',
+                                             'items__product',
+                                             'items__components',
+                                             'items__pillows',
+                                             'files')
         
         return queryset
         

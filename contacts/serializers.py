@@ -104,17 +104,20 @@ class ContactMixin(object):
         id_list = [address_data.get('id', None) for address_data in addresses_data]
         #Create and update 
         for address_data in addresses_data:
-            try:
-                address = Address.objects.get(pk=address_data['id'])
-            except KeyError:
-                address = Address.objects.create(contact=instance)
-                id_list.append(address.id)
-                
-            for field in address_data.keys():
-                if field != "contact":
-                    setattr(address, field, address_data[field])
-                
-            address.save()
+            
+            if len([a for a in address_data.values() if a is not None]) > 0:
+                try:
+                    address = Address.objects.get(pk=address_data['id'])
+                except (KeyError, Address.DoesNotExist) as e:
+                    
+                    address = Address.objects.create(contact=instance)
+                    id_list.append(address.id)
+                    
+                for field in address_data.keys():
+                    if field != "contact":
+                        setattr(address, field, address_data[field])
+                    
+                address.save()
             
         #Delete contacts
         for address in instance.addresses.all():

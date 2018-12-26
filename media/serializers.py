@@ -11,12 +11,14 @@ logger = logging.getLogger(__name__)
 class S3ObjectSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     filename = serializers.SerializerMethodField()
-    id = serializers.IntegerField(required=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
+    size = serializers.SerializerMethodField()
+    last_modified = serializers.DateTimeField()
     
     class Meta:
         model = S3Object
-        fields = ('id', 'url', 'filename')
-        read_only_fields = ('key', 'bucket')
+        fields = ('id', 'url', 'filename', 'size', 'last_modified')
+        read_only_fields = ('key', 'bucket', 'size', 'last_modified')
         
         
     def get_url(self, obj):
@@ -30,17 +32,25 @@ class S3ObjectSerializer(serializers.ModelSerializer):
         Returns the filename, a subset of the key
         """
         return obj.key.split('/')[-1]
+
+    def get_size(self, obj):
+        """
+        Returns the filename, a subset of the key
+        """
+        return obj.size
 
 
 class S3ObjectFieldSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     filename = serializers.SerializerMethodField()
-    id = serializers.IntegerField(required=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
+    size = serializers.SerializerMethodField()
+    last_modified = serializers.DateTimeField()
     
     class Meta:
         model = S3Object
-        fields = ('id', 'url', 'filename')
-        read_only_fields = ('key', 'bucket')
+        fields = ('id', 'url', 'filename', 'size', 'last_modified')
+        read_only_fields = ('key', 'bucket', 'size', 'last_modified')
         
         
     def get_url(self, obj):
@@ -54,3 +64,9 @@ class S3ObjectFieldSerializer(serializers.ModelSerializer):
         Returns the filename, a subset of the key
         """
         return obj.key.split('/')[-1]
+
+    def get_size(self, obj):
+        """
+        Returns the filename, a subset of the key
+        """
+        return obj.size
