@@ -32,13 +32,13 @@ class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField() 
     _size = models.IntegerField(db_column='size', max_length=30, null=True, default=None) 
+    _bucket_obj = None
 
     def __init__(self, *args, **kwargs):
 
         super(S3Object, self).__init__(*args, **kwargs)
 
         self._key_obj = None
-        self._bucket_obj = None
 
     @classmethod
     def create(cls, filename, key, bucket, access_key='', secret='', delete_original=True, encrypt_key=False, upload=True):
@@ -85,6 +85,8 @@ class S3Object(models.Model):
 
         if self._bucket_obj is None:
             self._bucket_obj = self._get_bucket()
+        elif self._bucket_obj.name != self.bucket:
+            self._bucket_obj = self._get_bucket()
 
         return self._bucket_obj
 
@@ -102,9 +104,11 @@ class S3Object(models.Model):
         if self._key_obj is None:
             self._key_obj = self.bucket_obj.get_key(self.key_name,
                                                     version_id=self.version_id)
-            self._size = self._key_obj.size
-            self.version_id = self._key_obj.version_id
-            self.save()
+            
+            if self._size is None or self.version_id is None:
+                self._size = self._key_obj.size
+                self.version_id = self._key_obj.version_id
+                self.save()
 
         return self._key_obj
 
