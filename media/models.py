@@ -28,7 +28,7 @@ class S3Object(models.Model):
     access_key = ''
     secret_key = ''
     version_id = models.TextField(default=None)
-    last_modified = models.DateTimeField(auto_now=True)
+    last_modified = models.DateTimeField(null=True, default=None)
     bucket = models.TextField()
     key = models.TextField() 
     _size = models.IntegerField(db_column='size', max_length=30, null=True, default=None) 

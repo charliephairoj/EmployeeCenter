@@ -42,7 +42,7 @@ class Estimate(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object, null=True, related_name='+')
-    #files = models.ManyToManyField(S3Object, through="File", related_name="estimates")
+    files = models.ManyToManyField(S3Object, through="File", related_name="quotations")
     acknowledgement = models.OneToOneField(Acknowledgement, null=True, related_name="quotation")
     deal = models.ForeignKey(Deal, null=True, related_name="quotations")
 
@@ -401,11 +401,11 @@ class Estimate(models.Model):
                         format='html')
 
 
-"""
+
 class File(models.Model):
     estimate = models.ForeignKey(Estimate)
-    file = models.ForeignKey(S3Object)
-""" 
+    file = models.ForeignKey(S3Object, related_name='quotation_files')
+ 
     
 class Item(models.Model):
     estimate = models.ForeignKey(Estimate, related_name="items")

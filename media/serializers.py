@@ -45,7 +45,7 @@ class S3ObjectFieldSerializer(serializers.ModelSerializer):
     filename = serializers.SerializerMethodField()
     id = serializers.IntegerField(required=False, allow_null=True)
     size = serializers.SerializerMethodField()
-    last_modified = serializers.DateTimeField()
+    last_modified = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = S3Object

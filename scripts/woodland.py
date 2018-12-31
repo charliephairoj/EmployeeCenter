@@ -14,6 +14,7 @@ import logging
 import copy
 from decimal import Decimal
 from datetime import datetime, timedelta, date
+from dateutil import parser
 
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
@@ -55,153 +56,73 @@ from hr.PDF import AttendancePDF
 from supplies.models import Log, Supply, Product
 from administrator.models import User 
 from media.models import DriveObject
+from media.models import S3Object
 
-
-def get_url_getter(conn, bucket):
-
-    def get_url(key, time=86400, force_http=False):
-        return conn.generate_url(time,
-                                'GET',
-                                bucket=bucket,
-                                key=key,
-                                force_http=force_http)
-
-    return get_url
-
-
-def get_customer_name(layout_element):
-    return layout_element.get_text().split('\n', 1)[0]
-
-
-def get_order_data(k):
-    order = {'id': k['id'], 'items': []}
-    filename = "Quotation-{0}.pdf".format(k['id'])
-    k['key'].get_contents_to_filename(filename)
-    fp = open(filename, 'rb')
-    parser = PDFParser(fp)
-
-    document = PDFDocument(parser)
-    if not document.is_extractable:
-        raise PDFTextExtractionNotAllowed
-    # Create a PDF resource manager object that stores shared resources.
-    rsrcmgr = PDFResourceManager()
-    # Set parameters for analysis.
-    laparams = LAParams()
-    # Create a PDF page aggregator object.
-    device = PDFPageAggregator(rsrcmgr, laparams=laparams)
-    interpreter = PDFPageInterpreter(rsrcmgr, device)
-
-    qp = {'quantities': [], 'prices': [], 'price_y': []}
-
-    for page in PDFPage.create_pages(document):
-        interpreter.process_page(page)
-        # receive the LTPage object for the page.
-        layout = device.get_result()
-        for a in layout:
-
-            if isinstance(a, LTTextBoxHorizontal):
-                if math.floor(a.x0) == 122 and math.floor(a.y1) == 695:
-                    order['customer'] = get_customer_name(a)
-        
-
-                elif math.floor(a.x0) in [111, 98]:
-
-                    products_str = a.get_text().replace('Description\n', '')
-                    item = {}
-
-                    if 'comments' in products_str.lower():
-                        products_str, item['comments'] = products_str.split('Comments:')
-
-                    for index, b in enumerate([s for s in products_str.split('\n') if s != '']):
-                        if index == 0:
-                            item['description'] = b
-                        if index > 0 and b[0] != ' ' and item.has_key('width'):
-                            order['items'].append(copy.deepcopy(item))
-                            item = {'description': b, 'comments': ''}
-
-                        if "width" in b.lower():
-                            d = b.replace('\n', '').replace('mm', '').strip()
-                            for dimension in [
-                                ('height', 'Height: '), 
-                                ('depth', 'Depth: '), 
-                                ('width', 'Width: ')]:
-                                d, item[dimension[0]] = d.split(dimension[1]) if len(d.split(dimension[1])) == 2 else (d, 0)
-                        elif b[0] == ' ':
-                            logger.debug(b)
-                            #item['comments'] += b
-                    if item.has_key('description'):
-                        order['items'].append(copy.deepcopy(item))
-
-                # Process prices
-                elif math.floor(a.x0) in [383, 390, 397, 408, 411, 402, 391]:
-                    try:
-                        qp['prices'].append(Decimal(a.get_text().replace('\n', '').replace('Unit Price', '').replace(',', '')))
-                        qp['price_y'].append(a.y0)
-                    except Exception as e:
-                        logger.warn(e)
-                elif math.floor(a.x0) in [459, 464, 457, 477, 455, 422]:
-                    if a.y0 in qp['price_y']:
-                        qp['quantities'].append(Decimal(a.get_text().replace('\n', '').replace('Qty', '')))
-
-                elif "vat" in a.get_text().lower():
-                    order['vat'] = Decimal(a.get_text().split('Vat ')[-1][0])
-
-                else:
-                    logger.debug("{0} : {1} | {2}".format(a.x0, a.y0, a))
-                
-
-    # Apply prices and quantites
-    err_msg = "{0} : {1} | {2} ... {3}".format(len(qp['quantities']), len(qp['prices']), len(order['items']), order['items'])
-    assert len(qp['quantities']) == len(qp['prices']) and len(qp['quantities']) == len(order['items']), err_msg
-
-    for index in  xrange(len(qp['prices'])):
-        order['items'][index]['price'] = qp['prices'][index]
-        order['items'][index]['quantity'] = qp['quantities'][index]
-
-    os.remove(filename)
-
-    return order        
 
 
 
 if __name__ == '__main__':
-    # Remove duplicate products
-
-    last_quotation = E.objects.exclude(id__gt=16000).order_by('-id')[0]
 
     conn = boto.s3.connect_to_region('ap-southeast-1')
+    bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
+    bucket.configure_versioning(True)
 
-    bucket = conn.get_bucket('document.dellarobbiathailand.com')
+    key_list = bucket.list()
 
-    keys = bucket.get_all_keys(prefix='estimate')
+    dupes_list = S3Object.objects.filter(bucket='document.dellarobbiathailand.com') \
+                                 .order_by('-id') \
+                                 .values('key', 'version_id') \
+                                 .annotate(Count('key'), Count('version_id')) \
+                                 .order_by('key') \
+                                 .filter(key__count__gt=1, version_id__count__gt=1)
+    
+    dupes_list = [i for i in sorted(dupes_list, key=lambda x: x['key'])]
 
-    get_url = get_url_getter(conn, bucket)
-
-    new_keys = []
-    orders = []
-    error_orders = []
-
-
-    for k in keys:
-        q_id = int(k.key.split('-')[1].split('.')[0])
-        if q_id > last_quotation.id:
-            new_keys.append({'id': q_id, 'key': k})
-
-
-    for k in new_keys:
-        try:
-            orders.append(get_order_data(k))
-        except AssertionError as e:
-            error_orders.append(k)
-
-    with open('error_quotations.csv', mode='w') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(['ID', 'key', 'url'])
-        for k in error_orders:
-            writer.writerow([k['id'], k['key'].key, get_url(k['key'])])
-            logger.debug("Quotation-{0}.pdf".format(k['id']))
-
+    logger.debug(pp.pformat(dupes_list))
     
 
+    #dupes_list = []
+
+    
+    for key in dupes_list:
+
+        key_name = key['key']
+        print('\n\n\n')
+        print(''.join(['-' for i in xrange(80)]))
+        #msg = u'{0} : {1} : {2} : {3}'.format(s.id, s.last_modified, s.key, s.version_id)
+        logger.debug(key_name)
+        print('\n\n')
 
 
+        s_objs = S3Object.objects.filter(key=key_name, version_id=key['version_id']).order_by('-last_modified', '-id')
+
+        assert len(s_objs) == key['version_id__count'], "Number of objects should be equal"
+
+        keys = sorted(bucket.list_versions(prefix=key_name), key=lambda x: x.last_modified, reverse=True)
+        for index, k in enumerate(keys):
+            try:
+                s = s_objs[index]
+                msg = u' {0} : {1} | {2} | {3} : {4}'.format(s.last_modified,
+                                                             k.last_modified,
+                                                             k.key, 
+                                                             s.version_id,
+                                                             k.version_id)
+                logger.debug(msg)
+
+                #s.last_modified = parser.parse(k.last_modified)
+                #s.version_id = k.version_id
+                #s._size = k.size
+                #s.save()
+            except AttributeError as e:
+                logger.error(e)
+            except IndexError as e:
+                logger.error(e)
+                
+                #S3Object.objects.create(key=key_name, 
+                #                        bucket=bucket.name,
+                #                        _size=k.size,
+                #                        version_id=k.version_id,
+                #                        last_modified=parser.parse(k.last_modified))
+                
+
+        print(''.join(['-' for i in xrange(80)]))

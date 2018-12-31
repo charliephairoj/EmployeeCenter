@@ -231,8 +231,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     vat = serializers.DecimalField(required=True, decimal_places=2, max_digits=12, min_value=0, max_value=100)
     discount = serializers.IntegerField(default=0, min_value=0, max_value=100)
     second_discount = serializers.IntegerField(default=0, min_value=0, max_value=100)
-    files = serializers.ListField(child=serializers.DictField(), required=False,
-                                  allow_null=True)
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     acknowledgement = AcknowledgementSerializer(required=False, allow_null=True)
     delivery_date = serializers.DateTimeField(required=False, allow_null=True, default=datetime.now())
     # Totals
@@ -365,7 +364,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.project = validated_data.pop('project', instance.project)
 
         #Update attached files
-        #files = validated_data.pop('files', [])
+        files = validated_data.pop('files', [])
         #for file in files:
         #    try:
         #        File.objects.get(file_id=file['id'], acknowledgement=instance)
@@ -401,7 +400,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the default 'to_representation' method to customize the output data
         """

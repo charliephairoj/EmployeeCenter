@@ -290,7 +290,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Acknowledgement
         read_only_fields = ('total', 'subtotal', 'time_created')
-        write_only_fields = ('items')
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id',
                    'trcloud_document_number')
         depth = 3

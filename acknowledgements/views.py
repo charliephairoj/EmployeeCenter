@@ -390,6 +390,35 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
         request = self._condense_pillows(request)
        
         return super(AcknowledgementDetail, self).put(request, *args, **kwargs)
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset.all()
+                
+        queryset = queryset.select_related('customer', 
+                                            'project', 
+                                            'room',
+                                            'phase',
+                                            'employee',
+                                            'acknowledgement_pdf',
+                                            'production_pdf',
+                                            'confirmation_pdf',
+                                            'label_pdf',
+                                            'original_acknowledgement_pdf',
+                                            'quotation',)
+        queryset = queryset.prefetch_related('logs', 
+                                             'customer__addresses',
+                                             'items',
+                                             'items__image',
+                                             'items__product',
+                                             'items__components',
+                                             'items__pillows',
+                                             'files')
+        
+        return queryset
+
     
 class AcknowledgementViewSet(viewsets.ModelViewSet):
     """
