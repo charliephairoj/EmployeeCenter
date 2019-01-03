@@ -90,33 +90,6 @@ class Estimate(models.Model):
         the database rather an actually delete the record
         """
         self.deleted = True
-
-    def update(self, data=None, employee=None):
-        """"Updates the acknowledgement
-
-        Updates the acknowledgement with the new data
-        and creates a new pdf for acknowledgement and production
-        """
-        self.current_employee = employee
-        try:
-            self.delivery_date = data["delivery_date"]
-            self.save()
-        except:
-            pass
-
-        self.calculate_totals()
-
-        ack_filename, production_filename = self.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
-        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
-        bucket = "document.dellarobbiathailand.com"
-        ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
-        prod_pdf = S3Object.create(production_filename, production_key, bucket)
-
-        self.acknowledgement_pdf = ack_pdf
-        self.production_pdf = prod_pdf
-
-        self.save()
     
     def create_and_update_deal(self, employee=None):
         """
@@ -157,7 +130,7 @@ class Estimate(models.Model):
 
     def create_and_upload_pdf(self, delete_original=True):
         ack_filename = self.create_pdf()
-        ack_key = "estimate/Quotation-{0}.pdf".format(self.id)
+        ack_key = "estimate/{0}/Quotation-{0}.pdf".format(self.id)
         
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)

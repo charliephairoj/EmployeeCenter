@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
 from django.db import transaction, connection
 from django.db.models import Q
@@ -24,6 +25,7 @@ from contacts.models import Customer
 from projects.models import Project, Room
 from utilities.http import save_upload
 from media.models import S3Object
+from media.serializers import S3ObjectSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -85,63 +87,71 @@ def acknowledgement_stats(request):
     
 
 @login_required
-def acknowledgement_item_image(request):
+def acknowledgement_item_image(request, ack_id=None):
 
     if request.method == "POST":
         try:
             credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
         except AttributeError as e:
             logger.error(e)
-
-
-        key = credentials.access_key_id
-        secret = credentials.secret_access_key
+            key = ''
+            secret = ''
         
         filename = save_upload(request)
+
+        if ack_id:
+            key = u"acknowledgement/{0}/item/image/{1}".format(ack_id, filename.split('/')[-1])
+        else: 
+            key = u"acknowledgement/item/image/{0}".format(filename.split('/')[-1])
+
         obj = S3Object.create(filename,
-                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
+                        key,
                         'media.dellarobbiathailand.com',
                         key, 
                         secret)
-        response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url(key, secret)}),
+
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
                                 content_type="application/json")
         response.status_code = 201
         return response
 
 
 @login_required
-def acknowledgement_file(request):
-    try:
-        file = request.FILES['image']
-    except Exception:
-        file = request.FILES['file']
-    
-    filename = file.name
+def acknowledgement_file(request, ack_id=None):
 
-    #Save file
-    with open(filename, 'wb+' ) as destination:
-        for chunk in file.chunks():
-            destination.write(chunk)
-    
-    credentials = request.user.aws_credentials
-    key = credentials.access_key_id
-    secret = credentials.secret_access_key
-    
-    obj = S3Object.create(filename,
-                          u"acknowledgement/files/{0}".format(filename),
-                          u"media.dellarobbiathailand.com",
-                          key, 
-                          secret)
-    
-    response = HttpResponse(json.dumps({'id': obj.id,
-                                        'filename': filename,
-                                        'type': filename.split('.')[-1],
-                                        'url': obj.generate_url(key, secret)}), 
-                            content_type="application/json")
-                            
-    response.status_code = 201
-    return response
+    if request.method == "POST":
+
+        try:
+            credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
+        except AttributeError as e:
+            logger.error(e)
+            key = ''
+            secret = ''
+
+        filename = save_upload(request)
+
+        if ack_id:
+            key = u"acknowledgement/{0}/files/{1}".format(ack_id, filename.split('/')[-1])
+        else: 
+            key = u"acknowledgement/files/{0}".format(filename.split('/')[-1])
+        
+        obj = S3Object.create(filename,
+                            key,
+                            u"document.dellarobbiathailand.com",
+                            key, 
+                            secret)
+        
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
+                                content_type="application/json")
+                                
+        response.status_code = 201
+        return response
     
 
 def acknowledgement_download(request):
@@ -355,6 +365,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
                                             'original_acknowledgement_pdf',
                                             'quotation',)
         queryset = queryset.prefetch_related('logs', 
+                                             'logs__user',
                                              'customer__addresses',
                                              'items',
                                              'items__image',
@@ -409,6 +420,7 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
                                             'original_acknowledgement_pdf',
                                             'quotation',)
         queryset = queryset.prefetch_related('logs', 
+                                             'logs__user',
                                              'customer__addresses',
                                              'items',
                                              'items__image',

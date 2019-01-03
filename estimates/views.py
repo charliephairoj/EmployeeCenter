@@ -7,10 +7,12 @@ from pytz import timezone
 from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
 from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from estimates.models import Estimate, Item, Pillow
 from estimates.serializers import EstimateSerializer, ItemSerializer
@@ -19,51 +21,81 @@ from contacts.models import Customer
 from projects.models import Project
 from utilities.http import save_upload
 from media.models import S3Object
+from media.serializers import S3ObjectSerializer
 from administrator.models import User
 
 
 logger = logging.getLogger(__name__)
 
 
-def acknowledgement_item_image(request):
+@login_required
+def estimate_item_image(request, q_id=None):
+
     if request.method == "POST":
+        try:
+            credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
+        except AttributeError as e:
+            logger.error(e)
+            key = ''
+            secret = ''
+        
         filename = save_upload(request)
+
+        if q_id:
+            key = u"estimate/{0}/item/image/{1}".format(q_id, filename.split('/')[-1])
+        else: 
+            key = u"estimate/item/image/{0}".format(filename.split('/')[-1])
+
         obj = S3Object.create(filename,
-                        "acknowledgement/item/image/{0}.jpg".format(time.time()),
-                        'media.dellarobbiathailand.com')
-        response = HttpResponse(json.dumps({'id': obj.id,
-                                            'url': obj.generate_url()}),
+                        key,
+                        'media.dellarobbiathailand.com',
+                        key, 
+                        secret)
+
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
                                 content_type="application/json")
         response.status_code = 201
         return response
-        
-def acknowledgement_file(request):
-    try:
-        file = request.FILES['image']
-    except MultiValueDictKeyError:
-        file = request.FILES['file']
-    
-    filename = file.name
 
-    #Save file
-    with open(filename, 'wb+' ) as destination:
-        for chunk in file.chunks():
-            destination.write(chunk)
+
+@login_required
+def estimate_file(request, q_id=None):
+
+    if request.method == "POST":
+
+        try:
+            credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
+        except AttributeError as e:
+            logger.error(e)
+            key = ''
+            secret = ''
+
+        filename = save_upload(request)
+
+        if q_id:
+            key = u"estimate/{0}/files/{1}".format(q_id, filename.split('/')[-1])
+        else: 
+            key = u"estimate/files/{0}".format(filename.split('/')[-1])
+        
+        obj = S3Object.create(filename,
+                            key,
+                            u"document.dellarobbiathailand.com",
+                            key, 
+                            secret)
+        
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
+                                content_type="application/json")
+                                
+        response.status_code = 201
+        return response
     
-    
-    obj = S3Object.create(filename,
-                          "acknowledgement/files/{0}".format(filename),
-                          "media.dellarobbiathailand.com")
-    
-    response = HttpResponse(json.dumps({'id': obj.id,
-                                        'filename': filename,
-                                        'type': filename.split('.')[-1],
-                                        'url': obj.generate_url()}), 
-                            content_type="application/json")
-                            
-    response.status_code = 201
-    return response
-    
+
 
 class EstimateMixin(object):
     queryset = Estimate.objects.all().order_by('-id')
@@ -292,4 +324,25 @@ class EstimateDetail(EstimateMixin, generics.RetrieveUpdateDestroyAPIView):
             pass
             
         return super(EstimateDetail, self).put(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset.all()
+                
+        queryset = queryset.select_related('customer', 'pdf', 'acknowledgement', 'employee', 'project', 'deal',
+                                           )
+        
+        queryset = queryset.prefetch_related('items',
+                                             'items__pillows',
+                                             'items__image',
+                                             'items__product',
+                                             'customer__addresses', 
+                                             'files',) 
+        #queryset = queryset.prefetch_related(Prefetch('items', queryset=Item.objects.select_related('image').prefetch_related('pillows')))
+        queryset = queryset.defer('acknowledgement__items', 'acknowledgement__customer', 'acknowledgement__project',
+                                  'project__customer', 'items', 'customer__contact', 'project__estimates')
+        
+        return queryset
     

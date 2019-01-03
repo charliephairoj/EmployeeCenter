@@ -10,7 +10,7 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
-from estimates.models import Estimate, Item, Pillow
+from estimates.models import Estimate, Item, Pillow, File
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -121,7 +121,7 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
         except (KeyError, S3Object.DoesNotExist, TypeError) as e:
-            pass
+            del ret['image']
         
         return ret
 
@@ -275,7 +275,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            pass #logger.warn(e)
+            del ret['acknowledgement']
 
         logger.debug("\n\nEstimate to internal value\n\n")
 
@@ -329,11 +329,21 @@ class EstimateSerializer(serializers.ModelSerializer):
             logger.warn(e)
             
         instance.create_and_upload_pdf()
- 
-        #Assign files
-        #for file in files:
-        #    File.objects.create(file=S3Object.objects.get(pk=file['id']),
-        #                        acknowledgement=instance)
+
+        # Add pdfs to files list
+        filenames = ['pdf']
+        for filename in filenames:
+            try:
+                File.objects.create(file=getattr(instance, filename),
+                                    estimate=instance)
+            except Exception as e:
+                logger.warn(e)
+
+        # Assign files
+        for file_obj in files:
+            File.objects.create(file_obj=S3Object.objects.get(pk=file_obj['id']),
+                                estimate=instance)
+
 
         """
         #Extract fabric quantities
@@ -365,12 +375,12 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         #Update attached files
         files = validated_data.pop('files', [])
-        #for file in files:
-        #    try:
-        #        File.objects.get(file_id=file['id'], acknowledgement=instance)
-        #    except File.DoesNotExist:
-        #        File.objects.create(file=S3Object.objects.get(pk=file['id']),
-        #                            acknowledgement=instance)
+        for file_obj in files:
+            try:
+                File.objects.get(file_id=file_obj['id'], estimate=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file_obj['id']),
+                                    estimate=instance)
 
         new_status = validated_data.pop('status', instance.status)
      

@@ -2,6 +2,7 @@
 import json
 from dateutil import parser
 import time
+import logging
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.conf import settings
@@ -9,6 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from django.core.paginator import Paginator
+
+
+logger = logging.getLogger(__name__)
 
 
 #primary function to process requests for supplies
@@ -192,18 +196,26 @@ def save_upload(request, filename=None):
     """
     Saves an uploaded file to disk and returns the filename
     """
-    if filename is None:
+    try:
+        file_obj = request.FILES['image']
+    except MultiValueDictKeyError:
+        file_obj = request.FILES['file']
+        
+    logger.debug(file_obj.name)
+    if filename is None and file_obj.name:
+
+        logger.info(u'Name from file is {0}'.format(file_obj.name))
+        filename = "{0}-{1}".format(time.time(), file_obj.name.split('/')[-1])
+    elif filename is None and file_obj.name is None:
         filename = "{0}.jpg".format(time.time())
 
     #Save File to disk
-    try:
-        image = request.FILES['image']
-    except MultiValueDictKeyError:
-        image = request.FILES['file']
+    
     filename = settings.MEDIA_ROOT + filename 
     with open(filename, 'wb+' ) as destination:
-        for chunk in image.chunks():
+        for chunk in file_obj.chunks():
             destination.write(chunk)
+
     return filename
 
 

@@ -1,7 +1,10 @@
 import os
 import datetime
-import dateutil.parser
+from dateutil import parser
 import logging
+import re
+from time import sleep
+from threading import Thread
 
 from django.db import models
 from django.contrib import admin
@@ -32,10 +35,12 @@ class S3Object(models.Model):
     bucket = models.TextField()
     key = models.TextField() 
     _size = models.IntegerField(db_column='size', max_length=30, null=True, default=None) 
-    _bucket_obj = None
-
+    _bucket_obj = {}
+    _conn_obj = boto.s3.connect_to_region('ap-southeast-1')
+    migrate_re = re.compile(r'(?:acknowledgement|estimate|purchase_order)\/(\d+)\/(?:Acknowledgement|Estimate|PO|Quality_Control|Label|Production|Quotation)\-\1(?:\-\S+)*.pdf')
+    migrate_sub_re = re.compile(r'(acknowledgement|acknowledgment|estimate|purchase_order)\/(Acknowledgement|Estimate|PO|Quality_Control|Label|Production|Quotation)\-(\d+)((?:\-\S+)*.pdf)')
+    
     def __init__(self, *args, **kwargs):
-
         super(S3Object, self).__init__(*args, **kwargs)
 
         self._key_obj = None
@@ -67,6 +72,7 @@ class S3Object(models.Model):
             obj.upload(filename, delete_original, encrypt_key=encrypt_key)
             
         obj.save()
+
         return obj
 
     @property
@@ -79,16 +85,18 @@ class S3Object(models.Model):
         return {'id': self.id,
                 'url': self.generate_url(),
                 'last_modified': self.last_modified}
-
+    @property
+    def _conn(self):
+        if self._conn_obj is None:
+            self._conn_obj = self._get_connection()
+        
+        return self._conn_obj
     @property
     def bucket_obj(self):
+        if self.bucket not in self._bucket_obj:
+            self._bucket_obj[self.bucket] = self._get_bucket()
 
-        if self._bucket_obj is None:
-            self._bucket_obj = self._get_bucket()
-        elif self._bucket_obj.name != self.bucket:
-            self._bucket_obj = self._get_bucket()
-
-        return self._bucket_obj
+        return self._bucket_obj[self.bucket]
 
     @property
     def key_name(self):
@@ -105,19 +113,53 @@ class S3Object(models.Model):
             self._key_obj = self.bucket_obj.get_key(self.key_name,
                                                     version_id=self.version_id)
             
-            if self._size is None or self.version_id is None:
-                self._size = self._key_obj.size
-                self.version_id = self._key_obj.version_id
-                self.save()
+            if self._size is None or self.version_id is None or self.last_modified is None:
+                t = Thread(target=self._update_from_key_obj, args=(self.key_name, self.bucket_obj))
+                t.start()
 
         return self._key_obj
 
     @property
     def size(self):
         if self._size is None:
-            self._size = self.key_obj.size
+            t = Thread(target=self._update_from_key_obj)
+            t.start()
+        return self._size or 0
 
-        return self._size
+    @property
+    def migrated(self):
+        return bool(self.migrate_re.search(self.key))
+
+    def migrate(self):
+
+        if self.migrated is False:
+            new_key = self.migrate_sub_re.sub(r'\1/\3/\2-\3\4', self.key)
+            new_key = new_key.replace('acknowledgment', 'acknowledgement')
+            assert self.migrate_re.search(new_key), new_key
+
+            old_key_obj = self.key_obj
+            
+            new_key_obj = old_key_obj.copy(self.bucket,
+                                           new_key)
+
+            assert new_key_obj.exists()
+            assert new_key_obj.key == new_key
+            assert new_key_obj.bucket.name == self.bucket
+
+            self.key = new_key
+            self.version_id = new_key_obj.version_id
+            self._size = new_key_obj.size
+            self._key_obj = new_key_obj
+            self.save()
+
+            assert not self.migrate_re.search(old_key_obj.key)
+            old_key_obj.delete()
+            assert self.bucket_obj.get_key(old_key_obj.key, version_id=old_key_obj.version_id) is None
+
+            logger.info(u"Migrated from key {0} to {1}".format(old_key_obj.key, self.key))
+            
+        else: 
+            logger.info(u"Already migrated to {0}".format(self.key))
 
     def upload(self, filename, delete_original=True, encrypt_key=True):
         """
@@ -138,8 +180,7 @@ class S3Object(models.Model):
         """
         Generates a url for the object
         """
-        conn = self._get_connection(key, secret)
-        return conn.generate_url(time,
+        return self._conn.generate_url(time,
                                  'GET',
                                  bucket=self.bucket,
                                  key=self.key_name,
@@ -165,7 +206,7 @@ class S3Object(models.Model):
 
     def delete(self, **kwargs):
         try:
-            bucket = self._get_bucket()
+            bucket = self.bucket_obj
             bucket.delete_key(self.key, version_id=self.version_id)
         except Exception as e:
             logger.warn(e)
@@ -176,15 +217,16 @@ class S3Object(models.Model):
         """
         Returns the S3 Connection of the object
         """
-        return boto.s3.connect_to_region('ap-southeast-1')
+        if self._conn_obj is None:
+            self._conn_obj = boto.s3.connect_to_region('ap-southeast-1')
+        return self._conn_obj
 
     def _get_bucket(self):
         """
         Returns the S3 Bucket of the object
         """
         if self.bucket:
-            conn = self._get_connection(self.access_key, self.secret_key)
-            bucket = conn.get_bucket(self.bucket, True)
+            bucket = self._conn.get_bucket(self.bucket, True)
             bucket.configure_versioning(True)
             return bucket
         else:
@@ -194,7 +236,7 @@ class S3Object(models.Model):
         """
         Returns the S3 Key of the object
         """
-        bucket = self._get_bucket()
+        bucket = self.bucket_obj
         return bucket.get_key(self.key, version_id=self.version_id)
 
     def _upload(self, filename, delete_original=True, encrypt_key=False):
@@ -204,20 +246,31 @@ class S3Object(models.Model):
         Requies the filename, the file type. if an Appendix is provided
         then the file is appended with that before the filetype.
         """
-        bucket = self._get_bucket()
+        bucket = self.bucket_obj
         k = Key(bucket)
         k.key = self.key_name
         k.set_contents_from_filename(filename, encrypt_key=encrypt_key)
         k.set_acl('private')
-        
-        try:
-            self.last_modified = dateutil.parser.parse(k.last_modified)
-        except:
-            self.last_modified = k.last_modified
-        
+
         self.version_id = k.version_id
+        if k.last_modified:
+            self.last_modified = parser.parse(k.last_modified)
+
         if delete_original:
             os.remove(filename)
+
+    def _update_from_key_obj(self):
+        
+        bucket_obj = self.bucket_obj
+
+        key_obj = bucket_obj.get_key(self.key_name, 
+                                     version_id=self.version_id)
+        self._size = key_obj.size
+        self.version_id = key_obj.version_id
+        self.last_modified = parser.parse(key_obj.last_modified)
+
+
+        self.save()
 
 
 class Employee(models.Model):

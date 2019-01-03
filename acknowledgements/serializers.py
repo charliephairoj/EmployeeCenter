@@ -11,7 +11,7 @@ from rest_framework.fields import DictField
 from pytz import timezone
 
 from administrator.models import User
-from administrator.serializers import UserFieldSerializer
+from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
 from contacts.serializers import CustomerFieldSerializer
 from supplies.serializers import FabricSerializer
@@ -134,7 +134,7 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
         except (KeyError, S3Object.DoesNotExist, TypeError) as e:
-            pass
+            del ret['image']
         
         return ret
 
@@ -195,30 +195,23 @@ class ItemSerializer(serializers.ModelSerializer):
         # Update attributes from client side details
         acknowledgement = self.context['acknowledgement']
         employee = self.context['employee']
-        new_qty = validated_data.pop('quantity', instance.quantity)
-        new_price = validated_data.pop('unit_price', instance.unit_price)
-        instance.description = validated_data.pop('description', instance.description)
-        instance.fabric = validated_data.pop('fabric', instance.fabric)
-        instance.fabric_quantity = validated_data.pop('fabric_quantity', instance.fabric_quantity)
-        instance.comments = validated_data.pop('comments', instance.comments)
 
-        instance.width = validated_data.pop('width', instance.width)
-        instance.depth = validated_data.pop('depth', instance.depth)
-        instance.height = validated_data.pop('height', instance.height)
-        
-        if new_qty != instance.quantity:
-            # Log Changing delivery date
-            message = u"{0} quantity changed from {1} to {2}"
-            message = message.format(instance.description, instance.quantity, new_qty)
-            AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
-            instance.quantity = new_qty
+        # Loops through attributes and logs changes
+        updatable_attributes = ['quantity', 'unit_price', 'description', 'fabric', 'fabric_quantity', 
+                                'comments', 'width', 'depth', 'height']
 
-        if new_price != instance.unit_price:
-            # Log Changing delivery date
-            message = u"{0} unit price changed from {1} to {2}"
-            message = message.format(instance.description, instance.unit_price, new_price)
-            AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
-            instance.unit_price = new_price
+        for attr in updatable_attributes:
+            new_attr_value = validated_data.pop(attr, getattr(instance, attr))
+
+            if getattr(instance, attr) != new_attr_value:
+                old_attr_value = getattr(instance, attr)
+                setattr(instance, attr, new_attr_value)
+
+                # Log data changes
+                message = u"{0}: {1} changed from {2} to {3}"
+                message = message.format(instance.description, attr, old_attr_value, new_attr_value)
+                AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+
 
         # Set the price of the total for this item
         instance.total = instance.quantity * instance.unit_price
@@ -273,7 +266,6 @@ class FileSerializer(serializers.ModelSerializer):
 
 class AcknowledgementSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
-
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = CustomerFieldSerializer()
     employee = UserFieldSerializer(required=False, read_only=True)
@@ -286,10 +278,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     fob = serializers.CharField(required=False, allow_null=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     delivery_date = serializers.DateTimeField(required=True)
+    logs = LogFieldSerializer(many=True, read_only=True)
 
     class Meta:
         model = Acknowledgement
-        read_only_fields = ('total', 'subtotal', 'time_created')
+        read_only_fields = ('total', 'subtotal', 'time_created', 'logs')
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id',
                    'trcloud_document_number')
         depth = 3
@@ -319,12 +312,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except KeyError as e:
                 pass
 
-        try:
-            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
-        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            logger.warn(e)
+        
 
-        logger.debug("\n\nEstimate to internal value\n\n")
+        logger.debug("\n\nAcknowledgement to internal value\n\n")
 
         return ret
 
@@ -490,88 +480,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
         self._update_items(instance, items_data)
 
-        """
-        #Update items individually
-        for item_data in items_data:
-
-            try:
-                item_data['product'] = item_data['product'].id
-            except AttributeError as e:
-                
-                pass
-                
-            except KeyError as e:
-                pass
-
-            item = Item.objects.get(pk=item_data['id'])
-            serializer = ItemSerializer(item, data=item_data, context={'acknowledgement': instance,
-                                                                       'employee': employee})
-
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-
-
-            # Update the fabric for this item if 'fabric' key exists
-            try:
-                item.fabric = item_data['fabric']
-                item.save()
-            except KeyError as e:
-                logger.warn(e)
-
-            # Loop and update pillows if 'pillows' key exists
-            try:
-                for pillow_data in item_data['pillows']:
-                        # Retrieve or create new pillow if it does not exist
-                        try:
-                            pillow = item.pillows.get(type=pillow_data['type'], fabric=pillow_data['fabric'])
-                        except Pillow.DoesNotExist:
-                            pillow = Pillow(type=pillow_data['type'], fabric=pillow_data['fabric'], item=item)
-
-                        # Set pillow attributes
-                        pillow.fabric = pillow_data['fabric']
-                        pillow.fabric_quantity = pillow_data['fabric_quantity']
-                        pillow.quantity = pillow_data['quantity']
-
-                        pillow.save()
-
-            except KeyError:
-                pass
-
-
-            # Extract fabric quantities from items
-            if item.fabric:
-
-                if item.fabric in fabrics:
-                    try:
-                        fabrics[item.fabric] += Decimal(str(item.quantity)) * item.fabric_quantity
-                    except TypeError:
-                        fabrics[item.fabric] += 0
-
-                else:
-                    try:
-                        fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
-                    except TypeError:
-                        fabrics[item.fabric] = Decimal('0')
-
-                #Extract fabric from the pillows
-                for pillow in item.pillows.all():
-                    if pillow.fabric:
-                        if pillow.fabric in fabrics:
-
-                            # There is no need to multiple by pillow quantity. The fabric quantity for the pillow already includes the fabric quantity
-                            # for the total pillows of that particular type
-                            try:
-                                fabrics[pillow.fabric] += Decimal(str(item.quantity)) * pillow.fabric_quantity
-                            except TypeError:
-                                pass
-
-                        else:
-                            try:
-                                fabrics[pillow.fabric] = Decimal(str(item.quantity)) * (pillow.fabric_quantity or Decimal('0'))
-                            except TypeError:
-                                fabrics[pillow.fabric] = Decimal('0')
-
-        """
+        
         # Log Fabric Reservations
         for fabric in fabrics:
             self.reserve_fabric(fabric, fabrics[fabric], instance.id)
@@ -632,32 +541,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                                     type="TRCLOUD ERROR")
            
         return instance
-
-    def xto_representation(self, instance):
-        """
-        Override the default 'to_representation' method to customize the output data
-        """
-        ret = super(AcknowledgementSerializer, self).to_representation(instance)
-
-        
-        """
-        # Retrieve and serialize logs for the acknowledgements
-        def get_employee(log):
-            try:
-                return u"{0} {1}".format(log.employee.first_name, log.employee.last_name)
-            except Exception as e:
-                return "NA"
-
-        try:
-            ret['logs'] = [{'message': log.message,
-                            'employee': get_employee(log),
-                            'timestamp': log.timestamp} for log in instance.logs.all()]
-        except Exception as e:
-            logger.warn(e)
-        """
-
-       
-        return ret
 
     def _update_items(self, instance, items_data):
         """

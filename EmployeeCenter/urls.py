@@ -13,6 +13,8 @@ if settings.DEBUG:
 
 import login.views
 import administrator.views
+import estimates.views
+import po.views
 import auth.views
 import products.views
 import acknowledgements.views
@@ -176,7 +178,9 @@ urlpatterns += [
 
 urlpatterns += [
     #url(r'^acknowledgement$', 'acknowledgement'),
-    #url(r'^acknowledgement/(?P<ack_id>\d+)$', 'acknowledgement'),
+    url(r'^api/v1/acknowledgement/(?P<ack_id>\d+)/file/$', acknowledgements.views.acknowledgement_file),
+    url(r'^api/v1/acknowledgement/(?P<ack_id>\d+)/item/image/$', acknowledgements.views.acknowledgement_item_image),
+
     #url(r'^acknowledgement/(?P<ack_id>\d+)/pdf$', 'pdf'),
     #url(r'^acknowledgement/(?P<ack_id>\d+)/log$', 'log'),
     #url(r'^api/v1/acknowledgement/schedule$', 'schedule'),
@@ -190,6 +194,20 @@ urlpatterns += [
 
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
+]
+
+urlpatterns += [
+    url(r'^api/v1/estimate/(?P<q_id>\d+)/file/$', estimates.views.estimate_file),
+    url(r'^api/v1/estimate/(?P<q_id>\d+)/item/image/$', estimates.views.estimate_item_image),
+    url(r'^api/v1/estimate/file/$', estimates.views.estimate_file),
+    url(r'^api/v1/estimate/item/image/$', estimates.views.estimate_item_image),
+]
+
+urlpatterns += [
+    url(r'^api/v1/purchase-order/(?P<po_id>\d+)/file/$', po.views.po_file),
+    url(r'^api/v1/purchase-order/(?P<po_id>\d+)/item/image/$', po.views.item_image),
+    url(r'^api/v1/purchase-order/file/$', po.views.po_file),
+    url(r'^api/v1/purchase-order/item/image/$', po.views.item_image),
 ]
 
 urlpatterns += [

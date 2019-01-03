@@ -12,9 +12,11 @@ import subprocess
 import pprint
 import logging
 import copy
+from time import sleep
 from decimal import Decimal
 from datetime import datetime, timedelta, date
 from dateutil import parser
+from threading import Thread, active_count
 
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
@@ -44,8 +46,9 @@ from pdfminer.pdfdevice import PDFDevice
 from pdfminer.layout import LAParams
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LTPage, LTChar, LTAnno, LAParams, LTTextBox, LTTextLine, LTTextBoxHorizontal
-
 from django.db.models import Count
+from django.contrib.auth.models import Group
+
 from contacts.models import Customer
 from acknowledgements.models import Acknowledgement as A
 from trcloud.models import TRSalesOrder as SO
@@ -57,11 +60,57 @@ from supplies.models import Log, Supply, Product
 from administrator.models import User 
 from media.models import DriveObject
 from media.models import S3Object
-
+from utilities.queue import Queue
 
 
 
 if __name__ == '__main__':
+
+    g = Group.objects.get(name='God')
+
+    logger.debug(g.__dict__)
+    
+
+    # def populate(queue, s_objs):
+    #     for s in s_objs[0:50]:
+    #         queue.enqueue(Thread(target=s._update_from_key_obj))
+        
+    #     logger.debug(queue.queue)
+
+    # queue = Queue()
+
+    # s_objs = S3Object.objects.filter(_size=None).order_by('-id')
+
+    # init_t = Thread(target=populate, args=(queue, s_objs))
+    # init_t.start()
+
+    # sleep(2)
+
+    # while queue.size > 0:
+    #     sleep(2)
+    #     ac = active_count()
+
+    #     if ac < 50:
+    #         for x in xrange(50 - ac):
+    #             if queue.size > 0:
+    #                 t = queue.dequeue(750)
+    #                 t.start()
+        
+
+    """
+    s_re = r'(acknowledgement|acknowledgment|estimate|purchase_order)\/(Acknowledgement|Estimate|PO|Quality_Control|Label|Production|Quotation)\-(\d+)((?:\-\S+)*.pdf)'
+    
+    s_objs = S3Object.objects.filter(bucket='document.dellarobbiathailand.com', key__regex=s_re, key__icontains='estimate').order_by('-id')
+
+    logger.debug(len(s_objs))
+    for s in s_objs[0:50]:
+        try:
+            s.migrate()
+        except AttributeError as e:
+            logger.debug(s.__dict__)
+    """
+
+    """
 
     conn = boto.s3.connect_to_region('ap-southeast-1')
     bucket = conn.get_bucket('document.dellarobbiathailand.com', True)
@@ -126,3 +175,4 @@ if __name__ == '__main__':
                 
 
         print(''.join(['-' for i in xrange(80)]))
+    """

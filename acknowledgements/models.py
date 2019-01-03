@@ -157,6 +157,10 @@ class Acknowledgement(models.Model):
         """
         self.deleted = True
 
+    def filtered_logs(self):
+        """Filter logs source"""
+        return self.logs.exclude(type__icontains="error")
+
     def update(self, data=None, employee=None):
         """"Updates the acknowledgement
 
@@ -270,10 +274,10 @@ class Acknowledgement(models.Model):
     
     def create_and_upload_pdfs(self, delete_original=True):
         ack_filename, production_filename, label_filename, qc_filename = self.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(self.id)
-        #confirmation_key = "acknowledgement/Confirmation-{0}.pdf".format(self.id)
-        production_key = "acknowledgement/Production-{0}.pdf".format(self.id)
-        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
+        ack_key = "acknowledgement/{0}/Acknowledgement-{0}.pdf".format(self.id)
+        #confirmation_key = "acknowledgement/{0}/Confirmation-{0}.pdf".format(self.id)
+        production_key = "acknowledgement/{0}/Production-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/{0}/Label-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
         #confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
@@ -282,7 +286,7 @@ class Acknowledgement(models.Model):
 
         # Create QC key and upload and add to files
         try:
-            qc_key = "acknowledgment/Quality_Control-{0}.pdf".format(self.id)
+            qc_key = "acknowledgment/{0}/Quality_Control-{0}.pdf".format(self.id)
             qc_pdf = S3Object.create(qc_filename, qc_key, bucket, delete_original=delete_original)
 
             # Add qc file to the
@@ -339,7 +343,7 @@ class Acknowledgement(models.Model):
         products = self.items.all().order_by('id')
         qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
         qc_filename = qc_pdf.create()
-        label_key = "acknowledgement/Quality_Control-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/{0}/Quality_Control-{0}.pdf".format(self.id)
         bucket = "document.dellarobbiathailand.com"
         #qc_pdf = S3Object.create(qc_filename, label_key, bucket, delete_original=False)
 

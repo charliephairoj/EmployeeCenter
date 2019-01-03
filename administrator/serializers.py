@@ -12,6 +12,13 @@ from administrator.models import User, AWSUser, Log, Label
 logger = logging.getLogger(__name__)
 
 
+class UserFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active', 'web_ui_version')
+        depth = 0
+
+
 class LabelSerializer(serializers.ModelSerializer):
     category = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
@@ -21,28 +28,41 @@ class LabelSerializer(serializers.ModelSerializer):
 
 
 class LogSerializer(serializers.ModelSerializer):
+
+    employee = UserFieldSerializer(source="user")
     
     class Meta:
         model = Log
-        fields = ('id', 'message', 'timestamp', 'user', 'type')
-        
-    def xto_representation(self, instance):
-        
-        ret = super(LogSerializer, self).to_representation(instance)
-        
-        ret['user'] = "{0} {1}".format(instance.user.first_name, instance.user.last_name)
-        
-        return ret
+        fields = ('id', 'message', 'timestamp', 'employee', 'type')
 
+
+class LogListFieldSerializer(serializers.ListSerializer):
+    """Serializer to filter the type of logs
+      The value argument to to_representation() method is 
+      the model instance"""
+    def to_representation(self, data):
+        data = data.exclude(type__icontains="error").order_by('-timestamp').select_related('user')
+        return super(LogListFieldSerializer, self).to_representation(data)
+
+
+class LogFieldSerializer(serializers.ModelSerializer):
+
+    employee = UserFieldSerializer(source="user")
+    
+    class Meta:
+        model = Log
+        list_serializer_class = LogListFieldSerializer
+        fields = ('id', 'message', 'timestamp', 'employee', 'type')
+        
 
 class PermissionListSerializer(serializers.ListSerializer):
 
-    def to_internal_value(self, data):
+    def xto_internal_value(self, data):
         print "\n\nPerm List\n\n"
         logger.debug(data)
         return super(PermissionListSerializer, self).to_internal_value(data)
 
-    def to_representation(self, data):
+    def xto_representation(self, data):
         print "\n\nPerm List\n\n"
         logger.debug(isinstance(data, models.Manager))
         logger.debug(type(data))
@@ -57,23 +77,20 @@ class PermissionListSerializer(serializers.ListSerializer):
 
 class PermissionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
-    
+    module = serializers.CharField(read_only=True, source="content_type.app_label")
+
     class Meta:
         model = Permission
-        fields = ('id', 'codename', 'name')
+        fields = ('id', 'codename', 'name', 'module')
         list_serializer_class = PermissionListSerializer
 
 
-    def to_internal_value(self, data):
-        logger.debug(data)
-        ret = super(PermissionSerializer, self).to_internal_value(data)
-
-        logger.debug(ret)
-        
+    def xto_internal_value(self, data):
+        ret = super(PermissionSerializer, self).to_internal_value(data)        
 
         return ret
         
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         
         ret = super(PermissionSerializer, self).to_representation(instance)
         
@@ -87,10 +104,11 @@ class GroupSerializer(serializers.ModelSerializer):
     permissions = PermissionSerializer(data=perm_queryset, many=True, required=False)
     name = serializers.CharField(required=False)
     id = serializers.IntegerField(required=False)
+    users = UserFieldSerializer(many=True, read_only=True, source="user_set")
     
     class Meta:
         model = Group
-        fields = ('id', 'permissions', 'name')
+        fields = ('id', 'permissions', 'name', 'users')
         
     def create(self, validated_data):
         perms = validated_data.pop('permissions', [])
@@ -210,12 +228,6 @@ class UserSerializer(serializers.ModelSerializer):
         
         user.aws_credentials.save()
 
-
-class UserFieldSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active', 'web_ui_version')
-        depth = 0
         
 
 

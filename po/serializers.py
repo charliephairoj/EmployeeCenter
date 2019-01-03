@@ -13,12 +13,13 @@ import boto.ses
 from pytz import timezone
 
 from administrator.models import User, Storage, CredentialsModel
+from administrator.serializers import LogFieldSerializer
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
-from po.models import PurchaseOrder, Item, Log as POLog
+from po.models import PurchaseOrder, Item, Log as POLog, File
 from projects.models import Project, Room, Phase
 from projects.serializers import RoomFieldSerializer, PhaseFieldSerializer, ProjectFieldSerializer
-from contacts.serializers import AddressSerializer, SupplierSerializer
+from contacts.serializers import AddressSerializer, SupplierSerializer, SupplierFieldSerializer
 from acknowledgements.models import Acknowledgement
 from acknowledgements.serializers import AcknowledgementFieldSerializer
 from media.serializers import S3ObjectFieldSerializer
@@ -164,13 +165,9 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         try:
             return S3ObjectFieldSerializer(instance.supply.image).data
-        except Exception as e:
+        except AttributeError as e:
             logger.warn(e)
-            try:
-                return {'url': instance.supply.image.generate_url(),
-                        'id': instance.supply.image.id}
-            except AttributeError as e:
-                return None
+            return None
 
     def _change_supply_cost(self, supply, cost, units="pc"):
         """
@@ -245,7 +242,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    supplier = SupplierSerializer() #serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all())
+    supplier = SupplierFieldSerializer()
     project = ProjectFieldSerializer(required=False, allow_null=True)
     room = RoomFieldSerializer(allow_null=True, required=False)
     phase = PhaseFieldSerializer(allow_null=True, required=False)
@@ -254,16 +251,17 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     order_date = serializers.DateTimeField(read_only=True)
     pdf = S3ObjectFieldSerializer(read_only=True)
     auto_print_pdf = S3ObjectFieldSerializer(read_only=True)
-    logs = serializers.SerializerMethodField(read_only=True)
+    logs = LogFieldSerializer(many=True, read_only=True)
     approval_pass = serializers.SerializerMethodField(read_only=True)
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
 
     class Meta:
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments', 
-                  'acknowledgement', 'pdf', 'auto_print_pdf', 'logs', 'approval_pass')
-
+                  'acknowledgement', 'pdf', 'auto_print_pdf', 'logs', 'approval_pass', 'files')
+        depth = 1
         read_only_fields = ('pdf', 'revision', 'auto_print_pdf', 'logs', 'approval_pass')
 
     def to_internal_value(self, data):
@@ -281,8 +279,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         library = {'project': Project, 
                    'room': Room,
-                   'phase': Phase,
-                   'acknowledgement': Acknowledgement}
+                   'phase': Phase}
         for key  in library:
             try:
                 ret[key] = library[key].objects.get(pk=data[key]['id'])
@@ -292,6 +289,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     ret[key] = library[key].objects.create(**data[key])
                 except (KeyError, TypeError) as e:
                     pass
+        
+        try:
+            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
+        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
+            del ret['acknowledgement']
 
         return ret
 
@@ -303,7 +305,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
-        
+        files = validated_data.pop('files', [])
 
 
         data = {}
@@ -341,6 +343,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.calculate_total()
 
         instance.create_and_upload_pdf()
+
+        # Add pdfs to files list
+        filenames = ['pdf']
+        for filename in filenames:
+            try:
+                File.objects.create(file=getattr(instance, filename),
+                                    puchase_order=instance)
+            except Exception as e:
+                logger.warn(e)
+
+        # Assign files
+        for file_obj in files:
+            File.objects.create(file_obj=S3Object.objects.get(pk=file_obj['id']),
+                                puchase_order=instance)
 
         # Create approval key and salt
         instance.approval_key = instance.create_approval_key()
@@ -394,6 +410,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
+
+        #Update attached files
+        files = validated_data.pop('files', [])
+        for file_obj in files:
+            try:
+                File.objects.get(file_id=file_obj['id'], purchase_order=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file_obj['id']),
+                                    purchase_order=instance)
 
         if receive_date != instance.receive_date:
             old_rd = instance.receive_date
@@ -480,14 +505,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 logger.warn(e)
 
         return instance
-
-    def get_logs(self, instance):
-        """
-        Return a list of logs
-        """
-        return [{'message': log.message,
-                 #'employee': get_employee(log),
-                 'timestamp': log.timestamp} for log in instance.logs.all()]
     
     def get_approval_pass(self, instance):
         """

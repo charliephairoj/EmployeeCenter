@@ -9,16 +9,89 @@ from django.db import connection
 from django.db.models import Q
 from django.conf import settings
 from rest_framework import generics
+from rest_framework.renderers import JSONRenderer
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_protect
+from django.contrib.auth.decorators import login_required
 
 from po.serializers import PurchaseOrderSerializer
 from po.models import PurchaseOrder
 from supplies.models import Supply, Product
 from projects.models import Project, Room, Phase
+from utilities.http import save_upload
+from media.models import S3Object
+from media.serializers import S3ObjectSerializer
 
 
 logger = logging.getLogger(__name__)
 
+
+@login_required
+def item_image(request, po_id=None):
+
+    if request.method == "POST":
+        try:
+            credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
+        except AttributeError as e:
+            logger.error(e)
+            key = ''
+            secret = ''
+        
+        filename = save_upload(request)
+
+        if po_id:
+            key = u"purchase_order/{0}/item/image/{1}".format(po_id, filename.split('/')[-1])
+        else: 
+            key = u"purchase_order/item/image/{0}".format(filename.split('/')[-1])
+
+        obj = S3Object.create(filename,
+                        key,
+                        'media.dellarobbiathailand.com',
+                        key, 
+                        secret)
+
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
+                                content_type="application/json")
+        response.status_code = 201
+        return response
+
+
+@login_required
+def po_file(request, po_id=None):
+
+    if request.method == "POST":
+
+        try:
+            credentials = request.user.aws_credentials
+            key = credentials.access_key_id
+            secret = credentials.secret_access_key
+        except AttributeError as e:
+            logger.error(e)
+            key = ''
+            secret = ''
+
+        filename = save_upload(request)
+
+        if po_id:
+            key = u"purchase_order/{0}/files/{1}".format(po_id, filename.split('/')[-1])
+        else: 
+            key = u"purchase_order/files/{0}".format(filename.split('/')[-1])
+        
+        obj = S3Object.create(filename,
+                            key,
+                            u"document.dellarobbiathailand.com",
+                            key, 
+                            secret)
+        
+        serializer = S3ObjectSerializer(obj)
+        response = HttpResponse(JSONRenderer().render(serializer.data),
+                                content_type="application/json")
+                                
+        response.status_code = 201
+        return response
+    
 
 @csrf_exempt
 def purchase_order_approval(request):
@@ -153,7 +226,6 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
                                            'auto_print_pdf',
                                            'acknowledgement')
         queryset = queryset.prefetch_related('items',
-                                             'items__purchase_order',
                                              'logs',
                                              'items__supply',
                                              'items__supply__image',
@@ -177,4 +249,30 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
 
 class PurchaseOrderDetail(PurchaseOrderMixin,
                           generics.RetrieveUpdateDestroyAPIView):
-    pass
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = self.queryset.all()
+                
+        queryset = queryset.select_related('supplier',
+                                           'project',
+                                           'room',
+                                           'phase', 
+                                           'pdf', 
+                                           'auto_print_pdf',
+                                           'acknowledgement')
+        queryset = queryset.prefetch_related('items',
+                                             'files',
+                                             'logs',
+                                             'logs__user',
+                                             'items__supply',
+                                             'items__supply__image',
+                                             #'items__supply__product',
+                                             'project__rooms',
+                                             'project__phases',
+                                             'project__rooms__files',
+                                             'supplier__addresses')
+        
+        return queryset

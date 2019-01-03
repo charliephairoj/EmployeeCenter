@@ -58,6 +58,8 @@ class PurchaseOrder(models.Model):
     status = models.TextField(default="AWAITING APPROVAL")
     pdf = models.ForeignKey(S3Object, null=True)
     auto_print_pdf = models.ForeignKey(S3Object, null=True, related_name="auto_print_po")
+    files = models.ManyToManyField(S3Object, through="File", related_name="purchase_orders")
+
     project = models.ForeignKey(Project, null=True, blank=True, related_name="purchase_orders")
     room = models.ForeignKey(Room, null=True)
     phase = models.ForeignKey(Phase, null=True)
@@ -174,12 +176,12 @@ class PurchaseOrder(models.Model):
         """
 
         filename, filename2 = self.create_pdf()
-        key = "purchase_order/PO-{0}.pdf".format(self.id)
+        key = "purchase_order/{0}/PO-{0}.pdf".format(self.id)
         self.pdf = S3Object.create(filename,
                                    key,
                                    'document.dellarobbiathailand.com')
         
-        auto_key = "purchase_order/PO-{0}-auto.pdf".format(self.id)
+        auto_key = "purchase_order/{0}/PO-{0}-auto.pdf".format(self.id)
         self.auto_print_pdf = S3Object.create(filename2,
                                               auto_key,
                                               'document.dellarobbiathailand.com')
@@ -582,7 +584,12 @@ class Item(models.Model):
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))
 
-        
+
+class File(models.Model):
+    purchase_order = models.ForeignKey(PurchaseOrder)
+    file = models.ForeignKey(S3Object, related_name='purchase_order_files')
+
+
 class Log(BaseLog):
     log_ptr = models.OneToOneField(BaseLog, related_name='+')
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='logs')
