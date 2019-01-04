@@ -79,6 +79,11 @@ class PurchaseOrder(models.Model):
 
     acknowledgement = models.ForeignKey(Acknowledgement, null=True)
 
+    class Meta: 
+        permissions = (
+            ('approve_purchaseorder', 'Can approve Purchase Orders'),
+        )
+
     @classmethod
     def create(cls, user=None, **kwargs):
         """

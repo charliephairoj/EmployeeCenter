@@ -223,8 +223,8 @@ def current_user(request):
 
     user_data = {'firstName': user.first_name,
                  'lastName': user.last_name,
-                 'permissions': [perm.split('.')[1] for perm in user.get_all_permissions()],
-                 'groups': [group.name for group in user.groups.all()]}
+                 'permissions': [perm for perm in user.get_all_permissions()],
+                 'groups': [GroupSerializer(group).data for group in user.groups.all()]}
    
     #get all the verified modules to be
     #used client side
