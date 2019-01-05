@@ -275,7 +275,10 @@ class EstimateSerializer(serializers.ModelSerializer):
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            del ret['acknowledgement']
+            try:
+                del ret['acknowledgement']
+            except KeyError as e: 
+                pass
 
         logger.debug("\n\nEstimate to internal value\n\n")
 
