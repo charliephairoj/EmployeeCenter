@@ -303,6 +303,8 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         currency = validated_data.pop('currency', validated_data['customer'].currency or 'THB')
         discount = validated_data.pop('discount', validated_data['customer'].discount)
+        status = validated_data.pop('status', None)
+        
         try:
             files = validated_data.pop('files', [])
         except KeyError as e:
