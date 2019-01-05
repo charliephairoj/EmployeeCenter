@@ -231,7 +231,7 @@ class EstimatePDF(object):
         #Add Data
         order_date, odObj = self.outputBKKTime(self.ack.time_created, '%B %d, %Y')
         if self.ack.delivery_date:
-            delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
+            pass #delivery_date, ddObj = self.outputBKKTime(self.ack.delivery_date, '%B %d, %Y')
         data.append(['Currency:', self._get_currency()])
         data.append(['Date:', order_date])
         data.append(['Lead Time:', self.ack.lead_time])
