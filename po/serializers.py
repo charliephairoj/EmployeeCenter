@@ -304,6 +304,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         """
         employee = self.context['request'].user
 
+        #Discard status
+        status = validated_data.pop('status', 'AWAITING APPROVAL')
         items_data = validated_data.pop('items')
         files = validated_data.pop('files', [])
 

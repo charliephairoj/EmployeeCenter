@@ -322,6 +322,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create nested items
         """
+
+        #Discard STatus
+        status = validated_data.pop('status', 'acknowledged')
+        
         items_data = validated_data.pop('items')
         items_data = self.initial_data['items']
         files = validated_data.pop('files', [])
