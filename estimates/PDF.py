@@ -180,13 +180,18 @@ class EstimatePDF(object):
             address = self.customer.addresses.all()[0]
             #Extract address
             addr = address.address1 or ''
-            city = address.city or ''
+            try:
+                city = u'{0}, '.format(address.city) if address.city else u''
+            except Exception as e:
+                city = address.city or u''
+                
             territory = address.territory or ''
             country = address.country or ''
             zipcode = address.zipcode or ''
+
             #add supplier address data
             data.append(['', addr])
-            data.append(['', u'{0}, {1}'.format(city, territory)])
+            data.append(['', u'{0}{1}'.format(city, territory)])
             data.append(['', u"{0} {1}".format(country, zipcode)])
         except IndexError:
             pass
