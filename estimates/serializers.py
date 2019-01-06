@@ -14,7 +14,7 @@ from estimates.models import Estimate, Item, Pillow, File
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
-from administrator.serializers import UserFieldSerializer as EmployeeSerializer
+from administrator.serializers import UserFieldSerializer as EmployeeSerializer, LogFieldSerializer
 from projects.serializers import ProjectFieldSerializer as ProjectSerializer
 from acknowledgements.serializers import AcknowledgementFieldSerializer as AcknowledgementSerializer
 from contacts.models import Customer
@@ -234,6 +234,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     acknowledgement = AcknowledgementSerializer(required=False, allow_null=True)
     delivery_date = serializers.DateTimeField(required=False, allow_null=True, default=datetime.now())
+    logs = LogFieldSerializer(many=True, read_only=True)
     # Totals
 
     class Meta:
@@ -243,7 +244,8 @@ class EstimateSerializer(serializers.ModelSerializer):
                             'post_discount_total',
                             'subtotal',
                             'time_created',
-                            'employee')
+                            'employee',
+                            'logs')
 
         exclude = ('pdf', 'deal', 'po_id', 'fob', 'shipping_method')
         depth = 1

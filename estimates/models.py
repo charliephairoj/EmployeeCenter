@@ -21,6 +21,7 @@ from estimates.PDF import EstimatePDF
 from media.models import Log, S3Object
 from acknowledgements.models import Acknowledgement
 from deals.models import Event, Deal
+from administrator.models import Log as BaseLog
 
 
 logger = logging.getLogger(__name__)
@@ -673,28 +674,19 @@ class Pillow(models.Model):
         pillow.save()
         return pillow
 
-
-class Log(models.Model):
-    message = models.TextField()
-    timestamp = models.DateTimeField(auto_now=True, db_column='log_timestamp')
-    delivery_date = models.DateField(null=True)
-    estimate = models.ForeignKey(Estimate)
+class Log(BaseLog):
+    log_ptr = models.OneToOneField(BaseLog, related_name='+')
+    estimate = models.ForeignKey(Estimate, related_name='logs')
 
     @classmethod
-    def create(cls, event, estimate, employee):
-        """Creates an acknowlegement log"""
-        log = cls(event=event, estimate=estimate,
-                  employee=employee)
+    def create(cls, **kwargs):
+
+        log_type = kwargs.pop('type', 'QUOTATION')
+
+        log = cls(type=log_type, **kwargs)
         log.save()
+
         return log
-
-    def to_dict(self):
-        """Get the log data"""
-
-        return {'event': self.event,
-                'employee': "{0} {1}".format(self.employee.first_name, self.employee.last_name),
-                'timestamp': self.timestamp.isoformat()}
-
 
 class Delivery(models.Model):
     estimate = models.ForeignKey(Estimate, null=True)

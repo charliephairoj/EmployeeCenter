@@ -37,6 +37,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
         """
         queryset = self.queryset
 
+        queryset = queryset.order_by('name')
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
@@ -92,6 +94,9 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset.all()
+
+        queryset = queryset.order_by('name')
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
@@ -151,6 +156,8 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
         Override 'get_queryset' method in order to customize filter
         """
         queryset = self.queryset.all()
+
+        queryset = queryset.order_by('name')
         
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -169,7 +176,6 @@ class SupplierList(SupplierMixin, generics.ListCreateAPIView):
 
         queryset = queryset.prefetch_related('addresses', 'contacts')
 
-            
         return queryset
         
     def get_paginate_by(self):
@@ -200,6 +206,8 @@ class SupplierViewSet(viewsets.ModelViewSet):
         """
         queryset = self.queryset.all()
         
+        queryset = queryset.order_by('name')
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
