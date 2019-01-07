@@ -254,7 +254,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     logs = LogFieldSerializer(many=True, read_only=True)
     approval_pass = serializers.SerializerMethodField(read_only=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
-
+    comments = serializers.CharField(allow_null=True, allow_blank=True)
+    
     class Meta:
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
