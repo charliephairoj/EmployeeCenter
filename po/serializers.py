@@ -255,7 +255,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     approval_pass = serializers.SerializerMethodField(read_only=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     comments = serializers.CharField(allow_null=True, allow_blank=True)
-    
+
     class Meta:
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
@@ -348,13 +348,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.create_and_upload_pdf()
 
         # Add pdfs to files list
-        filenames = ['pdf']
-        for filename in filenames:
-            try:
-                File.objects.create(file=getattr(instance, filename),
-                                    puchase_order=instance)
-            except Exception as e:
-                logger.warn(e)
+        File.objects.create(file=instance.pdf,
+                            purhase_order=instance)
+
 
         # Assign files
         for file_obj in files:
