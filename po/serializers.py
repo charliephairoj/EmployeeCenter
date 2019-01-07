@@ -242,7 +242,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    supplier = SupplierFieldSerializer()
+    supplier = SupplierSerializer()
     project = ProjectFieldSerializer(required=False, allow_null=True)
     room = RoomFieldSerializer(allow_null=True, required=False)
     phase = PhaseFieldSerializer(allow_null=True, required=False)

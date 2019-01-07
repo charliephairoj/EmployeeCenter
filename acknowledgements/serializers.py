@@ -13,7 +13,7 @@ from pytz import timezone
 from administrator.models import User
 from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
-from contacts.serializers import CustomerFieldSerializer
+from contacts.serializers import CustomerFieldSerializer, CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
 from projects.serializers import ProjectFieldSerializer, RoomFieldSerializer, PhaseFieldSerializer
@@ -267,7 +267,7 @@ class FileSerializer(serializers.ModelSerializer):
 class AcknowledgementSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    customer = CustomerFieldSerializer()
+    customer = CustomerSerializer()
     employee = UserFieldSerializer(required=False, read_only=True)
     project = ProjectFieldSerializer(required=False, allow_null=True)
     room = RoomFieldSerializer(allow_null=True, required=False)
