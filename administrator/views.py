@@ -220,11 +220,13 @@ class LogDetail(LogMixin, generics.RetrieveAPIView):
 def current_user(request):
 
     user = request.user
+    group_queryset = user.groups.all()
+    group_queryset = group_queryset.prefetch_related('permissions', 'permissions__content_type')
 
     user_data = {'firstName': user.first_name,
                  'lastName': user.last_name,
                  'permissions': [perm for perm in user.get_all_permissions()],
-                 'groups': [GroupSerializer(group).data for group in user.groups.all()]}
+                 'groups': GroupSerializer(group_queryset, many=True).data}
    
     #get all the verified modules to be
     #used client side
@@ -252,6 +254,7 @@ def current_user(request):
     if user.is_superuser:
         modules.append('administrator')
     user_data['modules'] = modules
+
     #return data via http
     return HttpResponse(json.dumps(user_data), content_type="application/json")
 

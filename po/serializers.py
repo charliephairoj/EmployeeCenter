@@ -684,3 +684,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                             format='html')
 
    
+
+class PurchaseOrderFieldSerializer(serializers.ModelSerializer):
+    project = ProjectFieldSerializer(required=False, allow_null=True)
+    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
+    order_date = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = ('id', 'project', 'grand_total',
+                  'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
+                  'discount', 'status', 'terms', 'order_date', 'currency')
+        depth = 1

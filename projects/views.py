@@ -119,7 +119,7 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
             queryset = queryset.exclude(status__icontains="completed", website=False)
         
         # Enfore ordering by codename    
-        queryset = queryset.order_by('-website', '-codename')
+        queryset = queryset.order_by('-website', '-id')
         
         offset = int(self.request.query_params.get('offset', 0))
         limit = int(self.request.query_params.get('limit', settings.REST_FRAMEWORK['PAGINATE_BY']))
@@ -129,7 +129,7 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
             queryset = queryset[0:50]
 
         queryset = queryset.select_related('customer')
-        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files')
+        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files', 'files', 'acknowledgements', 'purchase_orders')
         return queryset
     
     
@@ -139,6 +139,16 @@ class ProjectDetail(ProjectMixin, generics.RetrieveUpdateDestroyAPIView):
             project = self.get_object()
             serializer = ProjectSerializer(project, context={'pk':pk})
             return Response(serializer.data)
+
+    def get_queryset(self):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = Project.objects.all()
+
+        queryset = queryset.select_related('customer')
+        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files', 'files', 'acknowledgements', 'purchase_orders')
+        return queryset
     
 
 class PhaseViewSet(viewsets.ModelViewSet):

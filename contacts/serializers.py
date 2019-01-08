@@ -1,11 +1,24 @@
 import logging
+from datetime import datetime, timedelta
 
 from contacts.models import Customer, Supplier, Address, SupplierContact, Contact
+from po.models import PurchaseOrder
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
 
 logger = logging.getLogger(__name__)
+
+
+class PurchaseOrderFieldSerializer(serializers.ModelSerializer):
+    order_date = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = ('id', 'grand_total',
+                  'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
+                  'discount', 'status', 'terms', 'order_date', 'currency')
+        depth = 1
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -240,6 +253,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     notes = serializers.CharField(default="", allow_null=True, allow_blank=True)
     bank = serializers.CharField(default="", allow_null=True, allow_blank=True)
     bank_account_number = serializers.CharField(default="", allow_null=True, allow_blank=True)
+    purchase_orders = serializers.SerializerMethodField()
 
     class Meta:
         model = Supplier
@@ -329,6 +343,16 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         for address in instance.addresses.all():
             if address.id not in id_list:
                 address.delete()
+
+    def get_purchase_orders(self, instance):
+        request = self.context['request']
+
+        if "pk" in self.context['view'].kwargs:
+            year = (datetime.now() - timedelta(days=365)).year
+            pos = instance.purchase_orders.filter(order_date__year__gte=year).order_by('-id')
+            return PurchaseOrderFieldSerializer(pos, many=True).data
+        else:
+            return []
 
 
 class SupplierFieldSerializer(ContactMixin, serializers.ModelSerializer):

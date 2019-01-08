@@ -616,7 +616,11 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
 
 class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+    project = ProjectFieldSerializer(required=False, read_only=True)
 
     class Meta:
         model = Acknowledgement
-        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created')
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created', 'project')
+        read_only_fields = ('project', )
+
+

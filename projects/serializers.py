@@ -5,10 +5,32 @@ from rest_framework import serializers
 from supplies.serializers import SupplySerializer
 from projects.models import Project, Phase, Room, Item, File, ItemSupply, Part, ProjectSupply
 from media.models import S3Object
+from media.serializers import S3ObjectFieldSerializer
 from supplies.models import Supply
+from contacts.serializers import CustomerFieldSerializer
+from acknowledgements.models import Acknowledgement
+from po.models import PurchaseOrder
 
-
+ 
 logger = logging.getLogger(__name__)
+
+
+class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Acknowledgement
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created', 'project')
+
+
+class PurchaseOrderFieldSerializer(serializers.ModelSerializer):
+    order_date = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = ('id', 'grand_total',
+                  'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
+                  'discount', 'status', 'terms', 'order_date', 'currency')
+        depth = 1
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -35,40 +57,19 @@ class PhaseFieldSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
+    customer = CustomerFieldSerializer(required=False, allow_null=True)
     supplies = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
                                      required=False)
-    files = serializers.ListField(child=serializers.DictField(), write_only=True, allow_null=True,
-                                     required=False)
-    codename = serializers.CharField(allow_blank=True)
+    files = S3ObjectFieldSerializer(allow_null=True, required=False, many=True)
+    codename = serializers.CharField(allow_blank=False, allow_null=False)
+    acknowledgements = AcknowledgementFieldSerializer(read_only=True, many=True)
+    purchase_orders = PurchaseOrderFieldSerializer(read_only=True, many=True)
     #phases = PhaseSerializer(many=True)
     
     class Meta:
         model = Project
-        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies', 'status', 'website', 'files')
+        fields = ('id', 'codename', 'rooms', 'quantity', 'phases', 'supplies', 'status', 'website', 'files', 'customer', 'acknowledgements', 'purchase_orders')
         depth = 1
-        
-    def to_representation(self, instance):
-        """
-        Override the 'to_representation' method
-        """
-        ret = super(ProjectSerializer, self).to_representation(instance)
-        """
-        if 'pk' in self.context:
-            ret['items'] = []
-            for acknowledgement in instance.acknowledgements.all():
-                ret['items'] += [AckItemSerializer(item).data for item in acknowledgement.items.all()]
-        """
-
-        try:
-            ret['files'] = [{'id':f.file.id,
-                            'web_active': f.web_active,
-                            'primary': f.primary,
-                            'url':f.generate_url()} for f in instance.files.all()]     
-        except AttributeError as e:
-            ret['files'] = []
-        #ret['supplies'] = [self._serialize_supply(supply, instance) for supply in instance.supplies.all()]
-        
-        return ret
         
     def create(self, validated_data):
         """
@@ -88,7 +89,7 @@ class ProjectSerializer(serializers.ModelSerializer):
                 file = File.objects.get(file_id=f_data['id'], project=instance)
             except File.DoesNotExist:
                 file = File.objects.create(file=S3Object.objects.get(pk=f_data['id']),
-                                    project=instance)
+                                           project=instance)
 
             file.web_active = f_data.get('web_active', file.web_active)
             file.primary = f_data.get('primary', file.primary)
