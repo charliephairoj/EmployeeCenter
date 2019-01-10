@@ -54,10 +54,6 @@ class ItemSerializer(serializers.ModelSerializer):
         elif "id" not in data["supply"]:
             data['supply']['id'] = 10346
 
-        # Unit Cost to cost
-        if "unit_cost" in data:
-            data['cost'] = data['unit_cost']
-
         ret = super(ItemSerializer, self).to_internal_value(data)
         
         try:
