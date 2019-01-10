@@ -30,7 +30,7 @@ class Log(models.Model):
 class S3Object(models.Model):
     access_key = ''
     secret_key = ''
-    version_id = models.TextField(default=None)
+    version_id = models.TextField(default=None, null=True)
     last_modified = models.DateTimeField(null=True, default=None)
     bucket = models.TextField()
     key = models.TextField() 
@@ -113,17 +113,18 @@ class S3Object(models.Model):
             self._key_obj = self.bucket_obj.get_key(self.key_name,
                                                     version_id=self.version_id)
             
-            if self._size is None or self.version_id is None or self.last_modified is None:
-                t = Thread(target=self._update_from_key_obj, args=(self.key_name, self.bucket_obj))
-                t.start()
+
+            #if self._size is None or self.version_id is None or self.last_modified is None:
+            #    t = Thread(target=self._update_from_key_obj, args=(self.key_name, self.bucket_obj))
+            #    t.start()
 
         return self._key_obj
 
     @property
     def size(self):
-        if self._size is None:
-            t = Thread(target=self._update_from_key_obj)
-            t.start()
+        # if self._size is None:
+        #     t = Thread(target=self._update_from_key_obj)
+        #     t.start()
         return self._size or 0
 
     @property

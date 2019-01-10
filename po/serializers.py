@@ -1,4 +1,5 @@
-
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import logging
 import decimal
 from decimal import Decimal
@@ -254,7 +255,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     logs = LogFieldSerializer(many=True, read_only=True)
     approval_pass = serializers.SerializerMethodField(read_only=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
-    comments = serializers.CharField(allow_null=True, allow_blank=True)
+    comments = serializers.CharField(allow_null=True, allow_blank=True, required=False)
 
     class Meta:
         model = PurchaseOrder
@@ -294,7 +295,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
-            del ret['acknowledgement']
+            try:
+                del ret['acknowledgement']
+            except KeyError as e: 
+                pass
 
         return ret
 
@@ -349,13 +353,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         # Add pdfs to files list
         File.objects.create(file=instance.pdf,
-                            purhase_order=instance)
+                            purchase_order=instance)
 
 
         # Assign files
         for file_obj in files:
             File.objects.create(file_obj=S3Object.objects.get(pk=file_obj['id']),
-                                puchase_order=instance)
+                                purchase_order=instance)
 
         # Create approval key and salt
         instance.approval_key = instance.create_approval_key()
@@ -433,8 +437,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
             old_status = instance.status
             instance.status = status
-            logger.debug(old_status)
-            logger.debug(instance.status)
+
             if old_status.lower() != "ordered" and instance.status.lower() == "received":
                 self.receive_order(instance, validated_data)
 
@@ -451,25 +454,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         items_data = self.initial_data['items']#validated_data.pop('items', self.context['request'].data['items'])
 
-        """
-        for item_data in items_data:
-            try:
-                item_data['supply'] = item_data['supply'].id
-            except AttributeError:
-                try:
-                    item_data['supply'] = item_data['supply']['id']
-                except TypeError:
-                    pass
-        """
 
         self._update_items(instance, items_data)
 
         instance.revision += 1
-        """
-        instance.vat = validated_data.pop('vat', instance.vat)
-        instance.discount = validated_data.pop('discount', instance.discount)
-        instance.deposit = validated_data.pop('deposit', instance.deposit)
-        """
 
         fields = ['vat', 'discount', 'deposit', 'currency', 'terms']
         for field in fields:

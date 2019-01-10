@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def test_module(module):
-    cmd = "python manage.py test {0} --settings=EmployeeCenter.test-settings --keepdb".format(module)
+    cmd = "python manage.py test {0} --settings=EmployeeCenter.test-settings".format(module)
     subprocess.call(cmd, shell=True)
 
 def test_coverage(module='EmployeeCenter'):

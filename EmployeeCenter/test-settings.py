@@ -8,7 +8,7 @@ from EmployeeCenter.settings import *
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'TEST_NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
+        'NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
 
     }
 }
@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     #'social.apps.django_app.default',
     'corsheaders',
     #'oauth2client',
+    'test'
 )
 
 LOGGING = {

@@ -16,6 +16,7 @@ from django.test import TestCase
 from administrator.models import User
 from django.contrib.auth.models import Permission, ContentType
 from rest_framework.test import APITestCase
+from faker import Faker
 
 from contacts.models import Supplier, Address, SupplierContact
 from po.models import PurchaseOrder, Item
@@ -58,7 +59,10 @@ base_purchase_order = {'supplier': {'id':1,
                        'items': [{'supply':{'id': 1}, 'quantity':10},
                                  {'supply':{'id': 2}, 'quantity': 3}],
                        'vat': '7',
-                       'receive_date': datetime.datetime.now()}
+                       'receive_date': datetime.datetime.now(),
+                       'acknowledgement': {
+                           'id': None,
+                       }}
 
 date = datetime.datetime.now()
 
@@ -91,7 +95,7 @@ class PurchaseOrderTest(APITestCase):
         """
         Set up dependent objects
         """
-        #super(PurchaseOrderTest, self).setUp()
+        super(PurchaseOrderTest, self).setUp()
        
         self.ct = ContentType(app_label="po")
         self.ct.save()
@@ -107,7 +111,7 @@ class PurchaseOrderTest(APITestCase):
         self.user.user_permissions.add(self.p)
         self.user.user_permissions.add(self.p2)
         self.client.login(username=self.username, password=self.password)
-        
+        self.client.force_authenticate(self.user)
         
         self.supplier = Supplier(**base_supplier)
         self.supplier.save()

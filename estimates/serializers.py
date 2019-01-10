@@ -10,7 +10,7 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
-from estimates.models import Estimate, Item, Pillow, File
+from estimates.models import Estimate, Item, Pillow, File, Log
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -352,6 +352,13 @@ class EstimateSerializer(serializers.ModelSerializer):
                                 estimate=instance)
 
 
+        # Log Creation
+        message = u"Quotation {0} created."
+        message = message.format(instance.id)
+        log = Log.create(message=message, 
+                         estimate=instance, 
+                         user=employee)
+
         """
         #Extract fabric quantities
         fabrics = {}
@@ -371,14 +378,24 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        instance.vat = validated_data.pop('vat', instance.vat)
-        instance.discount = validated_data.pop('discount', instance.discount)
-        instance.second_discount = validated_data.pop('second_discount', instance.second_discount)
-        instance.remarks = validated_data.pop('remarks', instance.remarks)
-        instance.lead_time = validated_data.pop('lead_time', instance.lead_time)
-        instance.currency = validated_data.pop('currency', instance.currency or 'THB')
         instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
         instance.project = validated_data.pop('project', instance.project)
+
+        # Loops through attributes and logs changes
+        updatable_attributes = ['vat', 'discount', 'second_discount', 'remarks', 'lead_time', 
+                                'currency']
+
+        for attr in updatable_attributes:
+            new_attr_value = validated_data.pop(attr, getattr(instance, attr))
+
+            if getattr(instance, attr) != new_attr_value:
+                old_attr_value = getattr(instance, attr)
+                setattr(instance, attr, new_attr_value)
+
+                # Log data changes
+                message = u"Updated Quotation {0}: {1} changed from {2} to {3}"
+                message = message.format(instance.id, attr, old_attr_value, new_attr_value)
+                Log.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
 
         #Update attached files
         files = validated_data.pop('files', [])
@@ -436,15 +453,6 @@ class EstimateSerializer(serializers.ModelSerializer):
         except AttributeError as e:
             ret['files'] = []
 
-        """
-        try:
-            ret['files'] += [{'id': file.id,
-                             'filename': file.key.split('/')[-1],
-                             'type': file.key.split('.')[-1],
-                             'url': file.generate_url()} for file in instance.files]
-        except AttributeError as e:
-            logger.warn(e)
-        """
 
         return ret
 
@@ -478,51 +486,3 @@ class EstimateSerializer(serializers.ModelSerializer):
                 item = serializer.save()
                 id_list.append(item.id)
 
-
-            """ 
-            item.estimate = instance
-            item.width = item_data.get('width', item.width)
-            item.depth = item_data.get('depth', item.depth)
-            item.height = item_data.get('height', item.height)
-            item.description = item_data.get('description', item.description)
-            item.quantity = item_data.get('quantity', item.quantity)
-            item.unit_price = item_data.get('unit_price', item.unit_price or item.product.price)
-            item.comments = item_data.get('comments', item.comments)
-
-            item.total = item.quantity * item.unit_price
-
-          
-                
-            item.save()
-            """
-            """
-            try:
-
-                item = Item.objects.get(pk=item_data['id'])
-                serializer = ItemSerializer(item, context={'customer': instance.customer, 'estimate': instance}, data=item_data)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
-
-                
-                item.supply.supplier = instance.supplier
-                item.discount = item_data.get('discount', None) or item.discount
-                item.quantity = item_data.get('quantity', None) or item.quantity
-                item.unit_cost = item_data.get('unit_cost', None) or item.unit_cost
-
-                #Change the cost of the supply and log price change
-                if item.unit_cost != item.supply.cost:
-                    self._change_supply_cost(item.supply, item.unit_cost)
-
-                item.calculate_total()
-                item.save()
-                
-            except KeyError:
-                item_data['product'] = item_data['product'].id
-                serializer = ItemSerializer(data=item_data, context={'customer': instance.customer, 'estimate': instance})
-                if serializer.is_valid(raise_exception=True):
-                    item = serializer.save()
-                    id_list.append(item.id)
-            """
-            
-        
-        
