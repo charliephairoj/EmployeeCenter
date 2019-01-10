@@ -548,11 +548,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             try:           
                 product = Product.objects.create(supply=item.supply, 
                                              supplier=po.supplier,
-                                             unit_cost=item.unit_cost)
+                                             cost=item.unit_cost)
             except TypeError as e:
                 product = Product.objects.create(supply=item.supply, 
                                              supplier=po.supplier,
-                                             unit_cost=item.cost)
+                                             cost=item.cost)
 
         #Calculate the quantity to add to current supply qty
         try:
