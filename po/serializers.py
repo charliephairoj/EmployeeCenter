@@ -25,6 +25,7 @@ from acknowledgements.models import Acknowledgement
 from acknowledgements.serializers import AcknowledgementFieldSerializer
 from media.serializers import S3ObjectFieldSerializer
 from supplies.serializers import SupplyFieldSerializer
+from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
@@ -252,13 +253,19 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     approval_pass = serializers.SerializerMethodField(read_only=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     comments = serializers.CharField(allow_null=True, allow_blank=True, required=False)
+    terms = serializers.CharField(allow_null=False, required=True)
 
+    # Payment Documents
+    deposit_document = S3ObjectFieldSerializer(required=False, allow_null=True)
+    balance_document = S3ObjectFieldSerializer(required=False, allow_null=True)
+    
     class Meta:
         model = PurchaseOrder
         fields = ('company', 'vat', 'supplier', 'id', 'items', 'project', 'grand_total', 'room',
                   'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency', 'phase', 'comments', 
-                  'acknowledgement', 'pdf', 'auto_print_pdf', 'logs', 'approval_pass', 'files')
+                  'acknowledgement', 'pdf', 'auto_print_pdf', 'logs', 'approval_pass', 'files',
+                  'deposit_document', 'balance_document', 'terms')
         depth = 1
         read_only_fields = ('pdf', 'revision', 'auto_print_pdf', 'logs', 'approval_pass')
 
@@ -295,6 +302,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 del ret['acknowledgement']
             except KeyError as e: 
                 pass
+
+        for doc_type in ['deposit_document', 'balance_document']:
+            try:
+                ret[doc_type] = S3Object.objects.get(pk=data[doc_type]['id'])
+            except (KeyError, S3Object.DoesNotExist) as e:
+                try:
+                    del ret[doc_type]
+                except KeyError:
+                    pass
 
         return ret
 
@@ -409,6 +425,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.room = validated_data.pop('room', instance.room)
         instance.phase = validated_data.pop('phase', instance.phase)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
+
+        # Payment Documents
+        instance.deposit_document = validated_data.pop('deposit_document', instance.deposit_document)
+        instance.balance_document = validated_data.pop('balance_document', instance.balance_document)
 
         #Update attached files
         files = validated_data.pop('files', [])

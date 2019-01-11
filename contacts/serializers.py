@@ -181,7 +181,8 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     currency = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
+    terms = serializers.CharField(required=False, default="50/net")
+
     class Meta:
         model = Customer
         exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
@@ -254,7 +255,8 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     bank = serializers.CharField(default="", allow_null=True, allow_blank=True)
     bank_account_number = serializers.CharField(default="", allow_null=True, allow_blank=True)
     purchase_orders = serializers.SerializerMethodField()
-
+    terms = serializers.CharField(required=False, default="50/net")
+    
     class Meta:
         model = Supplier
         exclude = ('contact', 'google_contact_id', 'trcloud_id', 'fax')

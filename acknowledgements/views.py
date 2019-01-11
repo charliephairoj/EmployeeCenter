@@ -313,7 +313,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = self.queryset.all().order_by('-id')
         
         status = self.request.query_params.get('status', None)
         if status:

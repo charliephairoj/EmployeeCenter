@@ -38,7 +38,7 @@ class PurchaseOrder(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     receive_date = models.DateTimeField(null=True)
     paid_date = models.DateTimeField(null=True)
-    terms = models.IntegerField(default=0)
+    terms = models.TextField(default='net/0')
     vat = models.IntegerField(default=0)
     discount = models.IntegerField(default=0)
     shipping_type = models.CharField(max_length=10, default="none")
@@ -63,7 +63,7 @@ class PurchaseOrder(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, related_name="purchase_orders")
     room = models.ForeignKey(Room, null=True)
     phase = models.ForeignKey(Phase, null=True)
-    deposit = models.IntegerField(default=0)
+    deposit = models.IntegerField(default=100)
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
     comments = models.TextField(null=True, blank=True)
@@ -73,6 +73,12 @@ class PurchaseOrder(models.Model):
     approval_key = models.TextField(null=True)
     approval_salt = models.TextField(null=True)
     approval_pass = models.TextField(null=True)
+
+    deposit_document = models.ForeignKey(S3Object, null=True, default=None, related_name="deposited_purchase_orders")
+    #deposit_confirmed = models.TextField(null=True, default=None)
+
+    balance_document = models.ForeignKey(S3Object, null=True, default=None, related_name="paid_purchase_orders")
+    #balance_confirmed = models.TextField(null=True, default=None)
     
     current_user = None 
     calendar_service = None

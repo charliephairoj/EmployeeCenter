@@ -39,6 +39,7 @@ class Contact(models.Model):
     tax_id = models.TextField(null=True, blank=True)
     bank = models.TextField(null=True, default="")
     bank_account_number = models.TextField(null=True, default="")
+    terms = models.TextField(null=False, default="50/net")
 
     #class Meta:
         #ordering = ['name']
@@ -182,8 +183,7 @@ class Customer(Contact):
 
 
 class Supplier(Contact):
-    terms = models.IntegerField(default=0)
-    
+    pass    
 
 class SupplierContact(models.Model):
     name = models.TextField()
