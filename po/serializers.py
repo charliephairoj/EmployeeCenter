@@ -306,7 +306,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         for doc_type in ['deposit_document', 'balance_document']:
             try:
                 ret[doc_type] = S3Object.objects.get(pk=data[doc_type]['id'])
-            except (KeyError, S3Object.DoesNotExist) as e:
+            except (KeyError, S3Object.DoesNotExist, TypeError) as e:
                 try:
                     del ret[doc_type]
                 except KeyError:
