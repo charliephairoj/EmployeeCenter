@@ -335,7 +335,7 @@ class PurchaseOrderPDF():
             data.append([i,
                          self._get_reference(supply),
                          self._get_description(supply),
-                         self._format_string_to_paragraph(supply.supply.purchasing_units),
+                         self._format_string_to_paragraph(supply.supply.purchasing_units or 'pc'),
                          u"{0:,.2f}".format(supply.quantity),
                          u"{0:,.2f}".format(calculated_unit_cost),
                          u"{0:,.2f}".format(supply.total)])
