@@ -355,9 +355,9 @@ class EstimateSerializer(serializers.ModelSerializer):
         # Log Creation
         message = u"Quotation {0} created."
         message = message.format(instance.id)
-        ELog = ELog.create(message=message, 
-                         estimate=instance, 
-                         user=employee)
+        ELog.create(message=message, 
+                    estimate=instance, 
+                    user=employee)
 
         """
         #Extract fabric quantities
