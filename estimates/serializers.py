@@ -10,7 +10,7 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 
-from estimates.models import Estimate, Item, Pillow, File, Log
+from estimates.models import Estimate, Item, Pillow, File, Log as ELog
 from contacts.serializers import CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -20,7 +20,7 @@ from acknowledgements.serializers import AcknowledgementFieldSerializer as Ackno
 from contacts.models import Customer
 from administrator.models import User
 from products.models import Product
-from supplies.models import Fabric, Log
+from supplies.models import Fabric,  Log
 from projects.models import Project
 from media.models import S3Object
 from media.serializers import S3ObjectFieldSerializer
@@ -355,9 +355,9 @@ class EstimateSerializer(serializers.ModelSerializer):
         # Log Creation
         message = u"Quotation {0} created."
         message = message.format(instance.id)
-        log = Log.create(message=message, 
-                         estimate=instance, 
-                         user=employee)
+        ELog.create(message=message, 
+                    estimate=instance, 
+                    user=employee)
 
         """
         #Extract fabric quantities
@@ -395,7 +395,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                 # Log data changes
                 message = u"Updated Quotation {0}: {1} changed from {2} to {3}"
                 message = message.format(instance.id, attr, old_attr_value, new_attr_value)
-                Log.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+                ELog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
 
         #Update attached files
         files = validated_data.pop('files', [])
