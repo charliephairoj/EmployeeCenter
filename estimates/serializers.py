@@ -20,7 +20,7 @@ from acknowledgements.serializers import AcknowledgementFieldSerializer as Ackno
 from contacts.models import Customer
 from administrator.models import User
 from products.models import Product
-from supplies.models import Fabric, Log
+from supplies.models import Fabric,  Log
 from projects.models import Project
 from media.models import S3Object
 from media.serializers import S3ObjectFieldSerializer
