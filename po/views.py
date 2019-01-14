@@ -224,6 +224,8 @@ class PurchaseOrderList(PurchaseOrderMixin, generics.ListCreateAPIView):
                                            'phase', 
                                            'pdf', 
                                            'auto_print_pdf',
+                                           'deposit_document',
+                                           'balance_document',
                                            'acknowledgement')
         queryset = queryset.prefetch_related('items',
                                              'logs',
@@ -262,6 +264,8 @@ class PurchaseOrderDetail(PurchaseOrderMixin,
                                            'phase', 
                                            'pdf', 
                                            'auto_print_pdf',
+                                           'deposit_document',
+                                           'balance_document',
                                            'acknowledgement')
         queryset = queryset.prefetch_related('items',
                                              'files',

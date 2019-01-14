@@ -643,6 +643,9 @@ class Acknowledgement(models.Model):
             
         return description
         
+    def __str__(self):
+        return u"Acknowledgement #{0}".format(self.id)
+        
 
 class File(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)

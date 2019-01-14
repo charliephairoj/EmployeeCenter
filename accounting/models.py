@@ -8,6 +8,7 @@ from contacts.models import Contact
 
 class Account(models.Model):
     id = models.TextField(primary_key=True, unique=True)
+    #account_code = models.TextField(unique=True)
     name = models.TextField()
     name_th = models.TextField(null=True)
     type = models.TextField(db_column="account_type", null=True)

@@ -81,6 +81,9 @@ class Project(models.Model):
         project.save()
         return project
 
+    def __str__(self):
+        return u"Project: {0}".format(self.codename)
+
 
 class Phase(models.Model):
     description = models.TextField()
@@ -92,6 +95,10 @@ class Phase(models.Model):
         permissions = (
             ("view_phase_report", "Can view phase report"),
         )
+
+    def __str__(self):
+        return u"Phase: {0} in Project:{1}".format(self.description, self.project.codename)
+    
     
 class Room(models.Model):
     description = models.TextField()
@@ -174,6 +181,9 @@ class Room(models.Model):
                                  "url": self.image.generate_url()}
         """
         return data
+
+    def __str__(self):
+        return u"Room: {0} in Project:{1}".format(self.description, self.project.codename)
 
 
 class Item(models.Model):

@@ -88,6 +88,8 @@ class PurchaseOrder(models.Model):
     class Meta: 
         permissions = (
             ('approve_purchaseorder', 'Can approve Purchase Orders'),
+            ('change_purchaseorder_deposit_document', 'Can change the deposit document'),
+            ('change_purchaseorder_balance_document', 'Can change the balance document'),
         )
 
     @classmethod

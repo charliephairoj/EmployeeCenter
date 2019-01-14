@@ -409,9 +409,21 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Override the 'update' method in order to increase the revision number and create a new version of the pdf
+        Update Purchase Order
+
+        1. Get current user
+        2. Update associated models
+        3. Update Order terms and details
+        4. Attach files
+        5. Attach Payment Documents
+        6. Update Status
+        7. Update Items
+        8. Calcuate a new total
+        9. Create a new pdf
         """
 
+        
+        # Get the current user
         try:
             employee = self.context['request'].user
         except KeyError as e:
@@ -419,16 +431,45 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         instance.current_user = employee
 
-        status = validated_data.pop('status', instance.status)
-        instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
-        instance.project = validated_data.pop('project', instance.project)
-        instance.room = validated_data.pop('room', instance.room)
-        instance.phase = validated_data.pop('phase', instance.phase)
-        receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
+        # Section: Update order terms and details
+        # 
+        # We loop through properties, apply changes 
+        # and log the changes        
+        fields = ['vat',
+                  'discount',
+                  'deposit',
+                  'currency',
+                  'terms',
+                  'acknowledgement',
+                  'project',
+                  'room',
+                  'phase']
+        for field in fields:
+            old_val = getattr(instance, field)
+            new_val = validated_data.pop(field, old_val)
+            
+            if new_val != old_val:
+                setattr(instance, field, new_val)
 
-        # Payment Documents
-        instance.deposit_document = validated_data.pop('deposit_document', instance.deposit_document)
-        instance.balance_document = validated_data.pop('balance_document', instance.balance_document)
+                self._log_change(field, old_val, new_val)
+
+        receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
+        if receive_date != instance.receive_date:
+            old_rd = instance.receive_date
+            instance.receive_date = receive_date
+            
+            self._log_change('receive date', old_rd.strftime('%d/%m/%Y'), receive_date.strftime('%d/%m/%Y'))
+
+        
+        # Section: Update payment documents
+        # 
+        # We loop through properties, apply changes 
+        # and log the changes
+        if employee.has_perm('po.change_purchaseorder_deposit_document'):
+            instance.deposit_document = validated_data.pop('deposit_document', instance.deposit_document)
+
+        if employee.has_perm('po.change_purchaseorder_balance_document'):
+            instance.balance_document = validated_data.pop('balance_document', instance.balance_document)
 
         #Update attached files
         files = validated_data.pop('files', [])
@@ -439,33 +480,32 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 File.objects.create(file=S3Object.objects.get(pk=file_obj['id']),
                                     purchase_order=instance)
 
-        if receive_date != instance.receive_date:
-            old_rd = instance.receive_date
-            instance.receive_date = receive_date
-           
-            # Log changing receive date
-            message = "Purchase Order #{0} receive date changed from {1} to {2}."
-            message = message.format(instance.id, old_rd.strftime('%d/%m/%Y'), receive_date.strftime('%d/%m/%Y'))
-            POLog.create(message=message, purchase_order=instance, user=employee)
-
+        
         # Process if status has changed
-        if status.lower() != instance.status.lower():
+        new_status = validated_data.pop('status', instance.status)
+        old_status = instance.status
 
-            old_status = instance.status
-            instance.status = status
+        if new_status.lower() != old_status.lower():
 
-            if old_status.lower() != "ordered" and instance.status.lower() == "received":
-                self.receive_order(instance, validated_data)
+            # Check permissions
+            if old_status.lower() == 'awaiting approval':
+                if employee.has_perm('po.approve_purchaseorder'):
+                    instance.status = 'approved'
+                    instance.save()
 
-            instance.save()
+                    self._log_change('status', old_status, new_status)
+                else:
+                    logger.warn(u"{0} is not qualified.".format(employee.username))
+            else:
 
-            try:
-                message = "The status of purchase order #{0} has been changed from {1} to {2}.".format(instance.id, 
-                                                                                                    old_status.lower(),
-                                                                                                    instance.status.lower())
-                log = POLog.objects.create(message=message, purchase_order=instance, user=employee)
-            except ValueError as e:
-                logger.warn(e)
+                instance.status = new_status
+
+                if old_status.lower() != "ordered" and instance.status.lower() == "received":
+                    self.receive_order(instance, validated_data)
+
+                instance.save()
+
+                self._log_change('status', old_status, new_status)
 
 
         items_data = self.initial_data['items']#validated_data.pop('items', self.context['request'].data['items'])
@@ -474,22 +514,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         self._update_items(instance, items_data)
 
         instance.revision += 1
-
-        fields = ['vat', 'discount', 'deposit', 'currency', 'terms']
-        for field in fields:
-            old_val = getattr(instance, field)
-            new_val = validated_data.pop(field, old_val)
-            
-            if new_val != old_val:
-                setattr(instance, field, new_val)
-
-                # Log changing of values
-                try:
-                    message = "Purchase Order #{0}: {1} changed from {2} to {3}."
-                    message = message.format(instance.id, field, old_val, new_val)
-                    POLog.create(message=message, purchase_order=instance, user=employee)
-                except ValueError as e:
-                    logger.warn(e)
 
         instance.calculate_total()
 
@@ -651,7 +675,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                                                                    supply.description,
                                                                    item.purchase_order.supplier.name))
         log.save()
-        logger.debug(log.__dict__)
+
+    def _log_change(self, prop, old_value, new_value, instance=None, employee=None):
+        # Note: Log Changes to specified properties
+        if instance is None:
+            instance = self.instance
+
+        if employee is None:
+            employee = self.context['request'].user
+
+        message = "Purchase Order #{0}: {1} changed from {2} to {3}."
+        message = message.format(instance.id, prop, old_value, new_value)
+        POLog.create(message=message, purchase_order=instance, user=employee)
 
     def _email_purchaser(self, purchase_order):
         logger.debug(purchase_order.employee)
