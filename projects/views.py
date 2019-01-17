@@ -129,7 +129,16 @@ class ProjectList(ProjectMixin, generics.ListCreateAPIView):
             queryset = queryset[0:50]
 
         queryset = queryset.select_related('customer')
-        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files', 'files', 'acknowledgements', 'purchase_orders')
+        queryset = queryset.prefetch_related('rooms',
+                                             'phases',
+                                             'rooms__files',
+                                             'files',
+                                             'customer__addresses',
+                                             'acknowledgements',
+                                             'acknowledgements__items',
+                                             'acknowledgements__items__image',
+                                             'purchase_orders')
+                                             
         return queryset
     
     
@@ -147,7 +156,16 @@ class ProjectDetail(ProjectMixin, generics.RetrieveUpdateDestroyAPIView):
         queryset = Project.objects.all()
 
         queryset = queryset.select_related('customer')
-        queryset = queryset.prefetch_related('rooms', 'phases', 'rooms__files', 'files', 'acknowledgements', 'purchase_orders')
+        queryset = queryset.prefetch_related('rooms',
+                                             'phases',
+                                             'rooms__files',
+                                             'files',
+                                             'customer__addresses',
+                                             'acknowledgements',
+                                             'acknowledgements__items',
+                                             'acknowledgements__items__image',
+                                             'purchase_orders')
+
         return queryset
     
 

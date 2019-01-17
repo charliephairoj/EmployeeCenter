@@ -8,18 +8,28 @@ from media.models import S3Object
 from media.serializers import S3ObjectFieldSerializer
 from supplies.models import Supply
 from contacts.serializers import CustomerFieldSerializer
-from acknowledgements.models import Acknowledgement
+from acknowledgements.models import Acknowledgement, Item as AItem
 from po.models import PurchaseOrder
 
  
 logger = logging.getLogger(__name__)
 
+class ItemFieldSerializer(serializers.ModelSerializer):
+    image = S3ObjectFieldSerializer()
+    
+    class Meta:
+        model = AItem
+        fields = ('description', 'id', 'width', 'depth', 'height', 'unit_price', 'total', 'quantity', 'image', 'status')
+        read_only_fields = ('total', 'description', 'id', 'width', 'depth', 'height', 'unit_price', 'quantity', 'image', 'status')
+
 
 class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+    items = ItemFieldSerializer(read_only=True, many=True)
 
     class Meta:
         model = Acknowledgement
-        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created', 'project')
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created',
+                  'items')
 
 
 class PurchaseOrderFieldSerializer(serializers.ModelSerializer):

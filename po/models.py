@@ -63,7 +63,7 @@ class PurchaseOrder(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, related_name="purchase_orders")
     room = models.ForeignKey(Room, null=True)
     phase = models.ForeignKey(Phase, null=True)
-    deposit = models.IntegerField(default=100)
+    deposit = models.IntegerField(default=0)
     deposit_type = models.TextField(default="percent")
     revision = models.IntegerField(default=0)
     comments = models.TextField(null=True, blank=True)

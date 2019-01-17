@@ -89,6 +89,7 @@ class ItemSerializer(serializers.ModelSerializer):
     components = ComponentSerializer(required=False, many=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, default=0)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    status = serializers.CharField(required=False, default='acknowledged')
     #location = serializers.CharField(required=False, allow_null=True)
     fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
     image = S3ObjectFieldSerializer(required=False, allow_null=True)
@@ -113,7 +114,8 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product',
-                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components', 'type')
+                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components', 'type',
+                  'status')
         read_only_fields = ('total',)
         list_serializer_class = ItemListSerializer
 
