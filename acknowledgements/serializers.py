@@ -256,6 +256,20 @@ class ItemSerializer(serializers.ModelSerializer):
         return ret
 
 
+class ItemFieldSerializer(serializers.ModelSerializer):
+   
+    unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12)
+    quantity = serializers.DecimalField(required=False, decimal_places=2, max_digits=15)
+    width = serializers.IntegerField(required=False, allow_null=True)
+    depth = serializers.IntegerField(required=False, allow_null=True)
+    height = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = Item
+        fields = ('description', 'id', 'width', 'depth', 'height', 'unit_price', 'quantity')
+
+
+
 class FileSerializer(serializers.ModelSerializer):
 
     class Meta:

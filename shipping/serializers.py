@@ -5,6 +5,7 @@ from administrator.models import User
 
 from shipping.models import Shipping, Item
 from acknowledgements.models import Acknowledgement, Item as AckItem
+from acknowledgements.serializers import ItemFieldSerializer as AckItemFieldSerializer
 from contacts.models import Customer
 from contacts.serializers import CustomerSerializer
 from projects.models import Project, Phase, Room
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ItemSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    item = serializers.PrimaryKeyRelatedField(queryset=AckItem.objects.all(), required=False, allow_null=True)
+    item = AckItemFieldSerializer(required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     
     class Meta:
@@ -58,7 +59,7 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method in order to create items from nested data
         """ 
-        employee = User.objects.get(pk=1)#self.context['request'].user
+        employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
         for item_data in items_data:
@@ -66,9 +67,9 @@ class ShippingSerializer(serializers.ModelSerializer):
             # product before creation
             try:
                 item_data['item'] = item_data['item'].id
-            except KeyError as e:
+            except (KeyError, AttributeError) as e:
                 item_data['item'] = None
-        logger.debug(validated_data)
+        
         try:
             instance = self.Meta.model.objects.create(employee=employee,
                                                       **validated_data)
