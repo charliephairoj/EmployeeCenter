@@ -40,7 +40,7 @@ class LogListFieldSerializer(serializers.ListSerializer):
     """Serializer to filter the type of logs
       The value argument to to_representation() method is 
       the model instance"""
-    def to_representation(self, data):
+    def xto_representation(self, data):
         data = data.exclude(type__icontains="error").order_by('-timestamp').select_related('user')
         return super(LogListFieldSerializer, self).to_representation(data)
 
