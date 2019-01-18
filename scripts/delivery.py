@@ -14,7 +14,7 @@ import logging
 import pprint
 
 sys.path.append('/Users/Charlie/Sites/employee/backend')
-sys.path.append('/home/django_worker/backend')
+sys.path.append('/home/webserver-data/backend')
 
 from django.core.wsgi import get_wsgi_application
 
