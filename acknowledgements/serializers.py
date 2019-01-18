@@ -200,7 +200,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         # Loops through attributes and logs changes
         updatable_attributes = ['quantity', 'unit_price', 'description', 'fabric', 'fabric_quantity', 
-                                'comments', 'width', 'depth', 'height']
+                                'comments', 'width', 'depth', 'height', 'status']
 
         for attr in updatable_attributes:
             new_attr_value = validated_data.pop(attr, getattr(instance, attr))

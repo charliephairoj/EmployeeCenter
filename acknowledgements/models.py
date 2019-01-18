@@ -42,7 +42,7 @@ class Acknowledgement(models.Model):
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     _delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
-    status = models.TextField(default='acknowledged')
+    status = models.TextField(db_column='status', default='acknowledged')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)
@@ -87,6 +87,14 @@ class Acknowledgement(models.Model):
     @delivery_date.setter
     def delivery_date(self, value):
         self._delivery_date = value
+        
+    # @property
+    # def status(self):
+    #     return self._status
+
+    # @status.setter
+    # def status(self, value):
+    #     self._status = value
         
     @classmethod
     def create(cls, user, **kwargs):
@@ -669,7 +677,7 @@ class Item(models.Model):
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
     is_custom_item = models.BooleanField(default=False)
-    status = models.CharField(max_length=50, default="acknowledged")
+    status = models.CharField(db_column="status", max_length=50, default="acknowledged")
     comments = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     image = models.ForeignKey(S3Object, null=True, blank=True)
