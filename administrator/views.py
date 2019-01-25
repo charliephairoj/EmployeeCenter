@@ -66,13 +66,14 @@ def public_email(request):
 @login_required
 def log(request):
     if request.method.lower() == 'post':
-        data = request.POST
-    
+
+        data = json.loads(request.body)
+
         try:
-            err_type = "Web Error: {0}".format(data['type'].upper())
+            err_type = "Client Web Error: {0}".format(data['type'].upper())
             Log.objects.create(user=request.user, type=err_type, message=data['message'])
         except Exception:
-            Log.objects.create(user=request.user, type="Web Error", message=data['message'])
+            Log.objects.create(user=request.user, type="Client Web Error", message=data['message'])
             
         #Send an email if log is an error
         if data['type'].lower() == 'xerror': 
@@ -90,8 +91,8 @@ def log(request):
         
     else:
         
-        response = HttpResponse('suck it', content_type='application/json')
-        response.status_code = 200 
+        response = HttpResponse('Not Allowed', content_type='text/plain: charset=utf-8')
+        response.status_code = 405 
         return response
         
 
