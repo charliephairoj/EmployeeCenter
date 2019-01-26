@@ -85,13 +85,13 @@ def log(request):
                             'charliep@dellarobbiathailand.com',
                             format='html')
                             
-        response = HttpResponse('Log created.', content_type='application/json; charset=utf-8')
+        response = HttpResponse('{"message": "Log created."}', content_type='application/json; charset=utf-8')
         response.status_code = 201
         return response
         
     else:
         
-        response = HttpResponse('Not Allowed', content_type='text/plain: charset=utf-8')
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
         response.status_code = 405 
         return response
         

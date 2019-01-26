@@ -57,6 +57,12 @@ def item_image(request, po_id=None):
         response.status_code = 201
         return response
 
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
+        return response
+
 
 @login_required
 def po_file(request, po_id=None):
@@ -92,6 +98,12 @@ def po_file(request, po_id=None):
         response.status_code = 201
         return response
     
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
+        return response
+
 
 @csrf_exempt
 def purchase_order_approval(request):
@@ -120,12 +132,14 @@ def purchase_order_approval(request):
             response = HttpResponse(json.dumps({'message':'unauthorized'}),
                             content_type="application/json")
             response.status_code = 404
-    else: 
-        response = HttpResponse(json.dumps({'message':'unauthorized'}),
-                            content_type="application/json")
-        response.status_code = 404
+
+    # If any method other than POST
+    else:
+        response = HttpResponse('Not Allowed', content_type='text/plain: charset=utf-8')
+        response.status_code = 405 
     
     return response
+    
 
 def purchase_order_stats(request):
     cursor = connection.cursor()

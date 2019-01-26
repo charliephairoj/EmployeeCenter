@@ -60,6 +60,12 @@ def estimate_item_image(request, q_id=None):
         response.status_code = 201
         return response
 
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
+        return response
+
 
 @login_required
 def estimate_file(request, q_id=None):
@@ -95,7 +101,12 @@ def estimate_file(request, q_id=None):
         response.status_code = 201
         return response
     
-
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
+        return response
+        
 
 class EstimateMixin(object):
     queryset = Estimate.objects.all().order_by('-id')

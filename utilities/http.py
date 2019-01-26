@@ -201,11 +201,11 @@ def save_upload(request, filename=None):
     except MultiValueDictKeyError:
         file_obj = request.FILES['file']
         
-    logger.debug(file_obj.name)
+    
     if filename is None and file_obj.name:
 
         logger.info(u'Name from file is {0}'.format(file_obj.name))
-        filename = "{0}-{1}".format(time.time(), file_obj.name.split('/')[-1])
+        filename = "{1}".format(file_obj.name.split('/')[-1])
     elif filename is None and file_obj.name is None:
         filename = "{0}.jpg".format(time.time())
 

@@ -89,7 +89,7 @@ def acknowledgement_stats(request):
 @login_required
 def acknowledgement_item_image(request, ack_id=None):
 
-    if request.method == "POST":
+    if request.method.lower() == "post":
         try:
             credentials = request.user.aws_credentials
             key = credentials.access_key_id
@@ -118,11 +118,17 @@ def acknowledgement_item_image(request, ack_id=None):
         response.status_code = 201
         return response
 
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
+        return response
+
 
 @login_required
 def acknowledgement_file(request, ack_id=None):
 
-    if request.method == "POST":
+    if request.method.lower() == "post":
 
         try:
             credentials = request.user.aws_credentials
@@ -151,6 +157,12 @@ def acknowledgement_file(request, ack_id=None):
                                 content_type="application/json")
                                 
         response.status_code = 201
+        return response
+
+    # If any method other than POST
+    else:
+        response = HttpResponse('{"message": "Not Allowed"}', content_type='application/json; charset=utf-8')
+        response.status_code = 405 
         return response
     
 
