@@ -4,6 +4,8 @@ import base64
 import pickle
 import six
 import logging
+import hashlib
+from time import time
 
 from django.db import models
 from django.contrib.auth.models import User as AuthUser, UserManager, AbstractUser
@@ -180,6 +182,23 @@ class User(AbstractUser):
     reset_password = models.BooleanField(default=False)
     web_ui_version = models.TextField(default="V1")
     #company = model.ForeignKey(Company)
+    access_key = models.TextField(default=None)
+    secret_key = models.TextField(default=None)
+
+    def __init__(self, *args, **kwargs):
+        super(User, self).__init__(*args, **kwargs)
+
+        # Create the access_key and secret_key if it is missing
+        if self.access_key is None:
+            self.access_key = self.create_key()
+            self.save()
+        if self.secret_key is None:
+            self.secret_key = self.create_key(self.access_key)
+            self.save()
+
+    def create_key(self, salt=""):
+        return hashlib.sha512(u"{0}{1}{2}".format(self.id, time, salt)).hexdigest()
+
     
 
 class AWSUser(models.Model):

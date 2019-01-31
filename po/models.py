@@ -10,6 +10,7 @@ import httplib2
 import hashlib
 import random
 import string
+import time
 
 import boto.ses
 from django.template.loader import render_to_string
@@ -70,6 +71,8 @@ class PurchaseOrder(models.Model):
     calendar_event_id = models.TextField(null=True)
 
     # Approval fields
+    approved_by = models.ForeignKey(User, null=True, related_name="purchase_orders_approved")
+    approval_at = models.DateTimeField(null=True)
     approval_key = models.TextField(null=True)
     approval_salt = models.TextField(null=True)
     approval_pass = models.TextField(null=True)
@@ -91,6 +94,14 @@ class PurchaseOrder(models.Model):
             ('change_purchaseorder_deposit_document', 'Can change the deposit document'),
             ('change_purchaseorder_balance_document', 'Can change the balance document'),
         )
+
+    @property
+    def approval_token(self):
+        return self.approval_pass
+
+    @approval_token.setter
+    def approval_token(self, value):
+        self.approval_pass = value
 
     @classmethod
     def create(cls, user=None, **kwargs):
@@ -201,92 +212,6 @@ class PurchaseOrder(models.Model):
         
         self.save()
     
-    def _calculate_subtotal(self):
-        """
-        Calculate the subtotal
-        """
-        if self.items.count() > 0:
-            self.subtotal = sum([item.total for item in self.items.all()])
-        else:
-            raise ValueError('Purchase Order cannot not have 0 items')
-        
-        logger.debug("The subtotal is {0:.2f}".format(self.subtotal))
-        
-        return self.subtotal
-    
-    def _calculate_total(self):
-        """
-        Calculate the total
-        """
-        subtotal = self._calculate_subtotal()
-        if self.discount > 0:
-            self.total = subtotal - ((Decimal(self.discount) / Decimal('100')) * subtotal)
-        else:
-            self.total = subtotal
-
-        logger.debug("The total is {0:.2f}".format(self.total))
-        
-        return self.total
-    
-    def _calculate_grand_total(self):
-        """
-        Calcualte the grand total
-        """
-        logger.info('\nCalculating total...')
-        total = self._calculate_total()
-        
-        logger.debug("The vat is at {0}%".format(self.vat))
-        if self.vat > 0:
-            self.grand_total = total + (total * (Decimal(self.vat) / Decimal('100')))
-        else:
-            self.grand_total = total
-        
-        # Convert to 2 decimal places
-        self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
-        
-        logger.debug("The grand total is {0:.2f}".format(self.grand_total))
-        logger.info("Total calculated. \n")
-        
-        return self.grand_total
-        
-    def _get_calendar_service(self, user):
-        if self.calendar_service:
-            self.calendar_service
-        else:
-            
-            storage = Storage(CredentialsModel, 'id', user, 'credential')
-            credentials = storage.get()
-        
-            http = credentials.authorize(httplib2.Http())
-            self.calendar_service = discovery.build('calendar', 'v3', http=http)
-            
-        return self.calendar_service
-        
-    def _get_calendar(self, user):
-        service = self._get_calendar_service(user)
-        response = service.calendarList().list().execute()
-        
-        calendar_summaries = [cal['summary'].lower() for cal in response['items']]
-    
-        # Check if user does not already has account payables
-        if 'receivables' not in calendar_summaries:
-            # Get calendar
-            cal_id = 'dellarobbiathailand.com_vl7drjcuulloicm0qlupgsr4ko@group.calendar.google.com'
-            calendar = service.calendars().get(calendarId=cal_id).execute()
-     
-            # Add calendar to user's calendarList
-            service.calendarList().insert(body={
-                'id': calendar['id']
-            }).execute()
-            
-        else:
-            # Get calendar is already in calendarList
-            for cal in response['items']:
-                if cal['summary'].lower() == 'receivables':
-                    calendar = cal
-            
-        return calendar
-        
     def create_calendar_event(self, user):
         """Create a calendar event for the expected delivery date
         
@@ -318,54 +243,7 @@ class PurchaseOrder(models.Model):
         else:
             
             self.create_calendar_event(user)
-                                                                       
-    def _get_event_body(self):
-        evt = {
-            'summary': "Purchase Order {0}".format(self.id),
-            'location': self._get_address_as_string(),
-            'description': self._get_description_as_string(),
-            'start': {
-                'date': self.receive_date.strftime('%Y-%m-%d')
-            },
-            'end': {
-                'date': self.receive_date.strftime('%Y-%m-%d')
-            },
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                  {'method': 'email', 'minutes': 24 * 60 * 2},
-                  {'method': 'email', 'minutes': 120},
-                ]
-            }
-        }
-        
-        return evt
-
-    def _get_address_as_string(self):
-        try:
-            addr_str = ""
-            addr = self.supplier.addresses.all()[0]
-        
-            addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
-            addr_str += ", " + addr.country + " " + addr.zipcode
-        
-            return addr_str
-        except Exception as e:
-            logger.warn(e)
-            return ""
-
-    def _get_description_as_string(self):
-        description = u"""
-        Purchase Order: {0}
-        Supplier: {1}
-        Qty     Items: 
-        """.format(self.id, self.supplier.name)
-        
-        for i in self.items.all().order_by('id'):
-            description += u"{0:.2f}  {1}".format(i.quantity, i.description)
-            
-        return description
-
+         
     def create_approval_key(self):
         key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         return key
@@ -490,17 +368,171 @@ class PurchaseOrder(models.Model):
                         format='html')
         
 
-    def approve(self, approval_pass):
-        if approval_pass == self.create_approval_pass():
-            self.approval_pass = approval_pass
-            self.status = "APPROVED"
-            self.save()
+    def approve(self, approval_pass=None, user=None):
 
-            return True
+        if user:
+            if user.has_perm('po.approve_purchaseorder'):
+                dt = time.time()
+                self.approval_token = self._create_approval_token(dt, user)
+                self.status = u'APPROVED'
+                self.save()
+                return True
+            else: 
+                return False
         else:
-            return False
+            if approval_pass == self.create_approval_pass():
+                self.approval_pass = approval_pass
+                self.status = "APPROVED"
+                self.save()
+
+                return True
+            else:
+                return False
+
+    def _create_approval_token(self, dt, user):
+        pre_hash_str = u"{0}{1}{2}{3}"
+        pre_hash_str = pre_hash_str.format(self.id,
+                                           dt,
+                                           user.access_key,
+                                           user.secret_key)
+        return hashlib.sha512(pre_hash_str).hexdigest()
         
         
+    def _calculate_subtotal(self):
+        """
+        Calculate the subtotal
+        """
+        if self.items.count() > 0:
+            self.subtotal = sum([item.total for item in self.items.all()])
+        else:
+            raise ValueError('Purchase Order cannot not have 0 items')
+        
+        logger.debug("The subtotal is {0:.2f}".format(self.subtotal))
+        
+        return self.subtotal
+    
+    def _calculate_total(self):
+        """
+        Calculate the total
+        """
+        subtotal = self._calculate_subtotal()
+        if self.discount > 0:
+            self.total = subtotal - ((Decimal(self.discount) / Decimal('100')) * subtotal)
+        else:
+            self.total = subtotal
+
+        logger.debug("The total is {0:.2f}".format(self.total))
+        
+        return self.total
+    
+    def _calculate_grand_total(self):
+        """
+        Calcualte the grand total
+        """
+        logger.info('\nCalculating total...')
+        total = self._calculate_total()
+        
+        logger.debug("The vat is at {0}%".format(self.vat))
+        if self.vat > 0:
+            self.grand_total = total + (total * (Decimal(self.vat) / Decimal('100')))
+        else:
+            self.grand_total = total
+        
+        # Convert to 2 decimal places
+        self.grand_total = Decimal(str(math.ceil(self.grand_total * 100) / 100))
+        
+        logger.debug("The grand total is {0:.2f}".format(self.grand_total))
+        logger.info("Total calculated. \n")
+        
+        return self.grand_total
+        
+    def _get_calendar_service(self, user):
+        if self.calendar_service:
+            self.calendar_service
+        else:
+            
+            storage = Storage(CredentialsModel, 'id', user, 'credential')
+            credentials = storage.get()
+        
+            http = credentials.authorize(httplib2.Http())
+            self.calendar_service = discovery.build('calendar', 'v3', http=http)
+            
+        return self.calendar_service
+        
+    def _get_calendar(self, user):
+        service = self._get_calendar_service(user)
+        response = service.calendarList().list().execute()
+        
+        calendar_summaries = [cal['summary'].lower() for cal in response['items']]
+    
+        # Check if user does not already has account payables
+        if 'receivables' not in calendar_summaries:
+            # Get calendar
+            cal_id = 'dellarobbiathailand.com_vl7drjcuulloicm0qlupgsr4ko@group.calendar.google.com'
+            calendar = service.calendars().get(calendarId=cal_id).execute()
+     
+            # Add calendar to user's calendarList
+            service.calendarList().insert(body={
+                'id': calendar['id']
+            }).execute()
+            
+        else:
+            # Get calendar is already in calendarList
+            for cal in response['items']:
+                if cal['summary'].lower() == 'receivables':
+                    calendar = cal
+            
+        return calendar
+        
+                                                                  
+    def _get_event_body(self):
+        evt = {
+            'summary': "Purchase Order {0}".format(self.id),
+            'location': self._get_address_as_string(),
+            'description': self._get_description_as_string(),
+            'start': {
+                'date': self.receive_date.strftime('%Y-%m-%d')
+            },
+            'end': {
+                'date': self.receive_date.strftime('%Y-%m-%d')
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                  {'method': 'email', 'minutes': 24 * 60 * 2},
+                  {'method': 'email', 'minutes': 120},
+                ]
+            }
+        }
+        
+        return evt
+
+    def _get_address_as_string(self):
+        try:
+            addr_str = ""
+            addr = self.supplier.addresses.all()[0]
+        
+            addr_str += addr.address1 + ", " + addr.city + ", " + addr.territory
+            addr_str += ", " + addr.country + " " + addr.zipcode
+        
+            return addr_str
+        except Exception as e:
+            logger.warn(e)
+            return ""
+
+    def _get_description_as_string(self):
+        description = u"""
+        Purchase Order: {0}
+        Supplier: {1}
+        Qty     Items: 
+        """.format(self.id, self.supplier.name)
+        
+        for i in self.items.all().order_by('id'):
+            description += u"{0:.2f}  {1}".format(i.quantity, i.description)
+            
+        return description
+
+   
 class Item(models.Model):
     
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='items')

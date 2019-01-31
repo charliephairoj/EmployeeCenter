@@ -490,8 +490,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             # Check permissions
             if old_status.lower() == 'awaiting approval':
                 if employee.has_perm('po.approve_purchaseorder'):
-                    instance.status = 'approved'
-                    instance.save()
+                    instance.approve(user=employee)
 
                     self._log_change('status', old_status, new_status)
                 else:

@@ -164,9 +164,17 @@ class UserSerializer(serializers.ModelSerializer):
         instance = self.Meta.model.objects.create(**validated_data)
         instance.set_password(password)
         instance.save()
-        
+
         assert instance.check_password(password)
         assert instance.has_usable_password()
+
+        # Create access and secret keys
+        instance.access_key = instance.create_key()
+        instance.secret_key = instance.create_key(instance.access_key)
+        instance.save()
+        
+        assert instance.access_key
+        assert instance.secret_key
         
         #Create the credentials for aws
         self._create_aws_credentials(instance)
