@@ -89,6 +89,16 @@ class ContactMixin(object):
         instance = self.Meta.model.objects.create(name=name, **validated_data)
         
         if addresses_data:
+            # Delete any ideas, as a new customer should not have a pre existing id
+            try:
+                for a in addresses_data:
+                    try:
+                        a.pop('id', None)
+                    except (TypeError, KeyError, AttributeError) as e:
+                        pass
+            except Exception as e:
+                pass
+
             address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
             if address_serializer.is_valid(raise_exception=True):
                 address_serializer.save()
