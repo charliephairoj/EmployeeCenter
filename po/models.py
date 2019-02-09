@@ -40,20 +40,9 @@ class PurchaseOrder(models.Model):
     receive_date = models.DateTimeField(null=True)
     paid_date = models.DateTimeField(null=True)
     terms = models.TextField(default='net/0')
-    vat = models.IntegerField(default=0)
-    discount = models.IntegerField(default=0)
     shipping_type = models.CharField(max_length=10, default="none")
     shipping_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=10, default="THB")
-    
-    # refers to the total of all items
-    subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
-    
-    # refers to total after discount
-    total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
-    
-    # refers to the todal after vat
-    grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    currency = models.CharField(max_length=10, default="THB")    
     employee = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True)
     status = models.TextField(default="AWAITING APPROVAL")
@@ -70,9 +59,29 @@ class PurchaseOrder(models.Model):
     comments = models.TextField(null=True, blank=True)
     calendar_event_id = models.TextField(null=True)
 
+    # VATs
+    vat = models.IntegerField(default=0)
+    vat_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    # Discounts
+    discount = models.IntegerField(default=0)
+    second_discount = 0
+    discount_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    second_discount_amount = Decimal('0')
+
+    #Totals
+    # Totals of item totals
+    subtotal = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    # Total after first discount
+    post_discount_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # Total after second Discount
+    total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    # Total after all discounts and Vats
+    grand_total = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+
     # Approval fields
     approved_by = models.ForeignKey(User, null=True, related_name="purchase_orders_approved")
-    approval_at = models.DateTimeField(null=True)
+    approved_at = models.DateTimeField(null=True)
     approval_key = models.TextField(null=True)
     approval_salt = models.TextField(null=True)
     approval_pass = models.TextField(null=True)
@@ -102,67 +111,6 @@ class PurchaseOrder(models.Model):
     @approval_token.setter
     def approval_token(self, value):
         self.approval_pass = value
-
-    @classmethod
-    def create(cls, user=None, **kwargs):
-        """
-        Creates a purchase order
-        
-        This method creates the order details first, then
-        creates the supplies. The totals of the supplies are
-        then added and applied to the purchase order.
-        The order and supplies are then saved
-        """
-        order = cls()
-        
-        order.employee = user
-        try:
-            order.supplier = Supplier.objects.get(pk=kwargs["supplier"]["id"])
-            order.currency = order.supplier.currency
-            order.terms = order.supplier.terms
-        except KeyError:
-            raise ValueError("Expecting supplier ID")
-        try:
-            order.vat = int(kwargs["vat"])
-        except KeyError:
-            raise ValueError("Expecting a vat")
-        
-        if 'discount' in kwargs:
-            order.discount = int(kwargs['discount'])
-        try:
-            order.temporary_supplies = []
-            for supply_data in kwargs["items"]:
-                supply = Item.create(commit=False, **supply_data)
-                order.temporary_supplies.append(supply)
-                
-        except KeyError:
-            raise ValueError("Expecting a list of supplies")
-        except Supply.DoesNotExist:
-            pass
-       
-        order.subtotal = sum([supply.total for supply in order.temporary_supplies])
-        order.total = order.subtotal - ((Decimal(order.discount) / 100) * order.subtotal)
-        order.grand_total = Decimal(order.total) * (Decimal(1) + Decimal(order.vat) / 100)
-        
-        # Save the order
-        order.save()
-        
-        # Save all the items in the order
-        for supply in order.temporary_supplies:
-            supply.purchase_order = order
-            supply.save()
-           
-        # Create and upload pdf
-        """
-        pdf = PurchaseOrderPDF(po=order, items=order.items.all(),
-                               supplier=order.supplier)
-        filename = pdf.create()
-        key = "purchase_order/PO-{0}.pdf".format(order.id)
-        order.pdf = S3Object.create(filename, key, 'document.dellarobbiathailand.com')
-        order.save()
-        """
-        
-        return order
     
     def calculate_total(self):
         """
@@ -170,6 +118,28 @@ class PurchaseOrder(models.Model):
         """
         
         return Decimal(str(round(self._calculate_grand_total(), 2)))
+
+    def calculate_totals(self, items=None):
+        #Define items if not already defined
+        if not items:
+            items = self.items.all()
+
+        totals = self._calculate_totals(items)
+
+        # Totals
+        self.subtotal = totals['subtotal']
+        self.post_discount_total = totals['post_discount_total']
+        self.total = totals['total']
+        self.grand_total = totals['grand_total']
+
+        # VAT
+        self.vat_amount = totals['vat_amount']
+
+        # Discounts
+        self.discount_amount = totals['discount_amount']
+        self.second_discount_amount = totals['second_discount_amount']
+
+        self.save()
         
     def create_pdf(self):
         """
@@ -396,8 +366,135 @@ class PurchaseOrder(models.Model):
                                            user.access_key,
                                            user.secret_key)
         return hashlib.sha512(pre_hash_str).hexdigest()
+    
+    def _calculate_totals(self, items=None):
+        """Calculates the total of the order
+
+        Uses the items argument to calculate the cost
+        of the project. If the argument is null then the
+        items are pulled from the database relationship.
+        We use the argument first in the case of where
+        we are creating a new Acknowledgement, and the
+        items and acknowledgement have not yet been saved
+        """
+        # Totals
+        # Total of items totals
+        subtotal = 0
+        # Total after discount        
+        post_discount_total = 0
+        # Total after second discount
+        total = 0
+        # Total after Vat
+        grand_total = 0
+
+        # Running total to check
+        running_total = 0
+
+        # Discount amounts
+        # First Discount
+        discount_amount = 0
+        # Second Amount
+        second_discount_amount = 0
+
+        # Calculations
+        # Calculate the subtotal
+        for item in items:
+            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(item.unit_cost, item.quantity, item.total))
+            subtotal += item.total
+
+        # Set running_total to subtotal
+        running_total += subtotal
+            
+        # Set the subtotal
+        logger.debug("subtotal: = {0:.2f}".format(running_total))
         
+        if subtotal == 0:
+            return {
+                'subtotal': 0,
+                'post_discount_total': 0,
+                'total': 0,
+                'grand_total': 0,
+                'vat_amount': 0,
+                'discount_amount': 0,
+                'second_discount_amount': 0
+            }
+
+
+        # Calculate discount
+        discount_amount = (Decimal(self.discount) / 100) * subtotal
+        logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount_amount))
+
+        # Assert Discount amount is proportional to subtotal percent
+        assert (discount_amount / subtotal) == Decimal(self.discount) / 100, "{0}: {1}".format((discount_amount / subtotal), Decimal(self.discount) / 100)
+
+        # Apply discount
+        post_discount_total = subtotal - discount_amount
+        running_total -= discount_amount
+
+        # Assert Discounted amount is proportional to discount and subtotal
+        assert post_discount_total == running_total
+        assert (post_discount_total / subtotal) == ((100 - Decimal(self.discount)) / 100)
+
+        """
+        # Calculate a second discount
+        second_discount_amount = (Decimal(self.second_discount) / 100) * post_discount_total
+        logger.debug("second discount {0}%: - {1:.2f}".format(self.second_discount, second_discount_amount))
         
+        # Assert second discount amount is proportional to total percent
+        assert (second_discount_amount / post_discount_total) == Decimal(self.second_discount) / 100
+        # Assert second discount amount is not proportional to total percent
+        if self.second_discount > 0:
+            assert (second_discount_amount / subtotal) != Decimal(self.second_discount) / 100
+        """
+        second_discount_amount = Decimal('0')
+
+        # Apply second discount
+        total = post_discount_total - second_discount_amount
+        running_total -= second_discount_amount
+        logger.debug("total: = {0:.2f}".format(total))
+
+        # Assert total is proportional to subtotal
+        assert total == running_total
+        tpart1 = (total / subtotal)
+        tpart2 = 1 - (Decimal(self.discount) / 100) 
+        tpart2 = tpart2 - ((Decimal(self.discount) / 100) * (Decimal(self.second_discount) / 100))
+        assert tpart2 > 0 and tpart2 <= 1
+        assert tpart1 == tpart2, "{0}: {1}".format(tpart1, tpart2)
+        if self.second_discount > 0:
+            t2part1 = (total / subtotal)
+            t2part2 = 1 - (Decimal(self.discount) / 100) 
+            t2part2 = tpart2 - (Decimal(self.second_discount) / 100)
+            assert t2part2 > 0 and t2part2 <= 1
+            assert t2part1 != t2part2
+
+        
+        #Calculate VAT
+        vat_amount = (Decimal(self.vat) / 100) * total
+        logger.debug("vat: + {0:.2f}".format(vat_amount))
+
+        # Assert VAT
+        assert (vat_amount / total) == (Decimal(self.vat) / 100)
+
+        # Apply VAT
+        grand_total = total + vat_amount
+        running_total += vat_amount
+        logger.debug("grand total: = {0:.2f}".format(grand_total))
+
+        # Assert second discounted amount is proportional to discount and total
+        assert grand_total == running_total
+        assert (grand_total / total) == Decimal('1') + (Decimal(self.vat) / 100)
+        assert grand_total == (subtotal - discount_amount - second_discount_amount + vat_amount)
+
+        return {
+            'subtotal': subtotal,
+            'post_discount_total': post_discount_total,
+            'total': total,
+            'grand_total': grand_total,
+            'vat_amount': vat_amount,
+            'discount_amount': discount_amount,
+            'second_discount_amount': second_discount_amount
+        }
+
     def _calculate_subtotal(self):
         """
         Calculate the subtotal

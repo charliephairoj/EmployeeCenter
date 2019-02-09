@@ -513,7 +513,7 @@ class PurchaseOrderPDF():
             data.append(['', '', '', '', '', 'Subtotal', "{0:,.2f}".format(subtotal)])
             # add discount area if discount greater than 0
             if self.po.discount != 0:
-                discount = subtotal * (Decimal(self.po.discount) / Decimal('100'))
+                discount = self.po.discount_amount or subtotal * (Decimal(self.po.discount) / Decimal('100'))
                 dis_title = 'Discount {0}%'.format(self.po.discount)
                 dis_str = "{0:,.2f}".format(discount)
                 data.append(['', '', '', '', '', dis_title, dis_str])
@@ -532,7 +532,7 @@ class PurchaseOrderPDF():
                                  "{0:,.2f}".format(self.po.total)])
                     
                 # calculate vat and add to pdf
-                vat = Decimal(self.po.total) * (Decimal(self.po.vat) / Decimal('100'))
+                vat = self.po.vat_amount or Decimal(self.po.total) * (Decimal(self.po.vat) / Decimal('100'))
                 data.append(['',
                              '',
                              '',

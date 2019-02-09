@@ -359,7 +359,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
         
-        instance.calculate_total()
+        instance.calculate_totals()
 
         instance.create_and_upload_pdf()
 
@@ -514,7 +514,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         instance.revision += 1
 
-        instance.calculate_total()
+        instance.calculate_totals()
 
         instance.create_and_upload_pdf()
 
