@@ -26,6 +26,8 @@ from acknowledgements.serializers import AcknowledgementFieldSerializer
 from media.serializers import S3ObjectFieldSerializer
 from supplies.serializers import SupplyFieldSerializer
 from media.models import S3Object
+from po.purchase_order import service as po_service
+from supplies import service as supply_service
 
 
 logger = logging.getLogger(__name__)
@@ -50,22 +52,27 @@ class ItemSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
 
         # Create supply
-        if "supply" not in data:
-            data['supply'] = {'id': 10346}
-        elif "id" not in data["supply"]:
-            data['supply']['id'] = 10346
+        #if "supply" not in data:
+        #    data['supply'] = {'id': 10346}
+        #elif "id" not in data["supply"]:
+        #    data['supply']['id'] = 10346
 
         ret = super(ItemSerializer, self).to_internal_value(data)
         
         try:
             ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
-        except (Supply.DoesNotExist) as e:
+        except (Supply.DoesNotExist, KeyError) as e:
             try:
                 ret['supply'] = Supply.objects.get(description=data['description'], product__supplier=self.context['supplier'])
             except Supply.DoesNotExist as e:
-                ret['supply'] = Supply.objects.create(**data['supply'])
+
+                # Create a new Supply
+                ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
+                                                                         supplier=self.context['supplier'],
+                                                                         **data['supply'])
+
             except KeyError as e:
-                ret['supply'] = Supply.objects.get(pk=10436)
+                ret['supply'] = supply_service.get(pk=10436)
             except Supply.MultipleObjectsReturned as e:
                 ret['supply'] = Supply.objects.filter(description=data['description'],              
                                                       product__supplier=self.context['supplier']).order_by('-id')[0]
@@ -89,21 +96,21 @@ class ItemSerializer(serializers.ModelSerializer):
 
         # Confirm that the supply has a product
         if Product.objects.filter(supplier=purchase_order.supplier, supply=supply).count() == 0:
-            p = Product.objects.create(supplier=purchase_order.supplier,
-                                       supply=supply,
-                                       purchasing_units=validated_data.get('units', supply.units),
-                                       cost=validated_data.get('unit_cost', 0))
+            p = supply_service.create_product(supplier=purchase_order.supplier,
+                                              supply=supply,
+                                              purchasing_units=validated_data.get('units', supply.units),
+                                              cost=validated_data.get('unit_cost', 0))
 
         description = validated_data.pop('description', supply.description)
         unit_cost = Decimal(validated_data.pop('unit_cost', validated_data.pop('cost', supply.cost)))
         discount = validated_data.pop('discount', supply.discount)
         units = validated_data.pop('units', supply.units)
 
-        instance = self.Meta.model.objects.create(description=description, purchase_order=purchase_order,
-                                                  unit_cost=unit_cost, **validated_data)
-        instance.calculate_total()
-
-        instance.save()
+        instance = po_service.create_item(purchase_order=purchase_order,
+                                          supply=supply,
+                                          description=description,
+                                          unit_cost=unit_cost,
+                                          **validated_data)
 
         if unit_cost != supply.cost:
             self._change_supply_cost(supply, unit_cost)
@@ -339,13 +346,14 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         #terms = validated_data.pop('terms', validated_data['supplier'].terms)
         receive_date = timezone('Asia/Bangkok').normalize(validated_data.pop('receive_date'))
 
-        instance = self.Meta.model.objects.create(employee=employee, 
-                                                  currency=data['currency'],
-                                                  terms=data['terms'],
-                                                  discount=data['discount'],
-                                                  receive_date=receive_date,
-                                                  status="AWAITING APPROVAL",
-                                                  **validated_data)
+        instance = po_service.create(employee=employee, 
+                                     currency=data['currency'],
+                                     terms=data['terms'],
+                                     discount=data['discount'],
+                                     receive_date=receive_date,
+                                     status="AWAITING APPROVAL",
+                                     **validated_data)
+
         raw_items_data = self.initial_data['items']
         # Format items data by moving supply id to supply attribute
         for item_data in raw_items_data:
@@ -359,51 +367,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
         
-        instance.calculate_totals()
-
-        instance.create_and_upload_pdf()
-
-        # Add pdfs to files list
-        File.objects.create(file=instance.pdf,
-                            purchase_order=instance)
-
-
-        # Assign files
-        for file_obj in files:
-            File.objects.create(file_obj=S3Object.objects.get(pk=file_obj['id']),
-                                purchase_order=instance)
-
-        # Create approval key and salt
-        instance.approval_key = instance.create_approval_key()
-        instance.approval_salt = instance.create_approval_key()
-
-        instance.save()
-
-        
-
-        # Create a calendar event
-        try:
-            instance.create_calendar_event(employee)
-        except Exception as e:
-            message = "Unable to create calendar event because: {0}"
-            message = message.format(e)
-            type_label = "PURCHASE ORDER EMAIL ERROR"
-            POLog.create(message=message, purchase_order=instance, user=employee, type=type_label)
-
-        # Log Opening of an order
-        message = "Purchase Order #{0} was created.".format(instance.id)
-        log = POLog.create(message=message, purchase_order=instance, user=employee)
-
-        try:
-            instance.email_approver()
-            # Log Opening of an order
-            message = "Purchase Order #{0} sent for approval.".format(instance.id)
-            log = POLog.create(message=message, purchase_order=instance, user=employee)
-        except Exception as e:
-            message = "Unable to email approver because: {0}"
-            message = message.format(e)
-            type_label = "PURCHASE ORDER EMAIL ERROR"
-            POLog.create(message=message, purchase_order=instance, user=employee, type=type_label)
+        po_service.post_create(employee=employee, 
+                               po=instance, 
+                               files=files)
 
         return instance
 

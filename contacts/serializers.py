@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import logging
 from datetime import datetime, timedelta
 
@@ -5,7 +7,9 @@ from contacts.models import Customer, Supplier, Address, SupplierContact, Contac
 from po.models import PurchaseOrder
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-
+from contacts.customer import service as customer_service
+from contacts.supplier import service as supplier_service
+from contacts.address import service as address_service
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,28 @@ class PurchaseOrderFieldSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+class AddressListSerializer(serializers.ListSerializer):
+    def update(self, instance, validated_data):
+        # Maps for id->instance and id->data item.
+        addr_mapping = {addr.id: addr for addr in instance}
+        data_mapping = {item['id']: item for item in validated_data}
+
+        # Perform creations and updates.
+        ret = []
+        for addr_id, data in data_mapping.items():
+            addr = addr_mapping.get(addr_id, None)
+            if addr is None:
+                ret.append(self.child.create(data))
+            else:
+                ret.append(self.child.update(addr, data))
+
+        # Perform deletions.
+        for addr_id, addr in addr_mapping.items():
+            if addr_id not in data_mapping:
+                address_service.delete(addr)
+
+        return ret
+
 class AddressSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     address1 = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -33,15 +59,17 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = ("id", 'address1', 'city', 'territory', 'country', 'zipcode')
+        list_serializer_class = AddressListSerializer
         
     def create(self, validated_data):
         """
         Override 'create' method to assign contact from context
         """
-        instance = self.Meta.model.objects.create(contact=self.context['contact'], **validated_data)
-        
-        return instance
-        
+        return address_service.create(contact=self.context['contact'], **validated_data)
+
+    def update(self, instance, validated_data):
+        return address_service.update(instance, validated_data)
+                
 
 class ContactSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -63,90 +91,6 @@ class ContactSerializer(serializers.ModelSerializer):
         
 class ContactMixin(object):
 
-    def create(self, validated_data):
-        """
-        Override the base method 'create'.
-        
-        Calls the parent create and then also creates all the addresses and 
-        contacts that are nested
-        """
-        addresses_data = validated_data.pop('addresses', None)
-        if addresses_data is None:
-            addresses_data = [validated_data.pop('address', [])]
-        contacts_data = validated_data.pop('contacts', None)
-        
-        try:
-            first = validated_data['first_name']
-            try:
-                last = validated_data['last_name']
-            except KeyError:
-                last = ''
-            name = u"{0} {1}".format(first, last)
-            validated_data.pop('name', None)
-        except KeyError:
-            name = validated_data.pop('name')
-            
-        instance = self.Meta.model.objects.create(name=name, **validated_data)
-        
-        if addresses_data:
-            # Delete any ideas, as a new customer should not have a pre existing id
-            try:
-                for a in addresses_data:
-                    try:
-                        a.pop('id', None)
-                    except (TypeError, KeyError, AttributeError) as e:
-                        pass
-            except Exception as e:
-                pass
-
-            address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
-            if address_serializer.is_valid(raise_exception=True):
-                address_serializer.save()
-
-        if contacts_data:
-            self._sync_contacts(instance, contacts_data)
-                        
-        field = 'is_customer' if isinstance(instance, Customer) else 'is_supplier'
-        setattr(instance, field, True)
-        
-        instance.save()
-        
-        try:
-
-            instance.sync_google_contacts(self.context['request'].user)
-        except Exception as e:
-            logger.warn(e)
-
-        return instance
-    
-    def _update_addresses(self, instance, addresses_data):
-        """
-        Create, Update and Deletes addresses
-        """
-        #Get list of ids
-        id_list = [address_data.get('id', None) for address_data in addresses_data]
-        #Create and update 
-        for address_data in addresses_data:
-            
-            if len([a for a in address_data.values() if a is not None]) > 0:
-                try:
-                    address = Address.objects.get(pk=address_data['id'])
-                except (KeyError, Address.DoesNotExist) as e:
-                    
-                    address = Address.objects.create(contact=instance)
-                    id_list.append(address.id)
-                    
-                for field in address_data.keys():
-                    if field != "contact":
-                        setattr(address, field, address_data[field])
-                    
-                address.save()
-            
-        #Delete contacts
-        for address in instance.addresses.all():
-            if address.id not in id_list:
-                address.delete()
-                
     def _sync_contacts(self, instance, contacts_data):
         """
         Create, Update and Delete contacts
@@ -196,52 +140,72 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     class Meta:
         model = Customer
         exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
+
+    def create(self, validated_data):
+        """
+        Override the base method 'create'.
         
+        Calls the parent create and then also creates all the addresses and 
+        contacts that are nested
+        """
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+
+        contacts_data = validated_data.pop('contacts', None)
+        
+        try:
+            first = validated_data['first_name']
+            try:
+                last = validated_data['last_name']
+            except KeyError:
+                last = ''
+            name = u"{0} {1}".format(first, last)
+            validated_data.pop('name', None)
+        except KeyError:
+            name = validated_data.pop('name')
+            
+        instance = customer_service.create(name, user=self.context['request'].user, **validated_data)
+        
+        if addresses_data:
+            # Delete any ids, as a new customer should not have a pre existing id
+            try:
+                for a in addresses_data:
+                    try:
+                        a.pop('id', None)
+                    except (TypeError, KeyError, AttributeError) as e:
+                        pass
+            except Exception as e:
+                pass
+
+            address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
+            if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
+
+        if contacts_data:
+            self._sync_contacts(instance, contacts_data)
+        
+        return instance
+
     def update(self, instance, validated_data):
         """
         Override 'update' method
         """
-        addresses_data = validated_data.pop('addresses', None)
-        if addresses_data is None:
-            addresses_data = [validated_data.pop('addresss', None)]
-            if addresses_data[0] is None:
-                addresses_data = []
-            
-        #addresses_data = self.context['request'].data.get('addresses', None)
-        
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+                    
         contacts_data = validated_data.pop('contacts', None)
 
-        if addresses_data:
-            self._update_addresses(instance, addresses_data)
+        address_serializer = AddressSerializer(instance.addresses.all(), data=validated_data, many=True)
+        if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
         
         if contacts_data:
             self._sync_contacts(instance, contacts_data)
             
-        for field in validated_data.keys():
-            setattr(instance, field, validated_data[field])
-            
-        instance.save()
-        
-        try:
-            instance.sync_google_contacts(self.context['request'].user)
-        except Exception as e:
-            logger.warn(e)
+        customer_service.update(instance, validated_data, self.context['request'].user)
         
         return instance
-        
-    def to_representation(self, instance):
-        
-        ret = super(CustomerSerializer, self).to_representation(instance)
-        """
-        ret['contacts'] = [{'id': c.id,
-                            'name': c.name,
-                            'telephone': c.telephone,
-                            'email': c.email,
-                            'job_title': c.job_title} for c in instance.contacts.all()]
-        """
-                            
-        return ret
-    
+
 
 class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)
@@ -253,6 +217,7 @@ class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ('id', 'name', 'telephone', 'email', 'addresses')
+
 
 class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     addresses = AddressSerializer(required=False, many=True, allow_null=True)
@@ -282,12 +247,63 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         #ret['addresses'] = AddressSerializer(Address.objects.filter(contact=instance.id), many=True).data
             
         return ret
+
+    def create(self, validated_data):
+        """
+        Override the base method 'create'.
+        
+        Calls the parent create and then also creates all the addresses and 
+        contacts that are nested
+        """
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+
+        contacts_data = validated_data.pop('contacts', None)
+        
+        try:
+            first = validated_data['first_name']
+            try:
+                last = validated_data['last_name']
+            except KeyError:
+                last = ''
+            name = u"{0} {1}".format(first, last)
+            validated_data.pop('name', None)
+        except KeyError:
+            name = validated_data.pop('name')
+            
+        instance = supplier_service.create(name=name, user=self.context['request'].user, **validated_data)
+        
+        if addresses_data:
+            # Delete any ids, as a new supplier should not have a pre existing id
+            try:
+                for a in addresses_data:
+                    try:
+                        a.pop('id', None)
+                    except (TypeError, KeyError, AttributeError) as e:
+                        pass
+            except Exception as e:
+                pass
+
+            address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
+            if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
+
+        if contacts_data:
+            self._sync_contacts(instance, contacts_data)
+
+        return instance
         
     def update(self, instance, validated_data):
         """
         Override 'update' method
         """
-        addresses_data = validated_data.pop('addresses', None)
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+                            
+        address_serializer = AddressSerializer(instance.addresses.all(), data=validated_data, many=True)
+        if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
+
         contacts_data = validated_data.pop('contacts', None)
         try:
             if contacts_data is not None:
@@ -295,16 +311,9 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         except Exception as e:
             logger.error(e)
             
-        try:
-            if addresses_data is not None:
-                self._update_addresses(instance, addresses_data)
-        except Exception as e:
-            logger.error(e)
+       
             
-        for field in validated_data.keys():
-            setattr(instance, field, validated_data[field])
-            
-        instance.save()
+        supplier_service.update(instance, validated_data, self.context['request'].user)
         
         return instance
         
@@ -331,30 +340,6 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         for contact in instance.contacts.all():
             if contact.id not in id_list:
                 contact.delete()
-    
-    def _update_addresses(self, instance, addresses_data):
-        """
-        Create, Update and Deletes contacts
-        """
-        #Get list of ids
-        id_list = [address_data.get('id', None) for address_data in addresses_data]
-        #Create and update 
-        for address_data in addresses_data:
-            address_data.pop('contact', None)
-            try:
-                address = Address.objects.get(pk=address_data['id'])
-            except KeyError:
-                address = Address.objects.create(contact=instance)
-                id_list.append(address.id)
-            for field in address_data.keys():
-                setattr(address, field, address_data[field])
-            address.contact = instance
-            address.save()
-            
-        #Delete contacts
-        for address in instance.addresses.all():
-            if address.id not in id_list:
-                address.delete()
 
     def get_purchase_orders(self, instance):
         request = self.context['request']
