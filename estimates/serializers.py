@@ -121,7 +121,8 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
         except (KeyError, S3Object.DoesNotExist, TypeError) as e:
-            del ret['image']
+            if "image" in ret:
+                del ret['image']
         
         return ret
 
@@ -314,8 +315,6 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         #Get User
         employee = self.context['request'].user
-        if settings.DEBUG:
-            employee = User.objects.get(pk=1) 
 
         instance = self.Meta.model.objects.create(employee=employee,
                                                   currency=currency,
@@ -348,7 +347,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         # Assign files
         for file_obj in files:
-            File.objects.create(file_obj=S3Object.objects.get(pk=file_obj['id']),
+            File.objects.create(file=S3Object.objects.get(pk=file_obj['id']),
                                 estimate=instance)
 
 
@@ -378,6 +377,8 @@ class EstimateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        employee = self.context['request'].user
+
         instance.acknowledgement = validated_data.pop('acknowledgement', instance.acknowledgement)
         instance.project = validated_data.pop('project', instance.project)
 
@@ -395,7 +396,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                 # Log data changes
                 message = u"Updated Quotation {0}: {1} changed from {2} to {3}"
                 message = message.format(instance.id, attr, old_attr_value, new_attr_value)
-                ELog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+                ELog.create(message=message, estimate=instance, user=employee)
 
         #Update attached files
         files = validated_data.pop('files', [])

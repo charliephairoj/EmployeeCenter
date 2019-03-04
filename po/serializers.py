@@ -48,10 +48,10 @@ class ItemSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
 
         # Create supply
-        #if "supply" not in data:
-        #    data['supply'] = {'id': 10346}
-        #elif "id" not in data["supply"]:
-        #    data['supply']['id'] = 10346
+        if "supply" not in data:
+            if "id" in data:
+                data['supply'] = {'id': data['id']}
+                del data['id']
 
         ret = super(ItemSerializer, self).to_internal_value(data)
         
@@ -59,19 +59,23 @@ class ItemSerializer(serializers.ModelSerializer):
             ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
         except (Supply.DoesNotExist, KeyError) as e:
             try:
-                ret['supply'] = Supply.objects.get(description=data['description'], product__supplier=self.context['supplier'])
-            except Supply.DoesNotExist as e:
+                ret['supply'] = Product.objects.get(supply__description=data['description'],
+                                                    supplier=self.context['supplier']).supply
+            except Product.DoesNotExist as e:
 
                 # Create a new Supply
                 ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
                                                                          supplier=self.context['supplier'],
-                                                                         **data['supply'])
+                                                                         **data)
 
             except KeyError as e:
-                ret['supply'] = supply_service.get(pk=10436)
-            except Supply.MultipleObjectsReturned as e:
-                ret['supply'] = Supply.objects.filter(description=data['description'],              
-                                                      product__supplier=self.context['supplier']).order_by('-id')[0]
+                if "supplier" in self.context:
+                    ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
+                                                                             supplier=self.context['supplier'],
+                                                                             **data)
+            except Product.MultipleObjectsReturned as e:
+                ret['supply'] = Product.objects.filter(supply__description=data['description'],              
+                                                       supplier=self.context['supplier']).order_by('-id')[0].supply
 
         if "description" not in ret:
             ret['description'] = ret['supply'].description
@@ -82,7 +86,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Override the 'create' method for Item Serializer
         """
-        supply = validated_data['supply']
+        supply = validated_data.pop('supply')
         supply.supplier = self.context['supplier']
         purchase_order = self.context['po']
 
@@ -133,11 +137,12 @@ class ItemSerializer(serializers.ModelSerializer):
 
         instance.description = validated_data.pop('description', instance.description)
         instance.unit_cost = Decimal(validated_data.pop('unit_cost', validated_data.pop('cost', instance.supply.cost)))
-        instance.quantity = Decimal(validated_data.get('quantity'))
+        instance.quantity = Decimal(validated_data.get('quantity', instance.quantity))
         instance.discount = validated_data.get('discount', instance.discount)
         instance.comments = validated_data.get('comments', instance.comments)
         units = validated_data.pop('units', instance.supply.units)
-     
+        instance.save()
+
         instance.calculate_total()
         instance.save()
 
@@ -161,6 +166,10 @@ class ItemSerializer(serializers.ModelSerializer):
 
         if instance.unit_cost != instance.supply.cost:
             self._change_supply_cost(instance.supply, instance.unit_cost, units)
+
+        
+        assert instance == instance.purchase_order.items.get(pk=instance.pk)
+
 
         return instance
 
@@ -426,6 +435,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             
             self._log_change('receive date', old_rd.strftime('%d/%m/%Y'), receive_date.strftime('%d/%m/%Y'))
 
+        instance.save()
         
         # Section: Update payment documents
         # 
@@ -445,7 +455,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file_obj['id']),
                                     purchase_order=instance)
-
+        
+        instance.save()
         
         # Process if status has changed
         new_status = validated_data.pop('status', instance.status)
@@ -454,7 +465,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         if new_status.lower() != old_status.lower():
 
             # Check permissions
-            if old_status.lower() == 'awaiting approval':
+            if old_status.lower() == 'awaiting approval' and new_status.lower() != 'received':
                 if employee.has_perm('po.approve_purchaseorder'):
                     instance.approve(user=employee)
 
@@ -472,15 +483,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
                 self._log_change('status', old_status, new_status)
 
-
+        
         items_data = self.initial_data['items']#validated_data.pop('items', self.context['request'].data['items'])
 
 
         self._update_items(instance, items_data)
 
+            
+        instance.calculate_totals()
+
         instance.revision += 1
 
-        instance.calculate_totals()
+        instance.save()
 
         instance.create_and_upload_pdf()
 
@@ -580,24 +594,43 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         #Maps of id
         id_list = [item_data.get('id', None) for item_data in items_data]
 
+
         #Update or Create Item
         for item_data in items_data:
 
             try:
-                item = Item.objects.get(pk=item_data['id'])
-                item_data['purchase_order'] = item.purchase_order
-                serializer = ItemSerializer(item, context={'supplier': instance.supplier, 'po': instance}, data=item_data)
+                item = po_service.get_item(pk=item_data['id'], purchase_order=instance)
+                item_data['purchase_order'] = instance
+                serializer = ItemSerializer(item, 
+                                            context={
+                                                'supplier': instance.supplier, 
+                                                'po': instance,
+                                                'request': self.context['request']
+                                            },
+                                            data=item_data)
             except(KeyError, Item.DoesNotExist) as e:
-                serializer = ItemSerializer(data=item_data, context={'supplier': instance.supplier, 'po': instance})
+                serializer = ItemSerializer(data=item_data,
+                                            context={
+                                                'supplier': instance.supplier,
+                                                'po': instance,
+                                                'request': self.context['request']
+                                            })
             
             if serializer.is_valid(raise_exception=True):
-                item = serializer.save()
-                id_list.append(item.id)
+                saved_item = serializer.save()
+                if saved_item.id not in id_list:
+                    instance.items.add(saved_item)
+                    id_list.append(saved_item.id)
 
+        logger.debug(id_list)
         #Delete Items
-        for item in instance.items.all():
-            if item.id not in id_list:
-                item.delete()
+        for d_item in instance.items.all():
+            if d_item.id not in id_list:
+                logger.debug(u'Deleting item {0}'.format(d_item.id))
+                d_item.delete()
+
+        # Check correct quantity of items
+        assert len(filter(lambda x: x if x is not None else False, id_list)) == instance.items.all().count()
 
     def _change_supply_cost(self, supply, cost):
         """

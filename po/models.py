@@ -5,7 +5,7 @@ import sys
 import datetime
 import logging
 import math
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import httplib2
 import hashlib
 import random
@@ -120,10 +120,12 @@ class PurchaseOrder(models.Model):
         return Decimal(str(round(self._calculate_grand_total(), 2)))
 
     def calculate_totals(self, items=None):
+
         #Define items if not already defined
         if not items:
+            self.refresh_from_db()
             items = self.items.all()
-
+        
         totals = self._calculate_totals(items)
 
         # Totals
@@ -162,6 +164,7 @@ class PurchaseOrder(models.Model):
                                
         filename = pdf.create()
         filename2 = auto_print_pdf.create()
+
         return filename, filename2
         
     def create_and_upload_pdf(self):
@@ -399,7 +402,13 @@ class PurchaseOrder(models.Model):
         # Calculations
         # Calculate the subtotal
         for item in items:
-            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(item.unit_cost, item.quantity, item.total))
+            try:
+                if item.pk:
+                    item.refresh_from_db()
+            except Item.DoesNotExist as e:
+                logger.warn(e)
+
+            logger.debug("item: {0:.2f} x {1} = {2:.2f}".format(item.unit_cost, item.quantity, item.total))
             subtotal += item.total
 
         # Set running_total to subtotal
@@ -472,18 +481,26 @@ class PurchaseOrder(models.Model):
         vat_amount = (Decimal(self.vat) / 100) * total
         logger.debug("vat: + {0:.2f}".format(vat_amount))
 
+        # Apply Rounding to VAT
+        vat_amount = vat_amount.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
         # Assert VAT
-        assert (vat_amount / total) == (Decimal(self.vat) / 100)
+        assert (vat_amount / total).quantize(Decimal('.01'), rounding=ROUND_HALF_UP) == (Decimal(self.vat) / 100)
 
         # Apply VAT
         grand_total = total + vat_amount
         running_total += vat_amount
+
+        # Apply Rounding to second decimal
+        grand_total = grand_total.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+        running_total = running_total.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
         logger.debug("grand total: = {0:.2f}".format(grand_total))
 
         # Assert second discounted amount is proportional to discount and total
         assert grand_total == running_total
-        assert (grand_total / total) == Decimal('1') + (Decimal(self.vat) / 100)
-        assert grand_total == (subtotal - discount_amount - second_discount_amount + vat_amount)
+        assert (grand_total / total).quantize(Decimal('.01'), rounding=ROUND_HALF_UP) == Decimal('1') + (Decimal(self.vat) / 100)
+        assert grand_total == (subtotal - discount_amount - second_discount_amount + vat_amount).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
         return {
             'subtotal': subtotal,
@@ -722,6 +739,7 @@ class Item(models.Model):
         discount = unit_cost * (Decimal(self.discount) / Decimal('100'))
         unit_cost = unit_cost - discount
         self.total = unit_cost * Decimal(self.quantity)
+
 
         logger.debug(u"{0} total quantity is {1}".format(self.description, self.quantity))
         logger.debug(u"{0} total cost is {1:.2f}".format(self.description, self.total))

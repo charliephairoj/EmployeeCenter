@@ -125,6 +125,15 @@ class PODocTemplate(BaseDocTemplate):
 class PurchaseOrderPDF():
     """Class to create PO PDF"""
     document_type = "Purchase_Order"
+    term_options = {
+        '0/net': u'Balance before Delivery',
+        'net/0': u'100% Deposit before Production',
+        '0/30': u'No Deposit, Balance 30 Days after Delivery',
+        '50/net': u'50% Deposit. Balance before Delivery',
+        '70/net': u'70% Deposit. Balance before Delivery',
+        '50/15': u'50% Deposit. Balance 15 days after Delivery',
+        '50/30': u'50% Deposit. Balance 30 days after Delivery'
+    }
 
     def __init__(self, supplier=None, items=None, po=None, attention=None,
                  misc=None, connection=None, revision=None, revision_date=None,
@@ -419,16 +428,20 @@ class PurchaseOrderPDF():
         return signature
 
     def _get_payment_terms(self):
-        # determine Terms String
-        # based on term length
-        if self.po.terms == 0:
-            terms = "Payment On Delivery"
-        elif self.po.terms < 0:
-            terms = "Credit"
+        # If using new term system
+        if self.po.terms in self.term_options:
+            return self.term_options[self.po.terms]
+
+        # If using old term days system
         else:
-            terms = "{0} Days".format(self.po.terms)
-        # return term
-        return terms
+            if self.po.terms == 0:
+                terms = "Payment On Delivery"
+            elif self.po.terms < 0:
+                terms = "Credit"
+            else:
+                terms = "{0} Days".format(self.po.terms)
+            # return term
+            return terms
 
     def _get_currency(self):
         # Determine currency string

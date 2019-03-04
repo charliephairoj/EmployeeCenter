@@ -1261,8 +1261,7 @@ class ProductionPDF(AcknowledgementPDF):
                     pillow_type = u"Lumbar Pillow"
                 else:
                     pillow_type = u"Pillow"
-                logger.debug(u'    {0}'.format(pillow_type))
-                logger.debug(pillow.quantity)
+
                 data.append([u'', u'   {0}'.format(pillow_type), u'{0}'.format(pillow.quantity or 0)])
                 try:
                     data.append(['', self._get_fabric_table(pillow.fabric, '       - Fabric:'), ''])
@@ -1674,7 +1673,6 @@ class QualityControlPDF(AcknowledgementPDF):
         #initialize story array
         stories = []
         #add heading and spacing
-        logger.debug(self.products)
         # Run through arrays of products
         for product in self.products:
 
@@ -1683,7 +1681,7 @@ class QualityControlPDF(AcknowledgementPDF):
 
             # Add a page break
             stories.append(PageBreak())
-        logger.debug(stories)
+
         # Return the story
         return stories
 

@@ -38,7 +38,7 @@ base_supplier = {'name': 'Zipper World',
                  'id': 1,
                  'currency': 'USD',
                  #'address': base_address,
-                 'terms': 30}
+                 'terms': '0/net'}
 
 base_fabric = {'pattern': 'Maxx',
                'color': 'Blue',
@@ -56,6 +56,7 @@ base_purchase_order = {'supplier': {'id':1,
                        'project': {'id': 1,
                                    'codename': 'MC House'},
                        'deposit': '50',
+                       'terms': u'50/net',
                        'items': [{'supply':{'id': 1}, 'quantity':10},
                                  {'supply':{'id': 2}, 'quantity': 3}],
                        'vat': '7',
@@ -121,6 +122,9 @@ class PurchaseOrderTest(APITestCase):
         self.contact = SupplierContact(name='test', email='test@yahoo.com', telephone=1234, primary=True)
         self.contact.supplier = self.supplier
         self.contact.save()
+
+        # Create Custom Supply
+        # not implemented
 
         # Create Fabric
         self.supply = Fabric.create(**base_fabric)
@@ -193,7 +197,7 @@ class PurchaseOrderTest(APITestCase):
         #Validate the returned data
         obj = resp.data
         self.assertEqual(obj['id'], 1)
-        self.assertEqual(obj['terms'], 30)
+        self.assertEqual(obj['terms'], '0/net')
         self.assertEqual(obj['revision'], 0)
         
         #Test items
@@ -350,7 +354,7 @@ class PurchaseOrderTest(APITestCase):
         #Verify the returned data
         self.assertEqual(resp_obj['id'], 2)
         self.assertEqual(resp_obj['vat'], 7)
-        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.29'))
         item = resp_obj['items'][0]
         self.assertEqual(Decimal(item['unit_cost']), Decimal('1.99'))
         self.assertEqual(Decimal(item['total']), Decimal('19.90'))
@@ -386,7 +390,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(resp_obj['id'], 2)
         self.assertEqual(resp_obj['vat'], 7)
         self.assertEqual(resp_obj['currency'], 'RMB')
-        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.30'))
+        self.assertEqual(Decimal(resp_obj['grand_total']), Decimal('21.29'))
         item = resp_obj['items'][0]
         self.assertEqual(Decimal(item['unit_cost']), Decimal('1.99'))
         self.assertEqual(Decimal(item['total']), Decimal('19.90'))
@@ -414,11 +418,13 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(item.total, Decimal('121.1'))
         
         modified_po_data = copy.deepcopy(base_purchase_order)
-        del modified_po_data['items'][0]
+        del modified_po_data['items'][1]
+        modified_po_data['id'] = 1
         modified_po_data['items'][0]['id'] = 1
         modified_po_data['items'][0]['comments'] = 'test change'
-        modified_po_data['items'][0]['description'] = "test description change"
-        modified_po_data['status'] = 'PROCESSED'
+        modified_po_data['items'][0]['quantity'] = 3
+        modified_po_data['items'][0]['description'] = 'test description change'
+
         resp = self.client.put('/api/v1/purchase-order/1/',
                                    format='json',
                                    data=modified_po_data)
@@ -429,7 +435,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(po['id'], 1)
         self.assertEqual(po['supplier']['id'], 1)
         self.assertEqual(po['vat'], 7)
-        self.assertEqual(Decimal(po['grand_total']), Decimal('38.88'))
+        self.assertEqual(Decimal(po['grand_total']), Decimal('38.87'))
         self.assertEqual(po['discount'], 0)
         self.assertEqual(po['revision'], 1)
         self.assertEqual(len(po['items']), 1)
@@ -440,7 +446,7 @@ class PurchaseOrderTest(APITestCase):
         item2 = po['items'][0]
        
         self.assertEqual(item2['id'], 1)
-        self.assertEqual(item2['quantity'], '3.0000000000')
+        self.assertEqual(item2['quantity'], Decimal('3.0000000000'))
         self.assertEqual(item2['comments'], 'test change')
         self.assertEqual(item2['description'], 'test description change')
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
@@ -450,10 +456,9 @@ class PurchaseOrderTest(APITestCase):
         po = PurchaseOrder.objects.get(pk=1)
         
         self.assertEqual(po.supplier.id, 1)
-        self.assertEqual(po.status, 'PROCESSED')
         #self.assertEqual(timezone('Asia/Bangkok').normalize(po.order_date), datetime.datetime.now().date())
         self.assertEqual(po.vat, 7)
-        self.assertEqual(po.grand_total, Decimal('38.88'))
+        self.assertEqual(po.grand_total, Decimal('38.87'))
         self.assertEqual(po.items.count(), 1)
         
         item2 = po.items.all().order_by('id')[0]
@@ -483,12 +488,10 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(item.total, Decimal('121.1'))
         
         modified_po_data = copy.deepcopy(base_purchase_order)
-        modified_po_data['items'][1]['id'] = 203
         modified_po_data['items'][1]['unit_cost'] = Decimal('11.99')
         modified_po_data['items'][1]['comments'] = 'test change'
         modified_po_data['items'][1]['description'] = "test description change"
         del modified_po_data['items'][1]['supply']
-        modified_po_data['status'] = 'PROCESSED'
         resp = self.client.put('/api/v1/purchase-order/1/',
                                    format='json',
                                    data=modified_po_data)
@@ -510,15 +513,15 @@ class PurchaseOrderTest(APITestCase):
         item1 = po['items'][0]
         logger.debug(item1)
         self.assertEqual(item1['id'], 2)
-        self.assertEqual(item1['quantity'], '10.0000000000')
+        self.assertEqual(item1['quantity'], Decimal('10.0000000000'))
         self.assertEqual(item1['description'], u'Pattern: Maxx, Col: Blue')
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.1100'))
         self.assertEqual(Decimal(item1['total']), Decimal('121.10'))
 
         item2 = po['items'][1]
         logger.debug(item2)
-        self.assertEqual(item2['id'], 203)
-        self.assertEqual(item2['quantity'], '3.0000000000')
+        self.assertEqual(item2['id'], 3)
+        self.assertEqual(item2['quantity'], Decimal('3.0000000000'))
         self.assertEqual(item2['comments'], 'test change')
         self.assertEqual(item2['description'], 'test description change')
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('11.99'))
@@ -528,15 +531,14 @@ class PurchaseOrderTest(APITestCase):
         po = PurchaseOrder.objects.get(pk=1)
         
         self.assertEqual(po.supplier.id, 1)
-        self.assertEqual(po.status, 'PROCESSED')
         #self.assertEqual(timezone('Asia/Bangkok').normalize(po.order_date), datetime.datetime.now().date())
         self.assertEqual(po.vat, 7)
-        self.assertEqual(po.grand_total, Decimal('168.07'))
+        self.assertEqual(po.grand_total, Decimal('168.06'))
         self.assertEqual(po.items.count(), 2)
         
         # Check new item in the database
         item2_d = po.items.all().order_by('id')[1]
-        self.assertEqual(item2_d.id, 203)
+        self.assertEqual(item2_d.id, 3)
         self.assertEqual(item2_d.description, 'test description change')
         self.assertEqual(item2_d.comments, 'test change')
         self.assertEqual(item2_d.quantity, 3)
@@ -659,7 +661,7 @@ class PurchaseOrderTest(APITestCase):
         #self.assertIn('purchasing_units', item1)
         #self.assertEqual(item1['purchasing_units'], 'set')
         
-    def test_updating_po_with_discount(self):
+    def xtest_updating_po_with_discount(self):
         """
         """
         print '\n'
@@ -693,11 +695,11 @@ class PurchaseOrderTest(APITestCase):
         item1 = resp_obj['items'][0]
         item2 = resp_obj['items'][1]
         self.assertEqual(item1['id'], 1)
-        self.assertEqual(item1['quantity'], '10.0000000000')
+        self.assertEqual(item1['quantity'], Decimal('10.0000000000'))
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('12.11'))
         self.assertEqual(Decimal(item1['total']), Decimal('60.55'))
         self.assertEqual(item2['id'], 2)
-        self.assertEqual(item2['quantity'], '3.0000000000')
+        self.assertEqual(item2['quantity'], Decimal('3.0000000000'))
         self.assertEqual(item2['discount'], 5)
         self.assertEqual(Decimal(item2['unit_cost']), Decimal('12.11'))
         self.assertEqual(Decimal(item2['total']), Decimal('34.51'))
@@ -770,7 +772,7 @@ class PurchaseOrderTest(APITestCase):
         self.assertEqual(len(resp_obj['items']), 1)
         item1 = resp_obj['items'][0]
         self.assertEqual(item1['id'], 1)
-        self.assertEqual(item1['quantity'], '10.0000000000')
+        self.assertEqual(item1['quantity'], Decimal('10.0000000000'))
         self.assertEqual(Decimal(item1['unit_cost']), Decimal('10.05'))
         self.assertEqual(Decimal(item1['total']), Decimal('100.50'))
        
@@ -885,7 +887,7 @@ class PurchaseOrderTest(APITestCase):
             
             po_data = resp.data
             self.assertEqual(po_data['status'], 'AWAITING APPROVAL')
-            logger.debug(po_data)
+
             item1 = po_data['items'][0]
             #self.assertEqual(item1['supply']['id'], 1)
             self.assertEqual(item1['status'], u'Ordered')
@@ -970,7 +972,7 @@ class ItemTest(TestCase):
         """
         context = {'po': self.po,
                    'supplier': self.supplier}
-        data = {'supply': self.supply.id,
+        data = {'supply': {'id': self.supply.id},
                 'unit_cost': 10,
                 'quantity': 5,
                 'units': 'yd'}
@@ -998,7 +1000,7 @@ class ItemTest(TestCase):
         
         context = {'po': self.po,
                    'supplier': self.supplier}
-        data = {'supply': self.supply.id,
+        data = {'supply': {'id': self.supply.id},
                 'quantity': 5,
                 'units': 'yd'}
                 
@@ -1021,7 +1023,7 @@ class ItemTest(TestCase):
         
         context = {'po': self.po,
                    'supplier': self.supplier}
-        data = {'supply': self.supply.id,
+        data = {'supply': {'id': self.supply.id},
                 'unit_cost': Decimal('11.22'),
                 'quantity': 4,
                 'units': 'yd'}
@@ -1051,7 +1053,7 @@ class ItemTest(TestCase):
                                
         context = {'po': self.po,
                    'supplier': self.supplier}
-        data = {'supply': self.supply.id,
+        data = {'supply': {'id': self.supply.id},
                 'unit_cost': Decimal('11.22'),
                 'quantity': 4,
                 'units': 'm'}

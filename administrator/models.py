@@ -182,20 +182,21 @@ class User(AbstractUser):
     reset_password = models.BooleanField(default=False)
     web_ui_version = models.TextField(default="V1")
     #company = model.ForeignKey(Company)
-    access_key = models.TextField(default=None)
-    secret_key = models.TextField(default=None)
+    access_key = models.TextField(default=None, null=True)
+    secret_key = models.TextField(default=None, null=True)
 
     def __init__(self, *args, **kwargs):
         super(User, self).__init__(*args, **kwargs)
 
         # Create the access_key and secret_key if it is missing
-        if self.access_key is None:
-            self.access_key = self.create_key()
-            self.save()
-        if self.secret_key is None:
-            self.secret_key = self.create_key(self.access_key)
-            self.save()
-
+        if self.pk:
+            if self.access_key is None:
+                self.access_key = self.create_key()
+                self.save()
+            if self.secret_key is None:
+                self.secret_key = self.create_key(self.access_key)
+                self.save()
+            
     def create_key(self, salt=""):
         return hashlib.sha512(u"{0}{1}{2}".format(self.id, time, salt)).hexdigest()
 

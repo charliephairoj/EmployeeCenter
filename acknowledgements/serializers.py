@@ -136,7 +136,8 @@ class ItemSerializer(serializers.ModelSerializer):
         try:
             ret['image'] = S3Object.objects.get(pk=data['image']['id'])
         except (KeyError, S3Object.DoesNotExist, TypeError) as e:
-            del ret['image']
+            if "image" in ret:
+                del ret['image']
         
         return ret
 
@@ -305,7 +306,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         ret = super(AcknowledgementSerializer, self).to_internal_value(data)
-        logger.debug(data)
 
         try:
             ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
@@ -328,8 +328,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             except KeyError as e:
                 pass
 
-        
-
         logger.debug("\n\nAcknowledgement to internal value\n\n")
 
         return ret
@@ -348,8 +346,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         
         # Get user 
         employee = self.context['request'].user
-        if settings.DEBUG:
-            employee = User.objects.get(pk=1)
         
         for item_data in items_data:
             for field in ['product', 'fabric']:

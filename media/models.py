@@ -76,6 +76,18 @@ class S3Object(models.Model):
         return obj
 
     @property
+    def filename(self):
+        """
+        Return the filename from the key
+        """
+
+        try:
+            return self.key_name.split(u'/')[-1]
+        except Exception as e:
+            logger.warn(e)
+            return self.key_name
+
+    @property
     def data(self):
         """
         Return the objects attributes

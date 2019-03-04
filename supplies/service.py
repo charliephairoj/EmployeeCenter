@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 """
 Supply Section
 """
-def get(id):
-    return Supply.objects.get(pk=id)
+def get(id=None, pk=None):
+    return Supply.objects.get(pk=id or pk)
 
 def create(employee=None, **kwargs):
     # Check that the user is a user instance

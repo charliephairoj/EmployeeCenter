@@ -5,7 +5,7 @@ import logging
 
 from administrator.models import User
 from accounting.account import service as account_service
-from po.models import PurchaseOrder, Item, Log
+from po.models import PurchaseOrder, Item, Log as POLog, File
 
 
 logger = logging.getLogger(__name__)
@@ -212,9 +212,16 @@ def update(po, data, employee):
 """
 Purchase Order Item Section
 """
+def get_item(id=None, pk=None, purchase_order=None):
+    try:
+        return purchase_order.items.get(pk=id or pk)
+    except Item.DoesNotExist as e:
+        msg = u'Purchase Order {0} does not have an item with id {1}'
+        msg = msg.format(purchase_order.id, id or pk)
+        raise ValueError(msg)
 
 def create_item(purchase_order=None, supply=None, **kwargs):
-    item = Item.objects.create(purchase_order=purchase_order, **kwargs)
+    item = Item.objects.create(purchase_order=purchase_order, supply=supply, **kwargs)
     
     item.calculate_total()
 
@@ -230,9 +237,9 @@ def add_file(po, file, employee):
     File.objects.create(file=file,
                         purchase_order=po)
 
-    u"File '{0}' added to Purchase Order {1}".format(file.filename, po.id)        
+    message = u"File '{0}' added to Purchase Order {1}".format(file.filename, po.id)        
     create_log(message, po, employee)
 
 
 def create_log(message, po, user):
-    return POLog.create(message=message, purchase_order=po, user=employee)
+    return POLog.create(message=message, purchase_order=po, user=user)

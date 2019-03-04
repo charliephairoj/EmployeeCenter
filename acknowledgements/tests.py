@@ -105,7 +105,7 @@ base_ack = {'customer': base_customer,
                          #item 3:
                          #Custom item with no product
                          {"description": "test custom item",
-                          "custom_price": 0,
+                          "unit_price": 0,
                           'width': 1,
                           'is_custom_item': True,
                           "quantity": 1}]}
@@ -168,7 +168,9 @@ class AcknowledgementResourceTest(APITestCase):
         self.user.user_permissions.add(p2)
         
         self.user.save()
-        
+
+        self.setup_client()
+
         #Create supplier, customer and addrss
         customer = copy.deepcopy(base_customer)
         del customer['id']
@@ -245,6 +247,33 @@ class AcknowledgementResourceTest(APITestCase):
         return None#self.create_basic(username=self.username, password=self.password)
         
             
+    def setup_client(self):
+        # Login the Client
+
+        # APIClient
+        #self.client = APIClient(enforce_csrf_checks=False)
+        #self.client.login(username=self.username, password=self.password)
+        self.client.force_authenticate(self.user)
+        
+
+        # RequestsClient
+        """
+        logger.debug(self)
+        self.client = RequestsClient()
+        self.client.auth = HTTPBasicAuth(self.username, self.password)
+        logger.debug(self.client.__dict__)
+
+        # Obtain a CSRF token.
+        response = self.client.post("{0}{1}".format(self.live_server_url,'/login'), 
+                                    data={'username': self.username,
+                                          'password': self.password})
+        logger.debug(response.cookies['csrftoken'])
+        assert response.status_code == 200
+        csrftoken = response.cookies['csrftoken']
+        self.client.headers.update({'X-CSRFTOKEN': csrftoken})
+        logger.debug(self.client.__dict__)
+        """
+
     def test_get_list(self):
         """
         Tests getting the list of acknowledgements
@@ -793,9 +822,9 @@ class AcknowledgementResourceTest(APITestCase):
                 
         #POST and verify the response
         ack_data = copy.deepcopy(base_ack)
-        ack_data['items'][0]['custom_price'] = 100
-        ack_data['items'][1]['custom_price'] = 200
-        ack_data['items'][2]['custom_price'] = 300
+        ack_data['items'][0]['unit_price'] = 100
+        ack_data['items'][1]['unit_price'] = 200
+        ack_data['items'][2]['unit_price'] = 300
 
         self.assertEqual(Acknowledgement.objects.count(), 1)
         resp = self.client.post('/api/v1/acknowledgement/', format='json',
@@ -952,14 +981,14 @@ class AcknowledgementResourceTest(APITestCase):
                                    format='json',
                                    data=ack_data,
                                    authentication=self.get_credentials())
-        logger.debug(resp)
+
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Acknowledgement.objects.count(), 1)
         
         #Validate the change
         ack = resp.data
         #self.assertEqual(dateutil.parser.parse(ack['delivery_date']), ack_data['delivery_date'])
-        logger.debug(ack['items'][0]['pillows'])
+
         #Tests ack in database
         ack = Acknowledgement.objects.get(pk=1)
         items = ack.items.all()

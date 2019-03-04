@@ -250,7 +250,7 @@ class Supply(models.Model):
                     
                     self.product = Product.objects.filter(supply=self, supplier=supplier).order_by('id')[0]
                     #raise ValueError("Too many products return for this supply and supplier combo")
-        logger.debug(self.product.__dict__)
+
         return self.product
         
     def test_if_critically_low_quantity(self):
