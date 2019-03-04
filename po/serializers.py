@@ -1,17 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import logging
-import decimal
 from decimal import Decimal
 from datetime import datetime
 from pytz import timezone
-import httplib2
 
-from apiclient import discovery
 from django.template.loader import render_to_string
 from rest_framework import serializers
 import boto.ses
-from pytz import timezone
 
 from administrator.models import User, Storage, CredentialsModel
 from administrator.serializers import LogFieldSerializer
@@ -84,7 +80,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Override the 'create' method
+        Override the 'create' method for Item Serializer
         """
         supply = validated_data['supply']
         supply.supplier = self.context['supplier']
@@ -102,6 +98,10 @@ class ItemSerializer(serializers.ModelSerializer):
                                               cost=validated_data.get('unit_cost', 0))
 
         description = validated_data.pop('description', supply.description)
+        # Attemp to get 'unit_cost' in the following order:
+        # 1. key: 'unit_cost'
+        # 2. key: 'cost'
+        # 3. supply.cost
         unit_cost = Decimal(validated_data.pop('unit_cost', validated_data.pop('cost', supply.cost)))
         discount = validated_data.pop('discount', supply.discount)
         units = validated_data.pop('units', supply.units)
