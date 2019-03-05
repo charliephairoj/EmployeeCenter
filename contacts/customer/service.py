@@ -16,7 +16,7 @@ def create(user=None, **kwargs):
     
     if "is_customer" in kwargs:
         kwargs.pop('is_customer')
-        
+
     customer = Customer.objects.create(is_customer=True, **kwargs)
 
     try:
@@ -41,13 +41,13 @@ def update(customer, data, user):
     # Check that the user is a user instance
     assert isinstance(user, User), u"{0} should be a User instance".format(user)
 
-    for field in validated_data.keys():
-        setattr(customer, field, validated_data[field])
+    for field in data.keys():
+        setattr(customer, field, data[field])
 
     customer.save()    
 
     try:
-        customer.sync_google_contacts(self.context['request'].user)
+        customer.sync_google_contacts(user)
     except Exception as e:
         logger.warn(e)
 
