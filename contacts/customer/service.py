@@ -14,6 +14,9 @@ def create(user=None, **kwargs):
     # Check that the user is a user instance
     assert isinstance(user, User), u"{0} should be a User instance".format(user)
     
+    if "is_customer" in kwargs:
+        kwargs.pop('is_customer')
+        
     customer = Customer.objects.create(is_customer=True, **kwargs)
 
     try:
