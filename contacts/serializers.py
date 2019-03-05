@@ -195,7 +195,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
                     
         contacts_data = validated_data.pop('contacts', None)
 
-        address_serializer = AddressSerializer(instance.addresses.all(), data=validated_data, many=True)
+        address_serializer = AddressSerializer(instance.addresses.all(), data=addresses_data, many=True)
         if address_serializer.is_valid(raise_exception=True):
                 address_serializer.save()
         
