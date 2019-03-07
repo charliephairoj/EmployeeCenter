@@ -2,13 +2,16 @@ import logging
 
 from rest_framework import serializers
 from administrator.models import User
-
+from administrator.serializers import UserFieldSerializer as EmployeeSerializer
 from shipping.models import Shipping, Item
 from acknowledgements.models import Acknowledgement, Item as AckItem
-from acknowledgements.serializers import ItemFieldSerializer as AckItemFieldSerializer
+from acknowledgements.serializers import ItemFieldSerializer as AckItemFieldSerializer, AcknowledgementFieldSerializer
 from contacts.models import Customer
-from contacts.serializers import CustomerSerializer
+from contacts.serializers import CustomerSerializer, CustomerFieldSerializer
 from projects.models import Project, Phase, Room
+from projects.serializers import ProjectFieldSerializer, RoomFieldSerializer
+from media.serializers import S3ObjectFieldSerializer
+from acknowledgements import service as ack_service
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +26,20 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         read_only_fields = ('shipping',)
         fields = ('description', 'quantity', 'comments', 'gross_weight', 'net_weight', 'item', 'id')
-        
+    
+    def to_internal_value(self, data):
+
+        ret = super(ItemSerializer, self).to_internal_value(data)
+
+        try:
+            ret['item'] = ack_service.get_item(pk=data['item']['id'])
+        except KeyError as e:
+            pass
+        except AckItem.DoesNotExist as e:
+            logger.warn(e)
+
+        return ret
+
     def create(self, validated_data):
         """
         Override the 'create' method in order to assign the shipping instance pass via the context
@@ -41,20 +57,55 @@ class ItemSerializer(serializers.ModelSerializer):
     
     
 class ShippingSerializer(serializers.ModelSerializer):
-    items = ItemSerializer(many=True)
-    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), 
-                                                  required=True, allow_null=False)
-    #customer = CustomerSerializer(read_only=True)
-    acknowledgement = serializers.PrimaryKeyRelatedField(queryset=Acknowledgement.objects.all(), required=False, allow_null=True)
+    items = ItemSerializer(many=True, required=True)
+    customer = CustomerSerializer(required=True)
+    project = ProjectFieldSerializer(required=False, allow_null=True)
+    room = RoomFieldSerializer(allow_null=True, required=False)
+    acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), allow_null=True, required=False)
-    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), required=False, allow_null=True)
-    
+    pdf = S3ObjectFieldSerializer(read_only=True, required=False)
+    employee = EmployeeSerializer(required=False, read_only=True)
+
     class Meta:
         model = Shipping
-        read_only_fields = ('employee',)
-        exclude = ('pdf',)
+        fields = '__all__'
     
+    def to_internal_value(self, data):
+        ret = super(ShippingSerializer, self).to_internal_value(data)
+
+        try:
+            ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
+        except (Customer.DoesNotExist, KeyError) as e:
+            try:
+                ret['customer'] = Customer.objects.get(name=data['customer']['name'])
+            except Customer.DoesNotExist as e:
+                ret['customer'] = Customer.objects.create(**data['customer'])
+            except Customer.MultipleObjectsReturned as e:
+                logger.warn(e)
+
+        library = {'project': Project, 
+                   'room': Room,
+                   'phase': Phase}
+        for key  in library:
+            try:
+                ret[key] = library[key].objects.get(pk=data[key]['id'])
+            except (library[key].DoesNotExist, KeyError, TypeError) as e:
+
+                try:
+                    ret[key] = library[key].objects.create(**data[key])
+                except (KeyError, TypeError) as e:
+                    pass
+        
+        try:
+            ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
+        except (Acknowledgement.DoesNotExist, KeyError, TypeError) as e:
+            try:
+                del ret['acknowledgement']
+            except KeyError as e: 
+                pass
+
+        return ret
+
     def create(self, validated_data):
         """
         Override the 'create' method in order to create items from nested data
@@ -62,13 +113,7 @@ class ShippingSerializer(serializers.ModelSerializer):
         employee = self.context['request'].user
 
         items_data = validated_data.pop('items')
-        for item_data in items_data:
-            # add try and except that so new items no longer require a preapprove
-            # product before creation
-            try:
-                item_data['item'] = item_data['item'].id
-            except (KeyError, AttributeError) as e:
-                item_data['item'] = None
+        items_data = self.initial_data['items']
         
         try:
             instance = self.Meta.model.objects.create(employee=employee,
@@ -95,6 +140,11 @@ class ShippingSerializer(serializers.ModelSerializer):
         instance.create_and_upload_pdf()
         
         instance.save()
+
+        # Add Shipping Doc to Ack
+        if instance.acknowledgement:
+            ack_service.add_file(acknowledgement=instance.acknowledgement, 
+                                 media_obj=instance.pdf)
         
         # Update the delivery date for the acknowledgement
         # Tries as there maybe shipping documents with no corresponding 
@@ -117,7 +167,6 @@ class ShippingSerializer(serializers.ModelSerializer):
         """
         Override the 'update' method
         """
-        logger.debug(validated_data)
         delivery_date = validated_data.pop('delivery_date', instance.delivery_date)
         instance.comments = validated_data.pop('comments', instance.comments)
 
@@ -156,7 +205,7 @@ class ShippingSerializer(serializers.ModelSerializer):
 
         return instance
         
-    def to_representation(self, instance):
+    def xto_representation(self, instance):
         """
         Override the 'to_representation' method in order to customize the output of 
         customer and acknowledgement

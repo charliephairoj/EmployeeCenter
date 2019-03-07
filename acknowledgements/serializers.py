@@ -266,6 +266,7 @@ class ItemFieldSerializer(serializers.ModelSerializer):
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = Item

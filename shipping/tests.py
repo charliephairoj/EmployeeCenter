@@ -14,9 +14,10 @@ import subprocess
 import logging
 
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, ContentType
 from rest_framework.test import APITestCase
 
+from administrator.models import User
 from acknowledgements.models import Acknowledgement, Item as AckItem
 from shipping.models import Shipping
 from supplies.models import Fabric
@@ -96,13 +97,26 @@ class ShippingResourceTest(APITestCase):
         """
         super(ShippingResourceTest, self).setUp()
         
+        self.ct = ContentType(app_label="shipping")
+        self.ct.save()
+
         #Create the user
         self.username = 'tester'
         self.password = 'pass'
         self.user = User.objects.create_user(self.username, 'test@yahoo.com', self.password)
         self.user.save()
         
-        self.client.login(username='tester', password='pass')
+        p = Permission(content_type=self.ct, codename="change_shipping")
+        p.save()
+        p2 = Permission(content_type=self.ct, codename="add_shipping")
+        p2.save()
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        
+        self.user.save()
+
+        self.setup_client()
+
         
         #Create supplier, customer and addrss
         self.customer = Customer(**base_customer)
@@ -160,8 +174,16 @@ class ShippingResourceTest(APITestCase):
         self.shipping.save()
         
     def get_credentials(self):
-        return None#self.create_basic(username=self.username, password=self.password)
+        return self.user#self.create_basic(username=self.username, password=self.password)
     
+    def setup_client(self):
+        # Login the Client
+
+        # APIClient
+        #self.client = APIClient(enforce_csrf_checks=False)
+        #self.client.login(username=self.username, password=self.password)
+        self.client.force_authenticate(self.user)
+
     def test_get_list(self):
         """
         Tests getting a list of objects via GET
@@ -200,6 +222,7 @@ class ShippingResourceTest(APITestCase):
         Test creating a project packing list via POST
         """
         data = {'project': {'id': 1},
+                'customer': {'id': 1},
                 'phase': {'id': 1},
                 'items': [
                     {'description': 'TK 1/2'}
@@ -208,20 +231,21 @@ class ShippingResourceTest(APITestCase):
         resp = self.client.post('/api/v1/shipping/', format='json', data=data)
         
         # Test client response
-        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201, msg=resp)
         
-    def test_post_with_one_item(self):
+    def test_post_with_two_item(self):
         """
         Tests creating a resource via POST
         """
         #Validate the resp and obj creation
         self.assertEqual(Shipping.objects.count(), 0)
         shipping_data={'acknowledgement': {'id': 1},
+                       'customer': {'id': 1},
                        'delivery_date': base_delivery_date,
-                       'items': [{'id': 1,
+                       'items': [{'item': {'id': 1},
                                   'description':'test1',
                                   'quantity': 1},
-                                 {'id': 2}]}
+                                 {'item':{'id': 2}}]}
         resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')
 
         self.assertEqual(resp.status_code, 201, msg=resp)
@@ -250,8 +274,9 @@ class ShippingResourceTest(APITestCase):
         #Validate the resp and obj creation
         self.assertEqual(Shipping.objects.count(), 0)
         shipping_data={'acknowledgement': {'id': 1},
+                       'customer': {'id': 1},
                        'delivery_date': base_delivery_date,
-                       'items': [{'id': 1,
+                       'items': [{'item': {'id': 1},
                                   'description':'test1',
                                   'quantity': 1}]}
         resp = self.client.post('/api/v1/shipping/', data=shipping_data, format='json')

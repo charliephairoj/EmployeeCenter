@@ -94,7 +94,7 @@ class AckDocTemplate(BaseDocTemplate):
         
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
-        canvas.drawRightString(550, 800, 'Acknowledgement')
+        canvas.drawRightString(550, 800, 'Sales Order')
         canvas.setFont("Helvetica", 12)
         canvas.drawRightString(550, 780, 'Order#: {0}'.format(self.id))
         #Create a barcode from the id
