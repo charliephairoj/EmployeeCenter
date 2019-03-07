@@ -7,6 +7,7 @@ from contacts.models import Customer
 from administrator.models import User
 from accounting.account import service as account_service
 
+
 logger = logging.getLogger(__name__)
 
 

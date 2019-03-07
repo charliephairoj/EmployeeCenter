@@ -682,7 +682,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         if employee is None:
             employee = self.context['request'].user
 
-        message = "Purchase Order #{0}: {1} changed from {2} to {3}."
+        message = u"Purchase Order #{0}: {1} changed from {2} to {3}."
         message = message.format(instance.id, prop, old_value, new_value)
         POLog.create(message=message, purchase_order=instance, user=employee)
 

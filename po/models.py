@@ -347,6 +347,8 @@ class PurchaseOrder(models.Model):
             if user.has_perm('po.approve_purchaseorder'):
                 dt = time.time()
                 self.approval_token = self._create_approval_token(dt, user)
+                self.approved_at = dt
+                self.approved_by = user
                 self.status = u'APPROVED'
                 self.save()
                 return True
