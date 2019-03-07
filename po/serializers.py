@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from rest_framework import serializers
 import boto.ses
 
-from administrator.models import User, Storage, CredentialsModel
+from administrator.models import User
 from administrator.serializers import LogFieldSerializer
 from contacts.models import Supplier
 from supplies.models import Supply, Product, Log
@@ -24,6 +24,8 @@ from supplies.serializers import SupplyFieldSerializer
 from media.models import S3Object
 from po.purchase_order import service as po_service
 from supplies import service as supply_service
+from administrator.user import service as user_service
+from contacts.supplier import service as supplier_service
 
 
 logger = logging.getLogger(__name__)
@@ -52,31 +54,61 @@ class ItemSerializer(serializers.ModelSerializer):
             if "id" in data:
                 data['supply'] = {'id': data['id']}
                 del data['id']
+        
+
 
         ret = super(ItemSerializer, self).to_internal_value(data)
+
+        """
+        Processing supply object deserialization
+
+        1.  Get by ID
+        2.  If Supply Does Not Exist by ID raise warning
+        3.  If Key Error
+            3.1 If data has "id" but not "supply" try getting by id
+                3.1.1 If Supply.DoesNotExist try searching by item id
+        """
+
+        user = user_service.get_by_context(self)
+        try:
+            supplier = supplier_service.get(pk=self.parent.parent.initial_data['supplier']['id'])
+        except (AttributeError, KeyError) as e:
+            supplier = self.context['supplier']
         
         try:
-            ret['supply'] = Supply.objects.get(pk=data['supply']['id'])
-        except (Supply.DoesNotExist, KeyError) as e:
+            ret['supply'] = supply_service.get(pk=data['supply']['id'])
+        except Supply.DoesNotExist as e:
+            
+            raise ValueError("supply with id should be findable with id of {0}".format(data['supply']['id']))
+
+        except KeyError as e:
+
+            if "supply" not in data and "id" in data:
+                try:
+                    ret['supply'] = supply_service.get(data['id'])
+                except Supply.DoesNotExist as e:
+                    try:
+                        ret['supply'] = po_service.get_item(pk=data['id']).supply
+                    except Item.DoesNotExist as e:
+                        pass
+
             try:
-                ret['supply'] = Product.objects.get(supply__description=data['description'],
-                                                    supplier=self.context['supplier']).supply
+                ret['supply'] = supply_service.get_by_description_and_supplier(description=data['description'],
+                                                                               supplier=supplier)
             except Product.DoesNotExist as e:
 
                 # Create a new Supply
-                if "request" in self.context and "supplier" in self.context:
-                    ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
-                                                                             supplier=self.context['supplier'],
-                                                                             **data)
+                ret['supply'] = supply_service.create_supply_and_product(user, 
+                                                                         supplier,
+                                                                         **data)
 
             except KeyError as e:
-                if "supplier" in self.context and "supplier" in self.context:
-                    ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
-                                                                             supplier=self.context['supplier'],
-                                                                             **data)
+                ret['supply'] = supply_service.create_supply_and_product(user, 
+                                                                         supplier,
+                                                                         **data)
             except Product.MultipleObjectsReturned as e:
                 ret['supply'] = Product.objects.filter(supply__description=data['description'],              
-                                                       supplier=self.context['supplier']).order_by('-id')[0].supply
+                                                       supplier=supplier).order_by('-id')[0].supply
 
         if "description" not in ret:
             ret['description'] = ret['supply'].description
@@ -371,7 +403,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 item_data['supply'] = {'id': item_data['id']}
                 del item_data['id']
 
-        item_serializer = ItemSerializer(data=raw_items_data, context={'supplier': instance.supplier, 'po':instance},
+        item_serializer = ItemSerializer(data=raw_items_data, 
+                                         context={
+                                            'supplier': instance.supplier, 
+                                            'po':instance,
+                                            'request': self.context['request']
+                                         },
                                          many=True)
 
         if item_serializer.is_valid(raise_exception=True):

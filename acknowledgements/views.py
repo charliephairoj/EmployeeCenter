@@ -223,7 +223,7 @@ class AcknowledgementMixin(object):
 
                         if (pillow['type'], fabric_id) in pillows:
                             pillows[(pillow['type'], fabric_id)]['quantity'] += 1
-                            pillows[(pillow['type'], fabric_id)]['fabric_quantity'] += pillow['fabric_quantity']
+                            #pillows[(pillow['type'], fabric_id)]['fabric_quantity'] += pillow['fabric_quantity']
                         else: 
                             try:
                                 pillows[(pillow['type'], fabric_id)] = {'quantity': 1, 'fabric_quantity': pillow['fabric_quantity']}

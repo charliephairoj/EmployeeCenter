@@ -10,6 +10,13 @@ from administrator.models import User
 logger = logging.getLogger(__name__)
 
 
+def get(id=None, pk=None):
+
+    if id is None and pk is None:
+        raise ValueError(u'A valid id or pk is required')
+
+    return Supplier.objects.get(pk=id or pk)
+
 def create(user=None, **kwargs):
     # Check that the user is a user instance
     assert isinstance(user, User), u"{0} should be a User instance".format(user)

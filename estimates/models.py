@@ -208,7 +208,7 @@ class Estimate(models.Model):
         # Calculations
         # Calculate the subtotal
         for product in items:
-            logger.debug("item: {0:.2f} x {1} = {2:.2f} + ".format(product.unit_price, product.quantity, product.total))
+            logger.debug("item: {0:.2f} x {1} = {2:.2f}".format(product.unit_price, product.quantity, product.total))
             subtotal += product.total
 
         # Set running_total to subtotal

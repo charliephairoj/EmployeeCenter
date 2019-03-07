@@ -912,6 +912,7 @@ class PurchaseOrderTest(APITestCase):
             self.assertEqual(supply.quantity, 10)
             self.assertEqual(supply.products.filter(supplier=supplier).count(), 1)
 
+
 class ItemTest(TestCase):
     """
     Tests the PO Item

@@ -618,32 +618,39 @@ class AcknowledgementPDF(object):
     def _create_totals_section(self):
         #Create data and style array
         data = []
-        #calculate the totals
-        #what to do if there is vat or discount
-        if self.ack.vat > 0 or self.ack.discount > 0:
-            #get subtotal and add to pdf
-            data.append(['', 'Subtotal', "{0:,.2f}".format(self.ack.subtotal)])
-            total = self.ack.subtotal
-            #add discount area if discount greater than 0
-            if self.ack.discount != 0:
-                discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
-                data.append(['', 'Discount {0}%'.format(self.ack.discount), "{0:,.2f}".format(discount)])
-            #add vat if vat is greater than 0
-            if self.ack.vat != 0:
-                if self.ack.discount != 0:
-                    #append total to pdf
-                    discount = self.ack.subtotal * (Decimal(self.ack.discount) / Decimal(100))
-                    total -= discount
-                    data.append(['', 'Total', "{0:,.2f}".format(total)])
-                    
-                    prevat_total = total
-                else:
-                    prevat_total = self.ack.subtotal
-                    
-                #calculate vat and add to pdf
-                vat = Decimal(prevat_total) * (Decimal(self.ack.vat) / Decimal(100))
-                data.append(['', 'Vat {0}%'.format(self.ack.vat), "{0:,.2f}".format(vat)])
-        data.append(['', 'Grand Total', "{0:,.2f}".format(self.ack.total)])
+        
+        # Adding Totals to the data container
+
+        # Add Subtotal
+        if self.ack.vat or self.ack.discount or self.ack.second_discount:
+            data.append(['',
+                        u'Subtotal',
+                        "{0:,.2f}".format(self.ack.subtotal)])
+        # Add Discount if greater than 0
+        if self.ack.discount_amount > 0:
+            data.append(['',
+                         u'Discount {0}%'.format(self.ack.discount),
+                         u"-{:,.2f}".format(self.ack.discount_amount)])
+        # Add Second Discount if greater than 0
+        if self.ack.second_discount_amount > 0:
+            data.append(['',
+                         u'Additional Discount {0}%'.format(self.ack.second_discount),
+                         u"-{:,.2f}".format(self.ack.second_discount_amount)])
+        if (self.ack.second_discount > 0 or self.ack.discount > 0) and self.ack.vat:
+            data.append(['',
+                         'Total',
+                         "{0:,.2f}".format(self.ack.total)])
+
+        if self.ack.vat_amount:
+            data.append(['',
+                         'Vat {0:.0f}%'.format(self.ack.vat),
+                         "{0:,.2f}".format(self.ack.vat_amount)])
+
+        final_total_title = u"Grand Total" if (self.ack.discount or self.ack.second_discount) and self.ack.vat else u"Total"
+        data.append(['',
+                     final_total_title,
+                     "{0:,.2f}".format(self.ack.grand_total)])
+
         table = Table(data, colWidths=(80, 300, 165))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
                             #Lines around content

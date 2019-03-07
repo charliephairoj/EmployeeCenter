@@ -18,6 +18,21 @@ Supply Section
 def get(id=None, pk=None):
     return Supply.objects.get(pk=id or pk)
 
+def get_by_description(description=None):
+    """
+    Get a Supply via description and supplier via Product
+    """
+    return Supply.objects.get(description=description)
+
+def get_by_description_and_supplier(description=None, supplier=None):
+    """
+    Get a Supply via description and supplier via Product
+    """
+    product = Product.objects.get(supply__description=description,
+                                  supplier=supplier)
+
+    return product.supply
+
 def create(employee=None, **kwargs):
     # Check that the user is a user instance
     assert isinstance(employee, User), u"{0} should be a User instance".format(employee)
