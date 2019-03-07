@@ -64,12 +64,13 @@ class ItemSerializer(serializers.ModelSerializer):
             except Product.DoesNotExist as e:
 
                 # Create a new Supply
-                ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
-                                                                         supplier=self.context['supplier'],
-                                                                         **data)
+                if "request" in self.context and "supplier" in self.context:
+                    ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
+                                                                             supplier=self.context['supplier'],
+                                                                             **data)
 
             except KeyError as e:
-                if "supplier" in self.context:
+                if "supplier" in self.context and "supplier" in self.context:
                     ret['supply'] = supply_service.create_supply_and_product(employee=self.context['request'].user, 
                                                                              supplier=self.context['supplier'],
                                                                              **data)

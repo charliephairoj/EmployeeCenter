@@ -47,7 +47,7 @@ def update(supplier, data, user):
     supplier.save()    
 
     try:
-        supplier.sync_google_contacts(self.context['request'].user)
+        supplier.sync_google_contacts(user)
     except Exception as e:
         logger.warn(e)
 
