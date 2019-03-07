@@ -41,8 +41,8 @@ def update(supplier, data, user):
     # Check that the user is a user instance
     assert isinstance(user, User), u"{0} should be a User instance".format(user)
 
-    for field in validated_data.keys():
-        setattr(supplier, field, validated_data[field])
+    for field in data.keys():
+        setattr(supplier, field, data[field])
 
     supplier.save()    
 
