@@ -54,6 +54,7 @@ from hr.views import PayrollList
 from hr.views import employee_stats, employee_image, upload_attendance
 from deals.views import DealList, DealDetail
 from ivr.views import voice, get_token, test, route_call, recording_callback, call_status_update_callback
+from accounting.views import AccountList, AccountDetail
 """
 API Section
 
@@ -172,6 +173,13 @@ urlpatterns += [
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
 
     url(r'^api/v1/administrator/log/$', ALogList.as_view()),
+<<<<<<< HEAD
+=======
+    # Accounting Views
+    url(r'^api/v1/account/$', AccountList.as_view()),
+    url(r'^api/v1/account/(?P<pk>[0-9]+)/$', AccountDetail.as_view()),
+]
+>>>>>>> accounting
 
 ]
 
