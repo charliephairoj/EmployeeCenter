@@ -173,13 +173,10 @@ urlpatterns += [
     url(r'^api/v1/payroll/$', PayrollList.as_view()),
 
     url(r'^api/v1/administrator/log/$', ALogList.as_view()),
-<<<<<<< HEAD
-=======
     # Accounting Views
     url(r'^api/v1/account/$', AccountList.as_view()),
     url(r'^api/v1/account/(?P<pk>[0-9]+)/$', AccountDetail.as_view()),
 ]
->>>>>>> accounting
 
 ]
 
