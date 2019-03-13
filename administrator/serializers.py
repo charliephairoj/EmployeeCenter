@@ -6,7 +6,7 @@ from django.db import models
 import boto
 from django.conf import settings
 
-from administrator.models import User, AWSUser, Log, Label
+from administrator.models import User, AWSUser, Log, Label, Company
 
 
 logger = logging.getLogger(__name__)
@@ -145,23 +145,35 @@ class GroupFieldSerializer(serializers.ModelSerializer):
         model = Group
         fields = ('id', 'name')
 
+
+class CompanySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta:
+        model = Company
+        fields = ('id', 'name')
+
              
 class UserSerializer(serializers.ModelSerializer):
     groups = GroupFieldSerializer(many=True, required=False)
     #password = serializers.CharField(write_only=True, required=False)
+    company = CompanySerializer(read_only=True)
     
     class Meta:
         model = User
         write_only_fields = ['password',]
         fields = ('email', 'username', 'first_name', 'last_name', 'groups', 
-                  'id', 'last_login', 'is_active', 'web_ui_version')
-        depth = 0
+                  'id', 'last_login', 'is_active', 'web_ui_version', 'company')
+        read_only_fields = ('company',)
+        depth = 1
     
     def create(self, validated_data):
         groups = validated_data.pop('groups', [])
         password = validated_data.pop('password')
         
-        instance = self.Meta.model.objects.create(**validated_data)
+        company = self.context['request'].user.company
+        instance = self.Meta.model.objects.create(company=company, 
+                                                  **validated_data)
         instance.set_password(password)
         instance.save()
 

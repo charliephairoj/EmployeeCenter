@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from contacts.models import Customer, Supplier, Address, SupplierContact, Contact
 from po.models import PurchaseOrder
+from acknowledgements.models import Acknowledgement
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from contacts.customer import service as customer_service
@@ -22,6 +23,15 @@ class PurchaseOrderFieldSerializer(serializers.ModelSerializer):
         fields = ('id', 'grand_total',
                   'subtotal', 'total', 'revision', 'paid_date', 'receive_date', 'deposit',
                   'discount', 'status', 'terms', 'order_date', 'currency')
+        depth = 1
+
+
+class AcknowledgementFieldSerializer(serializers.ModelSerializer):
+    time_created = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Acknowledgement
+        fields = ('id', 'grand_total', 'time_created', 'delivery_date', 'status')
         depth = 1
 
 
@@ -137,6 +147,8 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     terms = serializers.CharField(required=False, default="50/net")
 
+    open_orders = serializers.SerializerMethodField()
+
     class Meta:
         model = Customer
         exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
@@ -206,6 +218,14 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         
         return instance
 
+    def get_open_orders(self, instance):
+        
+        today = datetime.now()
+        orders = instance.acknowledgements.filter(time_created__year=2018)
+        orders = orders.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+        
+        serializer = AcknowledgementFieldSerializer(orders, many=True)
+        return serializer.data
 
 class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)

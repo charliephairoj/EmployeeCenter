@@ -1,7 +1,9 @@
 import logging
 import time
 
-from django.db.models import Q
+from django.db.models import Q, Count, Value, Subquery, IntegerField, OuterRef
+from django.db.models.functions import Coalesce
+
 from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import generics
@@ -10,6 +12,7 @@ from rest_framework import authentication, permissions
 
 from contacts.models import Customer, Supplier
 from contacts.serializers import CustomerSerializer, SupplierSerializer
+from acknowledgements.models import Acknowledgement as A
 
 
 logger = logging.getLogger(__name__)
@@ -27,17 +30,16 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows acknowledgements to be view or editted
     """
-    queryset = Customer.objects.all().order_by('name')
+    queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     authentication_classes = (authentication.SessionAuthentication,)
 
-    def get_queryset(self):
+    def filter_queryset(self, queryset):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset
-
-        queryset = queryset.order_by('name')
+        queryset = queryset.annotate(num_open_orders=Count('acknowledgement')) \
+                           .order_by('-num_open_orders')
 
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -55,7 +57,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         elif not offset and limit:
             queryset = queryset[:limit]
             
-        queryset = queryset.prefetch_related('addresses', 'contacts')
+        queryset = queryset.prefetch_related('addresses', 'contacts', 'acknowledgements')
 
         return queryset
         
@@ -71,7 +73,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 
 class CustomerMixin(object):
-    queryset = Customer.objects.all().order_by('-last_modified')
+    queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     
     def handle_exception(self, exc):
@@ -89,13 +91,28 @@ class CustomerMixin(object):
 class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         
 
-    def get_queryset(self):
+    def filter_queryset(self, queryset):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        
+        acks_count = A.objects.filter(customer=OuterRef('pk'),
+                                time_created__year=2018) \
+                              .exclude(status__in=[u'cancelled', u'paid', u'invoiced']) \
+                              .values('customer') \
+                              .annotate(num_acks=Count('*')) \
+                              .values('num_acks')
 
-        queryset = queryset.order_by('name')
+        prepped_fn = Coalesce(
+            Subquery(acks_count, 
+                     output_field=IntegerField()
+            ), 
+            Value('0')
+        )
+
+
+        queryset = queryset.annotate(num_open_orders=prepped_fn) \
+                           .order_by('-num_open_orders')
 
         #Filter based on query
         query = self.request.query_params.get('q', None)
@@ -114,7 +131,7 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
             
-        queryset = queryset.prefetch_related('addresses', 'contacts')
+        queryset = queryset.prefetch_related('addresses', 'contacts', 'acknowledgements')
 
         return queryset
         
