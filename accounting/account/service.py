@@ -18,8 +18,11 @@ def create_account_receivable(company, contact):
     # Check customer is a customer instance
     assert isinstance(contact, Contact), u"{0} should be a sub class of Contact instance".format(contact)
 
-    last_account = Account.objects.filter(company=company, account_code__startswith='12').order_by('-id').values('account_code').first() or '12000'
-
+    try:
+        last_account = Account.objects.filter(company=company, account_code__startswith='12').order_by('-id').values('account_code').first()['account_code']
+    except Exception as e:
+        last_account = '120001'
+        
     new_account_code = int(last_account) + 1
     new_ar = Account.objects.create(name=u'Account Receivable: {0}'.format(contact.name),
                                     account_code=new_account_code,
