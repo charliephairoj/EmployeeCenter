@@ -11,6 +11,7 @@ import gdata.contacts.data
 
 from administrator.models import CredentialsModel, OAuth2TokenFromCredentials, Storage
 from trcloud.models import TRContact
+from media.models import S3Object
 
 
 pp = pprint.PrettyPrinter(width=1, indent=4)
@@ -40,9 +41,7 @@ class Contact(models.Model):
     bank = models.TextField(null=True, default="")
     bank_account_number = models.TextField(null=True, default="")
     terms = models.TextField(null=False, default="50/net")
-
-    #class Meta:
-        #ordering = ['name']
+    files = models.ManyToManyField(S3Object, through="File", related_name="contact")   
 
     @classmethod   
     def get_google_contacts_service(self, user):
@@ -185,6 +184,7 @@ class Customer(Contact):
 class Supplier(Contact):
     pass    
 
+
 class SupplierContact(models.Model):
     name = models.TextField()
     email = models.TextField(null=True, blank=True)
@@ -192,7 +192,11 @@ class SupplierContact(models.Model):
     supplier = models.ForeignKey(Supplier)
     primary = models.BooleanField(db_column='primary_contact', default=False)
 
-    
+
+class File(models.Model):
+    contact = models.ForeignKey(Contact)
+    file = models.ForeignKey(S3Object, related_name='contact_files')
+
 
 
 

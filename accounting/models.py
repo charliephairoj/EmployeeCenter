@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 import dateutil.parser
 import logging
@@ -44,25 +46,25 @@ class Transaction(models.Model):
 
 
 # Not yet created in database 
-class Invoice(models.Model):
-    tax_id = models.TextField(null=True)
-    issue_date = models.DateTimeField(null=True)
-    due_date = models.DateTimeField(null=True)
-    tax_date = models.DateTimeField(null=True)
-    discount = models.TextField(default=0)
-    vat = models.TextField(default=7)
-    total = models.DecimalField()
-    grand_total = models.DecimalField()
-    fiscal_year = models.TextField(null=True)
-    invoice_number = models.TextField(null=True)
+# class Invoice(models.Model):
+#     tax_id = models.TextField(null=True)
+#     issue_date = models.DateTimeField(null=True)
+#     due_date = models.DateTimeField(null=True)
+#     tax_date = models.DateTimeField(null=True)
+#     discount = models.TextField(default=0)
+#     vat = models.TextField(default=7)
+#     total = models.DecimalField()
+#     grand_total = models.DecimalField()
+#     fiscal_year = models.TextField(null=True)
+#     invoice_number = models.TextField(null=True)
 
 
-    # TRCloud Attributes
-    trcloud_invoice_id = models.IntegerField(null=True)
-    trcloud_company_id = models.IntegerField(null=True)
-    trcloud_user_id = models.IntegerField(null=True)
-    trcloud_company_format = models.TextField(null=True)
-    trcloud_contact_id = models.TextField(null=True)
+#     # TRCloud Attributes
+#     trcloud_invoice_id = models.IntegerField(null=True)
+#     trcloud_company_id = models.IntegerField(null=True)
+#     trcloud_user_id = models.IntegerField(null=True)
+#     trcloud_company_format = models.TextField(null=True)
+#     trcloud_contact_id = models.TextField(null=True)
 
 # u"""
     

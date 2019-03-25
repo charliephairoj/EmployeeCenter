@@ -3,14 +3,18 @@
 import logging
 from datetime import datetime, timedelta
 
-from contacts.models import Customer, Supplier, Address, SupplierContact, Contact
+from rest_framework.serializers import ValidationError
+from rest_framework import serializers
+
+from contacts.models import Customer, Supplier, Address, SupplierContact, Contact, File
 from po.models import PurchaseOrder
 from acknowledgements.models import Acknowledgement
-from rest_framework import serializers
-from rest_framework.serializers import ValidationError
 from contacts.customer import service as customer_service
 from contacts.supplier import service as supplier_service
 from contacts.address import service as address_service
+from media.serializers import S3ObjectFieldSerializer
+from media.models import S3Object
+
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +150,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     currency = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     terms = serializers.CharField(required=False, default="50/net")
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
 
     open_orders = serializers.SerializerMethodField()
 
@@ -196,6 +201,11 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         if contacts_data:
             self._sync_contacts(instance, contacts_data)
         
+        # Add Files
+        for file in files:
+            File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                contact=instance)
+
         return instance
 
     def update(self, instance, validated_data):
@@ -214,6 +224,15 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         if contacts_data:
             self._sync_contacts(instance, contacts_data)
             
+        #Update attached files
+        files = validated_data.pop('files', [])
+        for file in files:
+            try:
+                File.objects.get(file_id=file['id'], contact=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                    contact=instance)
+                                    
         customer_service.update(instance, validated_data, self.context['request'].user)
         
         return instance
@@ -251,7 +270,10 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
     bank_account_number = serializers.CharField(default="", allow_null=True, allow_blank=True)
     purchase_orders = serializers.SerializerMethodField()
     terms = serializers.CharField(required=False, default="50/net")
-    
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
+
+    open_orders = serializers.SerializerMethodField()
+
     class Meta:
         model = Supplier
         exclude = ('contact', 'google_contact_id', 'trcloud_id', 'fax')
@@ -279,7 +301,8 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
                                             [validated_data.pop('address', [])])
 
         contacts_data = validated_data.pop('contacts', None)
-        
+        files = validated_data.pop('files', [])
+
         try:
             first = validated_data['first_name']
             try:
@@ -311,6 +334,11 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         if contacts_data:
             self._sync_contacts(instance, contacts_data)
 
+        # Add Files
+        for file in files:
+            File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                contact=instance)
+
         return instance
         
     def update(self, instance, validated_data):
@@ -330,7 +358,15 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
                 self._update_contacts(instance, contacts_data)
         except Exception as e:
             logger.error(e)
-            
+        
+        #Update attached files
+        files = validated_data.pop('files', [])
+        for file in files:
+            try:
+                File.objects.get(file_id=file['id'], contact=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                    contact=instance)
        
             
         supplier_service.update(instance, validated_data, self.context['request'].user)
@@ -370,6 +406,15 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
             return PurchaseOrderFieldSerializer(pos, many=True).data
         else:
             return []
+
+    def get_open_orders(self, instance):
+        
+        today = datetime.now()
+        orders = instance.purchase_orders.filter(order_date__year=2018)
+        orders = orders.exclude(status__in=["paid", u'invoiced', u'cancelled', u'closed'])
+        
+        serializer = PurchaseOrderFieldSerializer(orders, many=True)
+        return serializer.data
 
 
 class SupplierFieldSerializer(ContactMixin, serializers.ModelSerializer):

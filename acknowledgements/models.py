@@ -783,7 +783,7 @@ class Acknowledgement(models.Model):
 
 class File(models.Model):
     acknowledgement = models.ForeignKey(Acknowledgement)
-    file = models.ForeignKey(S3Object)
+    file = models.ForeignKey(S3Object, related_name='acknowledgement_files')
     
     
 class Item(models.Model):

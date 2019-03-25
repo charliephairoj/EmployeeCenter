@@ -19,6 +19,7 @@ import auth.views
 import products.views
 import acknowledgements.views
 import ivr.views
+import contacts.views
 from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
 from supplies.views import SupplyList, SupplyDetail, supply_type_list
 from supplies.views import FabricList, FabricDetail
@@ -95,10 +96,10 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += [
-        #url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-        #url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-        #url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-        #url(r'^docs/', include_docs_urls(title='Internal API', public=False)),
+    #    url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    #    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    #    url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    #    url(r'^docs/', include_docs_urls(title='Internal API', public=False)),
     ]
 urlpatterns += [
 
@@ -176,10 +177,15 @@ urlpatterns += [
     # Accounting Views
     url(r'^api/v1/account/$', AccountList.as_view()),
     url(r'^api/v1/account/(?P<pk>[0-9]+)/$', AccountDetail.as_view()),
-]
+
 
 ]
 
+# Supplier and Customer Files
+urlpatterns += [
+    url(r'^api/v1/supplier/(?P<supplier_id>\d+)/file/$', contacts.views.supplier_file),
+    url(r'^api/v1/customer/(?P<customer_id>\d+)/file/$', contacts.views.customer_file),
+]
 
 urlpatterns += [
     #url(r'^acknowledgement$', 'acknowledgement'),
