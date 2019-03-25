@@ -169,6 +169,8 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
                                             [validated_data.pop('address', [])])
 
         contacts_data = validated_data.pop('contacts', None)
+        files = validated_data.pop('files', [])
+
         
         try:
             first = validated_data['first_name']
@@ -202,7 +204,6 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
             self._sync_contacts(instance, contacts_data)
         
         # Add Files
-        files = validated_data.pop('files', [])
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']),
                                 contact=instance)
