@@ -79,7 +79,7 @@ class AddressSerializer(serializers.ModelSerializer):
         """
         Override 'create' method to assign contact from context
         """
-        return address_service.create(contact=self.context['contact'], validated_data)
+        return address_service.create(contact=self.context['contact'], data=validated_data)
 
     def update(self, instance, validated_data):
         return address_service.update(instance, validated_data)
