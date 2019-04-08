@@ -1,7 +1,8 @@
 import logging
 import time
+from datetime import datetime
 
-from django.db.models import Q, Count, Value, Subquery, IntegerField, OuterRef
+from django.db.models import Q, Count, Value, Subquery, IntegerField, OuterRef, Prefetch
 from django.db.models.functions import Coalesce
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -15,6 +16,7 @@ from rest_framework.renderers import JSONRenderer
 from contacts.models import Customer, Supplier
 from contacts.serializers import CustomerSerializer, SupplierSerializer
 from acknowledgements.models import Acknowledgement as A
+from estimates.models import Estimate as Quotation
 from po.models import PurchaseOrder as PO
 from utilities.http import save_upload
 from media.models import S3Object
@@ -184,7 +186,8 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        
+        today = datetime.now()
+
         acks_count = A.objects.filter(customer=OuterRef('pk'),
                                      time_created__year=2018) \
                               .exclude(status__in=[u'cancelled', u'paid', u'invoiced', u'closed']) \
@@ -219,8 +222,25 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
             queryset = queryset[:limit]
         else:
             queryset = queryset[0:50]
-            
-        queryset = queryset.prefetch_related('addresses', 'contacts', 'acknowledgements')
+
+        open_orders_qs = A.objects.filter(time_created__year=2018)
+        open_orders_qs = open_orders_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+
+        open_quotations_qs = Quotation.objects.filter(time_created__year=2018)
+        open_quotations_qs = open_quotations_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+
+        queryset = queryset.prefetch_related('addresses',
+                                             'files',
+                                             'contacts',
+                                             'acknowledgements',
+                                             'quotations',
+                                             Prefetch('acknowledgements', 
+                                                      queryset=open_orders_qs,
+                                                      to_attr='open_orders'),
+                                             Prefetch('quotations',
+                                                      queryset=open_quotations_qs,
+                                                      to_attr='open_quotations'))
+
 
         return queryset
         
@@ -236,7 +256,35 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
             
 
 class CustomerDetail(CustomerMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+
+    def get_queryset(self):
+        """
+        Override 'filter_queryset' method in order to customize filter
+        """
+
+        queryset = self.queryset
+        
+        today = datetime.now()
+        open_orders_qs = A.objects.filter(time_created__year=2018)
+        open_orders_qs = open_orders_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+
+        open_quotations_qs = Quotation.objects.filter(time_created__year=2018)
+        open_quotations_qs = open_quotations_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+
+        queryset = queryset.prefetch_related('addresses',
+                                             'files',
+                                             'contacts',
+                                             'acknowledgements',
+                                             'quotations',
+                                             Prefetch('acknowledgements', 
+                                                      queryset=open_orders_qs,
+                                                      to_attr='open_orders'),
+                                             Prefetch('quotations',
+                                                      queryset=open_quotations_qs,
+                                                      to_attr='open_quotations'))
+
+
+        return queryset
 
 
 class SupplierMixin(object):

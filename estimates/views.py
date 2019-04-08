@@ -302,7 +302,11 @@ class EstimateList(EstimateMixin, generics.ListCreateAPIView):
                                              'items__image',
                                              'items__product',
                                              'customer__addresses', 
+                                             'customer__files',
+                                             'logs',
+                                             'logs__user',
                                              'files',) 
+
         #queryset = queryset.prefetch_related(Prefetch('items', queryset=Item.objects.select_related('image').prefetch_related('pillows')))
         queryset = queryset.defer('acknowledgement__items', 'acknowledgement__customer', 'acknowledgement__project',
                                   'project__customer', 'items', 'customer__contact', 'project__estimates')

@@ -9,6 +9,7 @@ from rest_framework import serializers
 from contacts.models import Customer, Supplier, Address, SupplierContact, Contact, File
 from po.models import PurchaseOrder
 from acknowledgements.models import Acknowledgement
+from estimates.models import Estimate
 from contacts.customer import service as customer_service
 from contacts.supplier import service as supplier_service
 from contacts.address import service as address_service
@@ -36,7 +37,16 @@ class AcknowledgementFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = Acknowledgement
         fields = ('id', 'grand_total', 'time_created', 'delivery_date', 'status')
-        depth = 1
+        depth = 0
+
+
+class QuotationFieldSerializer(serializers.ModelSerializer):
+    time_created = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Estimate
+        fields = ('id', 'grand_total', 'time_created', 'delivery_date', 'status')
+        depth = 0
 
 
 class AddressListSerializer(serializers.ListSerializer):
@@ -153,6 +163,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
 
     open_orders = serializers.SerializerMethodField()
+    open_quotations = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
@@ -241,12 +252,133 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
 
     def get_open_orders(self, instance):
         
-        today = datetime.now()
-        orders = instance.acknowledgements.filter(time_created__year=2018)
-        orders = orders.exclude(status__in=["paid", u'invoiced', u'cancelled'])
         
+        try:
+            orders = instance.open_orders
+        except AttributeError as e:
+            today = datetime.now()
+            orders = instance.acknowledgements.filter(time_created__year=today.year)
+            orders = orders.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+            orders = orders.select_related('customer')
+
         serializer = AcknowledgementFieldSerializer(orders, many=True)
         return serializer.data
+
+    def get_open_quotations(self, instance):
+
+        
+        try:
+            orders = instance.open_quotations
+        except AttributeError as e:
+            today = datetime.now()
+            orders = instance.quotations.filter(last_modified__year=today.year)
+            orders = orders.exclude(status__in=["paid", u'invoiced', u'cancelled'])
+            orders = orders.select_related('customer')
+        serializer = QuotationFieldSerializer(orders, many=True)
+        return serializer.data
+
+
+class CustomerOrderFieldSerializer(ContactMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True,)
+    addresses = AddressSerializer(required=False,  many=True, allow_null=True)
+    address = AddressSerializer(required=False, allow_null=True, write_only=True)
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    telephone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    contacts = serializers.ListField(child=serializers.DictField(), required=False, allow_null=True, write_only=True)
+    bank = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    bank_account_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    currency = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    terms = serializers.CharField(required=False, default="50/net")
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
+
+    class Meta:
+        model = Customer
+        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
+
+    def create(self, validated_data):
+        """
+        Override the base method 'create'.
+        
+        Calls the parent create and then also creates all the addresses and 
+        contacts that are nested
+        """
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+
+        contacts_data = validated_data.pop('contacts', None)
+        files = validated_data.pop('files', [])
+
+        
+        try:
+            first = validated_data['first_name']
+            try:
+                last = validated_data['last_name']
+            except KeyError:
+                last = ''
+            name = u"{0} {1}".format(first, last)
+            validated_data.pop('name', None)
+        except KeyError:
+            name = validated_data.pop('name')
+            
+        instance = customer_service.create(user=self.context['request'].user, name=name, **validated_data)
+        
+        if addresses_data:
+            # Delete any ids, as a new customer should not have a pre existing id
+            try:
+                for a in addresses_data:
+                    try:
+                        a.pop('id', None)
+                    except (TypeError, KeyError, AttributeError) as e:
+                        pass
+            except Exception as e:
+                pass
+
+            address_serializer = AddressSerializer(data=addresses_data, context={'contact': instance}, many=True)
+            if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
+
+        if contacts_data:
+            self._sync_contacts(instance, contacts_data)
+        
+        # Add Files
+        for file in files:
+            File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                contact=instance)
+
+        return instance
+
+    def update(self, instance, validated_data):
+        """
+        Override 'update' method
+        """
+        addresses_data = validated_data.pop('addresses', 
+                                            [validated_data.pop('address', [])])
+                    
+        contacts_data = validated_data.pop('contacts', None)
+
+        address_serializer = AddressSerializer(instance.addresses.all(), data=addresses_data, many=True)
+        if address_serializer.is_valid(raise_exception=True):
+                address_serializer.save()
+        
+        if contacts_data:
+            self._sync_contacts(instance, contacts_data)
+            
+        #Update attached files
+        files = validated_data.pop('files', [])
+        for file in files:
+            try:
+                File.objects.get(file_id=file['id'], contact=instance)
+            except File.DoesNotExist:
+                File.objects.create(file=S3Object.objects.get(pk=file['id']),
+                                    contact=instance)
+                                    
+        customer_service.update(instance, validated_data, self.context['request'].user)
+        
+        return instance
+
 
 class CustomerFieldSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True)

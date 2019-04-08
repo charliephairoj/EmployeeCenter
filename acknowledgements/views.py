@@ -379,6 +379,7 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
         queryset = queryset.prefetch_related('logs', 
                                              'logs__user',
                                              'customer__addresses',
+                                             'customer__files',
                                              'items',
                                              'items__image',
                                              'items__product',

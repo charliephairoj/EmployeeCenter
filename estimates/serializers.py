@@ -11,7 +11,7 @@ from rest_framework import serializers
 from rest_framework.fields import DictField
 
 from estimates.models import Estimate, Item, Pillow, File, Log as ELog
-from contacts.serializers import CustomerSerializer
+from contacts.serializers import CustomerOrderFieldSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
 from administrator.serializers import UserFieldSerializer as EmployeeSerializer, LogFieldSerializer
@@ -221,7 +221,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
 
     company = serializers.CharField(default="Alinea Group Co., Ltd.")
-    customer = CustomerSerializer(required=True)
+    customer = CustomerOrderFieldSerializer(required=True)
     employee = EmployeeSerializer(required=False, read_only=True)
     project = ProjectSerializer(allow_null=True, required=False)
     items = ItemSerializer(item_queryset, many=True, required=True)
