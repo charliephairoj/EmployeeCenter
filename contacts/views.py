@@ -1,6 +1,7 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from pytz import timezone
 
 from django.db.models import Q, Count, Value, Subquery, IntegerField, OuterRef, Prefetch
 from django.db.models.functions import Coalesce
@@ -186,10 +187,10 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        today = datetime.now()
-
+        today = datetime.now(tz=timezone('Asia/Bangkok'))
+        dt = today - timedelta(days=365)
         acks_count = A.objects.filter(customer=OuterRef('pk'),
-                                     time_created__year=2018) \
+                                     time_created__gte=dt) \
                               .exclude(status__in=[u'cancelled', u'paid', u'invoiced', u'closed']) \
                               .values('customer') \
                               .annotate(num_acks=Count('*')) \
@@ -223,10 +224,10 @@ class CustomerList(CustomerMixin, generics.ListCreateAPIView):
         else:
             queryset = queryset[0:50]
 
-        open_orders_qs = A.objects.filter(time_created__year=2018)
+        open_orders_qs = A.objects.filter(time_created__gte=dt)
         open_orders_qs = open_orders_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
 
-        open_quotations_qs = Quotation.objects.filter(time_created__year=2018)
+        open_quotations_qs = Quotation.objects.filter(time_created__gte=dt)
         open_quotations_qs = open_quotations_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
 
         queryset = queryset.prefetch_related('addresses',
@@ -264,11 +265,12 @@ class CustomerDetail(CustomerMixin, generics.RetrieveUpdateDestroyAPIView):
 
         queryset = self.queryset
         
-        today = datetime.now()
-        open_orders_qs = A.objects.filter(time_created__year=2018)
+        today = datetime.now(tz=timezone('Asia/Bangkok'))
+        dt = today - timedelta(days=365)
+        open_orders_qs = A.objects.filter(time_created__gte=dt)
         open_orders_qs = open_orders_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
 
-        open_quotations_qs = Quotation.objects.filter(time_created__year=2018)
+        open_quotations_qs = Quotation.objects.filter(time_created__gte=dt)
         open_quotations_qs = open_quotations_qs.exclude(status__in=["paid", u'invoiced', u'cancelled'])
 
         queryset = queryset.prefetch_related('addresses',
