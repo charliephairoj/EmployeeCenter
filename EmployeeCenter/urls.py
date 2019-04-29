@@ -7,9 +7,8 @@ import debug_toolbar
 from django.contrib.staticfiles import views
 from rest_framework.documentation import include_docs_urls
 if settings.DEBUG:
-    pass
-    #from drf_yasg.views import get_schema_view
-    #from drf_yasg import openapi
+    from drf_yasg.views import get_schema_view
+    from drf_yasg import openapi
 
 import login.views
 import administrator.views
@@ -18,6 +17,7 @@ import po.views
 import auth.views
 import products.views
 import acknowledgements.views
+import invoices.views
 import ivr.views
 import contacts.views
 from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
@@ -56,6 +56,9 @@ from hr.views import employee_stats, employee_image, upload_attendance
 from deals.views import DealList, DealDetail
 from ivr.views import voice, get_token, test, route_call, recording_callback, call_status_update_callback
 from accounting.views import AccountList, AccountDetail
+
+from invoices.views import InvoiceList, InvoiceDetail
+
 """
 API Section
 
@@ -74,8 +77,8 @@ router.register(r'api/v1/project-part', PartViewSet)
 router.register(r'api/v1/shift', ShiftViewSet)
 
 if settings.DEBUG:
-    pass
-    """
+    # pass
+    
     schema_view = get_schema_view(
     openapi.Info(
         title="Snippets API",
@@ -85,7 +88,7 @@ if settings.DEBUG:
     validators=['flex'],
     public=True,
     )
-    """
+    
 
 
 
@@ -96,8 +99,8 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += [
-    #    url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    #    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+        url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+        url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     #    url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     #    url(r'^docs/', include_docs_urls(title='Internal API', public=False)),
     ]
@@ -206,6 +209,30 @@ urlpatterns += [
     #url(r'^acknowledgement/item$', 'item'),
     #url(r'^acknowledgement/item/(?P<ack_item_id>\d+)$', 'item')
 ]
+
+urlpatterns += [
+    url(r'^api/v1/invoice/$', InvoiceList.as_view()),
+    url(r'^api/v1/invoice/(?P<pk>[0-9]+)/$', InvoiceDetail.as_view()),
+
+    #url(r'^invoice$', 'invoice'),
+    url(r'^api/v1/invoice/(?P<ack_id>\d+)/file/$', invoices.views.invoice_file),
+    url(r'^api/v1/invoice/(?P<ack_id>\d+)/item/image/$', invoices.views.invoice_item_image),
+
+    #url(r'^invoice/(?P<ack_id>\d+)/pdf$', 'pdf'),
+    #url(r'^invoice/(?P<ack_id>\d+)/log$', 'log'),
+    #url(r'^api/v1/invoice/schedule$', 'schedule'),
+    url(r'api/v1/invoice/stats/$', invoices.views.invoice_stats),
+    url(r'api/v1/invoice/item/image$', invoices.views.invoice_item_image),
+    url(r'^api/v1/invoice/item/image$', invoices.views.invoice_item_image),
+    url(r'api/v1/invoice/item/image/$', invoices.views.invoice_item_image),
+    url(r'^api/v1/invoice/item/image/$', invoices.views.invoice_item_image),
+    url(r'^api/v1/invoice/file/$', invoices.views.invoice_file),
+    url(r'^api/v1/invoice/download', invoices.views.invoice_download)
+
+    #url(r'^invoice/item$', 'item'),
+    #url(r'^invoice/item/(?P<ack_item_id>\d+)$', 'item')
+]
+
 
 urlpatterns += [
     url(r'^api/v1/estimate/(?P<q_id>\d+)/file/$', estimates.views.estimate_file),

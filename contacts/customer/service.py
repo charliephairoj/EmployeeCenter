@@ -40,7 +40,7 @@ def update(customer, data, user):
     assert isinstance(customer, Customer), u"{0} should be a Customer instance".format(customer)
     
     # Check that the user is a user instance
-    assert isinstance(user, User), u"{0} should be a User instance".format(user)
+    #assert isinstance(user, User), u"{0} should be a User instance".format(user)
 
     for field in data.keys():
         setattr(customer, field, data[field])
