@@ -299,7 +299,7 @@ class Invoice(models.Model):
 
 
         # Calculate discount
-        discount_amount = (Decimal(self.discount) / 100) * subtotal
+        discount_amount = (Decimal(self.discount) / Decimal('100')) * subtotal
         logger.debug("discount {0}%: - {1:.2f}".format(self.discount, discount_amount))
 
         # Assert Discount amount is proportional to subtotal percent
@@ -361,13 +361,13 @@ class Invoice(models.Model):
         assert grand_total == (subtotal - discount_amount - second_discount_amount + vat_amount)
 
         return {
-            'subtotal': subtotal,
-            'post_discount_total': post_discount_total,
-            'total': total,
-            'grand_total': grand_total,
-            'vat_amount': vat_amount,
-            'discount_amount': discount_amount,
-            'second_discount_amount': second_discount_amount
+            'subtotal': self._format_precision(subtotal),
+            'post_discount_total': self._format_precision(post_discount_total),
+            'total': self._format_precision(total),
+            'grand_total': self._format_precision(grand_total),
+            'vat_amount': self._format_precision(vat_amount),
+            'discount_amount': self._format_precision(discount_amount),
+            'second_discount_amount': self._format_precision(second_discount_amount)
         }
 
     def _populate_for_trcloud(self, tr_so):
@@ -537,9 +537,14 @@ class Invoice(models.Model):
             description += u"{0:.2f}  {1}".format(i.quantity, i.description)
             
         return description
+
+    def _format_precision(self, value):
+        return value.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
         
     def __str__(self):
         return u"Invoice #{0}".format(self.id)
+
+
         
 
 class File(models.Model):

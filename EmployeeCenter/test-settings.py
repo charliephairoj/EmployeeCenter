@@ -10,6 +10,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
 
+        'TEST': {
+            'NAME': 'testdb'
+        }
+
     }
 }
 
@@ -52,7 +56,8 @@ INSTALLED_APPS = (
     #'social.apps.django_app.default',
     'corsheaders',
     #'oauth2client',
-    'test'
+    'test',
+    'invoices'
 )
 
 LOGGING = {

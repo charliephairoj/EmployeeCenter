@@ -4,6 +4,7 @@ import logging
 import time
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import generics
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class AccountMixin(object):
-    queryset = Account.objects.all().order_by('code')
+    queryset = Account.objects.all().order_by('account_code')
     serializer_class = AccountSerializer
     
     def handle_exception(self, exc):

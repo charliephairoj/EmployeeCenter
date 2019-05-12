@@ -11,6 +11,16 @@ from accounting.models import Account
 logger = logging.getLogger(__name__)
 
 
+def get(name=None, pk=None):
+
+    assert not (name is None and pk is None), "Must provide Account name or id"
+
+    if name:
+        return Account.objects.get(name=name)
+
+    if pk:
+        return Account.objects.get(pk=pk)
+
 def create_account_receivable(company, contact):
     # Check that the company is a Company instance
     assert isinstance(company, Company), u"{0} should be a Company instance".format(company)

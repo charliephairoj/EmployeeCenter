@@ -13,6 +13,7 @@ from pytz import timezone
 from administrator.models import User
 from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer
 from invoices.models import Invoice, Item, Log as InvoiceLog, File
+from invoices import service as invoice_service
 from contacts.serializers import CustomerOrderFieldSerializer, CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -181,7 +182,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError) as e:
-            del ret['acknowledgement']
+            try:
+                del ret['acknowledgement']
+            except Exception as e:
+                logger.warn(e)
 
         try:
             ret['customer'] = Customer.objects.get(pk=data['customer']['id'])
@@ -293,7 +297,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
                                     invoice=instance, 
                                     user=employee,
                                     type="TRCLOUD")
-                
+
+        # Create Journal Entry in Accouting
+        invoice_service.create_journal_entry(instance)
+        
         return instance
 
     def update(self, instance, validated_data):

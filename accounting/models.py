@@ -3,6 +3,7 @@
 from decimal import Decimal
 import dateutil.parser
 import logging
+from datetime import datetime, date
 
 from django.db import models
 from administrator.models import User, Company
@@ -16,33 +17,51 @@ class Journal(models.Model):
     name_en = models.TextField()
     name_th = models.TextField()
 
+    @property
+    def name(self):
+        return self.name_en
+
+    @name.setter
+    def name(self, value):
+        self.name_en = value
+
 
 class JournalEntry(models.Model):
     description = models.TextField()
-    date = models.DateField(auto_now=True)
+    date = models.DateField(default=date.today)
     journal = models.ForeignKey(Journal)
     
 
 class Account(models.Model):
-    account_code = models.TextField(db_column='code')
+    account_code = models.TextField(db_column='code', null=True)
     name = models.TextField(db_column='name_en')
     name_th = models.TextField(null=True)
     type = models.TextField(db_column="account_type", null=True)
+    type_detail = models.TextField(null=True)
     company = models.ForeignKey(Company, related_name="chart_of_accounts")
+    #parent_account = models.ForeignKey('self', related_name='sub_accounts')
     
 
 class Transaction(models.Model):
-    account = models.ForeignKey(Account)
-    journal_entry = models.ForeignKey(JournalEntry)
-    debit = models.DecimalField(decimal_places=2, max_digits=12)
-    credit = models.DecimalField(decimal_places=2, max_digits=12)
-    balance = models.DecimalField(decimal_places=2, max_digits=12)
-    transaction_id = models.TextField()
+    account = models.ForeignKey(Account, related_name='transactions')
+    journal_entry = models.ForeignKey(JournalEntry, related_name='transactions')
+    debit = models.DecimalField(decimal_places=2, max_digits=12, null=True, blank=True)
+    credit = models.DecimalField(decimal_places=2, max_digits=12, null=True, blank=True)
+    #balance = models.DecimalField(decimal_places=2, max_digits=12)
+    #transaction_id = models.TextField()
     description = models.TextField()
-    transaction_date = models.DateTimeField()
+    transaction_date = models.DateTimeField(default=datetime.now)
 
     class Meta:
         permissions = (('can_view_transactions', 'Can View Transactions'),)
+
+    @property
+    def date(self):
+        return self.transaction_date
+
+    @date.setter
+    def date(self, value):
+        self.transaction_date = value
 
 
 # Not yet created in database 
