@@ -112,7 +112,7 @@ class AccountSerializer(serializers.ModelSerializer):
     type = serializers.CharField(required=False, allow_null=True)
     type_detail = serializers.CharField(required=False, allow_null=True)
     transactions = TransactionFieldSerializer(many=True, read_only=True)
- 
+    balance = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=15)
     
     class Meta:
         fields = '__all__'

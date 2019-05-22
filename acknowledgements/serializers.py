@@ -297,10 +297,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
     delivery_date = serializers.DateTimeField(required=True)
     logs = LogFieldSerializer(many=True, read_only=True)
+    invoices = serializers.SerializerMethodField(read_only=True)
+    balance = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=15)
 
     class Meta:
         model = Acknowledgement
-        read_only_fields = ('total', 'subtotal', 'time_created', 'logs')
+        read_only_fields = ('total', 'subtotal', 'time_created', 'logs', 'balance')
         exclude = ('acknowledgement_pdf', 'production_pdf', 'original_acknowledgement_pdf', 'label_pdf', 'trcloud_id',
                    'trcloud_document_number')
         depth = 3
@@ -559,6 +561,17 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
            
         return instance
 
+    def get_invoices(self, instance):
+
+        data = [
+            {
+                'id': inv.id,
+                'grand_total': inv.grand_total
+            }
+        for inv in instance.invoices.all()]
+
+        return data
+
     def _update_items(self, instance, items_data):
         """
         Handles creation, update, and deletion of items
@@ -630,10 +643,12 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
 
 class AcknowledgementFieldSerializer(serializers.ModelSerializer):
     project = ProjectFieldSerializer(required=False, read_only=True)
+    balance = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=15)
 
     class Meta:
         model = Acknowledgement
-        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 'total', 'subtotal', 'time_created', 'project')
-        read_only_fields = ('project', )
+        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 
+                  'total', 'subtotal', 'time_created', 'project', 'status', 'balance')
+        read_only_fields = ('project', 'balance')
 
 

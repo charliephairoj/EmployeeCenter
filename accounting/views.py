@@ -44,8 +44,9 @@ class AccountList(AccountMixin, generics.ListCreateAPIView):
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
-            queryset = queryset.filter(Q(name_en__icontains=query) |
+            queryset = queryset.filter(Q(name__icontains=query) |
                                        Q(name_th__icontains=query) |
+                                       Q(type__icontains=query) |
                                        Q(id__icontains=query))
 
         offset = int(self.request.query_params.get('offset', 0))

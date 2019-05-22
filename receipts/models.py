@@ -22,40 +22,34 @@ from apiclient import discovery
 from contacts.models import Customer
 from products.models import Product, Upholstery
 from projects.models import Project, Room, Phase
-from invoices.PDF import InvoicePDF
+from receipts.PDF import ReceiptPDF
 from media.models import Log, S3Object
 from administrator.models import CredentialsModel, Log as BaseLog
 from trcloud.models import TRSalesOrder, TRContact
 from acknowledgements.models import Acknowledgement, Item as AckItem
-from accounting.models import JournalEntry
-
+from invoices.models import Invoice, Item as InvItem
 
 logger = logging.getLogger(__name__)
 
 
-class Invoice(models.Model):
-    trcloud_id = models.IntegerField(null=True, default=0)
-    trcloud_document_number = models.TextField(null=True, default="")
+class Receipt(models.Model):
     company = models.TextField(default="Alinea Group Co., Ltd.")
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='invoices')
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='receipts')
     employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
-    acknowledgement = models.ForeignKey(Acknowledgement, on_delete=models.PROTECT, null=True, related_name='invoices')
+    acknowledgement = models.ForeignKey(Acknowledgement, on_delete=models.PROTECT, null=True, related_name='receipts')
+    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, null=True, related_name='receipts')
     time_created = models.DateTimeField(auto_now_add=True)
-    _due_date = models.DateTimeField(db_column='due_date', null=True)
-    status = models.TextField(db_column='status', default='open')
+    paid_date = models.DateTimeField(default=datetime.now)
+    status = models.TextField(default='paid')
     remarks = models.TextField(null=True, default=None, blank=True)
-    fob = models.TextField(null=True, blank=True)
-    project = models.ForeignKey(Project, null=True, blank=True, related_name='invoices')
-    room = models.ForeignKey(Room, null=True, blank=True, related_name='invoices')
-    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='invoices')
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object,
-                                            null=True,
-                                            related_name='+',
-                                            db_column="pdf")
+                            null=True,
+                            related_name='+',
+                            db_column="pdf")
     
-    files = models.ManyToManyField(S3Object, through="File", related_name="invoice")
+    files = models.ManyToManyField(S3Object, through="File", related_name="receipt")
     calendar_event_id = models.TextField(null=True)
     
     current_user = None 
@@ -80,17 +74,6 @@ class Invoice(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     # Total after all discounts and Vats
     grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    # Accounting
-    journal_entry = models.ForeignKey(JournalEntry, null=True, related_name="invoice")
-    
-    @property
-    def due_date(self):
-        return self._due_date
-        
-    @due_date.setter
-    def due_date(self, value):
-        self._due_date = value
         
     # @property
     # def status(self):
@@ -104,7 +87,7 @@ class Invoice(models.Model):
         """
         Overrides the standard delete method.
         
-        This method will simply make the invoice as deleted in
+        This method will simply make the receipt as deleted in
         the database rather an actually delete the record
         """
         self.deleted = True
@@ -113,104 +96,21 @@ class Invoice(models.Model):
         """Filter logs source"""
         return self.logs.exclude(type__icontains="error")
 
-    def create_in_trcloud(self):
-        """Create a Sales Order in TRCloud"""
-
-        # Create customer if does not already exist
-        if not self.customer.trcloud_id:
-
-            # Search current clients to double check if 
-            contacts = TRContact.search(self.customer.name)
-
-            if len(contacts) == 0:
-                try:
-
-                    self.customer.contact_type = "normal"
-                    self.customer.create_in_trcloud()
-                except Exception as e:
-                    message = "Unable to create contact in TRCloud"
-                    Log.objects.create(message=message,
-                                       type="TRCLOUD",
-                                       user=self.employee)
-            else:  
-                self.customer.trcloud_id = contacts[0]['contact_id']
-                self.customer.tax_id = contacts[0]['tax_id']
-                self.customer.save()
-
-        tr_so = TRSalesOrder()
-
-        tr_so = self._populate_for_trcloud(tr_so)
-        
-        try:
-            tr_so.create()
-        except Exception as e:
-            message = "Unable to create Sales Order for invoice {0} in TRCloud because: {1}"
-            message = message.format(self.id, e)
-            Log.objects.create(message=message,
-                                       type="TRCLOUD",
-                                       user=self.employee)
-                                       
-        self.trcloud_id = tr_so.id
-        self.trcloud_document_number = tr_so.document_number
-        self.save()
-
-        # Set the trcloud_id for items
-        for product in tr_so.products:
-            try:
-                item = self.items.get(description=product['product'],
-                                      quantity=product['quantity'])
-            except Item.DoesNotExist as e:
-                logger.debug(product['product'])
-                logger.debug(product['quantity'])
-
-            logger.debug(product)
-            logger.debug(item.__dict__)
-            item.trcloud_id = product['id']
-
-    def update_in_trcloud(self):
-        """Create a Sales Order in TRCloud"""
-        tr_so = TRSalesOrder()
-
-        tr_so = self._populate_for_trcloud(tr_so)
-        tr_so.document_number = self.trcloud_document_number
-        tr_so.id = self.trcloud_id
-
-        try:
-            tr_so.update()
-        except Exception as e:
-            message = "Unable to update Sales Order for invoice {0} in TRCloud because: {1}"
-            message = message.format(self.id, e)
-            Log.objects.create(message=message,
-                                       type="TRCLOUD",
-                                       user=self.employee)
-       
-
-        self.save()
-        
-    def ship(self, due_date, employee):
-        """Changes status to 'SHIPPED'
-
-        Change the order status to ship and logs who ships it
-        """
-        try:
-            message = "Ack# {0} shipped on {1}".format(self.id, due_date.strftime('%B %d, %Y'))
-        except AttributeError:
-            raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdf(self, delete_original=True):
-        invoice_filename = self.create_pdf()
-        invoice_key = "invoice/{0}/Invoice-{0}.pdf".format(self.id)
+        receipt_filename = self.create_pdf()
+        receipt_key = "receipt/{0}/Receipt-{0}.pdf".format(self.id)
         
         bucket = "document.dellarobbiathailand.com"
-        invoice_pdf = S3Object.create(invoice_filename, invoice_key, bucket, delete_original=delete_original)
+        receipt_pdf = S3Object.create(receipt_filename, receipt_key, bucket, delete_original=delete_original)
        
         # Save references for files
-        self.pdf = invoice_pdf
+        self.pdf = receipt_pdf
         
         self.save()
         
     def create_pdf(self):
-        """Creates Production and Invoice PDFs
+        """Creates Production and Receipt PDFs
 
         This method will extract the necessary data to 
         create the pdfs from the object itself. It requires
@@ -219,12 +119,12 @@ class Invoice(models.Model):
         products = self.items.all().order_by('id')
 
         # Initialize pdfs
-        invoice_pdf = InvoicePDF(customer=self.customer, invoice=self, products=products)
+        receipt_pdf = ReceiptPDF(customer=self.customer, receipt=self, products=products)
         
         # Create pdfs
-        invoice_filename = invoice_pdf.create()
+        receipt_filename = receipt_pdf.create()
         
-        return invoice_filename
+        return receipt_filename
         
     def calculate_totals(self, items=None):
         #Define items if not already defined
@@ -256,8 +156,8 @@ class Invoice(models.Model):
         of the project. If the argument is null then the
         items are pulled from the database relationship.
         We use the argument first in the case of where
-        we are creating a new Invoice, and the
-        items and invoice have not yet been saved
+        we are creating a new Receipt, and the
+        items and receipt have not yet been saved
         """
         # Totals
         # Total of items totals
@@ -374,56 +274,6 @@ class Invoice(models.Model):
             'second_discount_amount': self._format_precision(second_discount_amount)
         }
 
-    def _populate_for_trcloud(self, tr_so):
-
-        # Add customer to data pinvoiceage
-        tr_so.customer['contact_id'] = self.customer.trcloud_id
-        tr_so.customer['name'] = self.customer.name
-        # Set Orgnization name 
-        if u"co.," or u"บริษัท" in self.name.lower():
-            tr_so.customer['organization'] = self.customer.name
-        
-        tr_so.customer['branch'] = u"สำนักงานใหญ่"
-        tr_so.customer['email'] = self.customer.email
-        tr_so.customer['telephone'] = self.customer.telephone
-
-        #Set Address
-        try:
-            address = self.customer.addresses.all()[0]
-            tr_address = u"{0}, {1}, {2}, {3} {4}".format(address.address1,
-                                                        address.city or "",
-                                                        address.territory or "",
-                                                        address.country or "",
-                                                        address.zipcode or "")
-            tr_so.customer['address'] = tr_address
-        except IndexError as e:
-            tr_so.customer['address'] = ''
-            
-        tr_so.customer['tax_id'] = self.customer.tax_id or ""
-
-        # Set Date
-        d = datetime.now()
-        tr_so.document_number = self.trcloud_document_number
-        tr_so.issue_date = self.time_created.strftime("%Y-%m-%d")
-        tr_so.delivery_due = self.due_date.strftime("%Y-%m-%d")
-        tr_so.company_format = "SO"
-        tr_so.tax = "{0:.2f}".format((Decimal(str(self.vat))/Decimal('100')) * self.subtotal)
-        tr_so.total = float(self.subtotal)
-        tr_so.grand_total = float(self.total)
-        tr_so.customer_id = self.customer.trcloud_id
-
-        # Add Products
-        for item in self.items.all():
-            tr_so.products.append({'id': item.id,
-                                   'product': item.description or '',
-                                   'price': "{0:.2f}".format(item.unit_price or 0),
-                                   'quantity': "{0:.2f}".format(item.quantity or 0),
-                                   'before': "{0:.2f}".format(item.total or 0),
-                                   'amount': "{0:.2f}".format((item.total * Decimal('1.07')) or 0),
-                                   'vat':'7%'})
-        
-        return tr_so
-
     
     def _get_calendar_service(self, user):
         if self.calendar_service:
@@ -445,7 +295,7 @@ class Invoice(models.Model):
         calendar_summaries = [cal['summary'].lower() for cal in response['items']]
     
         # Check if user does not already has account payables
-        if 'invoices' not in calendar_summaries:
+        if 'receipts' not in calendar_summaries:
             # Get calendar
             cal_id = 'dellarobbiathailand.com_vl7drjcuulloicm0qlupgsr4ko@group.calendar.google.com'
             calendar = service.calendars().get(calendarId=cal_id).execute()
@@ -458,7 +308,7 @@ class Invoice(models.Model):
         else:
             # Get calendar is already in calendarList
             for cal in response['items']:
-                if cal['summary'].lower() == 'invoices':
+                if cal['summary'].lower() == 'receipts':
                     calendar = cal
             
         return calendar
@@ -501,10 +351,10 @@ class Invoice(models.Model):
             'location': self._get_address_as_string(),
             'description': self._get_description_as_string(),
             'start': {
-                'date': self.due_date.strftime('%Y-%m-%d')
+                'date': self.paid_date.strftime('%Y-%m-%d')
             },
             'end': {
-                'date': self.due_date.strftime('%Y-%m-%d')
+                'date': self.paid_date.strftime('%Y-%m-%d')
             },
             'reminders': {
                 'useDefault': False,
@@ -532,7 +382,7 @@ class Invoice(models.Model):
         
     def _get_description_as_string(self):
         description = u"""
-        Invoice: {0}
+        Receipt: {0}
         Customer: {1}
         Qty     Items: 
         """.format(self.id, self.customer.name)
@@ -546,53 +396,38 @@ class Invoice(models.Model):
         return value.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
         
     def __str__(self):
-        return u"Invoice #{0}".format(self.id)
+        return u"Receipt #{0}".format(self.id)
 
 
         
 
 class File(models.Model):
-    invoice = models.ForeignKey(Invoice)
-    file = models.ForeignKey(S3Object, related_name='invoice_files')
+    receipt = models.ForeignKey(Receipt)
+    file = models.ForeignKey(S3Object, related_name='receipt_files')
     
     
 class Item(models.Model):
     trcloud_id = models.IntegerField(null=True, blank=True)
-    invoice = models.ForeignKey(Invoice, related_name="items")
-    acknowledgement_item = models.ForeignKey(AckItem, null=True, related_name="invoice_items")
-    product = models.ForeignKey(Product, null=True, related_name="invoice_items")
+    receipt = models.ForeignKey(Receipt, related_name="items")
+    invoice_item = models.ForeignKey(InvItem, null=True, related_name="receipt_items")
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     total = models.DecimalField(null=True, max_digits=15, decimal_places=2)
     description = models.TextField()
-    status = models.CharField(db_column="status", max_length=50, default="invoiced")
+    status = models.CharField(db_column="status", max_length=50, default="paid")
     comments = models.TextField(null=True, blank=True)
-    image = models.ForeignKey(S3Object, null=True, blank=True, related_name="invoice_items")
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        permissions = (('change_item_price', 'Can edit item price'),)
-
-    def _get_image_url(self):
-        """Gets the item's default image."""
-        try:
-            conn = S3Connection()
-            url = conn.generate_url(1800, 'GET', bucket=self.bucket,
-                                    key=self.image_key, force_http=True)
-            return url
-        except Exception:
-            return None
 
 
 class Log(BaseLog):
     log_ptr = models.OneToOneField(BaseLog, related_name='+')
-    invoice = models.ForeignKey(Invoice, related_name='logs')
+    receipt = models.ForeignKey(Receipt, related_name='logs')
 
     @classmethod
     def create(cls, **kwargs):
 
-        log_type = kwargs.pop('type', 'INVOICE')
+        log_type = kwargs.pop('type', 'RECEIPT')
 
         log = cls(type=log_type, **kwargs)
         log.save()

@@ -12,8 +12,8 @@ from pytz import timezone
 
 from administrator.models import User
 from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer
-from invoices.models import Invoice, Item, Log as InvoiceLog, File
-from invoices import service as invoice_service
+from receipts.models import Receipt, Item, Log as ReceiptLog, File
+from receipts import service as receipt_service
 from contacts.serializers import CustomerOrderFieldSerializer, CustomerSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
@@ -26,7 +26,11 @@ from projects.models import Project, Phase, Room
 from media.models import S3Object
 from acknowledgements.serializers import ItemFieldSerializer as AckItemFieldSerializer, AcknowledgementFieldSerializer
 from acknowledgements.models import Acknowledgement, Item as AckItem, File as AckFile
-from accounting.serializers import JournalEntrySerializer
+from invoices.models import Invoice, File as InvFile, Item as InvItem
+from invoices.serializers import InvoiceFieldSerializer, ItemFieldSerializer as InvItemFieldSerializer
+from accounting.serializers import AccountFieldSerializer
+from accounting.models import Account
+from accounting.account import service as acc_service
 
 
 logger = logging.getLogger(__name__)
@@ -37,26 +41,16 @@ class ItemListSerializer(serializers.ListSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(required=False, allow_null=True)
-    acknowledgement_item = AckItemFieldSerializer(required=False, allow_null=True)
+    invoice_item = InvItemFieldSerializer(required=False, allow_null=True)
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, default=0)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    status = serializers.CharField(required=False, default='invoiced')
-    #location = serializers.CharField(required=False, allow_null=True)
-    image = S3ObjectFieldSerializer(required=False, allow_null=True)
+    status = serializers.CharField(required=False, default='receiptd')
     id = serializers.IntegerField(required=False, allow_null=True)
-
-    grades = {'A1': 15,
-              'A2': 20,
-              'A3': 25,
-              'A4': 30,
-              'A5': 35,
-              'A6': 40}
 
     class Meta:
         model = Item
-        fields = ('description', 'id', 'unit_price', 'total', 'product',
-                  'acknowledgement_item', 'comments', 'image', 'quantity', 'status')
+        fields = ('description', 'id', 'unit_price', 'total',
+                  'invoice_item', 'comments', 'quantity', 'status')
         read_only_fields = ('total',)
         list_serializer_class = ItemListSerializer
 
@@ -64,27 +58,10 @@ class ItemSerializer(serializers.ModelSerializer):
         ret = super(ItemSerializer, self).to_internal_value(data)
 
         try:
-            ret['product'] = Product.objects.get(pk=data['product']['id'])
-        except (KeyError, Product.DoesNotExist, TypeError) as e:
-            try:
-                ret['product'] = Product.objects.get(description=data['description'])
-            except (Product.DoesNotExist) as e:
-                try:
-                    ret['product'] = Product.objects.get(pk=10436)
-                except Product.DoesNotExist as e:
-                    ret['product'] = Product.objects.create()
-
-        try:
-            ret['acknowledgement_item'] = AckItem.objects.get(pk=data['acknowledgement_item']['id'])
-        except (KeyError, AckItem.DoesNotExist, TypeError) as e:
-            if 'acknowledgement_item' in ret:
-                del ret['acknowledgement_item']
-
-        try:
-            ret['image'] = S3Object.objects.get(pk=data['image']['id'])
-        except (KeyError, S3Object.DoesNotExist, TypeError) as e:
-            if "image" in ret:
-                del ret['image']
+            ret['invoice_item'] = InvItem.objects.get(pk=data['invoice_item']['id'])
+        except (KeyError, InvItem.DoesNotExist, TypeError) as e:
+            if 'invoice_item' in ret:
+                del ret['invoice_item']
         
         return ret
 
@@ -93,9 +70,9 @@ class ItemSerializer(serializers.ModelSerializer):
         Populates the instance after the parent 'restore_object' method is
         called.
         """
-        invoice = self.context['invoice']
+        receipt = self.context['receipt']
 
-        instance = self.Meta.model.objects.create(invoice=invoice, **validated_data)
+        instance = self.Meta.model.objects.create(receipt=receipt, **validated_data)
        
         instance.total = (instance.quantity or 1) * (instance.unit_price or 0)
 
@@ -109,7 +86,7 @@ class ItemSerializer(serializers.ModelSerializer):
         """
 
         # Update attributes from client side details
-        invoice = self.context['invoice']
+        receipt = self.context['receipt']
         employee = self.context['employee']
 
         # Loops through attributes and logs changes
@@ -125,7 +102,7 @@ class ItemSerializer(serializers.ModelSerializer):
                 # Log data changes
                 message = u"{0}: {1} changed from {2} to {3}"
                 message = message.format(instance.description, attr, old_attr_value, new_attr_value)
-                InvoiceLog.create(message=message, invoice=instance.invoice, user=employee)
+                ReceiptLog.create(message=message, receipt=instance.receipt, user=employee)
 
 
         # Set the price of the total for this item
@@ -152,40 +129,46 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = '__all__'
-        read_only_fields = ('invoice', 'file')
+        read_only_fields = ('receipt', 'file')
 
 
-class InvoiceSerializer(serializers.ModelSerializer):
+class ReceiptSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
     company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     customer = CustomerOrderFieldSerializer()
     acknowledgement = AcknowledgementFieldSerializer(required=False, allow_null=True)
     employee = UserFieldSerializer(required=False, read_only=True)
-    project = ProjectFieldSerializer(required=False, allow_null=True)
-    room = RoomFieldSerializer(allow_null=True, required=False)
-    phase = PhaseFieldSerializer(allow_null=True, required=False)
     items = ItemSerializer(item_queryset, many=True)
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
-    due_date = serializers.DateTimeField(required=True)
+    paid_date = serializers.DateTimeField(required=True)
     logs = LogFieldSerializer(many=True, read_only=True)
-    journal_entry = serializers.SerializerMethodField()
+    invoice = InvoiceFieldSerializer(required=True)
+    deposit_to = AccountFieldSerializer(required=True, write_only=True)
 
     class Meta:
-        model = Invoice
+        model = Receipt
         read_only_fields = ('total', 'subtotal', 'time_created', 'logs')
-        exclude = ('pdf', 'trcloud_id',
-                   'trcloud_document_number')
-        depth = 3
+        write_only_fields = ('deposit_to',)
+        exclude = ('pdf',)
+        depth = 2
 
     def to_internal_value(self, data):
-        ret = super(InvoiceSerializer, self).to_internal_value(data)
+        ret = super(ReceiptSerializer, self).to_internal_value(data)
 
         try:
             ret['acknowledgement'] = Acknowledgement.objects.get(pk=data['acknowledgement']['id'])
         except (Acknowledgement.DoesNotExist, KeyError) as e:
             try:
                 del ret['acknowledgement']
+            except Exception as e:
+                logger.warn(e)
+        
+        try:
+            ret['invoice'] = Invoice.objects.get(pk=data['invoice']['id'])
+        except (Invoice.DoesNotExist, KeyError) as e:
+            try:
+                del ret['invoice']
             except Exception as e:
                 logger.warn(e)
 
@@ -195,22 +178,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
             ret['customer'] = Customer.objects.create(**data['customer'])
 
         try:
-            ret['project'] = Project.objects.get(pk=data['project']['id'])
-        except (Project.DoesNotExist, KeyError, TypeError) as e:
+            ret['deposit_to'] = Account.objects.get(pk=data['deposit_to']['id'])
+        except (Account.DoesNotExist, KeyError) as e:
+            ret['deposit_to'] = Account.objects.create(**data['deposit_to'])
 
-            try:
-                ret['project'] = Project.objects.create(**data['project'])
-            except (TypeError) as e:
-                logger.warn(e)
-                logger.debug(ret['project'])
-                try:
-                    del ret['project']
-                except Exception as e:
-                    logger.warn(e)
-            except KeyError as e:
-                pass
 
-        logger.debug("\n\nInvoice to internal value\n\n")
+        logger.debug("\n\nReceipt to internal value\n\n")
 
         return ret
 
@@ -220,11 +193,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
         """
 
         #Discard STatus
-        status = validated_data.pop('status', 'invoiced')
+        status = validated_data.pop('status', 'paid')
         
         items_data = validated_data.pop('items')
         items_data = self.initial_data['items']
         files = validated_data.pop('files', [])
+        deposit_to = validated_data.pop('deposit_to')
         
         # Get user 
         employee = self.context['request'].user
@@ -244,13 +218,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
                     pass
 
         discount = validated_data.pop('discount', validated_data['customer'].discount)
-        due_date = timezone('Asia/Bangkok').normalize(validated_data.pop('due_date'))
+        paid_date = timezone('Asia/Bangkok').normalize(validated_data.pop('paid_date'))
 
         instance = self.Meta.model.objects.create(employee=employee, discount=discount,
-                                                  status='invoiced', _due_date=due_date,
+                                                  status='receiptd', paid_date=paid_date,
                                                   **validated_data)
 
-        item_serializer = ItemSerializer(data=items_data, context={'invoice': instance}, many=True)
+        item_serializer = ItemSerializer(data=items_data, context={'receipt': instance}, many=True)
 
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
@@ -265,53 +239,57 @@ class InvoiceSerializer(serializers.ModelSerializer):
         for filename in filenames:
             try:
                 File.objects.create(file=getattr(instance, filename),
-                                    invoice=instance)
+                                    receipt=instance)
             except Exception as e:
                 logger.warn(e)
 
         # Assign files
         for file in files:
             File.objects.create(file=S3Object.objects.get(pk=file['id']),
-                                invoice=instance)
+                                receipt=instance)
 
         # Create Sales Order File Link
-        # - So Invoices will show up in acknowledgement Files
+        # - So Receipts will show up in acknowledgement Files
         if instance.acknowledgement:
             AckFile.objects.create(acknowledgement=instance.acknowledgement,
                                    file=instance.pdf)
+
+        # Create Sales Order File Link
+        # - So Receipts will show up in acknowledgement Files
+        if instance.invoice:
+            InvFile.objects.create(invoice=instance.invoice,
+                                   file=instance.pdf)
+
+            if instance.invoice.acknowledgement:
+                AckFile.objects.create(acknowledgement=instance.invoice.acknowledgement,
+                                       file=instance.pdf)
 
         # Create a calendar event
         try:
             instance.create_calendar_event(employee)
         except Exception as e:
-            message = u"Unable to create calendar event for invoice {0} because:\n{1}"
+            message = u"Unable to create calendar event for receipt {0} because:\n{1}"
             message = message.format(instance.id, e)
-            log = InvoiceLog.create(message=message, 
-                                invoice=instance, 
+            log = ReceiptLog.create(message=message, 
+                                receipt=instance, 
                                 user=employee,
                                 type="GOOGLE CALENDAR")
 
         # Log Opening of an order
-        message = u"Created Invoice #{0}.".format(instance.id)
-        log = InvoiceLog.create(message=message, invoice=instance, user=employee)
-
-        if instance.vat > 0:
-            try:
-                pass #instance.create_in_trcloud() 
-            except Exception as e:
-                message = u"Unable to create invoice because:\n{0}"
-                message = message.format(e)
-                log = InvoiceLog.create(message=message, 
-                                    invoice=instance, 
-                                    user=employee,
-                                    type="TRCLOUD")
+        message = u"Created Receipt #{0}.".format(instance.id)
+        log = ReceiptLog.create(message=message, receipt=instance, user=employee)
 
         # Create Journal Entry in Accouting
-        invoice_service.create_journal_entry(instance)
+        receipt_service.create_journal_entry(instance, deposit_to=deposit_to)
 
         # Update Sales Order/ Acknowledgement status
-        instance.acknowledgement.status = 'invoiced' if instance.acknowledgement.balance == 0 else 'partially invoiced'
-        instance.acknowledgement.save()
+        if instance.invoice:
+            instance.invoice.status = 'paid'
+            instance.invoice.save()
+
+            if instance.invoice.acknowledgement:
+                instance.invoice.acknowledgement.status = 'paid'
+                instance.invoice.acknowledgement.save()
         
         return instance
 
@@ -340,15 +318,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
             instance.due_date = dd
            
             # Log Changing delivery date
-            message = u"Invoice #{0} due date changed from {1} to {2}."
+            message = u"Receipt #{0} due date changed from {1} to {2}."
             message = message.format(instance.id, old_dd.strftime('%d/%m/%Y'), dd.strftime('%d/%m/%Y'))
-            InvoiceLog.create(message=message, invoice=instance, user=employee)
+            ReceiptLog.create(message=message, receipt=instance, user=employee)
 
         if status.lower() != instance.status.lower():
 
-            message = u"Updated Invoice #{0} from {1} to {2}."
+            message = u"Updated Receipt #{0} from {1} to {2}."
             message = message.format(instance.id, instance.status.lower(), status.lower())
-            InvoiceLog.create(message=message, invoice=instance, user=employee)
+            ReceiptLog.create(message=message, receipt=instance, user=employee)
 
             instance.status = status
 
@@ -365,12 +343,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
         files = validated_data.pop('files', [])
         for file in files:
             try:
-                File.objects.get(file_id=file['id'], invoice=instance)
+                File.objects.get(file_id=file['id'], receipt=instance)
             except File.DoesNotExist:
                 File.objects.create(file=S3Object.objects.get(pk=file['id']),
-                                    invoice=instance)
+                                    receipt=instance)
 
-        #if instance.status.lower() in ['invoiced', 'in production', 'ready to ship']:
+        #if instance.status.lower() in ['receiptd', 'in production', 'ready to ship']:
 
         # Store old total and calculate new total
         old_total = instance.total
@@ -384,10 +362,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             tb = traceback.format_exc()
             logger.error(tb)
             
-            message = u"Unable to update PDF for invoice {0} because:\n{1}"
+            message = u"Unable to update PDF for receipt {0} because:\n{1}"
             message = message.format(instance.id, e)
-            log = InvoiceLog.create(message=message, 
-                                invoice=instance, 
+            log = ReceiptLog.create(message=message, 
+                                receipt=instance, 
                                 user=employee,
                                 type="PDF CREATION ERROR")
 
@@ -396,10 +374,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             instance.update_calendar_event()
         except Exception as e:
             logger.debug(e)
-            message = u"Unable to update calendar event for invoice {0} because:\n{1}"
+            message = u"Unable to update calendar event for receipt {0} because:\n{1}"
             message = message.format(instance.id, e)
-            log = InvoiceLog.create(message=message, 
-                                invoice=instance, 
+            log = ReceiptLog.create(message=message, 
+                                receipt=instance, 
                                 user=employee,
                                 type="GOOGLE CALENDAR ERROR")
 
@@ -409,10 +387,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             try:
                 pass #instance.update_in_trcloud()
             except Exception as e:
-                message = u"Unable to update invoice {0} because:\n{1}"
+                message = u"Unable to update receipt {0} because:\n{1}"
                 message = message.format(instance.id, e)
-                log = InvoiceLog.create(message=message, 
-                                    invoice=instance, 
+                log = ReceiptLog.create(message=message, 
+                                    receipt=instance, 
                                     user=employee,
                                     type="TRCLOUD ERROR")
            
@@ -439,34 +417,30 @@ class InvoiceSerializer(serializers.ModelSerializer):
         #Update or Create Item
         for item_data in items_data:
             try:
-                item = Item.objects.get(pk=item_data['id'], invoice=instance)
+                item = Item.objects.get(pk=item_data['id'], receipt=instance)
                 serializer = ItemSerializer(item, context={
                     'customer': instance.customer, 
-                    'invoice': instance, 
+                    'receipt': instance, 
                     'employee': instance.employee}, data=item_data)
             except (KeyError, Item.DoesNotExist) as e:
                 serializer = ItemSerializer(data=item_data, context={
                     'customer': instance.customer, 
-                    'invoice': instance,
+                    'receipt': instance,
                     'employee': instance.employee})
                 
             if serializer.is_valid(raise_exception=True):
                 item = serializer.save()
                 id_list.append(item.id)
 
-    def get_journal_entry(self, instance):
-
-        return JournalEntrySerializer(instance.journal_entry).data
 
    
 
-class InvoiceFieldSerializer(serializers.ModelSerializer):
-    project = ProjectFieldSerializer(required=False, read_only=True)
+class ReceiptFieldSerializer(serializers.ModelSerializer):
     acknowledgement = AcknowledgementFieldSerializer(required=False, read_only=True)
 
     class Meta:
-        model = Invoice
-        fields = ('company', 'id', 'remarks', 'due_date', 'total', 'subtotal', 'time_created', 'project', 'acknowledgement')
-        read_only_fields = ('project', 'acknowledgement')
+        model = Receipt
+        fields = ('company', 'id', 'remarks', 'due_date', 'total', 'subtotal', 'time_created', 'acknowledgement')
+        read_only_fields = ('acknowledgement', )
 
 

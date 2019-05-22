@@ -195,7 +195,7 @@ class SupplierContact(models.Model):
 
 class File(models.Model):
     contact = models.ForeignKey(Contact)
-    file = models.ForeignKey(S3Object, related_name='contact_files')
+    file = models.ForeignKey(S3Object)
 
 
 

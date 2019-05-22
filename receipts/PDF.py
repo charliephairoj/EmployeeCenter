@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
 """Collection of the classes that create pdf files
-for an Acnowledgement. The Invoice creates
+for an Acnowledgement. The Receipt creates
 an order confirmation to be used for the office and
 for customers. The production pdf is created to be
 use by the production team and the office overseeing
@@ -94,9 +94,9 @@ class AckDocTemplate(BaseDocTemplate):
         
         #Create The document type and document number
         canvas.setFont("Helvetica", 16)
-        canvas.drawRightString(550, 800, 'TAX INVOICE')
+        canvas.drawRightString(550, 800, 'RECEIPT')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 780, 'Invoice#: {0}'.format(self.id))
+        canvas.drawRightString(550, 780, 'Receipt#: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
         code = "A-{0}".format(self.id)
@@ -107,13 +107,13 @@ class AckDocTemplate(BaseDocTemplate):
         
 
 
-class InvoicePDF(object):
-    """Class to create Invoice PDF"""
+class ReceiptPDF(object):
+    """Class to create Receipt PDF"""
     #attributes
-    document_type = "Invoice"
+    document_type = "Receipt"
 
     def __init__(self, customer=None, products=None,
-                 invoice=None, connection=None):
+                 receipt=None, connection=None):
        
         self.width, self.height = A4
         stylesheet = getSampleStyleSheet()
@@ -121,15 +121,15 @@ class InvoicePDF(object):
         #Set Var
         self.customer = customer
         self.products = products
-        self.invoice = invoice
-        self.employee = self.invoice.employee
+        self.receipt = receipt
+        self.employee = self.receipt.employee
 
     #create method
     def create(self):
-        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.invoice.id)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.receipt.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.invoice.id, company=self.invoice.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.receipt.id, company=self.receipt.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -151,9 +151,9 @@ class InvoicePDF(object):
                           "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
         canvas.drawString(45, 750, "Pathum Thani, Thailand, 12150")
         canvas.setFont("Helvetica", 16)
-        canvas.drawRightString(550, 790, 'Invoice')
+        canvas.drawRightString(550, 790, 'Receipt')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 770, 'Invoice#: {0}'.format(self.invoice.id))
+        canvas.drawRightString(550, 770, 'Receipt#: {0}'.format(self.receipt.id))
 
     def _get_stories(self):
         #initialize story array
@@ -231,7 +231,7 @@ class InvoicePDF(object):
         return contact
  
     def _create_order_section(self):
-        data = [[self._create_ack_section(), self._create_project_section()]]
+        data = [[self._create_ack_section(), []]]
         table = Table(data, colWidths=(290, 285))
         style = TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')])
         table.setStyle(style)
@@ -242,18 +242,18 @@ class InvoicePDF(object):
         #Create data array
         data = []
         #Add Data
-        order_date, odObj = self.outputBKKTime(self.invoice.time_created, '%B %d, %Y')
-        due_date, ddObj = self.outputBKKTime(self.invoice.due_date, '%B %d, %Y')
+        order_date, odObj = self.outputBKKTime(self.receipt.time_created, '%B %d, %Y')
+        paid_date, ddObj = self.outputBKKTime(self.receipt.paid_date, '%B %d, %Y')
         data.append(['Currency:', self._get_currency()])
         data.append(['Order Date:', order_date])
-        data.append(['Due Date:', due_date])
+        data.append(['Paid Date:', paid_date])
             
-        if self.invoice.remarks is not None and self.invoice.remarks != '':
+        if self.receipt.remarks is not None and self.receipt.remarks != '':
             style = ParagraphStyle(name='Normal',
                                    fontName='Garuda',
                                    fontSize=10,
                                    textColor=colors.black)
-            paragraph = Paragraph(self.invoice.remarks.replace('\n', '<br/>'),
+            paragraph = Paragraph(self.receipt.remarks.replace('\n', '<br/>'),
                                   style)
             data.append(['Remarks', paragraph])
         #Create table
@@ -269,42 +269,6 @@ class InvoicePDF(object):
         #Return Table
         return table
         
-    def _create_project_section(self):
-        
-        if self.invoice.project:
-            #Create data array
-            data = []
-            #Add Data
-            project = self.invoice.project.codename
-            style = ParagraphStyle(name='Normal',
-                                   fontName='Garuda',
-                                   fontSize=10,
-                                   textColor=colors.black)
-            project_paragraph = Paragraph(project, style)
-            data.append(['Project:', project_paragraph])
-           
-            if self.invoice.room:
-                data.append(['Room:', self.invoice.room.description])
-                
-            if self.invoice.phase:
-                data.append(['Phase:', self.invoice.phase.description])
-            
-            #Create table
-            table = Table(data, colWidths=(50, 225))
-            #Create and set table style
-            style = TableStyle([('BOTTOMPADDING', (0,0), (-1,-1), 1),
-                                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                ('TOPPADDING', (0,0), (-1,-1), 1),
-                                ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
-                                ('FONT', (0,0), (-1, -1), 'Garuda')])
-                                #('GRID', (0,0), (-1,-1), 1, colors.black)])
-            table.setStyle(style)
-            #Return Table
-            return table
-        
-        else:
-            return u""
-            
     def _create_products_section(self):
         #Create data and index array
         data = []
@@ -437,34 +401,34 @@ class InvoicePDF(object):
         # Adding Totals to the data container
 
         # Add Subtotal
-        if self.invoice.vat or self.invoice.discount or self.invoice.second_discount:
+        if self.receipt.vat or self.receipt.discount or self.receipt.second_discount:
             data.append(['',
                         u'Subtotal',
-                        "{0:,.2f}".format(self.invoice.subtotal)])
+                        "{0:,.2f}".format(self.receipt.subtotal)])
         # Add Discount if greater than 0
-        if self.invoice.discount_amount > 0:
+        if self.receipt.discount_amount > 0:
             data.append(['',
-                         u'Discount {0}%'.format(self.invoice.discount),
-                         u"-{:,.2f}".format(self.invoice.discount_amount)])
+                         u'Discount {0}%'.format(self.receipt.discount),
+                         u"-{:,.2f}".format(self.receipt.discount_amount)])
         # Add Second Discount if greater than 0
-        if self.invoice.second_discount_amount > 0:
+        if self.receipt.second_discount_amount > 0:
             data.append(['',
-                         u'Additional Discount {0}%'.format(self.invoice.second_discount),
-                         u"-{:,.2f}".format(self.invoice.second_discount_amount)])
-        if (self.invoice.second_discount > 0 or self.invoice.discount > 0) and self.invoice.vat:
+                         u'Additional Discount {0}%'.format(self.receipt.second_discount),
+                         u"-{:,.2f}".format(self.receipt.second_discount_amount)])
+        if (self.receipt.second_discount > 0 or self.receipt.discount > 0) and self.receipt.vat:
             data.append(['',
                          'Total',
-                         "{0:,.2f}".format(self.invoice.total)])
+                         "{0:,.2f}".format(self.receipt.total)])
 
-        if self.invoice.vat_amount:
+        if self.receipt.vat_amount:
             data.append(['',
-                         'Vat {0:.0f}%'.format(self.invoice.vat),
-                         "{0:,.2f}".format(self.invoice.vat_amount)])
+                         'Vat {0:.0f}%'.format(self.receipt.vat),
+                         "{0:,.2f}".format(self.receipt.vat_amount)])
 
-        final_total_title = u"Grand Total" if (self.invoice.discount or self.invoice.second_discount) and self.invoice.vat else u"Total"
+        final_total_title = u"Grand Total" if (self.receipt.discount or self.receipt.second_discount) and self.receipt.vat else u"Total"
         data.append(['',
                      final_total_title,
-                     "{0:,.2f}".format(self.invoice.grand_total)])
+                     "{0:,.2f}".format(self.receipt.grand_total)])
 
         table = Table(data, colWidths=(80, 300, 165))
         style = TableStyle([('TEXTCOLOR', (0, 0), (-1, -1), colors.black),

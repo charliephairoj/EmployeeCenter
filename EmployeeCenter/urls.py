@@ -19,6 +19,8 @@ import auth.views
 import products.views
 import acknowledgements.views
 import invoices.views
+import receipts.views
+
 import ivr.views
 import contacts.views
 from contacts.views import CustomerList, CustomerDetail, SupplierList, SupplierDetail
@@ -59,7 +61,7 @@ from ivr.views import voice, get_token, test, route_call, recording_callback, ca
 from accounting.views import AccountList, AccountDetail
 
 from invoices.views import InvoiceList, InvoiceDetail
-
+from receipts.views import ReceiptList, ReceiptDetail
 """
 API Section
 
@@ -232,6 +234,18 @@ urlpatterns += [
 
     #url(r'^invoice/item$', 'item'),
     #url(r'^invoice/item/(?P<ack_item_id>\d+)$', 'item')
+]
+
+urlpatterns += [
+    url(r'^api/v1/receipt/$', ReceiptList.as_view()),
+    url(r'^api/v1/receipt/(?P<pk>[0-9]+)/$', ReceiptDetail.as_view()),
+
+    #url(r'^invoice$', 'invoice'),
+    url(r'^api/v1/receipt/(?P<ack_id>\d+)/file/$', receipts.views.receipt_file),
+    url(r'^api/v1/receipt/(?P<ack_id>\d+)/item/image/$', receipts.views.receipt_item_image),
+
+    url(r'^api/v1/receipt/file/$', receipts.views.receipt_file),
+   
 ]
 
 

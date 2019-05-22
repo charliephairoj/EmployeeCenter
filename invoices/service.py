@@ -87,6 +87,9 @@ def create_journal_entry(invoice):
     serializer = JournalEntrySerializer(data=data)
     if serializer.is_valid(raise_exception=True):
         serializer.save()
+
+        invoice.journal_entry = serializer.instance
+        invoice.save()
         
 
 

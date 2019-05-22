@@ -385,7 +385,8 @@ class AcknowledgementList(AcknowledgementMixin, generics.ListCreateAPIView):
                                              'items__product',
                                              'items__components',
                                              'items__pillows',
-                                             'files')
+                                             'files',
+                                             'invoices')
         
         return queryset
         
@@ -440,7 +441,8 @@ class AcknowledgementDetail(AcknowledgementMixin, generics.RetrieveUpdateDestroy
                                              'items__product',
                                              'items__components',
                                              'items__pillows',
-                                             'files')
+                                             'files', 
+                                             'invoices')
         
         return queryset
 

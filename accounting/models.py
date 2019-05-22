@@ -40,6 +40,17 @@ class Account(models.Model):
     type_detail = models.TextField(null=True)
     company = models.ForeignKey(Company, related_name="chart_of_accounts")
     #parent_account = models.ForeignKey('self', related_name='sub_accounts')
+
+    @property
+    def balance(self):
+        credits = []
+        debits = []
+
+        for tr in self.transactions.all():
+            credits.append(tr.credit or 0)
+            debits.append(tr.debit or 0)
+
+        return abs(sum(debits) - sum(credits))
     
 
 class Transaction(models.Model):

@@ -111,6 +111,10 @@ class Acknowledgement(models.Model):
     # @status.setter
     # def status(self, value):
     #     self._status = value
+
+    @property
+    def balance(self):
+        return self.grand_total - sum([inv.grand_total for inv in self.invoices.all()])
         
     @classmethod
     def create(cls, user, **kwargs):
