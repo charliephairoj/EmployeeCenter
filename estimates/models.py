@@ -21,7 +21,7 @@ from estimates.PDF import EstimatePDF
 from media.models import Log, S3Object
 from acknowledgements.models import Acknowledgement
 from deals.models import Event, Deal
-from administrator.models import Log as BaseLog
+from administrator.models import Log as BaseLog, Company
 
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,7 @@ logger = logging.getLogger(__name__)
 
 class Estimate(models.Model):
     po_id = models.TextField(default=None, null=True)
-    company = models.TextField(default="Alinea Group")
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='quotations')
-    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
+        
     time_created = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateTimeField(db_column='delivery_date', null=True, default=datetime.now())
     status = models.TextField(default='ACKNOWLEDGED', db_column='status')
@@ -39,13 +37,14 @@ class Estimate(models.Model):
     fob = models.TextField(default="Bangkok", blank=True)
     shipping_method = models.TextField(default="Truck", blank=True)
     
-    project = models.ForeignKey(Project, null=True, related_name='estimates')
+    
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
-    pdf = models.ForeignKey(S3Object, null=True, related_name='+')
-    files = models.ManyToManyField(S3Object, through="File", related_name="quotations")
-    acknowledgement = models.OneToOneField(Acknowledgement, null=True, related_name="quotation")
-    deal = models.ForeignKey(Deal, null=True, related_name="quotations")
+    
+    # Business Related Attributes
+    document_number = models.IntegerField(default=0)
+    company_name = models.TextField(default="Alinea Group Co., Ltd.")
+    customer_name = models.TextField()
 
     # Order Terms
     currency = models.TextField(default='THB')
@@ -72,6 +71,18 @@ class Estimate(models.Model):
     # Total after all discounts and Vats
     grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
+    # Relationships
+    company = models.ForeignKey(Company, 
+                                on_delete=models.CASCADE,
+                                related_name='quotations')
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='quotations')
+    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
+    project = models.ForeignKey(Project, null=True, related_name='estimates')
+    pdf = models.ForeignKey(S3Object, null=True, related_name='+')
+    files = models.ManyToManyField(S3Object, through="File", related_name="quotations")
+    acknowledgement = models.OneToOneField(Acknowledgement, null=True, related_name="quotation")
+    deal = models.ForeignKey(Deal, null=True, related_name="quotations")
+    
     # To Be Deprecated
     """
     @property

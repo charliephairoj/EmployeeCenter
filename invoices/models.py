@@ -11,7 +11,7 @@ from pytz import timezone
 from datetime import datetime
 from django.conf import settings
 from django.db import models
-from administrator.models import User, Storage
+from administrator.models import User, Storage, Company
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
@@ -34,20 +34,27 @@ logger = logging.getLogger(__name__)
 
 
 class Invoice(models.Model):
-    trcloud_id = models.IntegerField(null=True, default=0)
-    trcloud_document_number = models.TextField(null=True, default="")
-    company = models.TextField(default="Alinea Group Co., Ltd.")
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='invoices')
-    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
-    acknowledgement = models.ForeignKey(Acknowledgement, on_delete=models.PROTECT, null=True, related_name='invoices')
+    # Internal
+    trcloud_id = models.IntegerField(null=True)
+
+    # Business Related Attributes
+    document_number = models.IntegerField(default=0)
+    company_name = models.TextField(default="Alinea Group Co., Ltd.")
+    customer_name = models.TextField(null=True)
+    customer_branch = models.TextField(null=True)
+    customer_address = models.TextField(null=True)
+    customer_tax_id = models.TextField(null=True)
+    customer_telephone = models.TextField(null=True)
+    customer_email = models.TextField(null=True)
+
+    issue_date = models.DateField(auto_now_add=True, null=True)
+    tax_date = models.DateField(auto_now_add=True, null=True)
+
     time_created = models.DateTimeField(auto_now_add=True)
     _due_date = models.DateTimeField(db_column='due_date', null=True)
     status = models.TextField(db_column='status', default='open')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
-    project = models.ForeignKey(Project, null=True, blank=True, related_name='invoices')
-    room = models.ForeignKey(Room, null=True, blank=True, related_name='invoices')
-    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='invoices')
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
     pdf = models.ForeignKey(S3Object,
@@ -84,6 +91,15 @@ class Invoice(models.Model):
     # Accounting
     journal_entry = models.ForeignKey(JournalEntry, null=True, related_name="invoice")
     
+    # Relationships
+    company = models.ForeignKey(Company)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='invoices')
+    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
+    acknowledgement = models.ForeignKey(Acknowledgement, on_delete=models.PROTECT, null=True, related_name='invoices')
+    project = models.ForeignKey(Project, null=True, blank=True, related_name='invoices')
+    room = models.ForeignKey(Room, null=True, blank=True, related_name='invoices')
+    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='invoices')
+
     @property
     def due_date(self):
         return self._due_date
@@ -100,6 +116,17 @@ class Invoice(models.Model):
     # def status(self, value):
     #     self._status = value
         
+    def save(self, *args, **kwargs):
+        if self.document_number == 0 or self.document_number is None:
+            try:
+                last_id = Invoice.objects.filter(company=self.company).latest('document_number').document_number + 1
+            except Invoice.DoesNotExist:
+                last_id = 100001
+
+            self.document_number = last_id
+
+        super(Invoice, self).save(*args, **kwargs)
+
     def delete(self):
         """
         Overrides the standard delete method.
@@ -108,6 +135,8 @@ class Invoice(models.Model):
         the database rather an actually delete the record
         """
         self.deleted = True
+
+
 
     def filtered_logs(self):
         """Filter logs source"""
@@ -186,20 +215,10 @@ class Invoice(models.Model):
        
 
         self.save()
-        
-    def ship(self, due_date, employee):
-        """Changes status to 'SHIPPED'
-
-        Change the order status to ship and logs who ships it
-        """
-        try:
-            message = "Ack# {0} shipped on {1}".format(self.id, due_date.strftime('%B %d, %Y'))
-        except AttributeError:
-            raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdf(self, delete_original=True):
         invoice_filename = self.create_pdf()
-        invoice_key = "invoice/{0}/Invoice-{0}.pdf".format(self.id)
+        invoice_key = "invoice/{0}/Invoice-{0}.pdf".format(self.document_number)
         
         bucket = "document.dellarobbiathailand.com"
         invoice_pdf = S3Object.create(invoice_filename, invoice_key, bucket, delete_original=delete_original)

@@ -176,12 +176,15 @@ class Storage(BaseStorage):
         
 class Company(models.Model):
     name = models.TextField()
+    address = models.TextField(null=True)
+    tax_id = models.TextField(null=True)
+    telephone = models.TextField(null=True)
 
 
 class User(AbstractUser):
     reset_password = models.BooleanField(default=False)
     web_ui_version = models.TextField(default="V1")
-    company = models.ForeignKey(Company)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     access_key = models.TextField(default=None, null=True)
     secret_key = models.TextField(default=None, null=True)
 
@@ -223,11 +226,16 @@ class Log(models.Model):
     type = models.TextField()
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, related_name='UserLogs')
+    company = models.ForeignKey(Company, 
+                                on_delete=models.CASCADE,
+                                related_name='logs')
+    user = models.ForeignKey(User,
+                             on_delete=models.PROTECT, 
+                             related_name='UserLogs')
     
     
 class CredentialsModel(models.Model):
-    id = models.ForeignKey(User, primary_key=True)
+    id = models.ForeignKey(User, primary_key=True, on_delete=models.CASCADE)
     credential = CredentialsField()
 
 

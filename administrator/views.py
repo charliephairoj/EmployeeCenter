@@ -71,9 +71,9 @@ def log(request):
 
         try:
             err_type = "Client Web Error: {0}".format(data['type'].upper())
-            Log.objects.create(user=request.user, type=err_type, message=data['message'])
+            Log.objects.create(user=request.user, type=err_type, message=data['message'], company=request.user.company)
         except Exception:
-            Log.objects.create(user=request.user, type="Client Web Error", message=data['message'])
+            Log.objects.create(user=request.user, type="Client Web Error", message=data['message'], company=request.user.company)
             
         #Send an email if log is an error
         if data['type'].lower() == 'xerror': 

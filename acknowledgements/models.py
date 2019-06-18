@@ -11,7 +11,7 @@ from pytz import timezone
 from datetime import datetime
 from django.conf import settings
 from django.db import models
-from administrator.models import User, Storage
+from administrator.models import User, Storage, Company
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import boto.ses
@@ -33,23 +33,36 @@ logger = logging.getLogger(__name__)
 
 
 class Acknowledgement(models.Model):
+    # Internal Attributes
     trcloud_id = models.IntegerField(null=True, default=0)
     trcloud_document_number = models.TextField(null=True, default="")
     po_id = models.TextField(default=None, null=True)
-    company = models.TextField(default="Alinea Group Co., Ltd.")
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, related_name='acknowledgements')
-    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT, null=True)
+    
     time_created = models.DateTimeField(auto_now_add=True)
     _delivery_date = models.DateTimeField(db_column='delivery_date', null=True)
     status = models.TextField(db_column='status', default='acknowledged')
     remarks = models.TextField(null=True, default=None, blank=True)
     fob = models.TextField(null=True, blank=True)
     shipping_method = models.TextField(null=True, blank=True)
-    project = models.ForeignKey(Project, null=True, blank=True, related_name='acknowledgements')
-    room = models.ForeignKey(Room, null=True, blank=True, related_name='acknowledgements')
-    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='acknowledgements')
+    
     last_modified = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
+    
+    calendar_event_id = models.TextField(null=True)
+
+    # Business Related Attributes
+    document_number = models.IntegerField(default=0)
+    company_name = models.TextField(default="Alinea Group Co., Ltd.")
+    customer_name = models.TextField()
+
+
+    # Relationships
+    company = models.ForeignKey(Company, related_name='acknowledgements', on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='acknowledgements')
+    employee = models.ForeignKey(User, db_column='employee_id', on_delete=models.PROTECT)
+    project = models.ForeignKey(Project, null=True, blank=True, related_name='acknowledgements', on_delete=models.PROTECT)
+    room = models.ForeignKey(Room, null=True, blank=True, related_name='acknowledgements', on_delete=models.PROTECT)
+    phase = models.ForeignKey(Phase, null=True, blank=True, related_name='acknowledgements', on_delete=models.PROTECT)
     acknowledgement_pdf = models.ForeignKey(S3Object,
                                             null=True,
                                             related_name='+',
@@ -71,10 +84,6 @@ class Acknowledgement(models.Model):
                                                      related_name='+',
                                                      db_column="original_acknowledgement_pdf")
     files = models.ManyToManyField(S3Object, through="File", related_name="acknowledgement")
-    calendar_event_id = models.TextField(null=True)
-    
-    current_user = None 
-    calendar_service = None
 
     # VATs
     vat = models.IntegerField(default=0)
@@ -95,6 +104,10 @@ class Acknowledgement(models.Model):
     total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     # Total after all discounts and Vats
     grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    # None Database attributes
+    current_user = None 
+    calendar_service = None
 
     @property
     def delivery_date(self):
@@ -162,8 +175,8 @@ class Acknowledgement(models.Model):
 
         #Create the order PDFs
         ack, production = acknowledgement._create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(acknowledgement.id)
-        production_key = "acknowledgement/Production-{0}.pdf".format(acknowledgement.id)
+        ack_key = "acknowledgement/Acknowledgement-{0}.pdf".format(acknowledgement.document_number)
+        production_key = "acknowledgement/Production-{0}.pdf".format(acknowledgement.document_number)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack, ack_key, bucket, encrypt_key=True)
         prod_pdf = S3Object.create(production, production_key, bucket, encrypt_key=True)
@@ -176,6 +189,18 @@ class Acknowledgement(models.Model):
 
         return acknowledgement
         
+    def save(self, *args, **kwargs):
+
+        if self.document_number == 0 or self.document_number is None:
+            try:
+                last_id = Acknowledgement.objects.filter(company=self.company).latest('document_number').document_number + 1
+            except Acknowledgement.DoesNotExist:
+                last_id = 100001
+
+            self.document_number = last_id
+
+        super(Acknowledgement, self).save(*args, **kwargs)
+
     def delete(self):
         """
         Overrides the standard delete method.
@@ -205,8 +230,8 @@ class Acknowledgement(models.Model):
         self.calculate_totals()
 
         ack_filename, production_filename = self.create_pdfs()
-        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.id)
-        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.id)
+        ack_key = "acknowledgement/Acknowledgement-{0}-revision.pdf".format(self.document_number)
+        production_key = "acknowledgement/Production-{0}-revision.pdf".format(self.document_number)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket)
         prod_pdf = S3Object.create(production_filename, production_key, bucket)
@@ -248,7 +273,7 @@ class Acknowledgement(models.Model):
             tr_so.create()
         except Exception as e:
             message = "Unable to create Sales Order for acknowledgement {0} in TRCloud because: {1}"
-            message = message.format(self.id, e)
+            message = message.format(self.document_number, e)
             Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
@@ -282,7 +307,7 @@ class Acknowledgement(models.Model):
             tr_so.update()
         except Exception as e:
             message = "Unable to update Sales Order for acknowledgement {0} in TRCloud because: {1}"
-            message = message.format(self.id, e)
+            message = message.format(self.document_number, e)
             Log.objects.create(message=message,
                                        type="TRCLOUD",
                                        user=self.employee)
@@ -296,16 +321,16 @@ class Acknowledgement(models.Model):
         Change the order status to ship and logs who ships it
         """
         try:
-            message = "Ack# {0} shipped on {1}".format(self.id, delivery_date.strftime('%B %d, %Y'))
+            message = "Ack# {0} shipped on {1}".format(self.document_number, delivery_date.strftime('%B %d, %Y'))
         except AttributeError:
             raise TypeError("Missing Delivery Date")
     
     def create_and_upload_pdfs(self, delete_original=True):
         ack_filename, production_filename, label_filename, qc_filename = self.create_pdfs()
-        ack_key = "acknowledgement/{0}/Acknowledgement-{0}.pdf".format(self.id)
-        #confirmation_key = "acknowledgement/{0}/Confirmation-{0}.pdf".format(self.id)
-        production_key = "acknowledgement/{0}/Production-{0}.pdf".format(self.id)
-        label_key = "acknowledgement/{0}/Label-{0}.pdf".format(self.id)
+        ack_key = "acknowledgement/{0}/Acknowledgement-{0}.pdf".format(self.document_number)
+        #confirmation_key = "acknowledgement/{0}/Confirmation-{0}.pdf".format(self.document_number)
+        production_key = "acknowledgement/{0}/Production-{0}.pdf".format(self.document_number)
+        label_key = "acknowledgement/{0}/Label-{0}.pdf".format(self.document_number)
         bucket = "document.dellarobbiathailand.com"
         ack_pdf = S3Object.create(ack_filename, ack_key, bucket, delete_original=delete_original)
         #confirmation_pdf = S3Object.create(confirmation_filename, confirmation_key, bucket, delete_original=delete_original)
@@ -314,7 +339,7 @@ class Acknowledgement(models.Model):
 
         # Create QC key and upload and add to files
         try:
-            qc_key = "acknowledgment/{0}/Quality_Control-{0}.pdf".format(self.id)
+            qc_key = "acknowledgment/{0}/Quality_Control-{0}.pdf".format(self.document_number)
             qc_pdf = S3Object.create(qc_filename, qc_key, bucket, delete_original=delete_original)
 
             # Add qc file to the
@@ -371,7 +396,7 @@ class Acknowledgement(models.Model):
         products = self.items.all().order_by('id')
         qc_pdf = QualityControlPDF(customer=self.customer, ack=self, products=products)
         qc_filename = qc_pdf.create()
-        label_key = "acknowledgement/{0}/Quality_Control-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/{0}/Quality_Control-{0}.pdf".format(self.document_number)
         bucket = "document.dellarobbiathailand.com"
         #qc_pdf = S3Object.create(qc_filename, label_key, bucket, delete_original=False)
 
@@ -386,7 +411,7 @@ class Acknowledgement(models.Model):
         products = self.items.all().order_by('id')
         label_pdf = ShippingLabelPDF(customer=self.customer, ack=self, products=products)
         label_filename = label_pdf.create()
-        label_key = "acknowledgement/Label-{0}.pdf".format(self.id)
+        label_key = "acknowledgement/Label-{0}.pdf".format(self.document_number)
         bucket = "document.dellarobbiathailand.com"
         label_pdf = S3Object.create(label_filename, label_key, bucket)
 
@@ -654,7 +679,7 @@ class Acknowledgement(models.Model):
                       </p>
                   </td>
               </tr>
-          </table>""".format(id=self.id, customer=self.customer.name,
+          </table>""".format(id=self.document_number, customer=self.customer.name,
                              src=pdf.generate_url(),
                              delivery_date=self.delivery_date.strftime('%B %d, %Y'))
 
@@ -736,7 +761,7 @@ class Acknowledgement(models.Model):
                                                                        
     def _get_event_body(self):
         evt = {
-            'summary': "Ack {0}".format(self.id),
+            'summary': "Ack {0}".format(self.document_number),
             'location': self._get_address_as_string(),
             'description': self._get_description_as_string(),
             'start': {
@@ -774,7 +799,7 @@ class Acknowledgement(models.Model):
         Acknowledgement: {0}
         Customer: {1}
         Qty     Items: 
-        """.format(self.id, self.customer.name)
+        """.format(self.document_number, self.customer.name)
         
         for i in self.items.all().order_by('id'):
             description += u"{0:.2f}  {1}".format(i.quantity, i.description)
@@ -782,18 +807,18 @@ class Acknowledgement(models.Model):
         return description
         
     def __str__(self):
-        return u"Acknowledgement #{0}".format(self.id)
+        return u"Acknowledgement #{0}".format(self.document_number)
         
 
 class File(models.Model):
-    acknowledgement = models.ForeignKey(Acknowledgement)
-    file = models.ForeignKey(S3Object, related_name='acknowledgement_files')
+    acknowledgement = models.ForeignKey(Acknowledgement, on_delete=models.CASCADE)
+    file = models.ForeignKey(S3Object, related_name='acknowledgement_files', on_delete=models.CASCADE)
     
     
 class Item(models.Model):
     trcloud_id = models.IntegerField(null=True, blank=True)
-    acknowledgement = models.ForeignKey(Acknowledgement, related_name="items")
-    product = models.ForeignKey(Product)
+    acknowledgement = models.ForeignKey(Acknowledgement, related_name="items", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     type = models.TextField(null=True, blank=True)
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
     unit_price = models.DecimalField(null=True, max_digits=15, decimal_places=2)
@@ -802,7 +827,7 @@ class Item(models.Model):
     depth = models.IntegerField(db_column='depth', default=0)
     height = models.IntegerField(db_column='height', default=0)
     units = models.CharField(max_length=20, default='mm', blank=True)
-    fabric = models.ForeignKey(Fabric, null=True, blank=True)
+    fabric = models.ForeignKey(Fabric, null=True, blank=True, on_delete=models.PROTECT)
     fabric_quantity = models.DecimalField(null=True, max_digits=12, decimal_places=2)
     description = models.TextField()
     is_custom_size = models.BooleanField(db_column='is_custom_size', default=False)
@@ -810,7 +835,7 @@ class Item(models.Model):
     status = models.CharField(db_column="status", max_length=50, default="acknowledged")
     comments = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
-    image = models.ForeignKey(S3Object, null=True, blank=True)
+    image = models.ForeignKey(S3Object, null=True, blank=True, on_delete=models.PROTECT)
     deleted = models.BooleanField(default=False)
     inventory = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
@@ -1064,10 +1089,10 @@ class Item(models.Model):
 
 
 class Pillow(models.Model):
-    item = models.ForeignKey(Item, related_name='pillows')
+    item = models.ForeignKey(Item, related_name='pillows', on_delete=models.CASCADE)
     type = models.CharField(db_column="type", max_length=10)
     quantity = models.IntegerField(default=1)
-    fabric = models.ForeignKey(Fabric, null=True, blank=True)
+    fabric = models.ForeignKey(Fabric, null=True, blank=True, on_delete=models.PROTECT)
     fabric_quantity = models.DecimalField(null=True, max_digits=12, decimal_places=2)
 
     @classmethod
@@ -1079,14 +1104,14 @@ class Pillow(models.Model):
 
 
 class Component(models.Model):
-    item = models.ForeignKey(Item, related_name="components")
+    item = models.ForeignKey(Item, related_name="components", on_delete=models.CASCADE)
     description = models.TextField()
     quantity = models.DecimalField(max_digits=15, decimal_places=2, null=False)
 
 
 class Log(BaseLog):
     log_ptr = models.OneToOneField(BaseLog, related_name='+')
-    acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs')
+    acknowledgement = models.ForeignKey(Acknowledgement, related_name='logs', on_delete=models.PROTECT)
 
     @classmethod
     def create(cls, **kwargs):

@@ -12,7 +12,9 @@ import os
 sys.path.append('/Users/Charlie/Sites/employee/backend')
 sys.path.append('/home/django_worker/backend')
 from datetime import date
+import logging
 
+from django.db import connections
 import boto
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -22,28 +24,25 @@ from django.conf import settings
 import gdata.contacts.client
 import gdata.contacts.data
 
-
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'EmployeeCenter.settings'
 application = get_wsgi_application()
 
 from contacts.models import Customer, Contact
 from django.contrib.auth.models import User
             
-            
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
 if __name__ == "__main__":
+
+    with connections['trcloud'].cursor() as trcloud_cur:
+
+        trcloud_cur.execute("SELECT invoice_id, invoice_number FROM invoice limit 5")
+        row = trcloud_cur.fetchone()
+        logger.debug(row)
+
     
-    u = User.objects.get(pk=1)
-    s = Customer.get_google_contacts_service(u)
     
-    service = Customer.get_google_contacts_service(u)
-    query = gdata.contacts.client.ContactsQuery()
-    query.max_results = 10000
-    feed = service.GetContacts(q = query)
-    for contact in feed.entry:
-        try:
-            print contact.id.text, contact.email[0].address
-            print '\n'
-        except:
-            pass
     

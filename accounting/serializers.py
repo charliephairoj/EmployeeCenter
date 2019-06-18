@@ -113,7 +113,8 @@ class AccountSerializer(serializers.ModelSerializer):
     type_detail = serializers.CharField(required=False, allow_null=True)
     transactions = TransactionFieldSerializer(many=True, read_only=True)
     balance = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=15)
-    
+    sub_accounts = serializers.SerializerMethodField()
+
     class Meta:
         fields = '__all__'
         model = Account
@@ -124,6 +125,10 @@ class AccountSerializer(serializers.ModelSerializer):
 
         if "pk" not in self.context['view'].kwargs:
             self.fields.pop('transactions')
+
+    def get_sub_accounts(self, instance):
+        s = AccountSerializer(instance.sub_accounts.all(), context=self.context, many=True)
+        return s.data
 
 
 class JournalEntrySerializer(serializers.ModelSerializer):

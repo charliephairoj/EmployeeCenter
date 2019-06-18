@@ -63,7 +63,7 @@ class AckDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == 'dellarobbia thailand':
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
@@ -80,7 +80,7 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.setFillColorCMYK(0, 0, 0, 1)
 
         #Add Company Information in under the logo if dellarobbia
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == 'dellarobbia thailand':
             canvas.drawString(42, 760,
                             "78/448 Moo.6 Lam Lukka Rd. Bueng Kham Phroi, Lam Lukka")
             canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
@@ -132,7 +132,7 @@ class ConfirmationDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == 'dellarobbia thailand':
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
@@ -145,7 +145,7 @@ class ConfirmationDocTemplate(BaseDocTemplate):
         canvas.drawImage(path, 42, 760, height=logo_height, width=new_width)
 
         #Add Company Information in under the logo if dellarobbia
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == 'dellarobbia thailand':
             canvas.drawString(42, 760,
                             "8/10 Moo 4 Lam Lukka Rd. Soi 65, Lam Lukka")
             canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
@@ -274,10 +274,10 @@ class AcknowledgementPDF(object):
 
     #create method
     def create(self):
-        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.id)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.ack.document_number, company=self.ack.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -301,7 +301,7 @@ class AcknowledgementPDF(object):
         canvas.setFont("Helvetica", 16)
         canvas.drawRightString(550, 790, 'Acknowledgement')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.id))
+        canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.document_number))
 
     def _get_stories(self):
         #initialize story array
@@ -745,10 +745,10 @@ class ConfirmationPDF(object):
 
     #create method
     def create(self):
-        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
+        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = ConfirmationDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+        doc = ConfirmationDocTemplate(self.location, id=self.ack.document_number, company=self.ack.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -772,7 +772,7 @@ class ConfirmationPDF(object):
         canvas.setFont("Helvetica", 16)
         canvas.drawRightString(550, 790, 'Acknowledgement')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.id))
+        canvas.drawRightString(550, 770, 'Ack#: {0}'.format(self.ack.document_number))
 
     def _get_stories(self):
         #initialize story array
@@ -1142,10 +1142,10 @@ class ProductionPDF(AcknowledgementPDF):
 
     #create method
     def create(self):
-        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
+        self.filename = "%s-%s.pdf" % (self.document_type, self.ack.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = ProductionDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+        doc = ProductionDocTemplate(self.location, id=self.ack.document_number, company=self.ack.company, pagesize=A4,
                                     leftMargin=36, rightMargin=36,
                                     topMargin=36)
         #Build the document with stories
@@ -1408,7 +1408,7 @@ class ShippingLabelPDF(object):
     
     #create method
     def create(self):
-        self.filename = "ShippingLabel-{0}.pdf".format(self.ack.id)
+        self.filename = "ShippingLabel-{0}.pdf".format(self.ack.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT,self.filename)
         #create the doc template
         doc = SingleStickerDocTemplate(self.location)
@@ -1546,7 +1546,7 @@ class ShippingLabelPDF(object):
         except AttributeError:
             room = ""
             
-        data  += [["Ack#:", u"{0}".format(self.ack.id)],
+        data  += [["Ack#:", u"{0}".format(self.ack.document_number)],
                   ["Customer:", customer_paragraph],
                   ["Project:", project],
                   ["Room:", room]]
@@ -1664,10 +1664,10 @@ class QualityControlPDF(AcknowledgementPDF):
 
     #create method
     def create(self):
-        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.id)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.ack.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = ChecklistDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+        doc = ChecklistDocTemplate(self.location, id=self.ack.document_number, company=self.ack.company, pagesize=A4,
                                     leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -1780,7 +1780,7 @@ class UpholsteryQCPage(object):
 
         # Create data array
         data = []
-        data.append(["Order #:" , self.ack.id])
+        data.append(["Order #:" , self.ack.document_number])
         data.append(['Product Description:', product.description])
 
         table = Table(data)

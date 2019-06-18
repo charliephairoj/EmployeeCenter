@@ -9,9 +9,10 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import DictField
 from pytz import timezone
+from django.utils import timezone as tz
 
 from administrator.models import User
-from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer
+from administrator.serializers import UserFieldSerializer, LogSerializer, LogFieldSerializer, CompanyDefault, BaseLogSerializer
 from acknowledgements.models import Acknowledgement, Item, Pillow, Component, File, Log as AckLog
 from contacts.serializers import CustomerOrderFieldSerializer, CustomerSerializer
 from supplies.serializers import FabricSerializer
@@ -23,9 +24,34 @@ from products.models import Product
 from supplies.models import Fabric, Log
 from projects.models import Project, Phase, Room
 from media.models import S3Object
+from acknowledgements import service as ack_service
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+class DefaultAcknowledgement(object):
+    def set_context(self, serializer_field):
+        if 'acknowledgement' in serializer_field.context:
+            self.acknowledgement = serializer_field.context['acknowledgement']
+        else:
+            self.acknowledgement = serializer_field.parent.parent.instance
+
+        logger.debug(self.acknowledgement)
+
+    def __call__(self):
+        return self.acknowledgement
+
+
+class AcknowledgementLogSerializer(BaseLogSerializer):
+    acknowledgement = serializers.HiddenField(default=DefaultAcknowledgement())
+    type = serializers.CharField(default=serializers.CreateOnlyDefault('SALES ORDER'))
+
+    class Meta:
+        model = AckLog
+        depth = 1
+        fields = ('id', 'message', 'timestamp', 'user', 'company', 'type', 'acknowledgement')
 
 
 class ComponentSerializer(serializers.ModelSerializer):
@@ -80,30 +106,56 @@ class PillowSerializer(serializers.ModelSerializer):
 
 
 class ItemListSerializer(serializers.ListSerializer):
-    pass
+    def update(self, instances, validated_data):
+        logger.debug(validated_data)
+        item_mapping = {item.id: item for item in instances}
+        data_mapping = {d.get('id', d['description']): d for d in validated_data}
+
+        ret = []
+
+        for item_id, data in data_mapping.items():
+            item = item_mapping.get(item_id, None)
+            if item is None:
+                ret.append(self.child.create(data))
+            else:
+                ret.append(self.child.update(item, data))
+
+        # Perform deletions.
+        for item_id, item in item_mapping.items():
+            if item_id not in data_mapping:
+                item.delete()
+
+        return ret
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(required=False, allow_null=True)
-    pillows = PillowSerializer(required=False, many=True)
-    components = ComponentSerializer(required=False, many=True)
+    id = serializers.IntegerField(required=False, allow_null=True)
+    # Business Fields
     unit_price = serializers.DecimalField(required=False, decimal_places=2, max_digits=12, default=0)
     comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, default='acknowledged')
     #location = serializers.CharField(required=False, allow_null=True)
-    fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
-    image = S3ObjectFieldSerializer(required=False, allow_null=True)
     units = serializers.CharField(required=False, allow_null=True)
     width = serializers.IntegerField(required=False, allow_null=True)
     depth = serializers.IntegerField(required=False, allow_null=True)
     height = serializers.IntegerField(required=False, allow_null=True)
-    custom_price = serializers.DecimalField(decimal_places=2, max_digits=12, write_only=True, required=False,
-                                            allow_null=True)
     fabric_quantity = serializers.DecimalField(decimal_places=2, max_digits=12, required=False,
                                                allow_null=True)
-    id = serializers.IntegerField(required=False, allow_null=True)
+    quantity = serializers.DecimalField(decimal_places=2,
+                                        max_digits=12,
+                                        min_value=1)
     type = serializers.CharField(required=False, allow_null=True)
 
+    # Nested Relationships
+    product = ProductSerializer(required=False, allow_null=True)
+    fabric = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Fabric.objects.all())
+    image = S3ObjectFieldSerializer(required=False, allow_null=True)
+
+    # Nested Many Relationship
+    pillows = PillowSerializer(required=False, many=True)
+    components = ComponentSerializer(required=False, many=True)
+
+    # Non Model Properties
     grades = {'A1': 15,
               'A2': 20,
               'A3': 25,
@@ -114,10 +166,17 @@ class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ('description', 'id', 'width', 'depth', 'height', 'fabric_quantity', 'unit_price', 'total', 'product',
-                  'pillows', 'comments', 'image', 'units', 'fabric', 'custom_price', 'quantity', 'components', 'type',
+                  'pillows', 'comments', 'image', 'units', 'fabric', 'quantity', 'components', 'type',
                   'status')
         read_only_fields = ('total',)
         list_serializer_class = ItemListSerializer
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        # Instantiate the child serializer.
+        kwargs['child'] = cls()
+        # Instantiate the parent list serializer.
+        return cls.Meta.list_serializer_class(*args, **kwargs)
 
     def to_internal_value(self, data):
         ret = super(ItemSerializer, self).to_internal_value(data)
@@ -146,33 +205,20 @@ class ItemSerializer(serializers.ModelSerializer):
         Populates the instance after the parent 'restore_object' method is
         called.
         """
-        acknowledgement = self.context['acknowledgement']
         components_data = validated_data.pop('components', None)
         pillow_data = validated_data.pop('pillows', None)
         product = validated_data['product']
-        fabric = validated_data.pop('fabric', None)
 
-        try:
-            unit_price = validated_data.pop('price', None) or product.calculate_price(self._grades[fabric.grade])
-        except AttributeError:
-            unit_price = validated_data.pop('price', product.price)
         width = validated_data.pop('width', None) or product.width
         depth = validated_data.pop('depth', None) or product.depth
         height = validated_data.pop('height', None) or product.height
-        fabric_quantity = validated_data.pop('fabric_quantity', None)
 
-        instance = self.Meta.model.objects.create(acknowledgement=acknowledgement,
+        instance = self.Meta.model.objects.create(acknowledgement=self.context['acknowledgement'], 
                                                   width=width, depth=depth,
-                                                  height=height, fabric=fabric, **validated_data)
-
-        #attach fabric quantity
-        instance.fabric_quantity = fabric_quantity
+                                                  height=height, **validated_data)
 
         #Calculate the total price of the item
-        if instance.is_custom_size and product.price == unit_price:
-            instance._calculate_custom_price()
-        else:
-            instance.total = (instance.quantity or 1) * (instance.unit_price or 0)
+        self._calculate_total(instance)
 
         instance.save()
 
@@ -194,13 +240,8 @@ class ItemSerializer(serializers.ModelSerializer):
         """
         Updates the instance after the parent method is called
         """
-
-        # Update attributes from client side details
-        acknowledgement = self.context['acknowledgement']
-        employee = self.context['employee']
-
         # Loops through attributes and logs changes
-        updatable_attributes = ['quantity', 'unit_price', 'description', 'fabric', 'fabric_quantity', 
+        updatable_attributes = ['quantity', 'unit_price', 'description', 'fabric', 
                                 'comments', 'width', 'depth', 'height', 'status']
 
         for attr in updatable_attributes:
@@ -213,11 +254,11 @@ class ItemSerializer(serializers.ModelSerializer):
                 # Log data changes
                 message = u"{0}: {1} changed from {2} to {3}"
                 message = message.format(instance.description, attr, old_attr_value, new_attr_value)
-                AckLog.create(message=message, acknowledgement=instance.acknowledgement, user=employee)
+                ack_service.log(message, instance.acknowledgement, self.context['request'])
 
 
         # Set the price of the total for this item
-        instance.total = instance.quantity * instance.unit_price
+        self._calculate_total(instance)
         instance.save()
 
         pillows = validated_data.pop('pillows', [])
@@ -245,18 +286,15 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def to_representation(self, instance):
+    def _calculate_total(self, instance):
         """
-        Override the 'to_representation' method to transform the output for related and nested items
+        Calculate the total of the instance
         """
-        ret = super(ItemSerializer, self).to_representation(instance)
+        total = instance.quantity * (instance.unit_price or 0)
+        instance.total = total
 
-        try:
-            ret['fabric'] = {'id': instance.fabric.id,
-                             'description': instance.fabric.description}
-        except AttributeError:
-            pass
-        return ret
+        return instance.total
+
 
 
 class ItemFieldSerializer(serializers.ModelSerializer):
@@ -274,31 +312,82 @@ class ItemFieldSerializer(serializers.ModelSerializer):
 
 
 
+class FileListSerializer(serializers.ListSerializer):
+    def update(self, instances, validated_data):
+        """
+        Update List of Files
+
+        1. List of ids
+        2. Delete
+        3. Create
+        """
+
+        data_id_list = [d['file'].get('id', None) for d in validated_data]
+        instance_id_list = [f.file.id for f in instances]
+
+        ret = []
+        # Delete Files
+        for f in instances:
+            if f.file.id not in valid_id_list:
+                f.delete()
+            else:
+                ret.append(f)
+
+        # Add Files
+        for d in validated_data:
+            if d['file'].get('id', None) not in instance_id_list:
+                ret.append(self.child.create(d))
+
+        return ret
+
+
 class FileSerializer(serializers.ModelSerializer):
+    acknowledgement = serializers.HiddenField(default=serializers.CreateOnlyDefault(DefaultAcknowledgement))
+    file = S3ObjectFieldSerializer()
 
     class Meta:
         model = File
         fields = '__all__'
-        read_only_fields = ('acknowledgement', 'file')
+        list_serializer_class = FileListSerializer
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        # Instantiate the child serializer.
+        kwargs['child'] = cls()
+        # Instantiate the parent list serializer.
+        return cls.Meta.list_serializer_class(*args, **kwargs)
+
 
 
 class AcknowledgementSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
-    company = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    customer = CustomerOrderFieldSerializer()
-    employee = UserFieldSerializer(required=False, read_only=True)
-    project = ProjectFieldSerializer(required=False, allow_null=True)
-    room = RoomFieldSerializer(allow_null=True, required=False)
-    phase = PhaseFieldSerializer(allow_null=True, required=False)
-    items = ItemSerializer(item_queryset, many=True)
+
+    # Internal Fields
+    company = serializers.HiddenField(default=serializers.CreateOnlyDefault(CompanyDefault))
+    employee = UserFieldSerializer(read_only=True, default=serializers.CurrentUserDefault())
+
+    #Business Fields
+    company_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    customer_name = serializers.CharField(default="")
     remarks = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shipping_method = serializers.CharField(required=False, allow_null=True)
     fob = serializers.CharField(required=False, allow_null=True)
-    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
-    delivery_date = serializers.DateTimeField(required=True)
-    logs = LogFieldSerializer(many=True, read_only=True)
-    invoices = serializers.SerializerMethodField(read_only=True)
+    delivery_date = serializers.DateTimeField(required=True, default_timezone=timezone('Asia/Bangkok'))
     balance = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=15)
+
+    # Nested Fields
+    customer = CustomerOrderFieldSerializer()
+    project = ProjectFieldSerializer(required=False, allow_null=True)
+    room = RoomFieldSerializer(allow_null=True, required=False)
+    phase = PhaseFieldSerializer(allow_null=True, required=False)
+
+    # Nested Many Fields
+    items = ItemSerializer(item_queryset, many=True)
+    files = S3ObjectFieldSerializer(many=True, allow_null=True, required=False)
+    logs = LogFieldSerializer(many=True, read_only=True)
+    
+    # Method Fields
+    invoices = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Acknowledgement
@@ -346,12 +435,9 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         items_data = self.initial_data['items']
         files = validated_data.pop('files', [])
-        
-        # Get user 
-        employee = self.context['request'].user
-        
+                
         for item_data in items_data:
-            for field in ['product', 'fabric']:
+            for field in ['fabric']:
                 try:
                     item_data[field] = item_data[field].id
                 except KeyError:
@@ -360,13 +446,13 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
                     pass
 
         discount = validated_data.pop('discount', validated_data['customer'].discount)
-        delivery_date = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date'))
 
-        instance = self.Meta.model.objects.create(employee=employee, discount=discount,
-                                                  status='acknowledged', _delivery_date=delivery_date,
+        instance = self.Meta.model.objects.create(discount=discount,
+                                                  status='acknowledged',
                                                   **validated_data)
+        self.instance = instance
 
-        item_serializer = ItemSerializer(data=items_data, context={'acknowledgement': instance}, many=True)
+        item_serializer = ItemSerializer(data=items_data, context={'acknowledgement': instance, request:self.context['request']}, many=True)
 
         if item_serializer.is_valid(raise_exception=True):
             item_serializer.save()
@@ -379,144 +465,64 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Add pdfs to files list
         filenames = ['acknowledgement_pdf', 'production_pdf', 'label_pdf']
         for filename in filenames:
-            try:
-                File.objects.create(file=getattr(instance, filename),
-                                    acknowledgement=instance)
-            except Exception as e:
-                logger.warn(e)
-
-        # Assign files
+            self._add_file(getattr(instance, filename))
+           
+        # Add files
         for file in files:
-            File.objects.create(file=S3Object.objects.get(pk=file['id']),
-                                acknowledgement=instance)
-
-
-        # Extract fabric quantities
-        fabrics = {}
-
-        for item in item_serializer.instance:
-            if item.fabric:
-                if item.fabric in fabrics:
-                    fabrics[item.fabric] += Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
-                else:
-                    try:
-                        fabrics[item.fabric] = Decimal(str(item.quantity)) * (item.fabric_quantity or Decimal('0'))
-                    except TypeError:
-                        fabrics[item.fabric] = Decimal('0')
-
-            #Extract fabric from the pillows
-            for pillow in item.pillows.all():
-                if pillow.fabric:
-                    if pillow.fabric in fabrics:
-
-                        # There is no need to multiple by pillow quantity. The fabric quantity for the pillow already includes the fabric quantity
-                        # for the total pillows of that particular type
-                        try:
-                            fabrics[pillow.fabric] += Decimal(str(item.quantity)) * pillow.fabric_quantity
-                        except TypeError:
-                            pass
-
-                    else:
-                        try:
-                            fabrics[pillow.fabric] = Decimal(str(item.quantity)) * (pillow.fabric_quantity or Decimal('0'))
-                        except TypeError:
-                            fabrics[pillow.fabric] = Decimal('0')
-
-        # Log Fabric Reservations
-        for fabric in fabrics:
-            self.reserve_fabric(fabric, fabrics[fabric], instance.id)
+            self._add_file(S3Object.objects.get(pk=file['id']))
 
         # Create a calendar event
         try:
             instance.create_calendar_event(employee)
         except Exception as e:
             message = u"Unable to create calendar event for acknowledgement {0} because:\n{1}"
-            message = message.format(instance.id, e)
-            log = AckLog.create(message=message, 
-                                acknowledgement=instance, 
-                                user=employee,
-                                type="GOOGLE CALENDAR")
+            message = message.format(instance.document_number, e)
+            self._log(message, instance, self.context['request'])
 
         # Log Opening of an order
-        message = u"Created Acknowledgement #{0}.".format(instance.id)
-        log = AckLog.create(message=message, acknowledgement=instance, user=employee)
-
-        if instance.vat > 0:
-            try:
-                pass #instance.create_in_trcloud() 
-            except Exception as e:
-                message = u"Unable to create acknowledgement because:\n{0}"
-                message = message.format(e)
-                log = AckLog.create(message=message, 
-                                    acknowledgement=instance, 
-                                    user=employee,
-                                    type="TRCLOUD")
+        message = u"Created Sales Order #{0}.".format(instance.document_number)
+        self._log(message, instance, self.context['request'])
                 
         return instance
 
     def update(self, instance, validated_data):
 
-        # Get user 
-        try:
-            employee = self.context['request'].user
-        except KeyError as e:
-            employee = self.context['employee']
+        attrs_to_update = {'delivery_date': lambda x : x.strftime('%d/%m/%Y'),
+                           'status': lambda x : x.lower(),
+                           'project': None,
+                           'vat': None,
+                           'discount': None}
 
-        if settings.DEBUG:
-            employee = User.objects.get(pk=1)
-        
-        instance.current_user = employee
-        dd = timezone('Asia/Bangkok').normalize(validated_data.pop('delivery_date', instance.delivery_date))
-        instance.project = validated_data.pop('project', instance.project)
-        instance.vat = validated_data.pop('vat', instance.vat)
-        instance.discount = validated_data.pop('discount', instance.discount)
-        instance.room = validated_data.pop('room', instance.room)
-        status = validated_data.pop('status', instance.status)
-
-        if instance.delivery_date != dd:
-            old_dd = instance.delivery_date
-            instance.delivery_date = dd
-           
-            # Log Changing delivery date
-            message = u"Acknowledgement #{0} delivery date changed from {1} to {2}."
-            message = message.format(instance.id, old_dd.strftime('%d/%m/%Y'), dd.strftime('%d/%m/%Y'))
-            AckLog.create(message=message, acknowledgement=instance, user=employee)
-
-        if status.lower() != instance.status.lower():
-
-            message = u"Updated Acknowledgement #{0} from {1} to {2}."
-            message = message.format(instance.id, instance.status.lower(), status.lower())
-            AckLog.create(message=message, acknowledgement=instance, user=employee)
-
-            instance.status = status
-
-        old_qty = sum([item.quantity for item in instance.items.all()])
+        for attr, attr_formatting in attrs_to_update.items():
+            self._update_attr(instance, attr, validated_data, attr_formatting)
         
         # Extract items data
         items_data = validated_data.pop('items')
         items_data = self.initial_data['items']
         fabrics = {}
+        logger.debug(items_data)
+        items_serializer = ItemSerializer(instance=instance.items.all(), 
+                                          data=items_data,
+                                          many=True, 
+                                          context={'request': self.context['request'],
+                                                   'acknowledgement': instance,
+                                                   'employee': self.context['request'].user,
+                                                   'customer': instance.customer})
 
-        self._update_items(instance, items_data)
-
+        if items_serializer.is_valid(raise_exception=True):
+            items_serializer.save()
         
-        # Log Fabric Reservations
-        for fabric in fabrics:
-            self.reserve_fabric(fabric, fabrics[fabric], instance.id)
-
         #Update attached files
-        files = validated_data.pop('files', [])
-        for file in files:
-            try:
-                File.objects.get(file_id=file['id'], acknowledgement=instance)
-            except File.DoesNotExist:
-                File.objects.create(file=S3Object.objects.get(pk=file['id']),
-                                    acknowledgement=instance)
-
-        #if instance.status.lower() in ['acknowledged', 'in production', 'ready to ship']:
+        files_data = validated_data.pop('files', None)
+        if files_data:
+            files_data = [{'file': f} for f in files_data]
+            files_serializer = FileSerializer(File.objects.filter(acknowledgement=instance),
+                                            data=files_data, 
+                                            context={'request': self.context['request'],
+                                                    'acknowledgement': instance},
+                                            many=True)
 
         # Store old total and calculate new total
-        old_total = instance.total
         instance.calculate_totals()
 
         try:
@@ -529,11 +535,7 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             
             message = u"Unable to update PDF for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
-            log = AckLog.create(message=message, 
-                                acknowledgement=instance, 
-                                user=employee,
-                                type="PDF CREATION ERROR")
-
+            self._log(message, instance)
 
         try:
             instance.update_calendar_event()
@@ -541,24 +543,10 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
             logger.debug(e)
             message = u"Unable to update calendar event for acknowledgement {0} because:\n{1}"
             message = message.format(instance.id, e)
-            log = AckLog.create(message=message, 
-                                acknowledgement=instance, 
-                                user=employee,
-                                type="GOOGLE CALENDAR ERROR")
+            self._log(message, instance)
 
         instance.save()
 
-        if instance.vat > 0 and instance.trcloud_id:
-            try:
-                pass #instance.update_in_trcloud()
-            except Exception as e:
-                message = u"Unable to update acknowledgement {0} because:\n{1}"
-                message = message.format(instance.id, e)
-                log = AckLog.create(message=message, 
-                                    acknowledgement=instance, 
-                                    user=employee,
-                                    type="TRCLOUD ERROR")
-           
         return instance
 
     def get_invoices(self, instance):
@@ -571,45 +559,6 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         for inv in instance.invoices.all()]
 
         return data
-
-    def _update_items(self, instance, items_data):
-        """
-        Handles creation, update, and deletion of items
-        """
-
-        
-        #Maps of id
-        id_list = [item_data.get('id', None) for item_data in items_data]
-        logger.debug(id_list)
-
-        #Delete Items
-        for item in instance.items.all():
-            if item.id not in id_list:
-                item.delete()
-                instance.items.filter(pk=item.id).delete()
-                logger.debug(item)
-                logger.debug(instance.items.all())
-                #item.deleted = True
-                #item.save()
-
-        #Update or Create Item
-        for item_data in items_data:
-            try:
-                item = Item.objects.get(pk=item_data['id'], acknowledgement=instance)
-                serializer = ItemSerializer(item, context={
-                    'customer': instance.customer, 
-                    'acknowledgement': instance, 
-                    'employee': instance.employee}, data=item_data)
-            except (KeyError, Item.DoesNotExist) as e:
-                serializer = ItemSerializer(data=item_data, context={
-                    'customer': instance.customer, 
-                    'acknowledgement': instance,
-                    'employee': instance.employee})
-                
-            if serializer.is_valid(raise_exception=True):
-                item = serializer.save()
-                id_list.append(item.id)
-
 
     def reserve_fabric(self, fabric, quantity, acknowledgement_id, employee=None):
         """
@@ -640,6 +589,57 @@ class AcknowledgementSerializer(serializers.ModelSerializer):
         # Save log
         log.save()
 
+    def _add_file(self, file):
+        """
+        Adds a file to the acknowledgement
+        """
+        File.objects.create(acknowledgement=self.instance, 
+                            file=file)
+        
+        # Log addition of file
+        msg = u"Added '{0}' to Sales Order #{1} files"
+        msg = msg.format(file.filename, self.instance.document_number)
+        self._log(msg)
+
+    def _update_attr(self, instance, attr_name, data_mapping, format=None):
+        """
+        Update Attribute in instance if there is a change
+        """
+        new_val = data_mapping.get(attr_name, getattr(instance, attr_name))
+        old_val = getattr(instance, attr_name)
+
+        # Format if callable is set
+        if callable(format):
+            new_val = format(new_val)
+            old_val = format(old_val)
+
+        if old_val != new_val:
+            setattr(instance, attr_name, data_mapping.get(attr_name, getattr(instance, attr_name)))
+            msg = u"{0} for Sales Order # {1} changed from {2} to {3}"
+            msg = msg.format(attr_name, instance.document_number, old_val, new_val)
+            self._log(msg)
+
+    def _log(self, message, instance=None):
+        """
+        Create Acknowledgement link Log
+        """
+        if not isinstance(instance, self.Meta.model):
+            instance = self.instance
+
+        serializer = AcknowledgementLogSerializer(data={'message': message}, 
+                                                  context={'acknowledgement': instance,
+                                                           'request': self.context['request']})
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        
+
+
+
+"""
+Field Serializers
+"""
+
 
 class AcknowledgementFieldSerializer(serializers.ModelSerializer):
     project = ProjectFieldSerializer(required=False, read_only=True)
@@ -647,8 +647,7 @@ class AcknowledgementFieldSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Acknowledgement
-        fields = ('company', 'id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 
+        fields = ('id', 'remarks', 'fob', 'shipping_method', 'delivery_date', 
                   'total', 'subtotal', 'time_created', 'project', 'status', 'balance')
         read_only_fields = ('project', 'balance')
-
 

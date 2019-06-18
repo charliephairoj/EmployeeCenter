@@ -4,12 +4,13 @@
 import logging
 from decimal import getcontext
 
+from administrator.models import Company
 from receipts.models import File, Receipt, Item
 from media.models import S3Object
 from accounting.models import Account, Transaction, JournalEntry, Journal
 from accounting.serializers import JournalEntrySerializer
 from accounting.account import service as account_service
-
+from accounting.journal import service as journal_service
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -35,13 +36,15 @@ def add_file(receipt=None, media_obj=None):
     File.objects.create(file=media_obj,
                         receipt=receipt)
 
-def create_journal_entry(receipt, deposit_to):
+def create_journal_entry(receipt, deposit_to, company=None):
+
+    assert isinstance(company, Company), "An company instance is required"
 
     data = {
         'description': u'Received payment from {0} for invoice {1}'.format(receipt.customer.name, 
-                                                                           receipt.invoice.id),
+                                                                           receipt.invoice.document_number),
         'journal': {
-            'id': Journal.objects.get(name_en='Assets').id
+            'id': journal_service.get(name='Assets', company=company).id
         },
         'transactions': []
     }
@@ -49,11 +52,11 @@ def create_journal_entry(receipt, deposit_to):
     # Add to Receivable
     receivable_tr_data = {
         'account': {
-            'id': account_service.get(name='Accounts Receivable (A/R)').id
+            'id': account_service.get(name='Accounts Receivable (A/R)', company=company).id
         },
         'credit': receipt.grand_total,
         'debit': None,
-        'description': u'Recieved payment from {1} for Invoice {0}'.format(receipt.id, receipt.customer.name)
+        'description': u'Recieved payment from {1} for Invoice {0}'.format(receipt.invoice.document_number, receipt.customer.name)
     }    
 
     data['transactions'].append(receivable_tr_data)
@@ -61,11 +64,11 @@ def create_journal_entry(receipt, deposit_to):
     # Add to assets
     asset_tr_data = {
         'account': {
-            'id': deposit_to.id
+            'id': account_service.get(id=deposit_to.id, company=company).id
         },
         'debit': receipt.grand_total,
         'credit': None,
-        'description': u'Received payment from {1} for Invoice {0}'.format(receipt.invoice.id, receipt.customer.name)
+        'description': u'Received payment from {1} for Invoice {0}'.format(receipt.invoice.document_number, receipt.customer.name)
     }    
 
     data['transactions'].append(asset_tr_data)

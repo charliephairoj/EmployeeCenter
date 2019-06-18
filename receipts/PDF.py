@@ -63,7 +63,7 @@ class AckDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == u'dellarobbia thailand':
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
@@ -80,7 +80,7 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.setFillColorCMYK(0, 0, 0, 1)
 
         #Add Company Information in under the logo if dellarobbia
-        if self.company.lower() == 'dellarobbia thailand':
+        if self.company.name.lower() == u'dellarobbia thailand':
             canvas.drawString(42, 760,
                             "78/448 Moo.6 Lam Lukka Rd. Bueng Kham Phroi, Lam Lukka")
             canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
@@ -99,7 +99,7 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.drawRightString(550, 780, 'Receipt#: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        code = "A-{0}".format(self.id)
+        code = "RV-{0}".format(self.id)
         barcode = code128.Code128(code, barHeight=20, barWidth=0.5 * mm)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
@@ -126,10 +126,10 @@ class ReceiptPDF(object):
 
     #create method
     def create(self):
-        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.receipt.id)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.receipt.document_number)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.receipt.id, company=self.receipt.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.receipt.document_number, company=self.receipt.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -153,7 +153,7 @@ class ReceiptPDF(object):
         canvas.setFont("Helvetica", 16)
         canvas.drawRightString(550, 790, 'Receipt')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 770, 'Receipt#: {0}'.format(self.receipt.id))
+        canvas.drawRightString(550, 770, 'Receipt#: {0}'.format(self.receipt.document_number))
 
     def _get_stories(self):
         #initialize story array

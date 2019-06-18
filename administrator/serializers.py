@@ -6,17 +6,53 @@ from django.db import models
 import boto
 from django.conf import settings
 
+from django.utils import timezone as tz
+
 from administrator.models import User, AWSUser, Log, Label, Company
 
 
 logger = logging.getLogger(__name__)
 
 
+"""
+Defaults 
+
+Used for Serializer Field defaults
+"""
+class CompanyDefault(object):
+    def set_context(self, serializer_field):
+        request = serializer_field.context['request']
+        self.user = request.user
+
+        if settings.DEBUG:
+            self.user = User.objects.get(pk=1)
+
+        self.company = self.user.company
+
+    def __call__(self):
+        return self.company
+
+
+"""
+Serializers
+"""
 class UserFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'username', 'first_name', 'last_name', 'id', 'last_login', 'is_active', 'web_ui_version')
         depth = 0
+
+
+class BaseLogSerializer(serializers.ModelSerializer):
+    timestamp = serializers.DateTimeField(default=serializers.CreateOnlyDefault(tz.now))
+    type = serializers.CharField(default=serializers.CreateOnlyDefault('GENERAL'))
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    company = serializers.HiddenField(default=serializers.CreateOnlyDefault(CompanyDefault()))
+
+    class Meta:
+        model = Log
+        depth = 1
+        fields = ('id', 'message', 'timestamp', 'user', 'type', 'company')
 
 
 class LabelSerializer(serializers.ModelSerializer):
@@ -248,7 +284,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         user.aws_credentials.save()
 
-        
+
 
 
         

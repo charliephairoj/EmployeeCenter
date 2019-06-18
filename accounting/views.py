@@ -4,7 +4,7 @@ import logging
 import time
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import generics
@@ -19,9 +19,18 @@ logger = logging.getLogger(__name__)
 
 
 class AccountMixin(object):
-    queryset = Account.objects.all().order_by('account_code')
     serializer_class = AccountSerializer
     
+    def get_queryset(self):
+
+        user = self.request.user
+        company = user.company
+        logger.info(company)
+        qs = Account.objects.filter(company=company).order_by('type', 'type_detail')
+        qs = qs.annotate(debit_sum=Sum('transactions__debit'), credit_sum=Sum('transactions__credit'))
+
+        return qs 
+        
     def handle_exception(self, exc):
         """
         Custom Exception Handler
@@ -36,11 +45,12 @@ class AccountMixin(object):
     
 class AccountList(AccountMixin, generics.ListCreateAPIView):
         
-    def get_queryset(self):
+    def filter_queryset(self, queryset):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.all()
+        queryset = queryset.filter(parent__isnull=True)
+
         #Filter based on query
         query = self.request.query_params.get('q', None)
         if query:
@@ -57,6 +67,16 @@ class AccountList(AccountMixin, generics.ListCreateAPIView):
             queryset = queryset[:limit]
         else:
             queryset = queryset[0:50]
+
+        queryset = queryset.select_related('parent',
+                                           'company')
+
+        queryset = queryset.prefetch_related('sub_accounts', 
+                                             'sub_accounts__parent',
+                                             'sub_accounts__company',
+                                             'transactions',
+                                             'sub_accounts__transactions',
+                                             'sub_accounts__sub_accounts')
             
         return queryset
         
@@ -72,4 +92,18 @@ class AccountList(AccountMixin, generics.ListCreateAPIView):
             
 
 class AccountDetail(AccountMixin, generics.RetrieveUpdateDestroyAPIView):
-    pass
+    def filter_queryset(self, queryset):
+        """
+        Override 'get_queryset' method in order to customize filter
+        """
+        queryset = queryset.select_related('parent',
+                                           'company')
+
+        queryset = queryset.prefetch_related('sub_accounts', 
+                                             'sub_accounts__parent',
+                                             'sub_accounts__company',
+                                             'sub_accounts__transactions',
+                                             'transactions')
+
+            
+        return queryset

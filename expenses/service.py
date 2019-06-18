@@ -5,12 +5,10 @@ import logging
 from decimal import getcontext
 
 from invoices.models import File, Invoice, Item
-from administrator.models import Company
 from media.models import S3Object
 from accounting.models import Account, Transaction, JournalEntry, Journal
 from accounting.serializers import JournalEntrySerializer
 from accounting.account import service as account_service
-from accounting.journal import service as journal_service
 
 
 logger = logging.getLogger(__name__)
@@ -37,15 +35,12 @@ def add_file(invoice=None, media_obj=None):
     File.objects.create(file=media_obj,
                         invoice=invoice)
 
-def create_journal_entry(invoice=None, company=None):
-
-    assert isinstance(invoice, Invoice), "An invoice instance is required"
-    assert isinstance(company, Company), "An company instance is required"
+def create_journal_entry(invoice):
 
     data = {
-        'description': u'Invoice {0}'.format(invoice.document_number),
+        'description': u'Invoice {0}'.format(invoice.id),
         'journal': {
-            'id': journal_service.get(name='Revenue', company=company).id
+            'id': Journal.objects.get(name_en='Revenue').id
         },
         'transactions': []
     }
@@ -53,11 +48,11 @@ def create_journal_entry(invoice=None, company=None):
     # Add to Receivable
     payable_tr_data = {
         'account': {
-            'id': account_service.get(name='Accounts Receivable (A/R)', company=company).id
+            'id': account_service.get(name='Accounts Receivable (A/R)').id
         },
         'debit': invoice.grand_total,
         'credit': None,
-        'description': u'Invoice {0}: {1}'.format(invoice.document_number, invoice.customer.name)
+        'description': u'Invoice {0}: {1}'.format(invoice.id, invoice.customer.name)
     }    
 
     data['transactions'].append(payable_tr_data)
@@ -66,11 +61,11 @@ def create_journal_entry(invoice=None, company=None):
     if invoice.vat_amount > 0:
         vat_tr_data = {
             'account': {
-                'id': account_service.get(name='VAT Payable', company=company).id
+                'id': account_service.get(name='VAT Payable').id
             },
             'credit': invoice.vat_amount,
             'debit': None,
-            'description': u'Invoice {0}: {1}'.format(invoice.document_number, invoice.customer.name)
+            'description': u'Invoice {0}: {1}'.format(invoice.id, invoice.customer.name)
         }  
         data['transactions'].append(vat_tr_data)
 
@@ -79,11 +74,11 @@ def create_journal_entry(invoice=None, company=None):
     for item in invoice.items.all():
         income_tr_data = {
             'account': {
-                'id': account_service.get(name='Sales of Product Income', company=company).id
+                'id': account_service.get(name='Sales of Product Income').id
             },
             'credit': item.total,
             'debit': None,
-            'description': u'Invoice {0}: {1}'.format(invoice.document_number, item.description)
+            'description': u'Invoice {0}: {1}'.format(invoice.id, item.description)
         }
         data['transactions'].append(income_tr_data)
 
@@ -96,7 +91,6 @@ def create_journal_entry(invoice=None, company=None):
         invoice.journal_entry = serializer.instance
         invoice.save()
         
-
 
 
 

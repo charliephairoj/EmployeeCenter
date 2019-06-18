@@ -149,7 +149,8 @@ class ContactMixin(object):
 class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True,)
     addresses = AddressSerializer(required=False,  many=True, allow_null=True)
-    address = AddressSerializer(required=False, allow_null=True, write_only=True)
+    address = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    branch = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -167,7 +168,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
+        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax', 'company', 'account_receivable', 'account_payable')
 
     def create(self, validated_data):
         """
@@ -176,8 +177,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         Calls the parent create and then also creates all the addresses and 
         contacts that are nested
         """
-        addresses_data = validated_data.pop('addresses', 
-                                            [validated_data.pop('address', [])])
+        addresses_data = validated_data.pop('addresses', [])
 
         contacts_data = validated_data.pop('contacts', None)
         files = validated_data.pop('files', [])
@@ -225,8 +225,7 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         """
         Override 'update' method
         """
-        addresses_data = validated_data.pop('addresses', 
-                                            [validated_data.pop('address', [])])
+        addresses_data = validated_data.pop('addresses', [])
                     
         contacts_data = validated_data.pop('contacts', None)
 
@@ -284,7 +283,8 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
 class CustomerOrderFieldSerializer(ContactMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, allow_null=True,)
     addresses = AddressSerializer(required=False,  many=True, allow_null=True)
-    address = AddressSerializer(required=False, allow_null=True, write_only=True)
+    address = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    branch = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     first_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -299,7 +299,7 @@ class CustomerOrderFieldSerializer(ContactMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax')
+        exclude = ('contact', 'google_contact_id', 'type', 'job_title', 'trcloud_id', 'fax', 'company', 'account_receivable', 'account_payable')
 
     def create(self, validated_data):
         """
@@ -308,8 +308,7 @@ class CustomerOrderFieldSerializer(ContactMixin, serializers.ModelSerializer):
         Calls the parent create and then also creates all the addresses and 
         contacts that are nested
         """
-        addresses_data = validated_data.pop('addresses', 
-                                            [validated_data.pop('address', [])])
+        addresses_data = validated_data.pop('addresses', [])
 
         contacts_data = validated_data.pop('contacts', None)
         files = validated_data.pop('files', [])
@@ -357,8 +356,7 @@ class CustomerOrderFieldSerializer(ContactMixin, serializers.ModelSerializer):
         """
         Override 'update' method
         """
-        addresses_data = validated_data.pop('addresses', 
-                                            [validated_data.pop('address', [])])
+        addresses_data = validated_data.pop('addresses', [])
                     
         contacts_data = validated_data.pop('contacts', None)
 
@@ -413,7 +411,7 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Supplier
-        exclude = ('contact', 'google_contact_id', 'trcloud_id', 'fax')
+        exclude = ('contact', 'google_contact_id', 'trcloud_id', 'fax', 'company')
 
     def to_representation(self, instance):
         

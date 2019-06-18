@@ -10,8 +10,11 @@ import gdata.contacts.client
 import gdata.contacts.data
 
 from administrator.models import CredentialsModel, OAuth2TokenFromCredentials, Storage
+from administrator.models import Company
+from accounting.models import Account
 from trcloud.models import TRContact
 from media.models import S3Object
+from accounting.account import service as acc_service
 
 
 pp = pprint.PrettyPrinter(width=1, indent=4)
@@ -19,6 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 class Contact(models.Model):
+
+    # Business Related Attributes
+    tax_id = models.TextField(null=True, blank=True)
+    bank = models.TextField(null=True, default="")
+    bank_account_number = models.TextField(null=True, default="")
+    terms = models.TextField(null=False, default="50/net")
+    address = models.TextField(null=True)
+    branch = models.TextField(null=True)
+
     trcloud_id = models.IntegerField(null=True, default=0)
     name = models.TextField()
     name_th = models.TextField(null=True, blank=True)
@@ -33,14 +45,17 @@ class Contact(models.Model):
     notes = models.TextField(null=True, default="", blank=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
-    contact = models.ForeignKey('self', related_name="contacts", null=True)
+    contact = models.ForeignKey('self', related_name="contacts", null=True, on_delete=models.CASCADE)
     contact_service = None
     website = models.TextField(null=True, blank=True)
     google_contact_id = models.TextField(null=True, blank=True)
-    tax_id = models.TextField(null=True, blank=True)
-    bank = models.TextField(null=True, default="")
-    bank_account_number = models.TextField(null=True, default="")
-    terms = models.TextField(null=False, default="50/net")
+
+    # Accounting
+    account_receivable = models.ForeignKey(Account, on_delete=models.PROTECT, null=True, related_name='receivable_contact')
+    account_payable = models.ForeignKey(Account, on_delete=models.PROTECT, null=True, related_name='payable_contact')
+
+    # Relationships
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     files = models.ManyToManyField(S3Object, through="File", related_name="contact")   
 
     @classmethod   
@@ -52,6 +67,16 @@ class Contact(models.Model):
             auth_token.authorize(self.contact_service)
             
         return self.contact_service
+
+    def save(self, *args, **kwargs):
+
+        if self.account_payable is None:
+            self.account_payable = acc_service.create_account_payable(self.company, self)
+
+        if self.account_receivable is None:
+            self.account_receivable = acc_service.create_account_receivable(self.company, self)
+
+        super(Contact, self).save(*args, **kwargs)
         
     def sync_google_contacts(self, user):
         # Make the service availabel via the self.contact_service attribute
@@ -166,7 +191,7 @@ class Address(models.Model):
     territory = models.TextField(null=True)
     country = models.TextField(null=True)
     zipcode = models.TextField(null=True)
-    contact = models.ForeignKey(Contact, related_name="addresses")
+    contact = models.ForeignKey(Contact, related_name="addresses", on_delete=models.CASCADE)
     latitude = models.DecimalField(decimal_places=15, max_digits=20, null=True)
     longitude = models.DecimalField(decimal_places=15, max_digits=20, null=True)
     user_defined_latlng = models.BooleanField(default=False)
@@ -182,20 +207,19 @@ class Customer(Contact):
 
 
 class Supplier(Contact):
-    pass    
-
+    pass
 
 class SupplierContact(models.Model):
     name = models.TextField()
     email = models.TextField(null=True, blank=True)
     telephone = models.TextField(null=True, blank=True)
-    supplier = models.ForeignKey(Supplier)
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     primary = models.BooleanField(db_column='primary_contact', default=False)
 
 
 class File(models.Model):
-    contact = models.ForeignKey(Contact)
-    file = models.ForeignKey(S3Object)
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
+    file = models.ForeignKey(S3Object, on_delete=models.CASCADE)
 
 
 

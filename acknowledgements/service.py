@@ -3,11 +3,47 @@
 
 import logging
 
-from acknowledgements.models import File, Acknowledgement, Item
+from django.utils import timezone as tz
+from rest_framework import serializers
+
+from administrator.models import Company
+from administrator.serializers import CompanyDefault, UserFieldSerializer, BaseLogSerializer
+from acknowledgements.models import File, Acknowledgement, Item, Log as AckLog
 from media.models import S3Object
 
 
 logger = logging.getLogger(__name__)
+
+
+"""
+Internal Serializers
+"""
+class DefaultAcknowledgement(object):
+    def set_context(self, serializer_field):
+        self.acknowledgement = serializer_field.context['acknowledgement']
+
+    def __call__(self):
+        return self.acknowledgement
+
+class AcknowledgementLogSerializer(BaseLogSerializer):
+    acknowledgement = serializers.HiddenField(default=serializers.CreateOnlyDefault(DefaultAcknowledgement))
+    type = serializers.CharField(default=serializers.CreateOnlyDefault('SALES ORDER'))
+
+    class Meta:
+        model = AckLog
+        depth = 1
+        fields = ('message', 'timestamp', 'employee', 'company', 'type', 'acknowledgement')
+
+"""
+Utility Services
+"""
+def log(message, acknowledgement, request):
+    serializer = AcknowledgementLogSerializer(data={'message': message}, 
+                                              context={'acknowledgement': acknowledgement,
+                                                       'request': request})
+
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
 
 
 """

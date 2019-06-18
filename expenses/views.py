@@ -269,8 +269,7 @@ class InvoiceList(InvoiceMixin, generics.ListCreateAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        #Filter by company
-        queryset = self.queryset.filter(company=self.request.user.company).order_by('-id')
+        queryset = self.queryset.all().order_by('-id')
         
         status = self.request.query_params.get('status', None)
         if status:
@@ -356,7 +355,7 @@ class InvoiceDetail(InvoiceMixin, generics.RetrieveUpdateDestroyAPIView):
         """
         Override 'get_queryset' method in order to customize filter
         """
-        queryset = self.queryset.filter(company=self.request.user.company).order_by('-id')
+        queryset = self.queryset.all()
                 
         queryset = queryset.select_related('customer', 
                                             'project', 

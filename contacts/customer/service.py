@@ -26,9 +26,9 @@ def create(user=None, **kwargs):
         logger.warn(e)
 
     # Create AR for this customer
-    account_service.create_account_receivable(user.company, customer)
+    #account_service.create_account_receivable(user.company, customer)
     # Create AP for this customer
-    account_service.create_account_payable(user.company, customer)
+    #account_service.create_account_payable(user.company, customer)
     
     return customer
 

@@ -33,5 +33,16 @@ def create(journal_entry=None, account=None, debit=Decimal('0'), credit=Decimal(
 
     return t
 
+def create_trx_data(account, description, debit=None, credit=None):
+    data = {
+        'account': {
+            'id': account.id
+        },
+        'credit': credit,
+        'debit': debit,
+        'description': description
+    }
+
+    return data
 
 

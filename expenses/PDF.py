@@ -63,7 +63,7 @@ class AckDocTemplate(BaseDocTemplate):
 
     def _create_header(self, canvas, doc):
         #Draw the logo in the upper left
-        if self.company.name.lower() == u'dellarobbia thailand':
+        if self.company.lower() == 'dellarobbia thailand':
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
         else:
             path = "https://s3-ap-southeast-1.amazonaws.com/media.dellarobbiathailand.com/logo/Alinea-Logo_Master.jpg"
@@ -80,7 +80,7 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.setFillColorCMYK(0, 0, 0, 1)
 
         #Add Company Information in under the logo if dellarobbia
-        if self.company.name.lower() == u'dellarobbia thailand':
+        if self.company.lower() == 'dellarobbia thailand':
             canvas.drawString(42, 760,
                             "78/448 Moo.6 Lam Lukka Rd. Bueng Kham Phroi, Lam Lukka")
             canvas.drawString(42, 750, "Pathum Thani, Thailand, 12150")
@@ -99,7 +99,7 @@ class AckDocTemplate(BaseDocTemplate):
         canvas.drawRightString(550, 780, 'Invoice#: {0}'.format(self.id))
         #Create a barcode from the id
         canvas.setFillColorCMYK(0, 0, 0, 1)
-        code = "IV-{0}".format(self.id)
+        code = "A-{0}".format(self.id)
         barcode = code128.Code128(code, barHeight=20, barWidth=0.5 * mm)
         x_position = 570 - barcode.width
         # drawOn puts the barcode on the canvas at the specified coordinates
@@ -126,10 +126,10 @@ class InvoicePDF(object):
 
     #create method
     def create(self):
-        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.invoice.document_number)
+        self.filename = u"{0}-{1}.pdf".format(self.document_type, self.invoice.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.invoice.document_number, company=self.invoice.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.invoice.id, company=self.invoice.company, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -153,7 +153,7 @@ class InvoicePDF(object):
         canvas.setFont("Helvetica", 16)
         canvas.drawRightString(550, 790, 'Invoice')
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(550, 770, 'Invoice#: {0}'.format(self.invoice.document_number))
+        canvas.drawRightString(550, 770, 'Invoice#: {0}'.format(self.invoice.id))
 
     def _get_stories(self):
         #initialize story array
@@ -178,7 +178,7 @@ class InvoicePDF(object):
         #Create data array
         data = []
         #Add supplier name
-        data.append(['Customer:', self.invoice.customer_name])
+        data.append(['Customer:', self.customer.name])
         try:
             #extract supplier address
             address = self.customer.addresses.all()[0]
@@ -195,15 +195,15 @@ class InvoicePDF(object):
         except IndexError:
             pass
         
-        if self.invoice.customer_telephone:
-            data.append(['Tel:', u'{0}'.format(self.invoice.customer_telephone)])
+        if self.customer.telephone:
+            data.append(['Tel:', u'{0}'.format(self.customer.telephone)])
 
-        if self.invoice.customer_email:
-            data.append(['Email:', u'{0}'.format(self.invoice.customer_email)])
+        if self.customer.email:
+            data.append(['Email:', u'{0}'.format(self.customer.email)])
 
         # Add Tax ID
-        if self.invoice.customer_tax_id:
-            data.append(['Tax ID:', u'{0}'.format(self.invoice.customer_tax_id)])
+        if self.customer.tax_id:
+            data.append(['Tax ID:', u'{0}'.format(self.customer.tax_id)])
 
         #Create Table
         table = Table(data, colWidths=(80, 440))

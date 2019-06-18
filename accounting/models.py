@@ -6,8 +6,8 @@ import logging
 from datetime import datetime, date
 
 from django.db import models
+from django.db.models import Sum
 from administrator.models import User, Company
-from contacts.models import Contact
 
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 class Journal(models.Model):
     name_en = models.TextField()
     name_th = models.TextField()
+    company = models.ForeignKey(Company)
 
     @property
     def name(self):
@@ -33,25 +34,24 @@ class JournalEntry(models.Model):
     
 
 class Account(models.Model):
+    id = models.AutoField(primary_key=True)
     account_code = models.TextField(db_column='code', null=True)
     name = models.TextField(db_column='name_en')
     name_th = models.TextField(null=True)
     type = models.TextField(db_column="account_type", null=True)
     type_detail = models.TextField(null=True)
-    company = models.ForeignKey(Company, related_name="chart_of_accounts")
-    #parent_account = models.ForeignKey('self', related_name='sub_accounts')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="chart_of_accounts")
+    parent = models.ForeignKey('self', related_name='sub_accounts', null=True)
 
     @property
     def balance(self):
-        credits = []
-        debits = []
-
-        for tr in self.transactions.all():
-            credits.append(tr.credit or 0)
-            debits.append(tr.debit or 0)
-
-        return abs(sum(debits) - sum(credits))
-    
+        #qs = self.transactions.all()
+        #totals = qs.aggregate(Sum('debit'), Sum('credit'))
+        #return abs((totals['debit__sum'] or 0) - (totals['credit__sum'] or 0)) 
+        try:
+            return abs((self.debit_sum or 0) - (self.credit_sum or 0))
+        except Exception as e:
+            return 0
 
 class Transaction(models.Model):
     account = models.ForeignKey(Account, related_name='transactions')
