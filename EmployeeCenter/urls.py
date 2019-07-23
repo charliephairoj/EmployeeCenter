@@ -109,6 +109,9 @@ if settings.DEBUG:
     ]
 urlpatterns += [
 
+    # Social Auth
+    #url('', include('social_django.urls', namespace='social')),
+
     url(r'^__debug__/', include(debug_toolbar.urls)),
     url(r'^$', login.views.app_login),
     url(r'^main$', login.views.main),
