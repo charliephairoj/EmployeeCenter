@@ -694,7 +694,7 @@ class Log(BaseLog):
 
         log_type = kwargs.pop('type', 'QUOTATION')
 
-        log = cls(type=log_type, **kwargs)
+        log = cls(type=log_type, company=kwargs['user'].company, **kwargs)
         log.save()
 
         return log
