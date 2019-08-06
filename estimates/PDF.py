@@ -124,7 +124,7 @@ class EstimatePDF(object):
         self.filename = "%s-%s.pdf" % (self.document_type, self.ack.id)
         self.location = "{0}{1}".format(settings.MEDIA_ROOT, self.filename)
         #create the doc template
-        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.ack.company, pagesize=A4,
+        doc = AckDocTemplate(self.location, id=self.ack.id, company=self.ack.company.name, pagesize=A4,
                              leftMargin=36, rightMargin=36, topMargin=36)
         #Build the document with stories
         stories = self._get_stories()
@@ -475,7 +475,7 @@ class EstimatePDF(object):
         #calculate the totals
         #what to do if there is vat or discount
         # Provide account details for 'Dellarobbia Thailand'
-        if self.ack.company.lower() == 'dellarobbia thailand':
+        if self.ack.company.name.lower() == 'dellarobbia thailand':
             quotation_details = u"Prices are valid for 30 Days\n"
             quotation_details += "Terms: 50% deposit / Balance before Delivery.\n"
             quotation_details += "Transfer deposit to:\n"
