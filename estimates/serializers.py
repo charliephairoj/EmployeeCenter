@@ -14,11 +14,11 @@ from estimates.models import Estimate, Item, Pillow, File, Log as ELog
 from contacts.serializers import CustomerOrderFieldSerializer
 from supplies.serializers import FabricSerializer
 from products.serializers import ProductSerializer
-from administrator.serializers import UserFieldSerializer as EmployeeSerializer, LogFieldSerializer
+from administrator.serializers import UserFieldSerializer as EmployeeSerializer, LogFieldSerializer, CompanySerializer
 from projects.serializers import ProjectFieldSerializer as ProjectSerializer
 from acknowledgements.serializers import AcknowledgementFieldSerializer as AcknowledgementSerializer
 from contacts.models import Customer
-from administrator.models import User
+from administrator.models import User, Company
 from products.models import Product
 from supplies.models import Fabric,  Log
 from projects.models import Project
@@ -219,11 +219,12 @@ class FileSerializer(serializers.ModelSerializer):
 
 class EstimateSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
-
-    company = serializers.CharField(default="Alinea Group Co., Ltd.")
+    company = CompanySerializer(write_only=True, required=False)
+    company_name = serializers.CharField(default="Alinea Group Co., Ltd.")
     customer_name = serializers.CharField(required=False, allow_null=True)
     customer = CustomerOrderFieldSerializer(required=True)
     employee = EmployeeSerializer(required=False, read_only=True)
+
     project = ProjectSerializer(allow_null=True, required=False)
     items = ItemSerializer(item_queryset, many=True, required=True)
     remarks = serializers.CharField(default="", allow_blank=True, allow_null=True)
@@ -248,7 +249,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                             'time_created',
                             'employee',
                             'logs')
-
+        write_only_fields = ('company',)
         exclude = ('pdf', 'deal', 'po_id', 'fob', 'shipping_method')
         depth = 1
 
@@ -320,6 +321,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         instance = self.Meta.model.objects.create(employee=employee,
                                                   customer_name=c_name,
+                                                  company=employee.company,
                                                   currency=currency,
                                                   discount=discount,
                                                   status="open",

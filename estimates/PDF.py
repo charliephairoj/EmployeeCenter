@@ -47,7 +47,7 @@ class AckDocTemplate(BaseDocTemplate):
         try:
             self.company = kwargs['company']
         except KeyError:
-            pass
+            self.company = 'Alinea Group Co., Ltd.'
 
         BaseDocTemplate.__init__(self, filename, **kwargs)
         self.addPageTemplates(self._create_page_template())
