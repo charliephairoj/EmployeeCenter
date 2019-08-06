@@ -221,6 +221,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     item_queryset = Item.objects.exclude(deleted=True)
 
     company = serializers.CharField(default="Alinea Group Co., Ltd.")
+    customer_name = serializers.CharField(required=False, allow_null=True)
     customer = CustomerOrderFieldSerializer(required=True)
     employee = EmployeeSerializer(required=False, read_only=True)
     project = ProjectSerializer(allow_null=True, required=False)
@@ -304,6 +305,7 @@ class EstimateSerializer(serializers.ModelSerializer):
                 except AttributeError:
                     pass
 
+        c_name = validated_data.pop('customer_name', validated_data['customer'].name)
         currency = validated_data.pop('currency', validated_data['customer'].currency or 'THB')
         discount = validated_data.pop('discount', validated_data['customer'].discount)
         status = validated_data.pop('status', None)
@@ -317,6 +319,7 @@ class EstimateSerializer(serializers.ModelSerializer):
         employee = self.context['request'].user
 
         instance = self.Meta.model.objects.create(employee=employee,
+                                                  customer_name=c_name,
                                                   currency=currency,
                                                   discount=discount,
                                                   status="open",
