@@ -71,10 +71,16 @@ class Contact(models.Model):
     def save(self, *args, **kwargs):
 
         if self.account_payable is None:
-            self.account_payable = acc_service.create_account_payable(self.company, self)
+            try:
+                self.account_payable = acc_service.create_account_payable(self.company, self)
+            except:
+                pass
 
         if self.account_receivable is None:
-            self.account_receivable = acc_service.create_account_receivable(self.company, self)
+            try:
+                self.account_receivable = acc_service.create_account_receivable(self.company, self)
+            except:
+                pass
 
         super(Contact, self).save(*args, **kwargs)
         
