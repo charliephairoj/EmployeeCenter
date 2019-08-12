@@ -194,7 +194,9 @@ class CustomerSerializer(ContactMixin, serializers.ModelSerializer):
         except KeyError:
             name = validated_data.pop('name')
             
-        instance = customer_service.create(user=self.context['request'].user, name=name, **validated_data)
+        instance = customer_service.create(user=self.context['request'].user, 
+                                           company=self.context['request'].user.company, 
+                                           name=name, **validated_data)
         
         if addresses_data:
             # Delete any ids, as a new customer should not have a pre existing id
@@ -449,7 +451,9 @@ class SupplierSerializer(ContactMixin, serializers.ModelSerializer):
         except KeyError:
             name = validated_data.pop('name')
             
-        instance = supplier_service.create(user=self.context['request'].user, name=name, **validated_data)
+        instance = supplier_service.create(user=self.context['request'].user,
+                                           company=self.context['request'].user.company,
+                                           name=name, **validated_data)
         
         if addresses_data:
             # Delete any ids, as a new supplier should not have a pre existing id
